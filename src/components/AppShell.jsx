@@ -1,13 +1,14 @@
+
 import React, { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { 
-  Grid3X3, 
-  Calendar, 
-  Clock, 
-  User, 
-  Settings, 
-  Sun, 
+import {
+  Grid3X3,
+  Calendar,
+  Clock,
+  User,
+  Settings,
+  Sun,
   Moon,
   Upload,
   Plus,
@@ -16,7 +17,8 @@ import {
   ArrowRight,
   Type,
   Users,
-  Target
+  Target,
+  BookOpen
 } from 'lucide-react';
 
 const AppShell = () => {
@@ -31,6 +33,7 @@ const AppShell = () => {
 
   const sidebarItems = [
     { icon: Grid3X3, label: 'Dashboard', path: '/dashboard' },
+    { icon: BookOpen, label: 'Courses', path: '/courses' },
     { icon: Target, label: 'Mastery', path: '/mastery' },
     { icon: Calendar, label: 'Calendar', path: '/calendar' },
     { icon: Clock, label: 'Timer', path: '/timer' },
@@ -44,17 +47,27 @@ const AppShell = () => {
   };
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'dark' : ''}`}>
-      {/* Background - User's custom background or default */}
-      <div 
-        className="fixed inset-0 bg-cover bg-center bg-no-repeat"
+    <div className={`min - h - screen ${isDarkMode ? 'dark' : ''} `}>
+      {/* Background - User's custom background or default gradient */}
+      <div
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat -z-10 transition-all duration-500"
         style={{
-          backgroundImage: profile?.background_image 
-            ? `url(${profile.background_image})` 
-            : `url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><defs><filter id="blur"><feGaussianBlur stdDeviation="8"/></filter></defs><rect width="1200" height="800" fill="%23f5f3f0"/><rect x="0" y="0" width="400" height="800" fill="%23e8e4d8"/><rect x="400" y="200" width="200" height="400" fill="%23d4c4a8"/><rect x="600" y="100" width="300" height="600" fill="%23c9b99a"/><rect x="900" y="0" width="300" height="800" fill="%23b8a082"/></svg>')`
+          backgroundImage: profile?.background_image
+            ? `url(${profile.background_image})`
+            : undefined
         }}
       >
-        <div className="absolute inset-0 backdrop-blur-sm"></div>
+        {!profile?.background_image && (
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+            {/* Abstract shapes for visual interest */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-30 dark:opacity-20">
+              <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-blue-400/20 blur-3xl"></div>
+              <div className="absolute top-[40%] right-[10%] w-[40%] h-[40%] rounded-full bg-purple-400/20 blur-3xl"></div>
+              <div className="absolute -bottom-[10%] left-[20%] w-[30%] h-[30%] rounded-full bg-indigo-400/20 blur-3xl"></div>
+            </div>
+          </div>
+        )}
+        <div className="absolute inset-0 backdrop-blur-[1px]"></div>
       </div>
 
       {/* Header - 60% width, no search bar */}
@@ -104,7 +117,7 @@ const AppShell = () => {
                 <div className="w-1 h-1 bg-orange-400 rounded-full"></div>
               </div>
             </div>
-            
+
             {/* Active dashboard icon */}
             <button className="glass-nav-btn-active mb-6">
               <Grid3X3 size={20} />
@@ -116,12 +129,12 @@ const AppShell = () => {
             {sidebarItems.slice(1).map((item, index) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
-              
+
               return (
                 <button
                   key={index}
                   onClick={() => handleNavigation(item.path)}
-                  className={`glass-nav-btn ${isActive ? 'glass-nav-btn-active' : ''}`}
+                  className={`glass - nav - btn ${isActive ? 'glass-nav-btn-active' : ''} `}
                   title={item.label}
                 >
                   <Icon size={20} />
@@ -133,16 +146,16 @@ const AppShell = () => {
           {/* Theme toggle - Circular switch */}
           <div className="flex flex-col items-center pb-6">
             <div className="glass-theme-toggle">
-              <button 
+              <button
                 onClick={toggleTheme}
-                className={`glass-theme-btn ${!isDarkMode ? 'glass-theme-btn-active' : ''}`}
+                className={`glass - theme - btn ${!isDarkMode ? 'glass-theme-btn-active' : ''} `}
                 title="Light mode"
               >
                 <Sun size={14} />
               </button>
-              <button 
+              <button
                 onClick={toggleTheme}
-                className={`glass-theme-btn ${isDarkMode ? 'glass-theme-btn-active' : ''}`}
+                className={`glass - theme - btn ${isDarkMode ? 'glass-theme-btn-active' : ''} `}
                 title="Dark mode"
               >
                 <Moon size={14} />

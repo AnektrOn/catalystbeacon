@@ -153,11 +153,11 @@
     padding: 12px 16px;
     height: 56px;
   }
-  
+
   .glass-sidebar-panel {
     display: none;
   }
-  
+
   .glass-main-panel {
     left: 0;
     right: 0;
@@ -205,9 +205,12 @@
 
 /* Animation for smooth transitions */
 @keyframes glassFloat {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0px);
   }
+
   50% {
     transform: translateY(-1px);
   }
@@ -274,7 +277,8 @@
 }
 
 /* Cards */
-.glass-card {
+.glass-card,
+.glass-panel {
   @apply glass-effect;
   @apply rounded-xl;
   @apply p-6;

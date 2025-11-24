@@ -3,7 +3,7 @@ import skillsService from './skillsService';
 
 class MasteryService {
   // ===== HABITS LIBRARY =====
-  
+
   /**
    * Get all habits from the library
    */
@@ -30,7 +30,7 @@ class MasteryService {
     try {
       const from = (page - 1) * limit;
       const to = from + limit - 1;
-      
+
       const { data, error, count } = await supabase
         .from('user_habits')
         .select(`
@@ -49,9 +49,9 @@ class MasteryService {
         .range(from, to);
 
       if (error) throw error;
-      return { 
-        data, 
-        error: null, 
+      return {
+        data,
+        error: null,
         pagination: {
           page,
           limit,
@@ -157,7 +157,7 @@ class MasteryService {
   async completeHabit(userId, habitId, date = null) {
     try {
       const completionDate = date || new Date().toISOString().split('T')[0];
-      
+
       // Check if already completed today
       const { data: existingCompletion, error: checkError } = await supabase
         .from('user_habit_completions')
@@ -240,7 +240,7 @@ class MasteryService {
   async removeHabitCompletion(userId, habitId, date = null) {
     try {
       const completionDate = date || new Date().toISOString().split('T')[0];
-      
+
       // Find and delete the completion
       const { data, error } = await supabase
         .from('user_habit_completions')
@@ -297,7 +297,7 @@ class MasteryService {
       // Get completions for the last 30 days only (more efficient)
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      
+
       const { data: completions, error } = await supabase
         .from('user_habit_completions')
         .select('completed_at')
@@ -314,18 +314,18 @@ class MasteryService {
 
       // Convert to date strings and sort
       const completionDates = completions.map(c => c.completed_at.split('T')[0]).sort();
-      
+
       // Calculate streak
       let streak = 0;
       const today = new Date();
       const todayString = today.toISOString().split('T')[0];
-      
+
       // Check if completed today or yesterday
       let checkDate = new Date(today);
       if (!completionDates.includes(todayString)) {
         checkDate.setDate(checkDate.getDate() - 1);
       }
-      
+
       while (true) {
         const checkDateString = checkDate.toISOString().split('T')[0];
         if (completionDates.includes(checkDateString)) {
@@ -645,7 +645,7 @@ class MasteryService {
     try {
       const from = (page - 1) * limit;
       const to = from + limit - 1;
-      
+
       const { data, error, count } = await supabase
         .from('user_toolbox_items')
         .select(`
@@ -665,9 +665,9 @@ class MasteryService {
         .range(from, to);
 
       if (error) throw error;
-      return { 
-        data, 
-        error: null, 
+      return {
+        data,
+        error: null,
         pagination: {
           page,
           limit,
@@ -735,11 +735,11 @@ class MasteryService {
         .select();
 
       if (error) throw error;
-      
+
       if (!data || data.length === 0) {
         throw new Error(`No toolbox item found with id: ${itemId}`);
       }
-      
+
       return { data: data[0], error: null };
     } catch (error) {
       console.error('Error updating user toolbox item:', error);
@@ -834,10 +834,12 @@ class MasteryService {
           *,
           user_habits (
             title,
+            description,
             xp_reward
           ),
           toolbox_library (
             title,
+            description,
             xp_reward
           )
         `)
@@ -855,78 +857,13 @@ class MasteryService {
     }
   }
 
-  // ===== HELPER FUNCTIONS =====
-
-  /**
-   * Update habit completion count
-   */
-  async updateHabitCompletionCount(habitId) {
-    try {
-      const { data: completions, error } = await supabase
-        .from('user_habit_completions')
-        .select('id', { count: 'exact' })
-        .eq('habit_id', habitId);
-
-      if (error) throw error;
-
-      const { error: updateError } = await supabase
-        .from('user_habits')
-        .update({ completion_count: completions.length })
-        .eq('id', habitId);
-
-      if (updateError) throw updateError;
-    } catch (error) {
-      console.error('Error updating habit completion count:', error);
-    }
-  }
-
-  /**
-   * Award XP to user
-   */
-  async awardXP(userId, amount, source, description) {
-    try {
-      // Add XP transaction
-      const { error: transactionError } = await supabase
-        .from('xp_transactions')
-        .insert({
-          user_id: userId,
-          amount: amount,
-          source: source,
-          description: description
-        });
-
-      if (transactionError) throw transactionError;
-
-      // Update user profile XP
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('current_xp, total_xp_earned')
-        .eq('id', userId)
-        .single();
-
-      if (profileError) throw profileError;
-
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          current_xp: profile.current_xp + amount,
-          total_xp_earned: profile.total_xp_earned + amount
-        })
-        .eq('id', userId);
-
-      if (updateError) throw updateError;
-    } catch (error) {
-      console.error('Error awarding XP:', error);
-    }
-  }
-
   /**
    * Test database connection and basic operations
    */
   async testConnection() {
     try {
       console.log('🧪 Testing MasteryService connection...');
-      
+
       // Test 1: Get habits library
       console.log('📚 Testing habits library fetch...');
       const { data: habitsLibrary, error: habitsError } = await this.getHabitsLibrary();
@@ -943,7 +880,7 @@ class MasteryService {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         console.log(`👤 Testing with user: ${user.email}`);
-        
+
         // Test 4: Get user habits
         console.log('🎯 Testing user habits fetch...');
         const { data: userHabits, error: userHabitsError } = await this.getUserHabits(user.id);
@@ -962,7 +899,7 @@ class MasteryService {
         startOfMonth.setDate(1);
         const endOfMonth = new Date();
         endOfMonth.setMonth(endOfMonth.getMonth() + 1, 0);
-        
+
         const { data: calendarEvents, error: calendarError } = await this.getCalendarEvents(
           user.id,
           startOfMonth.toISOString().split('T')[0],
@@ -973,12 +910,8 @@ class MasteryService {
       } else {
         console.log('⚠️ No authenticated user found - skipping user-specific tests');
       }
-
-      console.log('🎉 All tests passed! MasteryService is working correctly.');
-      return { success: true, error: null };
     } catch (error) {
-      console.error('❌ MasteryService test failed:', error);
-      return { success: false, error };
+      console.error('❌ Connection test failed:', error);
     }
   }
 }

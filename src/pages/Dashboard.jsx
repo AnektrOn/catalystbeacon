@@ -1,6 +1,9 @@
 import React, { useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
+import { Button } from '../components/ui/button'
+import { User, CreditCard, Award, BookOpen, Settings as SettingsIcon, Target, Users } from 'lucide-react'
 import SignupTest from '../components/SignupTest'
 
 const Dashboard = () => {
@@ -12,30 +15,30 @@ const Dashboard = () => {
   useEffect(() => {
     const payment = searchParams.get('payment')
     const sessionId = searchParams.get('session_id')
-    
+
     if (payment === 'success' && sessionId && user) {
       // Show alert to confirm payment success
       alert('🎉 Payment completed! Processing your subscription...')
-      
+
       console.log('Payment success detected:', { sessionId, userId: user.id })
-      
+
       // Call payment success endpoint to update role
       fetch(`http://localhost:3001/api/payment-success?session_id=${sessionId}`)
         .then(response => response.json())
         .then(data => {
           console.log('Payment success response:', data)
           alert(`✅ Subscription activated! Your role is now: ${data.role}`)
-          
+
           // Refresh profile to get updated subscription status
           fetchProfile(user.id)
-          
+
           // Clean up URL
           navigate('/dashboard', { replace: true })
         })
         .catch(error => {
           console.error('Error processing payment success:', error)
           alert('⚠️ Payment completed but there was an error updating your subscription. Please refresh the page.')
-          
+
           // Still try to refresh profile
           fetchProfile(user.id)
           navigate('/dashboard', { replace: true })
@@ -63,12 +66,11 @@ const Dashboard = () => {
             <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">Welcome back, {displayName}</p>
           </div>
           <div className="dashboard-header-actions flex items-center space-x-2">
-            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-              userRole === 'Free' ? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200' :
-              userRole === 'Student' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200' :
-              userRole === 'Teacher' ? 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200' :
-              'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
-            }`}>
+            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${userRole === 'Free' ? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200' :
+                userRole === 'Student' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200' :
+                  userRole === 'Teacher' ? 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200' :
+                    'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
+              }`}>
               {userRole}
             </span>
           </div>
@@ -120,9 +122,7 @@ const Dashboard = () => {
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
                     <div className="h-12 w-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg">
-                      <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                      </svg>
+                      <CreditCard className="h-6 w-6 text-white" />
                     </div>
                   </div>
                   <div className="ml-4 flex-1 min-w-0">
@@ -155,9 +155,7 @@ const Dashboard = () => {
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
                     <div className="h-12 w-12 rounded-full bg-gradient-to-br from-yellow-500 to-orange-600 flex items-center justify-center shadow-lg">
-                      <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
+                      <Award className="h-6 w-6 text-white" />
                     </div>
                   </div>
                   <div className="ml-4 flex-1 min-w-0">
@@ -196,37 +194,47 @@ const Dashboard = () => {
                 className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm p-4 sm:p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-200 border border-slate-600/50 hover:border-emerald-500/50"
               >
                 <div className="text-center">
-                  <div className="text-3xl sm:text-4xl mb-2">👤</div>
+                  <User className="h-8 w-8 mx-auto mb-2 text-white" />
                   <div className="text-xs sm:text-sm font-medium text-white">Profile</div>
                 </div>
               </button>
-              
+
               <button
                 onClick={() => navigate('/pricing')}
                 className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm p-4 sm:p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-200 border border-slate-600/50 hover:border-emerald-500/50"
               >
                 <div className="text-center">
-                  <div className="text-3xl sm:text-4xl mb-2">💳</div>
+                  <CreditCard className="h-8 w-8 mx-auto mb-2 text-white" />
                   <div className="text-xs sm:text-sm font-medium text-white">Pricing</div>
                 </div>
               </button>
-              
-              <button 
+
+              <button
+                onClick={() => navigate('/courses')}
+                className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm p-4 sm:p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-200 border border-slate-600/50 hover:border-emerald-500/50"
+              >
+                <div className="text-center">
+                  <BookOpen className="h-8 w-8 mx-auto mb-2 text-white" />
+                  <div className="text-xs sm:text-sm font-medium text-white">Courses</div>
+                </div>
+              </button>
+
+              <button
                 onClick={() => navigate('/mastery')}
                 className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm p-4 sm:p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-200 border border-slate-600/50 hover:border-emerald-500/50"
               >
                 <div className="text-center">
-                  <div className="text-3xl sm:text-4xl mb-2">🎯</div>
+                  <Target className="h-8 w-8 mx-auto mb-2 text-white" />
                   <div className="text-xs sm:text-sm font-medium text-white">Mastery</div>
                 </div>
               </button>
-              
-              <button 
+
+              <button
                 onClick={() => navigate('/community')}
                 className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm p-4 sm:p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-200 border border-slate-600/50 hover:border-emerald-500/50"
               >
                 <div className="text-center">
-                  <div className="text-3xl sm:text-4xl mb-2">👥</div>
+                  <Users className="h-8 w-8 mx-auto mb-2 text-white" />
                   <div className="text-xs sm:text-sm font-medium text-white">Community</div>
                 </div>
               </button>
