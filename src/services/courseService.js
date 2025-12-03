@@ -1,8 +1,58 @@
 import { supabase } from '../lib/supabaseClient';
 
 class CourseService {
+  // ===== UUID GENERATION HELPERS =====
+
+  /**
+   * Generate a deterministic UUID for a chapter based on course_id and chapter_number
+   * This ensures consistent UUIDs for the same chapter across operations
+   * @param {number} courseId - The course_id
+   * @param {number} chapterNumber - The chapter number (1-5)
+   * @returns {string} UUID v5 based on course and chapter
+   */
+  generateChapterId(courseId, chapterNumber) {
+    // Use a namespace UUID for chapters (could be any valid UUID)
+    const CHAPTER_NAMESPACE = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+    const name = `course:${courseId}:chapter:${chapterNumber}`;
+
+    // Simple deterministic UUID generation (you may want to use uuid library for proper v5)
+    // For now, create a pseudo-UUID based on the input
+    const hash = this._simpleHash(name);
+    return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-${hash.slice(12, 16)}-${hash.slice(16, 20)}-${hash.slice(20, 32)}`;
+  }
+
+  /**
+   * Generate a deterministic UUID for a lesson based on course_id, chapter_number, and lesson_number
+   * @param {number} courseId - The course_id
+   * @param {number} chapterNumber - The chapter number (1-5)
+   * @param {number} lessonNumber - The lesson number (1-4)
+   * @returns {string} UUID v5 based on course, chapter, and lesson
+   */
+  generateLessonId(courseId, chapterNumber, lessonNumber) {
+    const LESSON_NAMESPACE = '6ba7b811-9dad-11d1-80b4-00c04fd430c8';
+    const name = `course:${courseId}:chapter:${chapterNumber}:lesson:${lessonNumber}`;
+
+    const hash = this._simpleHash(name);
+    return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-${hash.slice(12, 16)}-${hash.slice(16, 20)}-${hash.slice(20, 32)}`;
+  }
+
+  /**
+   * Simple hash function for deterministic UUID generation
+   * @private
+   */
+  _simpleHash(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    // Convert to hex and pad to 32 characters
+    return Math.abs(hash).toString(16).padStart(32, '0');
+  }
+
   // ===== COURSE METADATA =====
-  
+
   /**
    * Get all published courses with optional filters
    * Only returns courses from unlocked schools
@@ -71,7 +121,7 @@ class CourseService {
   async getCoursesBySchool() {
     try {
       const { data, error } = await this.getAllCourses();
-      
+
       if (error) throw error;
 
       // Group courses by masterschool (normalize to capitalize first letter)
@@ -80,7 +130,7 @@ class CourseService {
         data.forEach(course => {
           // Normalize masterschool name: capitalize first letter
           let school = course.masterschool || 'Other';
-          
+
           // Handle special case "God Mode" (two words)
           if (school.toLowerCase() === 'god mode' || school.toLowerCase() === 'godmode') {
             school = 'God Mode';
@@ -88,7 +138,7 @@ class CourseService {
             // Capitalize first letter, lowercase rest
             school = school.charAt(0).toUpperCase() + school.slice(1).toLowerCase();
           }
-          
+
           if (!grouped[school]) {
             grouped[school] = [];
           }
@@ -257,6 +307,48 @@ class CourseService {
       return { data: data || null, error: null };
     } catch (error) {
       console.error('Error fetching lesson content:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Get lesson content by UUID (for backward compatibility)
+   * @param {string} lessonId - UUID of the lesson
+   * @returns {Promise<{data: Object, error: Error|null}>}
+   */
+  async getLessonContentByUUID(lessonId) {
+    try {
+      const { data, error } = await supabase
+        .from('course_content')
+        .select('*')
+        .eq('lesson_id', lessonId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      return { data: data || null, error: null };
+    } catch (error) {
+      console.error('Error fetching lesson content by UUID:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Get lesson content by chapter UUID (for backward compatibility)
+   * @param {string} chapterId - UUID of the chapter
+   * @returns {Promise<{data: Array, error: Error|null}>}
+   */
+  async getLessonsByChapterUUID(chapterId) {
+    try {
+      const { data, error } = await supabase
+        .from('course_content')
+        .select('*')
+        .eq('chapter_id', chapterId)
+        .order('lesson_number');
+
+      if (error) throw error;
+      return { data: data || [], error: null };
+    } catch (error) {
+      console.error('Error fetching lessons by chapter UUID:', error);
       return { data: null, error };
     }
   }
@@ -442,7 +534,7 @@ class CourseService {
           .eq('id', existing.id)
           .select()
           .single();
-        
+
         if (error) throw error;
         result = data;
       } else {
@@ -452,7 +544,7 @@ class CourseService {
           .insert(progressUpdate)
           .select()
           .single();
-        
+
         if (error) throw error;
         result = data;
       }
@@ -523,7 +615,7 @@ class CourseService {
           .eq('id', existing.id)
           .select()
           .single();
-        
+
         if (error) throw error;
         lessonProgress = data;
       } else {
@@ -533,7 +625,7 @@ class CourseService {
           .insert(progressData)
           .select()
           .single();
-        
+
         if (error) throw error;
         lessonProgress = data;
       }
@@ -598,8 +690,8 @@ class CourseService {
       const progressPercentage = Math.round((completedCount / totalLessons) * 100);
 
       // Update course progress
-      const status = completedCount === totalLessons ? 'completed' : 
-                     completedCount > 0 ? 'in_progress' : 'not_started';
+      const status = completedCount === totalLessons ? 'completed' :
+        completedCount > 0 ? 'in_progress' : 'not_started';
 
       await this.updateCourseProgress(userId, courseId, {
         status,
@@ -692,14 +784,13 @@ class CourseService {
 
       if (profileError) throw profileError;
 
-      // Get course XP threshold
+      // Get course metadata
       const { data: course, error: courseError } = await this.getCourseById(courseId);
       if (courseError) throw courseError;
 
       const userXp = profile?.current_xp || 0;
-      const requiredXp = course?.xp_threshold || 0;
-      
-      // Check if the school itself is unlocked first
+
+      // Check if the school itself is unlocked
       const { data: school } = await supabase
         .from('schools')
         .select('unlock_xp')
@@ -709,18 +800,15 @@ class CourseService {
       const schoolUnlockXp = school?.unlock_xp || 0;
       const isSchoolUnlocked = userXp >= schoolUnlockXp;
 
-      // Course is unlocked only if:
-      // 1. The school is unlocked AND
-      // 2. Either it's an Ignition course (no XP threshold) OR user has enough XP for the course
-      const isIgnition = course?.masterschool === 'Ignition';
-      const meetsCourseThreshold = isIgnition || userXp >= requiredXp;
-      const isUnlocked = isSchoolUnlocked && meetsCourseThreshold;
+      // Course is unlocked if the school is unlocked
+      // Individual courses no longer have XP requirements
+      const isUnlocked = isSchoolUnlocked;
 
       return {
         data: {
           isUnlocked,
           userXp,
-          requiredXp: isIgnition ? 0 : requiredXp // Show 0 for Ignition courses
+          requiredXp: schoolUnlockXp // Return school unlock XP as the requirement
         },
         error: null
       };

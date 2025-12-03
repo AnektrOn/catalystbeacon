@@ -1,27 +1,26 @@
 import React, { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { 
-  Grid3X3, 
-  Calendar, 
-  Clock, 
-  User, 
-  Settings, 
-  Sun, 
+import NotificationBadge from './NotificationBadge';
+import {
+  Grid3X3,
+  Calendar,
+  Clock,
+  User,
+  Settings,
+  Sun,
   Moon,
-  Upload,
-  Plus,
-  Square,
-  ArrowLeft,
-  ArrowRight,
-  Type,
   Users,
   Target,
   Menu,
   X,
   Home,
   LogOut,
-  BookOpen
+  BookOpen,
+  Bell,
+  ArrowLeft,
+  ArrowRight,
+  Type
 } from 'lucide-react';
 
 const AppShellMobile = () => {
@@ -30,6 +29,9 @@ const AppShellMobile = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { profile, signOut } = useAuth();
+
+  // Mock notification count - replace with actual data
+  const notificationCount = 3;
 
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
@@ -64,15 +66,23 @@ const AppShellMobile = () => {
 
   return (
     <div className={`min-h-screen ${isDarkMode ? 'dark' : ''}`}>
-      {/* Background - User's custom background or default */}
-      <div 
+      {/* Background - User's custom background or earth-tone gradient */}
+      <div
         className="fixed inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: profile?.background_image 
-            ? `url(${profile.background_image})` 
-            : `url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><defs><filter id="blur"><feGaussianBlur stdDeviation="8"/></filter></defs><rect width="1200" height="800" fill="%23f5f3f0"/><rect x="0" y="0" width="400" height="800" fill="%23e8e4d8"/><rect x="400" y="200" width="200" height="400" fill="%23d4c4a8"/><rect x="600" y="100" width="300" height="600" fill="%23c9b99a"/><rect x="900" y="0" width="300" height="800" fill="%23b8a082"/></svg>')`
+          backgroundImage: profile?.background_image
+            ? `url(${profile.background_image})`
+            : undefined
         }}
       >
+        {!profile?.background_image && (
+          <div className="absolute inset-0 bg-gradient-to-br from-[#F7F1E1] via-[#E3D8C1] to-[#B4833D] dark:from-[#3F3F2C] dark:via-[#66371B] dark:to-[#81754B]">
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-20 dark:opacity-10">
+              <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-[#B4833D]/20 blur-3xl"></div>
+              <div className="absolute top-[40%] right-[10%] w-[40%] h-[40%] rounded-full bg-[#81754B]/20 blur-3xl"></div>
+            </div>
+          </div>
+        )}
         <div className="absolute inset-0 backdrop-blur-sm"></div>
       </div>
 
@@ -80,7 +90,7 @@ const AppShellMobile = () => {
       <header className="fixed top-0 left-0 right-0 z-50 safe-area-top">
         <div className="glass-header-browser flex items-center justify-between">
           {/* Left side - Menu button */}
-          <button 
+          <button
             className="glass-icon-btn lg:hidden"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
@@ -112,15 +122,21 @@ const AppShellMobile = () => {
 
           {/* Right side actions */}
           <div className="flex items-center space-x-2">
-            <button 
+            {/* Notification Bell */}
+            <div className="relative">
+              <button className="glass-icon-btn">
+                <Bell size={18} />
+              </button>
+              <NotificationBadge count={notificationCount} />
+            </div>
+
+            {/* Theme Toggle */}
+            <button
               onClick={toggleTheme}
               className="glass-icon-btn"
               title={isDarkMode ? 'Light mode' : 'Dark mode'}
             >
               {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
-            <button className="glass-icon-btn hidden sm:flex">
-              <Upload size={16} />
             </button>
           </div>
         </div>
@@ -133,13 +149,13 @@ const AppShellMobile = () => {
           <div className="flex flex-col items-center pt-6 pb-4">
             {/* Toggle button */}
             <div className="glass-toggle-btn mb-4">
-              <div className="w-4 h-3 bg-orange-400 rounded-sm"></div>
+              <div className="w-4 h-3 bg-[#B4833D] rounded-sm"></div>
               <div className="flex space-x-1 mt-1">
-                <div className="w-1 h-1 bg-orange-400 rounded-full"></div>
-                <div className="w-1 h-1 bg-orange-400 rounded-full"></div>
+                <div className="w-1 h-1 bg-[#B4833D] rounded-full"></div>
+                <div className="w-1 h-1 bg-[#B4833D] rounded-full"></div>
               </div>
             </div>
-            
+
             {/* Active dashboard icon */}
             <button className="glass-nav-btn-active mb-6">
               <Grid3X3 size={20} />
@@ -150,10 +166,10 @@ const AppShellMobile = () => {
           <nav className="flex-1 flex flex-col items-center space-y-4">
             {sidebarItems.slice(1).map((item, index) => {
               const Icon = item.icon;
-              const isActive = location.pathname === item.path || 
-                               (item.path === '/mastery' && location.pathname.startsWith('/mastery')) ||
-                               (item.path === '/courses' && location.pathname.startsWith('/courses'));
-              
+              const isActive = location.pathname === item.path ||
+                (item.path === '/mastery' && location.pathname.startsWith('/mastery')) ||
+                (item.path === '/courses' && location.pathname.startsWith('/courses'));
+
               return (
                 <button
                   key={index}
@@ -170,14 +186,14 @@ const AppShellMobile = () => {
           {/* Theme toggle - Circular switch */}
           <div className="flex flex-col items-center pb-6">
             <div className="glass-theme-toggle">
-              <button 
+              <button
                 onClick={toggleTheme}
                 className={`glass-theme-btn ${!isDarkMode ? 'glass-theme-btn-active' : ''}`}
                 title="Light mode"
               >
                 <Sun size={14} />
               </button>
-              <button 
+              <button
                 onClick={toggleTheme}
                 className={`glass-theme-btn ${isDarkMode ? 'glass-theme-btn-active' : ''}`}
                 title="Dark mode"
@@ -191,12 +207,12 @@ const AppShellMobile = () => {
 
       {/* Mobile Slide-out Menu */}
       {isMobileMenuOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-50 lg:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         >
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-          <div 
+          <div
             className="absolute top-0 left-0 bottom-0 w-80 max-w-[80vw] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
@@ -204,25 +220,25 @@ const AppShellMobile = () => {
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Menu</h2>
-                <button 
+                <button
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
                   <X size={20} />
                 </button>
               </div>
-              
+
               {/* User info */}
               {profile && (
                 <div className="flex items-center space-x-3 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
                   {profile.avatar_url ? (
-                    <img 
-                      src={profile.avatar_url} 
+                    <img
+                      src={profile.avatar_url}
                       alt={profile.full_name}
                       className="w-10 h-10 rounded-full"
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-400 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#B4833D] to-[#81754B] flex items-center justify-center">
                       <User size={20} className="text-white" />
                     </div>
                   )}
@@ -242,19 +258,18 @@ const AppShellMobile = () => {
             <nav className="p-4 space-y-2">
               {sidebarItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = location.pathname === item.path || 
-                                 (item.path === '/mastery' && location.pathname.startsWith('/mastery')) ||
-                                 (item.path === '/courses' && location.pathname.startsWith('/courses'));
-                
+                const isActive = location.pathname === item.path ||
+                  (item.path === '/mastery' && location.pathname.startsWith('/mastery')) ||
+                  (item.path === '/courses' && location.pathname.startsWith('/courses'));
+
                 return (
                   <button
                     key={item.path}
                     onClick={() => handleNavigation(item.path)}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-                      isActive
-                        ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-lg'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                    }`}
+                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive
+                      ? 'bg-gradient-to-r from-[#B4833D] to-[#66371B] text-white shadow-lg'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                      }`}
                   >
                     <Icon size={20} />
                     <span>{item.label}</span>
@@ -287,26 +302,25 @@ const AppShellMobile = () => {
 
       {/* Mobile Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden safe-area-bottom mobile-bottom-nav">
-        <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-t border-gray-200 dark:border-gray-700 shadow-lg">
-          <div className="flex items-center justify-around px-2 py-2">
+        <div className="glass-effect mx-4 mb-4 rounded-2xl border border-white/20 shadow-xl backdrop-blur-xl">
+          <div className="flex items-center justify-around px-2 py-3">
             {bottomNavItems.map((item) => {
               const Icon = item.icon;
-              const isActive = location.pathname === item.path || 
-                               (item.path === '/mastery' && location.pathname.startsWith('/mastery')) ||
-                               (item.path === '/courses' && location.pathname.startsWith('/courses'));
-              
+              const isActive = location.pathname === item.path ||
+                (item.path === '/mastery' && location.pathname.startsWith('/mastery')) ||
+                (item.path === '/courses' && location.pathname.startsWith('/courses'));
+
               return (
                 <button
                   key={item.path}
                   onClick={() => handleNavigation(item.path)}
-                  className={`mobile-nav-item flex flex-col items-center justify-center px-3 py-2 rounded-xl min-w-[60px] transition-all duration-200 ${
-                    isActive
-                      ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20'
-                      : 'text-gray-600 dark:text-gray-400'
-                  }`}
+                  className={`mobile-nav-item flex flex-col items-center justify-center px-3 py-2 rounded-xl min-w-[60px] transition-all duration-200 ${isActive
+                    ? 'text-[#B4833D] dark:text-[#B4833D] scale-110'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                    }`}
                 >
                   <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
-                  <span className="text-[10px] mt-1 font-medium">{item.label}</span>
+                  {isActive && <div className="w-1 h-1 bg-[#B4833D] rounded-full mt-1"></div>}
                 </button>
               );
             })}

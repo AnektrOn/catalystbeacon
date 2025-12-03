@@ -112,6 +112,8 @@ const AppRoutes = () => {
         <Route path="/mastery/calendar" element={<Mastery />} />
         <Route path="/mastery/habits" element={<Mastery />} />
         <Route path="/mastery/toolbox" element={<Mastery />} />
+        <Route path="/mastery/achievements" element={<Mastery />} />
+        <Route path="/mastery/timer" element={<Mastery />} />
 
         {/* Redirect standalone calendar to mastery calendar for now */}
         <Route path="/calendar" element={<Navigate to="/mastery/calendar" replace />} />
@@ -120,7 +122,7 @@ const AppRoutes = () => {
         <Route path="/community" element={<CommunityPage />} />
 
         {/* Tools Routes */}
-        <Route path="/timer" element={<TimerPage />} />
+        <Route path="/timer" element={<Navigate to="/mastery/timer" replace />} />
         <Route path="/settings" element={<SettingsPage />} />
 
         {/* Course Routes */}
