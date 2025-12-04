@@ -5,6 +5,17 @@ module.exports = {
     "./src/**/*.{js,jsx,ts,tsx}",
     "./public/index.html",
   ],
+  // Optimize CSS output
+  corePlugins: {
+    // Disable unused features to reduce CSS size
+    preflight: true, // Keep preflight for base styles
+  },
+  // Remove unused styles in production
+  safelist: [
+    // Keep dynamic classes that might be missed
+    'dark',
+    'dark-mode',
+  ],
   theme: {
     container: {
       center: true,
