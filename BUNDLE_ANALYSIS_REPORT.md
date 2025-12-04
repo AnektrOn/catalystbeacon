@@ -20,10 +20,17 @@
 ### CSS Bundle
 - `main.*.css`: 20.6 kB
 
-### Total Estimated Size
-- **JavaScript:** ~150-200 kB (split across chunks)
-- **CSS:** ~20.6 kB
-- **Total:** ~170-220 kB (excellent for initial load!)
+### Total Size Analysis
+- **Main Bundle:** 471 KB ⚠️ (needs optimization)
+- **Largest Chunk:** 100 KB (762.*.chunk.js)
+- **Other Chunks:** ~200 KB total (split across 15+ chunks)
+- **CSS:** 136 KB
+- **Total Initial Load:** ~607 KB (main + CSS)
+
+### Initial Load Breakdown
+- **Critical Path:** main.js (471 KB) + main.css (136 KB) = **607 KB**
+- **Deferred:** ~200 KB (lazy-loaded chunks)
+- **Total:** ~807 KB
 
 ## ✅ Current Optimizations Working
 
@@ -125,10 +132,16 @@
 - ⚠️ Dependencies: Some heavy libraries
 
 ### Target Metrics
-- **Initial Bundle:** < 200 kB ✅ (achieved)
+- **Initial Bundle:** < 200 kB ❌ (current: 471 KB - needs 57% reduction)
 - **LCP:** < 2.5s (to measure)
 - **FCP:** < 1.8s (to measure)
 - **TTI:** < 3.8s (to measure)
+
+### Priority Actions
+1. **URGENT:** Reduce main bundle from 471 KB to < 200 KB
+2. **HIGH:** Optimize CSS bundle from 136 KB to < 50 KB
+3. **MEDIUM:** Verify tree-shaking for lucide-react and @radix-ui
+4. **MEDIUM:** Implement component-level code splitting
 
 ## 🚀 Next Steps
 
