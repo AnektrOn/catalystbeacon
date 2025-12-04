@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Trophy, Lock } from 'lucide-react';
 
-const AchievementsWidget = ({ recentAchievements = [], totalCount = 0, nextUnlock = null }) => {
+const AchievementsWidget = memo(({ recentAchievements = [], totalCount = 0, nextUnlock = null }) => {
     return (
         <div className="glass-card-premium p-6 hover:scale-[1.02] transition-transform duration-300">
             <div className="flex items-start justify-between mb-4">
@@ -57,6 +57,8 @@ const AchievementsWidget = ({ recentAchievements = [], totalCount = 0, nextUnloc
             )}
         </div>
     );
-};
+});
+
+AchievementsWidget.displayName = 'AchievementsWidget';
 
 export default AchievementsWidget;

@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { BookOpen, Play, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const CurrentLessonWidget = ({
+const CurrentLessonWidget = memo(({
     lessonId = null,
     lessonTitle = 'No active lesson',
     courseTitle = '',
@@ -100,6 +100,8 @@ const CurrentLessonWidget = ({
             )}
         </div>
     );
-};
+});
+
+CurrentLessonWidget.displayName = 'CurrentLessonWidget';
 
 export default CurrentLessonWidget;

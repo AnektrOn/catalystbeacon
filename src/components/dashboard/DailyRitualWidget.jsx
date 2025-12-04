@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Flame } from 'lucide-react';
 
-const DailyRitualWidget = ({ completed = false, streak = 0, xpReward = 50 }) => {
+const DailyRitualWidget = memo(({ completed = false, streak = 0, xpReward = 50 }) => {
     return (
         <div className="glass-card-premium p-6 hover:scale-[1.02] transition-transform duration-300">
             <div className="flex items-start justify-between mb-4">
@@ -33,6 +33,8 @@ const DailyRitualWidget = ({ completed = false, streak = 0, xpReward = 50 }) => 
             )}
         </div>
     );
-};
+});
+
+DailyRitualWidget.displayName = 'DailyRitualWidget';
 
 export default DailyRitualWidget;

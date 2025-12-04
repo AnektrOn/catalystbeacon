@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { BookOpen, Clock, ArrowRight } from 'lucide-react';
 
-const TeacherFeedWidget = ({ posts = [] }) => {
+const TeacherFeedWidget = memo(({ posts = [] }) => {
     // Transform Supabase posts to widget format
     const displayPosts = posts.map(post => ({
         id: post.id,
@@ -75,6 +75,8 @@ const TeacherFeedWidget = ({ posts = [] }) => {
             </div>
         </div>
     );
-};
+});
+
+TeacherFeedWidget.displayName = 'TeacherFeedWidget';
 
 export default TeacherFeedWidget;

@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Brain, Heart, Zap } from 'lucide-react';
 
-const CoherenceWidget = ({ energy = 75, mind = 85, heart = 90 }) => {
+const CoherenceWidget = memo(({ energy = 75, mind = 85, heart = 90 }) => {
     const overall = Math.round((energy + mind + heart) / 3);
 
     const getColor = (value) => {
@@ -73,6 +73,8 @@ const CoherenceWidget = ({ energy = 75, mind = 85, heart = 90 }) => {
             </div>
         </div>
     );
-};
+});
+
+CoherenceWidget.displayName = 'CoherenceWidget';
 
 export default CoherenceWidget;

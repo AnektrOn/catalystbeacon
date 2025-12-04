@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Sparkles, ChevronRight } from 'lucide-react';
 
-const ConstellationNavigatorWidget = ({
+const ConstellationNavigatorWidget = memo(({
     currentSchool = 'Insight',
     currentConstellation = {
         name: 'Consciousness Studies',
@@ -172,6 +172,8 @@ const ConstellationNavigatorWidget = ({
             )}
         </div>
     );
-};
+});
+
+ConstellationNavigatorWidget.displayName = 'ConstellationNavigatorWidget';
 
 export default ConstellationNavigatorWidget;

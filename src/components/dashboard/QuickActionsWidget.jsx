@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Wind, FileText, Eye, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const QuickActionsWidget = ({ actions = [] }) => {
+const QuickActionsWidget = memo(({ actions = [] }) => {
     const navigate = useNavigate();
 
     const defaultActions = [
@@ -71,6 +71,8 @@ const QuickActionsWidget = ({ actions = [] }) => {
             </div>
         </div>
     );
-};
+});
+
+QuickActionsWidget.displayName = 'QuickActionsWidget';
 
 export default QuickActionsWidget;
