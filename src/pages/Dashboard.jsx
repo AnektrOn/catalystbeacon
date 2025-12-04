@@ -1,11 +1,10 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import toast from 'react-hot-toast'
 import SEOHead from '../components/SEOHead'
 import courseService from '../services/courseService'
-import masteryService from '../services/masteryService'
 import socialService from '../services/socialService'
 import levelsService from '../services/levelsService'
 
@@ -23,7 +22,7 @@ const Dashboard = () => {
   const { user, profile, fetchProfile } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const [loading, setLoading] = useState(true)
+  const [, setLoading] = useState(true)
   const [levelData, setLevelData] = useState({
     level: 1,
     levelTitle: '',
