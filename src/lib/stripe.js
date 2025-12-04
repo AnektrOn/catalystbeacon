@@ -1,10 +1,15 @@
 import { loadStripe } from '@stripe/stripe-js'
 
-// Debug environment variables
-console.log('Stripe Publishable Key:', process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY ? 'SET' : 'NOT SET')
+// Get Stripe publishable key from environment variables
+// Create React App uses REACT_APP_ prefix
+const STRIPE_PUBLISHABLE_KEY = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY
 
-// Fallback key if environment variable is not available
-const STRIPE_PUBLISHABLE_KEY = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || 'pk_test_51Rut6V2MKT6HumxnDZ7DwJN9DuigVCcStaqzS7OIUYQRA7OLgMpQfeHq8oP7gchdTGLXsvbFUK2Kg89YVfkaLSGD00sIMtt0H0'
+if (!STRIPE_PUBLISHABLE_KEY) {
+  throw new Error(
+    'Missing Stripe publishable key. ' +
+    'Please set REACT_APP_STRIPE_PUBLISHABLE_KEY in your .env file.'
+  )
+}
 
 // Initialize Stripe with error handling
 const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY)
@@ -17,15 +22,15 @@ export const PRICE_IDS = {
   TEACHER_YEARLY: 'price_1SB9co2MKT6HumxnOSALvAM4'
 }
 
+// Get API URL from environment variables
+// Create React App uses REACT_APP_ prefix
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001'
+
 // Modern Stripe Checkout approach - create session on backend first
 export const createCheckoutSession = async (priceId, userEmail) => {
   try {
-    console.log('Creating Stripe checkout session...')
-    console.log('Price ID:', priceId)
-    console.log('User Email:', userEmail)
-    
     // Call our backend to create the checkout session
-    const response = await fetch('http://localhost:3001/api/create-checkout-session', {
+    const response = await fetch(`${API_URL}/api/create-checkout-session`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -43,7 +48,6 @@ export const createCheckoutSession = async (priceId, userEmail) => {
     }
     
     const session = await response.json()
-    console.log('Checkout session created:', session)
     
     if (session.error) {
       throw new Error(session.error)

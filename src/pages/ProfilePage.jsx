@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { User, Star, Flame, Target, BookOpen, Heart, Brain, Sparkles } from 'lucide-react'
+import toast from 'react-hot-toast'
 import RadarChart from '../components/profile/RadarChart'
 import ProgressBar from '../components/profile/ProgressBar'
 import skillsService from '../services/skillsService'
@@ -55,7 +56,7 @@ const ProfilePage = () => {
           // Use current_xp from profiles table (the actual XP system)
           const totalXP = profile?.current_xp || 0;
           
-          console.log('🎯 ProfilePage Debug:');
+          // Debug logging removed for production
           console.log('- User skills data:', userSkillsResult.data);
           console.log('- User master stats data:', userMasterStatsResult.data);
           console.log('- Total XP from profile.current_xp:', totalXP);
@@ -73,7 +74,7 @@ const ProfilePage = () => {
           // Calculate radar chart data from user master stats
           const radarData = {};
           if (userMasterStatsResult.data) {
-            console.log('🎯 Radar Chart Debug - User Master Stats:', userMasterStatsResult.data);
+            // Debug logging removed for production
             userMasterStatsResult.data.forEach(stat => {
               const currentValue = stat.user_master_stats?.[0]?.current_value || 0;
               radarData[stat.display_name] = Math.min(currentValue, 200); // Cap at 200 for radar
@@ -93,8 +94,46 @@ const ProfilePage = () => {
     loadUserData();
   }, [user?.id]);
 
+  const validateForm = () => {
+    if (formData.full_name && formData.full_name.length < 2) {
+      toast.error('Full name must be at least 2 characters')
+      return false
+    }
+    
+    if (formData.avatar_url && !isValidUrl(formData.avatar_url)) {
+      toast.error('Please enter a valid URL for avatar')
+      return false
+    }
+    
+    if (formData.background_image && !isValidUrl(formData.background_image)) {
+      toast.error('Please enter a valid URL for background image')
+      return false
+    }
+    
+    if (formData.bio && formData.bio.length > 500) {
+      toast.error('Bio must be less than 500 characters')
+      return false
+    }
+    
+    return true
+  }
+
+  const isValidUrl = (string) => {
+    try {
+      const url = new URL(string)
+      return url.protocol === 'http:' || url.protocol === 'https:'
+    } catch (_) {
+      return false
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    if (!validateForm()) {
+      return
+    }
+    
     setLoading(true)
 
     const { error } = await updateProfile(formData)

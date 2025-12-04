@@ -103,26 +103,25 @@ const CoursePlayerPage = () => {
           setUserLessonProgress(progress);
         }
 
-        // Mock Quiz Data (for demonstration)
-        // In a real app, this would come from the database
-        if (lessonNum % 2 === 0) { // Add quiz to every 2nd lesson for demo
-          setQuizData([
-            {
-              question: "What is the main concept discussed in this lesson?",
-              options: ["The importance of focus", "Advanced coding techniques", "History of the internet", "Cooking recipes"],
-              correctAnswer: 0
-            },
-            {
-              question: "Which term was defined as a key takeaway?",
-              options: ["Procrastination", "Flow State", "Multitasking", "Distraction"],
-              correctAnswer: 1
-            },
-            {
-              question: "How can you apply this to your daily life?",
-              options: ["By sleeping more", "By eating less", "By setting clear goals", "By watching TV"],
-              correctAnswer: 2
-            }
-          ]);
+        // Load quiz data from Supabase (if quiz table exists)
+        // Note: Quiz system is planned for future implementation
+        // When quiz table is created, implement quiz loading here
+        try {
+          // Future implementation:
+          // const { data: quizData, error: quizError } = await supabase
+          //   .from('lesson_quizzes')
+          //   .select('*')
+          //   .eq('lesson_id', lessonId)
+          //   .single();
+          // if (!quizError && quizData) {
+          //   setQuizData(quizData.questions || []);
+          // } else {
+          //   setQuizData([]);
+          // }
+          setQuizData([]); // No quizzes until quiz system is implemented
+        } catch (quizErr) {
+          console.warn('Quiz data not available:', quizErr);
+          setQuizData([]);
         }
       }
     } catch (err) {

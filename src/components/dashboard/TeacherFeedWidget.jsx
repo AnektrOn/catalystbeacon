@@ -2,34 +2,15 @@ import React from 'react';
 import { BookOpen, Clock, ArrowRight } from 'lucide-react';
 
 const TeacherFeedWidget = ({ posts = [] }) => {
-    const defaultPosts = [
-        {
-            id: '1',
-            title: 'The observer is the observed',
-            excerpt: 'When you truly see that the observer and the observed are one, transformation happens naturally...',
-            author: 'J. Krishnamurti',
-            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-            mediaUrl: null
-        },
-        {
-            id: '2',
-            title: 'Awareness is the greatest agent for change',
-            excerpt: 'The moment you become aware of your thoughts, you are no longer identified with them...',
-            author: 'Eckhart Tolle',
-            timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000),
-            mediaUrl: null
-        },
-        {
-            id: '3',
-            title: 'The nature of consciousness',
-            excerpt: 'Consciousness is not something you have, it is what you are. The recognition of this is liberation...',
-            author: 'Rupert Spira',
-            timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
-            mediaUrl: null
-        }
-    ];
-
-    const displayPosts = posts.length > 0 ? posts : defaultPosts;
+    // Transform Supabase posts to widget format
+    const displayPosts = posts.map(post => ({
+        id: post.id,
+        title: post.title || post.content?.substring(0, 50) || 'Untitled',
+        excerpt: post.excerpt || post.content?.substring(0, 150) || '',
+        author: post.profiles?.full_name || post.profiles?.email || 'Unknown',
+        timestamp: post.created_at ? new Date(post.created_at) : new Date(),
+        mediaUrl: post.image_url || post.video_url || null
+    }));
 
     const formatTimestamp = (date) => {
         const now = new Date();

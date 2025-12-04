@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
 
 const PricingPage = () => {
   const { user, profile } = useAuth()
@@ -67,7 +68,8 @@ const PricingPage = () => {
     setLoading(true)
 
     try {
-      const response = await fetch('http://localhost:3001/api/create-checkout-session', {
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001'
+      const response = await fetch(`${API_URL}/api/create-checkout-session`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -89,7 +91,7 @@ const PricingPage = () => {
       window.location.href = session.url
     } catch (error) {
       console.error('Error:', error)
-      alert('Something went wrong. Please try again.')
+      toast.error('Something went wrong. Please try again.')
     } finally {
       setLoading(false)
     }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import toast from 'react-hot-toast'
 
 export default function Account({ session }) {
   const [loading, setLoading] = useState(true)
@@ -30,7 +31,7 @@ export default function Account({ session }) {
         setAvatarUrl(data.avatar_url)
       }
     } catch (error) {
-      alert(error.message)
+      toast.error(error.message)
     } finally {
       setLoading(false)
     }
@@ -51,7 +52,7 @@ export default function Account({ session }) {
       const { error } = await supabase.from('profiles').upsert(updates)
       if (error) throw error
     } catch (error) {
-      alert(error.message)
+      toast.error(error.message)
     } finally {
       setLoading(false)
     }

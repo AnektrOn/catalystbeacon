@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabaseClient';
 import UserProfileDropdown from './UserProfileDropdown';
 import NotificationBadge from './NotificationBadge';
 import AppShellMobile from './AppShellMobile';
@@ -27,8 +28,11 @@ const AppShell = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const navigate = useNavigate();
   const location = useLocation();
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
 
+  // Load notification count from Supabase (must be before any early returns)
+  const [notificationCount, setNotificationCount] = useState(0);
+  
   // Handle resize to switch between desktop and mobile shells
   useEffect(() => {
     const handleResize = () => {
@@ -39,16 +43,59 @@ const AppShell = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Load notifications
+  useEffect(() => {
+    const loadNotifications = async () => {
+      if (!user) {
+        setNotificationCount(0);
+        return;
+      }
+      
+      try {
+        // Check if notifications table exists
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('is_read', false);
+        
+        if (error && error.code !== 'PGRST116') {
+          // Table doesn't exist or other error - default to 0
+          console.warn('Notifications table not available:', error.message);
+          setNotificationCount(0);
+        } else {
+          setNotificationCount(data?.length || 0);
+        }
+      } catch (err) {
+        console.warn('Error loading notifications:', err);
+        setNotificationCount(0);
+      }
+    };
+    
+    loadNotifications();
+    
+    // Set up real-time subscription for notifications
+    if (user) {
+      const channel = supabase
+        .channel('notifications')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
+          () => loadNotifications()
+        )
+        .subscribe();
+      
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [user]);
+
   // Use AppShellMobile for smaller screens
   if (isMobile) {
     return <AppShellMobile />;
   }
 
   // Debug: Verify new version is loading
-  console.log('🎨 NEW AppShell loaded - with earth tones and expandable sidebar!');
-
-  // Mock notification count - replace with actual data
-  const notificationCount = 3;
 
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);

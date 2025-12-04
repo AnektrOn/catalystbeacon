@@ -92,15 +92,40 @@ const CourseDetailPage = () => {
     }
   };
 
-  const handleStartCourse = () => {
+  const handleStartCourse = async () => {
     if (!unlockStatus?.isUnlocked) {
       toast.error(`You need ${unlockStatus?.requiredXp || 0} XP to unlock this course`);
       return;
     }
 
-    // Navigate to first lesson or continue from last position
+    if (!courseStructure?.course_id) {
+      toast.error('Course structure not available');
+      return;
+    }
+
+    // Find the first uncompleted lesson using courseService
+    if (user && courseStructure.course_id) {
+      try {
+        const { data: nextLesson, error: nextLessonError } = await courseService.getNextLesson(
+          user.id,
+          courseStructure.course_id
+        );
+
+        if (nextLessonError) {
+          console.error('Error finding next lesson:', nextLessonError);
+        }
+
+        if (nextLesson) {
+          navigate(`/courses/${courseId}/chapters/${nextLesson.chapter_number}/lessons/${nextLesson.lesson_number}`);
+          return;
+        }
+      } catch (err) {
+        console.error('Error getting next lesson:', err);
+      }
+    }
+
+    // Fallback to first lesson if no progress found
     if (courseStructure?.chapters?.[0]?.lessons?.[0]) {
-      // TODO: Logic to find the first uncompleted lesson
       const firstLesson = courseStructure.chapters[0].lessons[0];
       navigate(`/courses/${courseId}/chapters/${firstLesson.chapter_number}/lessons/${firstLesson.lesson_number}`);
     } else {

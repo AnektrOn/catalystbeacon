@@ -748,6 +748,24 @@ class MasteryService {
   }
 
   /**
+   * Remove a toolbox item from user's toolbox
+   */
+  async removeUserToolboxItem(itemId) {
+    try {
+      const { error } = await supabase
+        .from('user_toolbox_items')
+        .delete()
+        .eq('id', itemId);
+
+      if (error) throw error;
+      return { data: null, error: null };
+    } catch (error) {
+      console.error('Error removing user toolbox item:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
    * Get toolbox usage data for a user
    */
   async getToolboxUsage(userId, toolboxItemId, startDate, endDate) {

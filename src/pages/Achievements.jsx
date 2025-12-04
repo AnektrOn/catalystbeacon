@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Trophy, Lock, Star, Zap, Target, BookOpen, Clock, Award } from 'lucide-react';
+import { Trophy, Star, Zap, BookOpen, Clock, Award } from 'lucide-react';
+import { supabase } from '../lib/supabaseClient';
 
 const Achievements = () => {
     const { user, profile } = useAuth();
     const [loading, setLoading] = useState(true);
+    const [achievements, setAchievements] = useState([]);
 
     // Helper component for icon rendering to avoid reference errors if icon is missing
     const Fire = ({ size, className }) => (
@@ -24,73 +26,97 @@ const Achievements = () => {
         </svg>
     );
 
-    // Mock Achievements Data (replace with DB fetch later)
-    const achievements = [
-        {
-            id: 'first_login',
-            title: 'First Step',
-            description: 'Log in to the platform for the first time.',
-            icon: Zap,
-            xpReward: 10,
-            isUnlocked: true,
-            unlockedAt: '2023-10-25'
-        },
-        {
-            id: 'first_lesson',
-            title: 'Scholar',
-            description: 'Complete your first lesson.',
-            icon: BookOpen,
-            xpReward: 50,
-            isUnlocked: profile?.current_xp > 50, // Simple mock logic
-            progress: 1,
-            total: 1
-        },
-        {
-            id: 'focus_master',
-            title: 'Focus Master',
-            description: 'Complete a 25-minute focus session.',
-            icon: Clock,
-            xpReward: 100,
-            isUnlocked: false,
-            progress: 0,
-            total: 25
-        },
-        {
-            id: 'streak_7',
-            title: 'Unstoppable',
-            description: 'Maintain a 7-day login streak.',
-            icon: Fire,
-            xpReward: 500,
-            isUnlocked: false,
-            progress: 3,
-            total: 7
-        },
-        {
-            id: 'quiz_ace',
-            title: 'Quiz Ace',
-            description: 'Score 100% on a quiz.',
-            icon: Star,
-            xpReward: 200,
-            isUnlocked: false,
-            progress: 0,
-            total: 1
-        },
-        {
-            id: 'level_5',
-            title: 'Rising Star',
-            description: 'Reach Level 5.',
-            icon: Trophy,
-            xpReward: 1000,
-            isUnlocked: (profile?.level || 1) >= 5,
-            progress: profile?.level || 1,
-            total: 5
-        }
-    ];
-
-    useEffect(() => {
-        // Simulate loading
-        setTimeout(() => setLoading(false), 800);
+    // Icon mapping for badges
+    const getBadgeIcon = useCallback((category, title) => {
+        const titleLower = title?.toLowerCase() || '';
+        if (titleLower.includes('streak') || titleLower.includes('fire')) return Fire;
+        if (titleLower.includes('lesson') || titleLower.includes('book') || titleLower.includes('scholar')) return BookOpen;
+        if (titleLower.includes('level') || titleLower.includes('star')) return Trophy;
+        if (titleLower.includes('quiz') || titleLower.includes('ace')) return Star;
+        if (titleLower.includes('focus') || titleLower.includes('time')) return Clock;
+        if (titleLower.includes('first') || titleLower.includes('start')) return Zap;
+        return Trophy;
     }, []);
+
+    // Load achievements/badges from Supabase
+    useEffect(() => {
+        const loadAchievements = async () => {
+            if (!user) {
+                setLoading(false);
+                return;
+            }
+
+            try {
+                // Get all badges
+                const { data: allBadges, error: badgesError } = await supabase
+                    .from('badges')
+                    .select('*')
+                    .eq('is_active', true)
+                    .order('xp_reward', { ascending: true });
+
+                if (badgesError) throw badgesError;
+
+                // Get user's earned badges
+                const { data: userBadges, error: userBadgesError } = await supabase
+                    .from('user_badges')
+                    .select('badge_id, awarded_at')
+                    .eq('user_id', user.id);
+
+                if (userBadgesError) throw userBadgesError;
+
+                const userBadgeIds = new Set((userBadges || []).map(ub => ub.badge_id));
+                const userBadgesMap = new Map((userBadges || []).map(ub => [ub.badge_id, ub.awarded_at]));
+
+                // Transform badges to achievements format
+                const transformedAchievements = (allBadges || []).map(badge => {
+                    const isUnlocked = userBadgeIds.has(badge.id);
+                    const criteria = badge.criteria || {};
+                    let progress = 0;
+                    let total = 1;
+
+                    // Calculate progress based on criteria
+                    if (criteria.type === 'habits_completed') {
+                        progress = Math.min(profile?.habits_completed_total || 0, criteria.count || 10);
+                        total = criteria.count || 10;
+                    } else if (criteria.type === 'streak') {
+                        progress = Math.min(profile?.completion_streak || 0, criteria.days || 7);
+                        total = criteria.days || 7;
+                    } else if (criteria.type === 'xp') {
+                        progress = Math.min(profile?.current_xp || 0, criteria.amount || 1000);
+                        total = criteria.amount || 1000;
+                    } else if (criteria.type === 'level') {
+                        progress = Math.min(profile?.level || 1, criteria.level || 5);
+                        total = criteria.level || 5;
+                    } else {
+                        // Default: unlocked or not
+                        progress = isUnlocked ? 1 : 0;
+                        total = 1;
+                    }
+
+                    return {
+                        id: badge.id,
+                        title: badge.title,
+                        description: badge.description || '',
+                        icon: getBadgeIcon(badge.category, badge.title),
+                        xpReward: badge.xp_reward || 0,
+                        isUnlocked,
+                        unlockedAt: userBadgesMap.get(badge.id) || null,
+                        progress,
+                        total
+                    };
+                });
+
+                setAchievements(transformedAchievements);
+            } catch (error) {
+                console.error('Error loading achievements:', error);
+                setAchievements([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadAchievements();
+    }, [user, profile, getBadgeIcon]);
 
     if (loading) {
         return (
@@ -136,13 +162,20 @@ const Achievements = () => {
                     </div>
                     <div className="glass-card-premium p-6 text-center">
                         <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
-                            {Math.round((achievements.filter(a => a.isUnlocked).length / achievements.length) * 100)}%
+                            {achievements.length > 0 ? Math.round((achievements.filter(a => a.isUnlocked).length / achievements.length) * 100) : 0}%
                         </div>
                         <div className="text-xs text-gray-500 uppercase tracking-wider font-bold">Completion</div>
                     </div>
                 </div>
 
                 {/* Achievements Grid */}
+                {achievements.length === 0 ? (
+                    <div className="text-center py-12">
+                        <Trophy size={48} className="mx-auto text-gray-400 mb-4" />
+                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No achievements yet</h3>
+                        <p className="text-gray-600 dark:text-gray-400">Start completing tasks to unlock achievements!</p>
+                    </div>
+                ) : (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {achievements.map((achievement) => {
                         const Icon = achievement.icon || Trophy;
@@ -207,6 +240,7 @@ const Achievements = () => {
                         );
                     })}
                 </div>
+                )}
 
             </div>
         </div>

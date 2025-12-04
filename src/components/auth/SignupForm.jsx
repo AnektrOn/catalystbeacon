@@ -34,13 +34,42 @@ const SignupForm = () => {
   }
 
   const validateForm = () => {
+    if (!formData.fullName || !formData.fullName.trim()) {
+      setError('Full name is required')
+      return false
+    }
+    
+    if (formData.fullName.length < 2) {
+      setError('Full name must be at least 2 characters')
+      return false
+    }
+    
+    if (!formData.email || !formData.email.trim()) {
+      setError('Email is required')
+      return false
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.email)) {
+      setError('Please enter a valid email address')
+      return false
+    }
+    
+    if (!formData.password || formData.password.length < 6) {
+      setError('Password must be at least 6 characters')
+      return false
+    }
+    
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match')
       return false
     }
     
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters')
+    // Check for strong password (at least one letter and one number)
+    const hasLetter = /[a-zA-Z]/.test(formData.password)
+    const hasNumber = /[0-9]/.test(formData.password)
+    if (!hasLetter || !hasNumber) {
+      setError('Password must contain at least one letter and one number')
       return false
     }
     

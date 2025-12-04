@@ -31,104 +31,6 @@ const CommunityPage = () => {
   const [leaderboard, setLeaderboard] = useState([])
   const [challenges, setChallenges] = useState([])
 
-  // Mock data for now - will be replaced with real API calls
-  const mockPosts = [
-    {
-      id: '1',
-      user: {
-        id: 'user1',
-        name: 'Alex Chen',
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-        level: 8,
-        title: 'Mindful Explorer',
-        xp: 2450
-      },
-      content: 'Just completed my 30-day meditation streak! 🧘‍♀️ The transformation in my focus and clarity has been incredible. Who else is on a mindfulness journey?',
-      type: 'text',
-      tags: ['mindfulness', 'meditation', 'personal-growth'],
-      likes: 23,
-      comments: 8,
-      shares: 3,
-      createdAt: '2 hours ago',
-      isLiked: false
-    },
-    {
-      id: '2',
-      user: {
-        id: 'user2',
-        name: 'Sarah Johnson',
-        avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
-        level: 12,
-        title: 'Wisdom Seeker',
-        xp: 4200
-      },
-      content: 'Sharing my latest learning: The power of compound habits. Small daily actions create massive long-term results. What\'s one small habit you\'ve been consistent with?',
-      type: 'text',
-      tags: ['habits', 'productivity', 'learning'],
-      likes: 45,
-      comments: 12,
-      shares: 7,
-      createdAt: '4 hours ago',
-      isLiked: true
-    },
-    {
-      id: '3',
-      user: {
-        id: 'user3',
-        name: 'Marcus Rodriguez',
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-        level: 15,
-        title: 'Transformation Catalyst',
-        xp: 6800
-      },
-      content: 'Just unlocked the "Discipline Master" achievement! 🏆 100 days of consistent morning routine. The key was starting small and building momentum.',
-      type: 'achievement',
-      tags: ['achievement', 'discipline', 'morning-routine'],
-      likes: 67,
-      comments: 15,
-      shares: 12,
-      createdAt: '6 hours ago',
-      isLiked: false
-    }
-  ]
-
-  const mockLeaderboard = [
-    { id: '1', full_name: 'Elena Martinez', current_xp: 12500, level: 18, title: 'Enlightened Sage', avatar_url: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face' },
-    { id: '2', full_name: 'David Kim', current_xp: 11200, level: 17, title: 'Wisdom Keeper', avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face' },
-    { id: '3', full_name: 'Lisa Wang', current_xp: 10800, level: 16, title: 'Transformation Master', avatar_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face' },
-    { id: '4', full_name: 'James Wilson', current_xp: 9500, level: 15, title: 'Growth Catalyst', avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face' },
-    { id: '5', full_name: 'Maria Garcia', current_xp: 8900, level: 14, title: 'Insight Seeker', avatar_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face' }
-  ]
-
-  const mockChallenges = [
-    {
-      id: '1',
-      title: '30-Day Mindfulness Challenge',
-      description: 'Practice meditation or mindfulness for 30 consecutive days',
-      participants: 156,
-      xpReward: 500,
-      endDate: '2024-02-15',
-      isParticipating: true
-    },
-    {
-      id: '2',
-      title: 'Habit Stacking Mastery',
-      description: 'Create and maintain 3 new positive habits for 21 days',
-      participants: 89,
-      xpReward: 300,
-      endDate: '2024-02-20',
-      isParticipating: false
-    },
-    {
-      id: '3',
-      title: 'Knowledge Sharing Week',
-      description: 'Share one learning insight every day for a week',
-      participants: 234,
-      xpReward: 200,
-      endDate: '2024-02-10',
-      isParticipating: true
-    }
-  ]
 
   useEffect(() => {
     loadData()
@@ -137,34 +39,43 @@ const CommunityPage = () => {
   const loadData = async () => {
     setLoading(true)
     try {
-      // Load posts
+      // Load posts from Supabase
       const postsResult = await socialService.getPosts()
-      if (postsResult.data) {
+      if (postsResult.data && postsResult.data.length > 0) {
         setPosts(postsResult.data)
+      } else if (postsResult.error) {
+        console.error('Error loading posts:', postsResult.error)
+        setPosts([])
       } else {
-        setPosts(mockPosts)
+        setPosts([])
       }
 
-      // Load leaderboard
+      // Load leaderboard from Supabase
       const leaderboardResult = await socialService.getLeaderboard()
-      if (leaderboardResult.data) {
+      if (leaderboardResult.data && leaderboardResult.data.length > 0) {
         setLeaderboard(leaderboardResult.data)
+      } else if (leaderboardResult.error) {
+        console.error('Error loading leaderboard:', leaderboardResult.error)
+        setLeaderboard([])
       } else {
-        setLeaderboard(mockLeaderboard)
+        setLeaderboard([])
       }
 
-      // Load challenges
+      // Load challenges from Supabase
       const challengesResult = await socialService.getChallenges()
-      if (challengesResult.data) {
+      if (challengesResult.data && challengesResult.data.length > 0) {
         setChallenges(challengesResult.data)
+      } else if (challengesResult.error) {
+        console.error('Error loading challenges:', challengesResult.error)
+        setChallenges([])
       } else {
-        setChallenges(mockChallenges)
+        setChallenges([])
       }
     } catch (error) {
       console.error('Error loading data:', error)
-      setPosts(mockPosts)
-      setLeaderboard(mockLeaderboard)
-      setChallenges(mockChallenges)
+      setPosts([])
+      setLeaderboard([])
+      setChallenges([])
     } finally {
       setLoading(false)
     }

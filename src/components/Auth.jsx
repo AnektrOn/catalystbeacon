@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import toast from 'react-hot-toast'
 
 export default function Auth() {
   const [loading, setLoading] = useState(false)
@@ -12,9 +13,9 @@ export default function Auth() {
       setLoading(true)
       const { error } = await supabase.auth.signInWithOtp({ email })
       if (error) throw error
-      alert('Check your email for the login link!')
+      toast.success('Check your email for the login link!')
     } catch (error) {
-      alert(error.error_description || error.message)
+      toast.error(error.error_description || error.message)
     } finally {
       setLoading(false)
     }

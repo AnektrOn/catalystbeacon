@@ -2,35 +2,27 @@ import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { Toaster } from 'react-hot-toast'
-
-// Components
+import ErrorBoundary from './components/ErrorBoundary'
 import AppShell from './components/AppShell'
-
-// Auth Components
-import LoginPage from './pages/LoginPage'
-import SignupPage from './pages/SignupPage'
-import Dashboard from './pages/Dashboard'
-import PricingPage from './pages/PricingPage'
-import ProfilePage from './pages/ProfilePage'
-import Mastery from './pages/Mastery'
-import CommunityPage from './pages/CommunityPage'
-import TimerPage from './pages/TimerPage'
-import SettingsPage from './pages/SettingsPage'
-import MasteryTestComponent from './components/test/MasteryTestComponent'
-
-// Course Pages
-import CourseCatalogPage from './pages/CourseCatalogPage'
-import CourseDetailPage from './pages/CourseDetailPage'
-import CoursePlayerPage from './pages/CoursePlayerPage'
-import CourseCreationPage from './pages/CourseCreationPage'
-
-// Import glassmorphism and mobile styles
 import './styles/glassmorphism.css'
 import './styles/mobile-responsive.css'
 
+// Lazy load pages for code splitting
+const LoginPage = React.lazy(() => import('./pages/LoginPage'))
+const SignupPage = React.lazy(() => import('./pages/SignupPage'))
+const Dashboard = React.lazy(() => import('./pages/Dashboard'))
+const PricingPage = React.lazy(() => import('./pages/PricingPage'))
+const ProfilePage = React.lazy(() => import('./pages/ProfilePage'))
+const Mastery = React.lazy(() => import('./pages/Mastery'))
+const CommunityPage = React.lazy(() => import('./pages/CommunityPage'))
+const SettingsPage = React.lazy(() => import('./pages/SettingsPage'))
+const CourseCatalogPage = React.lazy(() => import('./pages/CourseCatalogPage'))
+const CourseDetailPage = React.lazy(() => import('./pages/CourseDetailPage'))
+const CoursePlayerPage = React.lazy(() => import('./pages/CoursePlayerPage'))
+const CourseCreationPage = React.lazy(() => import('./pages/CourseCreationPage'))
+
 // Loading component
 const LoadingScreen = () => {
-  console.log('🔄 LoadingScreen: Rendering loading screen')
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="text-center">
@@ -77,24 +69,48 @@ const AppRoutes = () => {
   return (
     <Routes>
       {/* Public Routes (No AppShell) */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignupPage />} />
-      <Route path="/pricing" element={<PricingPage />} />
-
-      {/* Test route without authentication */}
-      <Route path="/test" element={
-        <div style={{ padding: '20px', backgroundColor: 'lightblue' }}>
-          <h1>TEST ROUTE WORKS!</h1>
-          <p>If you can see this, routing is working.</p>
-        </div>
+      <Route path="/login" element={
+        <React.Suspense fallback={<LoadingScreen />}>
+          <LoginPage />
+        </React.Suspense>
+      } />
+      <Route path="/signup" element={
+        <React.Suspense fallback={<LoadingScreen />}>
+          <SignupPage />
+        </React.Suspense>
+      } />
+      <Route path="/pricing" element={
+        <React.Suspense fallback={<LoadingScreen />}>
+          <PricingPage />
+        </React.Suspense>
       } />
 
-      {/* Mastery Test Component */}
-      <Route path="/mastery-test" element={
-        <ProtectedRoute>
-          <MasteryTestComponent />
-        </ProtectedRoute>
-      } />
+      {/* Test routes - only in development */}
+      {process.env.NODE_ENV === 'development' && (
+        <>
+          <Route path="/test" element={
+            <div style={{ padding: '20px', backgroundColor: 'lightblue' }}>
+              <h1>TEST ROUTE WORKS!</h1>
+              <p>If you can see this, routing is working.</p>
+            </div>
+          } />
+
+          {/* Mastery Test Component - lazy loaded only in development */}
+          <Route path="/mastery-test" element={
+            <ProtectedRoute>
+              {(() => {
+                // eslint-disable-next-line react-hooks/rules-of-hooks
+                const MasteryTestComponent = React.lazy(() => import('./components/test/MasteryTestComponent'))
+                return (
+                  <React.Suspense fallback={<LoadingScreen />}>
+                    <MasteryTestComponent />
+                  </React.Suspense>
+                )
+              })()}
+            </ProtectedRoute>
+          } />
+        </>
+      )}
 
       {/* Protected Routes (With AppShell) */}
       <Route element={
@@ -102,34 +118,118 @@ const AppRoutes = () => {
           <AppShell />
         </ProtectedRoute>
       }>
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard" element={
+          <ErrorBoundary>
+            <React.Suspense fallback={<LoadingScreen />}>
+              <Dashboard />
+            </React.Suspense>
+          </ErrorBoundary>
+        } />
 
         {/* Profile Routes */}
-        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/profile" element={
+          <ErrorBoundary>
+            <React.Suspense fallback={<LoadingScreen />}>
+              <ProfilePage />
+            </React.Suspense>
+          </ErrorBoundary>
+        } />
 
         {/* Mastery Routes */}
-        <Route path="/mastery" element={<Mastery />} />
-        <Route path="/mastery/calendar" element={<Mastery />} />
-        <Route path="/mastery/habits" element={<Mastery />} />
-        <Route path="/mastery/toolbox" element={<Mastery />} />
-        <Route path="/mastery/achievements" element={<Mastery />} />
-        <Route path="/mastery/timer" element={<Mastery />} />
+        <Route path="/mastery" element={
+          <ErrorBoundary>
+            <React.Suspense fallback={<LoadingScreen />}>
+              <Mastery />
+            </React.Suspense>
+          </ErrorBoundary>
+        } />
+        <Route path="/mastery/calendar" element={
+          <ErrorBoundary>
+            <React.Suspense fallback={<LoadingScreen />}>
+              <Mastery />
+            </React.Suspense>
+          </ErrorBoundary>
+        } />
+        <Route path="/mastery/habits" element={
+          <ErrorBoundary>
+            <React.Suspense fallback={<LoadingScreen />}>
+              <Mastery />
+            </React.Suspense>
+          </ErrorBoundary>
+        } />
+        <Route path="/mastery/toolbox" element={
+          <ErrorBoundary>
+            <React.Suspense fallback={<LoadingScreen />}>
+              <Mastery />
+            </React.Suspense>
+          </ErrorBoundary>
+        } />
+        <Route path="/mastery/achievements" element={
+          <ErrorBoundary>
+            <React.Suspense fallback={<LoadingScreen />}>
+              <Mastery />
+            </React.Suspense>
+          </ErrorBoundary>
+        } />
+        <Route path="/mastery/timer" element={
+          <ErrorBoundary>
+            <React.Suspense fallback={<LoadingScreen />}>
+              <Mastery />
+            </React.Suspense>
+          </ErrorBoundary>
+        } />
 
         {/* Redirect standalone calendar to mastery calendar for now */}
         <Route path="/calendar" element={<Navigate to="/mastery/calendar" replace />} />
 
         {/* Community Routes */}
-        <Route path="/community" element={<CommunityPage />} />
+        <Route path="/community" element={
+          <ErrorBoundary>
+            <React.Suspense fallback={<LoadingScreen />}>
+              <CommunityPage />
+            </React.Suspense>
+          </ErrorBoundary>
+        } />
 
         {/* Tools Routes */}
         <Route path="/timer" element={<Navigate to="/mastery/timer" replace />} />
-        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/settings" element={
+          <ErrorBoundary>
+            <React.Suspense fallback={<LoadingScreen />}>
+              <SettingsPage />
+            </React.Suspense>
+          </ErrorBoundary>
+        } />
 
         {/* Course Routes */}
-        <Route path="/courses" element={<CourseCatalogPage />} />
-        <Route path="/courses/create" element={<CourseCreationPage />} />
-        <Route path="/courses/:courseId" element={<CourseDetailPage />} />
-        <Route path="/courses/:courseId/chapters/:chapterNumber/lessons/:lessonNumber" element={<CoursePlayerPage />} />
+        <Route path="/courses" element={
+          <ErrorBoundary>
+            <React.Suspense fallback={<LoadingScreen />}>
+              <CourseCatalogPage />
+            </React.Suspense>
+          </ErrorBoundary>
+        } />
+        <Route path="/courses/create" element={
+          <ErrorBoundary>
+            <React.Suspense fallback={<LoadingScreen />}>
+              <CourseCreationPage />
+            </React.Suspense>
+          </ErrorBoundary>
+        } />
+        <Route path="/courses/:courseId" element={
+          <ErrorBoundary>
+            <React.Suspense fallback={<LoadingScreen />}>
+              <CourseDetailPage />
+            </React.Suspense>
+          </ErrorBoundary>
+        } />
+        <Route path="/courses/:courseId/chapters/:chapterNumber/lessons/:lessonNumber" element={
+          <ErrorBoundary>
+            <React.Suspense fallback={<LoadingScreen />}>
+              <CoursePlayerPage />
+            </React.Suspense>
+          </ErrorBoundary>
+        } />
       </Route>
 
       {/* Default redirect */}

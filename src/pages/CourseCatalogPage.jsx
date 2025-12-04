@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import SEOHead from '../components/SEOHead';
 import courseService from '../services/courseService';
 import schoolService from '../services/schoolService';
 import { BookOpen, Lock, Play, Star, Clock, TrendingUp } from 'lucide-react';
@@ -49,7 +50,27 @@ const CourseCatalogPage = () => {
 
       if (fetchError) throw fetchError;
 
-      setCoursesBySchool(data || {});
+      // Load user progress for each course if user is logged in
+      if (user?.id && data) {
+        const coursesWithProgress = { ...data };
+        for (const schoolName in coursesWithProgress) {
+          const courses = coursesWithProgress[schoolName];
+          for (const course of courses) {
+            if (course.course_id) {
+              try {
+                const { data: progress } = await courseService.getUserCourseProgress(user.id, course.course_id);
+                course.userProgress = progress;
+              } catch (err) {
+                // Progress loading failed, continue without it
+                console.warn('Failed to load progress for course:', course.id, err);
+              }
+            }
+          }
+        }
+        setCoursesBySchool(coursesWithProgress);
+      } else {
+        setCoursesBySchool(data || {});
+      }
     } catch (err) {
       console.error('Error loading data:', err);
       setError('Failed to load courses. Please try again.');
@@ -113,6 +134,10 @@ const CourseCatalogPage = () => {
 
   return (
     <div className="p-4 lg:p-8 max-w-7xl mx-auto">
+      <SEOHead 
+        title="Course Catalog - The Human Catalyst University"
+        description="Browse our comprehensive catalog of transformative courses across Ignition, Insight, Transformation, and God Mode schools"
+      />
       <div className="mb-8">
         <h1 className="text-3xl lg:text-4xl font-bold text-gray-800 dark:text-white mb-2">Course Catalog</h1>
         <p className="text-gray-600 dark:text-gray-400">Explore courses organized by school</p>
@@ -214,7 +239,8 @@ const CourseCatalogPage = () => {
                       {courses.map((course) => {
                         // Course is unlocked if school is unlocked
                         const isUnlocked = isSchoolUnlocked;
-                        const userProgress = null; // TODO: Load user progress
+                        // Load user progress for this course
+                        const userProgress = coursesBySchool[school.name]?.find(c => c.id === course.id)?.userProgress || null;
 
                         return (
                           <div

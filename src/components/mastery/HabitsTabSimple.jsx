@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Target, CheckCircle, Star, BookOpen, Dumbbell, Flame, Trash2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabaseClient';
+import masteryService from '../../services/masteryService';
 
-// Simple fallback version that works without complex database queries
+// Loads real habits from Supabase
 const HabitsTabSimple = () => {
   const { user } = useAuth();
   const [habits, setHabits] = useState([]);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [showAddHabit, setShowAddHabit] = useState(false);
   const [newHabit, setNewHabit] = useState({
     title: '',
@@ -15,67 +18,172 @@ const HabitsTabSimple = () => {
     xp_reward: 10
   });
 
-  // Simple data loading without complex queries
+  // Icon mapping for habits
+  const getHabitIcon = (title) => {
+    const titleLower = title.toLowerCase();
+    if (titleLower.includes('read') || titleLower.includes('book')) return BookOpen;
+    if (titleLower.includes('exercise') || titleLower.includes('workout')) return Dumbbell;
+    if (titleLower.includes('meditat')) return Target;
+    return Target;
+  };
+
+  // Color mapping for habits
+  const getHabitColor = (index) => {
+    const colors = ['#10b981', '#8b5cf6', '#3b82f6', '#f59e0b', '#ef4444'];
+    return colors[index % colors.length];
+  };
+
+  // Load habits from Supabase
   useEffect(() => {
     if (!user) {
       console.log('📝 HabitsTabSimple: No user, skipping data load');
       return;
     }
     
-    console.log('📝 HabitsTabSimple: Loading habits data for user:', user.id);
-    setError(null);
-    
-    // For now, just show some sample habits
-    const sampleHabits = [
-      {
-        id: '1',
-        title: 'Read for 30 minutes',
-        description: 'Read books, articles, or educational content',
-        frequency_type: 'daily',
-        xp_reward: 15,
-        currentStreak: 3,
-        completedDates: ['2024-01-20', '2024-01-21', '2024-01-22'],
-        color: '#10b981',
-        Icon: BookOpen
-      },
-      {
-        id: '2',
-        title: 'Exercise for 20 minutes',
-        description: 'Do any form of physical exercise',
-        frequency_type: 'daily',
-        xp_reward: 20,
-        currentStreak: 1,
-        completedDates: ['2024-01-22'],
-        color: '#8b5cf6',
-        Icon: Dumbbell
+    const loadHabits = async () => {
+      console.log('📝 HabitsTabSimple: Loading habits data for user:', user.id);
+      setError(null);
+      setLoading(true);
+      
+      try {
+        // Get user habits from Supabase
+        const { data: userHabits, error: habitsError } = await masteryService.getUserHabits(user.id);
+        
+        if (habitsError) {
+          console.error('❌ HabitsTabSimple: Error loading habits:', habitsError);
+          setError('Failed to load habits');
+          setHabits([]);
+          return;
+        }
+
+        if (!userHabits || userHabits.length === 0) {
+          console.log('📝 HabitsTabSimple: No habits found');
+          setHabits([]);
+          setLoading(false);
+          return;
+        }
+
+        // Get completions for all habits
+        const habitIds = userHabits.map(h => h.id);
+        const { data: completions, error: completionsError } = await supabase
+          .from('user_habit_completions')
+          .select('habit_id, completed_at')
+          .eq('user_id', user.id)
+          .in('habit_id', habitIds);
+
+        if (completionsError) {
+          console.warn('⚠️ HabitsTabSimple: Error loading completions:', completionsError);
+        }
+
+        // Group completions by habit_id
+        const completionsByHabit = {};
+        (completions || []).forEach(completion => {
+          const habitId = completion.habit_id;
+          if (!completionsByHabit[habitId]) {
+            completionsByHabit[habitId] = [];
+          }
+          const dateStr = new Date(completion.completed_at).toISOString().split('T')[0];
+          if (!completionsByHabit[habitId].includes(dateStr)) {
+            completionsByHabit[habitId].push(dateStr);
+          }
+        });
+
+        // Transform habits with completion data
+        const transformedHabits = userHabits.map((habit, index) => {
+          const completedDates = completionsByHabit[habit.id] || [];
+          const currentStreak = calculateCurrentStreak(completedDates);
+          
+          return {
+            id: habit.id,
+            title: habit.title || habit.habits_library?.title || 'Untitled Habit',
+            description: habit.description || habit.habits_library?.description || '',
+            frequency_type: habit.frequency_type || 'daily',
+            xp_reward: habit.xp_reward || habit.habits_library?.xp_reward || 10,
+            currentStreak,
+            completedDates,
+            color: getHabitColor(index),
+            Icon: getHabitIcon(habit.title || habit.habits_library?.title || '')
+          };
+        });
+
+        setHabits(transformedHabits);
+        console.log('✅ HabitsTabSimple: Loaded', transformedHabits.length, 'habits from Supabase');
+      } catch (err) {
+        console.error('❌ HabitsTabSimple: Exception loading habits:', err);
+        setError('Failed to load habits');
+        setHabits([]);
+      } finally {
+        setLoading(false);
       }
-    ];
-    
-    setHabits(sampleHabits);
-    console.log('✅ HabitsTabSimple: Sample habits loaded');
+    };
+
+    loadHabits();
   }, [user]);
 
   const handleToggleHabit = async (habitId, date) => {
     console.log('📝 HabitsTabSimple: Toggling habit completion:', habitId, date);
     
-    // Simple toggle logic
-    setHabits(prev => prev.map(habit => {
-      if (habit.id === habitId) {
-        const isCompleted = habit.completedDates.includes(date);
-        const newCompletedDates = isCompleted 
-          ? habit.completedDates.filter(d => d !== date)
-          : [...habit.completedDates, date];
-        
-        return {
-          ...habit,
-          completedDates: newCompletedDates,
-          currentStreak: calculateCurrentStreak(newCompletedDates)
-        };
-      }
-      return habit;
-    }));
+    if (!user) return;
     
-    console.log('✅ HabitsTabSimple: Habit toggled successfully');
+    try {
+      const habit = habits.find(h => h.id === habitId);
+      if (!habit) return;
+
+      const isCompleted = habit.completedDates.includes(date);
+      
+      if (isCompleted) {
+        // Remove completion
+        const { error } = await supabase
+          .from('user_habit_completions')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('habit_id', habitId)
+          .gte('completed_at', `${date}T00:00:00`)
+          .lt('completed_at', `${date}T23:59:59`);
+
+        if (error) throw error;
+      } else {
+        // Add completion
+        const { error } = await supabase
+          .from('user_habit_completions')
+          .insert({
+            user_id: user.id,
+            habit_id: habitId,
+            completed_at: `${date}T12:00:00`,
+            xp_earned: habit.xp_reward || 10
+          });
+
+        if (error) throw error;
+      }
+
+      // Update local state
+      setHabits(prev => prev.map(h => {
+        if (h.id === habitId) {
+          const newCompletedDates = isCompleted 
+            ? h.completedDates.filter(d => d !== date)
+            : [...h.completedDates, date].sort();
+          
+          return {
+            ...h,
+            completedDates: newCompletedDates,
+            currentStreak: calculateCurrentStreak(newCompletedDates)
+          };
+        }
+        return h;
+      }));
+
+      // Refresh profile to update streak
+      if (window.location.pathname.includes('/mastery')) {
+        // Trigger profile refresh if available
+        const event = new CustomEvent('habitCompleted', { detail: { habitId, date } });
+        window.dispatchEvent(event);
+      }
+
+      console.log('✅ HabitsTabSimple: Habit toggled successfully');
+    } catch (err) {
+      console.error('❌ HabitsTabSimple: Error toggling habit:', err);
+      setError('Failed to update habit completion');
+    }
   };
 
   const calculateCurrentStreak = (completedDates) => {
@@ -152,32 +260,75 @@ const HabitsTabSimple = () => {
   };
 
   const handleCreateHabit = async () => {
-    if (!newHabit.title.trim()) return;
+    if (!newHabit.title.trim() || !user) return;
     
     console.log('📝 HabitsTabSimple: Creating new habit:', newHabit.title);
     
-    const newHabitData = {
-      id: Date.now().toString(),
-      ...newHabit,
-      currentStreak: 0,
-      completedDates: [],
-      color: '#3b82f6',
-      Icon: Target
-    };
-    
-    setHabits(prev => [...prev, newHabitData]);
-    setNewHabit({ title: '', description: '', frequency_type: 'daily', xp_reward: 10 });
-    setShowAddHabit(false);
-    
-    console.log('✅ HabitsTabSimple: Habit created successfully');
+    try {
+      // Create custom habit in Supabase
+      const { data, error } = await supabase
+        .from('user_habits')
+        .insert({
+          user_id: user.id,
+          title: newHabit.title,
+          description: newHabit.description,
+          frequency_type: newHabit.frequency_type,
+          xp_reward: newHabit.xp_reward,
+          is_custom: true,
+          is_active: true
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Add to local state
+      const newHabitData = {
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        frequency_type: data.frequency_type,
+        xp_reward: data.xp_reward,
+        currentStreak: 0,
+        completedDates: [],
+        color: getHabitColor(habits.length),
+        Icon: getHabitIcon(data.title)
+      };
+      
+      setHabits(prev => [...prev, newHabitData]);
+      setNewHabit({ title: '', description: '', frequency_type: 'daily', xp_reward: 10 });
+      setShowAddHabit(false);
+      
+      console.log('✅ HabitsTabSimple: Habit created successfully');
+    } catch (err) {
+      console.error('❌ HabitsTabSimple: Error creating habit:', err);
+      setError('Failed to create habit');
+    }
   };
 
   const handleDeleteHabit = async (habitId) => {
     console.log('📝 HabitsTabSimple: Deleting habit:', habitId);
     
-    setHabits(prev => prev.filter(h => h.id !== habitId));
+    if (!user) return;
     
-    console.log('✅ HabitsTabSimple: Habit deleted successfully');
+    try {
+      // Delete from Supabase (set is_active to false)
+      const { error } = await supabase
+        .from('user_habits')
+        .update({ is_active: false })
+        .eq('id', habitId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Remove from local state
+      setHabits(prev => prev.filter(h => h.id !== habitId));
+      
+      console.log('✅ HabitsTabSimple: Habit deleted successfully');
+    } catch (err) {
+      console.error('❌ HabitsTabSimple: Error deleting habit:', err);
+      setError('Failed to delete habit');
+    }
   };
 
   // Error display
@@ -212,20 +363,11 @@ const HabitsTabSimple = () => {
         </button>
       </div>
 
-      {/* Info Banner */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-center">
-          <div className="flex-shrink-0">
-            <Target className="h-5 w-5 text-blue-400" />
-          </div>
-          <div className="ml-3">
-            <p className="text-sm text-blue-700">
-              <strong>Simple Mode:</strong> This is a fallback version that works without complex database queries. 
-              Create the missing tables to enable full functionality.
-            </p>
-          </div>
+      {loading && (
+        <div className="text-center py-12">
+          <div className="text-gray-600">Loading habits...</div>
         </div>
-      </div>
+      )}
 
       {/* Content */}
       <div className="space-y-4">

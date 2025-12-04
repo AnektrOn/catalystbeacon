@@ -2,6 +2,7 @@ const express = require('express')
 const cors = require('cors')
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const { createClient } = require('@supabase/supabase-js')
+const rateLimit = require('express-rate-limit')
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -12,9 +13,37 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
+// Rate limiting middleware
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+})
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // limit each IP to 5 requests per windowMs
+  message: 'Too many authentication attempts, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+})
+
+const paymentLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // limit each IP to 10 payment requests per windowMs
+  message: 'Too many payment requests, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+})
+
 // Middleware
 app.use(cors())
 app.use(express.json())
+
+// Apply general rate limiting to all routes
+app.use('/api/', generalLimiter)
 
 // Create Stripe customer
 app.post('/api/create-customer', async (req, res) => {
@@ -42,7 +71,7 @@ app.post('/api/create-customer', async (req, res) => {
 })
 
 // Create checkout session
-app.post('/api/create-checkout-session', async (req, res) => {
+app.post('/api/create-checkout-session', paymentLimiter, async (req, res) => {
   try {
     const { priceId, userId, userEmail } = req.body
 
@@ -94,7 +123,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
 })
 
 // Handle successful payment
-app.get('/api/payment-success', async (req, res) => {
+app.get('/api/payment-success', paymentLimiter, async (req, res) => {
   try {
     const { session_id } = req.query
     console.log('=== PAYMENT SUCCESS ENDPOINT CALLED ===')
@@ -154,7 +183,7 @@ app.get('/api/payment-success', async (req, res) => {
 })
 
 // Create customer portal session
-app.post('/api/create-portal-session', async (req, res) => {
+app.post('/api/create-portal-session', paymentLimiter, async (req, res) => {
   try {
     const { userId } = req.body
 

@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
 import masteryService from '../../services/masteryService';
 import skillsService from '../../services/skillsService';
+import toast from 'react-hot-toast';
 
 // Helper function to calculate current streak from completion dates
 const calculateCurrentStreak = (completedDates = []) => {
@@ -267,7 +268,7 @@ const ToolboxTabCompact = () => {
       console.log('✅ ToolboxTabCompact: Tool converted to habit successfully:', newHabit);
       
       // Show success message
-      alert(`✅ "${selectedTool.title}" has been converted to a habit!\n\nYou can now track it in the Habits tab.`);
+      toast.success(`"${selectedTool.title}" has been converted to a habit! You can now track it in the Habits tab.`);
       
       // Close modal
       setShowConvertModal(false);

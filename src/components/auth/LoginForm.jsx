@@ -15,7 +15,6 @@ const LoginForm = () => {
   const [error, setError] = useState('')
   
   const { signIn } = useAuth()
-  const navigate = useNavigate()
 
   // Reset loading state on component mount
   useEffect(() => {
@@ -23,18 +22,44 @@ const LoginForm = () => {
   }, [])
 
 
+  const validateForm = () => {
+    if (!email || !email.trim()) {
+      setError('Email is required')
+      return false
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address')
+      return false
+    }
+    
+    if (!password || password.length < 6) {
+      setError('Password must be at least 6 characters')
+      return false
+    }
+    
+    return true
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setLoading(true)
     setError('')
+    
+    if (!validateForm()) {
+      return
+    }
+    
+    setLoading(true)
 
     const { error } = await signIn(email, password)
     
     if (error) {
       setError(error.message)
+      setLoading(false)
+    } else {
+      setLoading(false)
     }
-    
-    setLoading(false)
   }
 
   return (

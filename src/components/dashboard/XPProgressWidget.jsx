@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Zap } from 'lucide-react';
 
-const XPProgressWidget = ({ level = 1, currentXP = 0, nextLevelXP = 1000, phase = 'ignition' }) => {
-    const percentage = Math.min((currentXP / nextLevelXP) * 100, 100);
+const XPProgressWidget = memo(({ level = 1, levelTitle = '', currentXP = 0, nextLevelXP = 1000, phase = 'ignition' }) => {
+    const percentage = nextLevelXP > 0 ? Math.min((currentXP / nextLevelXP) * 100, 100) : 0;
 
     const phaseColors = {
         ignition: '#FF8A5B',
@@ -28,6 +28,11 @@ const XPProgressWidget = ({ level = 1, currentXP = 0, nextLevelXP = 1000, phase 
                 <div className="text-3xl font-semibold text-gray-900 dark:text-white mb-1">
                     Level {level}
                 </div>
+                {levelTitle && (
+                    <div className="text-sm font-medium text-orange-500 mb-2">
+                        {levelTitle}
+                    </div>
+                )}
                 <div className="text-sm text-gray-500 dark:text-gray-400">
                     {currentXP.toLocaleString()} / {nextLevelXP.toLocaleString()} XP
                 </div>
@@ -50,6 +55,8 @@ const XPProgressWidget = ({ level = 1, currentXP = 0, nextLevelXP = 1000, phase 
             </div>
         </div>
     );
-};
+});
+
+XPProgressWidget.displayName = 'XPProgressWidget';
 
 export default XPProgressWidget;

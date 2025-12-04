@@ -3,6 +3,7 @@ import { Wrench, Plus, Target, Trash2, CheckCircle, Clock, Star } from 'lucide-r
 import masteryService from '../../services/masteryService';
 import { useAuth } from '../../contexts/AuthContext';
 import { handleError, clearError } from '../../utils/errorHandler';
+import toast from 'react-hot-toast';
 
 // Helper function to calculate current streak from completion dates
 const calculateCurrentStreak = (completedDates = []) => {
@@ -270,13 +271,30 @@ const ToolboxTab = () => {
 
   // Remove tool from user toolbox
   const removeTool = async (toolId) => {
+    if (!user) return;
+    
     try {
-      // TODO: Implement API call to remove tool
-      console.log('Removing tool:', toolId);
+      // Find the user toolbox item ID
+      const toolboxItem = userToolbox.find(tool => tool.toolbox_library?.id === toolId || tool.id === toolId);
+      if (!toolboxItem) {
+        console.error('Toolbox item not found:', toolId);
+        return;
+      }
+
+      // Use masteryService to remove the toolbox item
+      const { error } = await masteryService.removeUserToolboxItem(toolboxItem.id);
       
-      setUserToolbox(userToolbox.filter(tool => tool.id !== toolId));
+      if (error) {
+        console.error('Error removing tool:', error);
+        handleError(error);
+        return;
+      }
+      
+      // Update local state
+      setUserToolbox(userToolbox.filter(tool => tool.id !== toolboxItem.id));
     } catch (error) {
       console.error('Error removing tool:', error);
+      handleError(error);
     }
   };
 
@@ -377,34 +395,41 @@ const ToolboxTab = () => {
       const { error } = await masteryService.useToolboxItem(user.id, toolId);
       if (error) throw error;
 
-      // Reload toolbox to get updated data
+      // Reload toolbox to get updated data with real usage
       const { data: userToolboxData } = await masteryService.getUserToolboxItems(user.id);
       if (userToolboxData) {
-        // Transform the updated toolbox items
+        // Transform the updated toolbox items with real usage data
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const today = new Date();
+        
         const transformedUserToolbox = await Promise.all(
           userToolboxData.map(async (item) => {
-            const mockUsageCount = Math.floor(Math.random() * 20) + 1;
-            const mockCompletedDates = Array.from({ length: mockUsageCount }, (_, i) => {
-              const date = new Date();
-              date.setDate(date.getDate() - Math.floor(Math.random() * 30));
-              return date.toISOString().split('T')[0];
-            }).sort();
+            // Get real usage data from Supabase
+            const { data: usageData } = await masteryService.getToolboxUsage(
+              user.id,
+              item.id,
+              thirtyDaysAgo.toISOString().split('T')[0],
+              today.toISOString().split('T')[0]
+            );
 
-            const today = new Date();
+            // Get usage dates from real data
+            const usageDates = (usageData || []).map(usage => new Date(usage.used_at).toISOString().split('T')[0]);
             const todayString = today.toISOString().split('T')[0];
-            const isUsedToday = mockCompletedDates.includes(todayString);
+            const isUsedToday = usageDates.includes(todayString);
+            const totalXPEarned = (usageData || []).reduce((sum, usage) => sum + (usage.xp_earned || 0), 0);
 
             return {
               ...item,
               title: item.toolbox_library?.title || 'Unknown Tool',
               description: item.toolbox_library?.description || 'No description available',
-              usage_count: mockUsageCount,
-              last_used: mockCompletedDates[mockCompletedDates.length - 1] || null,
-              xp_earned: mockUsageCount * (item.toolbox_library?.xp_reward || 15),
+              usage_count: usageData?.length || 0,
+              last_used: usageDates[usageDates.length - 1] || null,
+              xp_earned: totalXPEarned,
               color: getToolboxColor(item.toolbox_library?.title || 'Unknown Tool'),
-              completed_dates: mockCompletedDates,
+              completed_dates: usageDates,
               used_today: isUsedToday,
-              streak: calculateCurrentStreak(mockCompletedDates)
+              streak: calculateCurrentStreak(usageDates)
             };
           })
         );
