@@ -20,6 +20,7 @@ const CourseCatalogPage = React.lazy(() => import('./pages/CourseCatalogPage'))
 const CourseDetailPage = React.lazy(() => import('./pages/CourseDetailPage'))
 const CoursePlayerPage = React.lazy(() => import('./pages/CoursePlayerPage'))
 const CourseCreationPage = React.lazy(() => import('./pages/CourseCreationPage'))
+const StellarMapPage = React.lazy(() => import('./pages/StellarMapPage'))
 
 // Loading component
 const LoadingScreen = () => {
@@ -227,6 +228,15 @@ const AppRoutes = () => {
           <ErrorBoundary>
             <React.Suspense fallback={<LoadingScreen />}>
               <CoursePlayerPage />
+            </React.Suspense>
+          </ErrorBoundary>
+        } />
+
+        {/* Stellar Map Route */}
+        <Route path="/stellar-map" element={
+          <ErrorBoundary>
+            <React.Suspense fallback={<LoadingScreen />}>
+              <StellarMapPage />
             </React.Suspense>
           </ErrorBoundary>
         } />
