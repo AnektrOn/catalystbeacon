@@ -1,0 +1,573 @@
+[
+  {
+    "id": "TC001",
+    "title": "User Registration with Email and Password",
+    "description": "Verify that a new user can register with valid email and password and receives appropriate role assignment.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the signup page"
+      },
+      {
+        "type": "action",
+        "description": "Input a valid email address, password, and confirm password"
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form"
+      },
+      {
+        "type": "assertion",
+        "description": "Check for successful registration confirmation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that the user is assigned the default Free or Student role based on input"
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "User Login with Correct Credentials",
+    "description": "Check login functionality with valid email and password for all user roles (Free, Student, Teacher, Admin).",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the login page"
+      },
+      {
+        "type": "action",
+        "description": "Input valid email and password credentials of a registered user"
+      },
+      {
+        "type": "action",
+        "description": "Click the login button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user is logged in and redirected to dashboard matching role permissions"
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "User Login with Incorrect Credentials",
+    "description": "Verify login is prevented when invalid email or password is entered.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to login page"
+      },
+      {
+        "type": "action",
+        "description": "Input incorrect or unregistered email and/or password"
+      },
+      {
+        "type": "action",
+        "description": "Click login button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify error message is displayed and login is rejected"
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "Dashboard Widgets Display and Functionality",
+    "description": "Confirm all dashboard widgets load correctly and display accurate data for XP progress, achievements, daily rituals, constellation navigator, current lessons, teacher feed, and quick actions.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as student user and navigate to dashboard"
+      },
+      {
+        "type": "assertion",
+        "description": "Validate XP Progress widget shows correct current progress and level"
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure Daily Ritual widget lists current habits with correct statuses"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify Coherence widget displays appropriate coherence metrics"
+      },
+      {
+        "type": "assertion",
+        "description": "Check Achievements widget shows earned badges accurately"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm Current Lesson widget displays active course lesson"
+      },
+      {
+        "type": "assertion",
+        "description": "Check Constellation Navigator and Teacher Feed widgets load data"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify Quick Actions widget navigation links function"
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Course Catalog Browsing and Enrollment",
+    "description": "Verify user can browse course catalog, view detailed course pages, enroll in courses, and see enrollment confirmed.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login and navigate to Course Catalog page"
+      },
+      {
+        "type": "action",
+        "description": "Browse available courses and select one course"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify detailed course page loads with correct information"
+      },
+      {
+        "type": "action",
+        "description": "Enroll in the course"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm enrollment success message and course added to user profile"
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Course Video Lesson Playback and Progress Tracking",
+    "description": "Ensure course video lessons play properly and user progress is tracked and saved correctly.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login and open an enrolled course's video lesson"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify video loads, plays, pauses and resumes without errors"
+      },
+      {
+        "type": "action",
+        "description": "Watch partial video and navigate away"
+      },
+      {
+        "type": "action",
+        "description": "Resume lesson and confirm playback starts from last watched point"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm progress is updated in course progress tracker"
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Teacher Course Creation and Content Management",
+    "description": "Confirm that teacher role users can access course creation page, create new courses, add video lessons, and save content without errors.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as a teacher and navigate to Course Creation page"
+      },
+      {
+        "type": "action",
+        "description": "Fill in required course information fields"
+      },
+      {
+        "type": "action",
+        "description": "Add at least one video lesson with proper metadata"
+      },
+      {
+        "type": "action",
+        "description": "Submit the course creation form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify no errors occur and new course appears in teacher’s course list"
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Habit Tracking and Streaks Functionality",
+    "description": "Validate that users can add, edit, complete, and track habits with accurate streak calculations.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login and navigate to Mastery Habits tab"
+      },
+      {
+        "type": "action",
+        "description": "Create a new habit with appropriate category and settings"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm habit is added and displayed in habit list"
+      },
+      {
+        "type": "action",
+        "description": "Mark habit as completed for today"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify streak count increments correctly"
+      },
+      {
+        "type": "action",
+        "description": "Edit and delete habit and confirm expected updates"
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Toolbox Items Management",
+    "description": "Check that toolbox items can be created, organized, and managed in the toolbox tab.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the Toolbox tab in Mastery system"
+      },
+      {
+        "type": "action",
+        "description": "Add a new toolbox item with relevant details"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify new item appears in toolbox list correctly"
+      },
+      {
+        "type": "action",
+        "description": "Edit the toolbox item’s details"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm changes are saved"
+      },
+      {
+        "type": "action",
+        "description": "Delete toolbox item and verify it is removed"
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Calendar Integration for Habit Visualization",
+    "description": "Validate user calendar displays habit completions accurately and allows marking completions for past and current days.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to Calendar tab in Mastery system"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify calendar shows habit completions with correct color coding or icons"
+      },
+      {
+        "type": "action",
+        "description": "Mark habit completion for current day via calendar"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm habit streak updates accordingly"
+      },
+      {
+        "type": "action",
+        "description": "Attempt marking completion on past day"
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure system updates habit status and streak properly without errors"
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "Skills System Progress Tracking and Visualization",
+    "description": "Ensure multiple skills in cognitive, creative, discipline, and social categories are tracked accurately and radar chart visualizations render properly.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login and navigate to Skills section"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify skill levels and progress data are displayed accurately"
+      },
+      {
+        "type": "assertion",
+        "description": "Check radar chart renders with correct skill values"
+      },
+      {
+        "type": "action",
+        "description": "Update skill progress or complete related activities"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm radar chart updates reflecting new data"
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "Achievements Display and Progress Update",
+    "description": "Confirm badge achievement system displays earned badges correctly and updates achievement progress based on user activity.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to Achievements page"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify all earned badges are shown with correct metadata"
+      },
+      {
+        "type": "action",
+        "description": "Perform actions to qualify for a new achievement"
+      },
+      {
+        "type": "assertion",
+        "description": "Check for newly earned badges appearing dynamically"
+      }
+    ]
+  },
+  {
+    "id": "TC013",
+    "title": "Social Feed: Post Creation, Commenting, and Liking",
+    "description": "Verify users can create posts, comment, and like posts on community social feed with updates to UI and data.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to Community page"
+      },
+      {
+        "type": "action",
+        "description": "Create a new post with text and optional media"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm post appears on feed instantly"
+      },
+      {
+        "type": "action",
+        "description": "Add comment to an existing post"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify comment is displayed beneath the post"
+      },
+      {
+        "type": "action",
+        "description": "Like a post and observe UI state change"
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure like count increments and persists"
+      }
+    ]
+  },
+  {
+    "id": "TC014",
+    "title": "Subscription Payment Processing via Stripe",
+    "description": "Verify that users can subscribe, upgrade, or cancel subscriptions using Stripe integration with secure payment processing and role updates.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to Pricing page"
+      },
+      {
+        "type": "action",
+        "description": "Select a subscription plan and initiate payment"
+      },
+      {
+        "type": "action",
+        "description": "Enter valid payment details and submit"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm payment is processed by Stripe successfully"
+      },
+      {
+        "type": "assertion",
+        "description": "Check that user role is updated appropriately in system"
+      },
+      {
+        "type": "action",
+        "description": "Cancel subscription and verify user role downgrade"
+      }
+    ]
+  },
+  {
+    "id": "TC015",
+    "title": "Profile Settings Update and Avatar Customization",
+    "description": "Validate that users can update personal settings and change their avatar profile picture with immediate reflection in UI.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to Profile settings page"
+      },
+      {
+        "type": "action",
+        "description": "Modify editable profile fields such as display name, email preferences"
+      },
+      {
+        "type": "action",
+        "description": "Change or upload new avatar image"
+      },
+      {
+        "type": "action",
+        "description": "Save settings"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify changes are saved and displayed correctly on profile"
+      }
+    ]
+  },
+  {
+    "id": "TC016",
+    "title": "UI Responsiveness and Mobile Compatibility",
+    "description": "Ensure application UI components and pages render correctly on multiple device sizes with mobile-first glassmorphism design and safe touch targets.",
+    "category": "ui",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Access the platform on different screen sizes including phones, tablets, and desktops"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify UI elements adjust layout responsively without overlap or cutoff"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm glassmorphism effects and shadcn/ui + Radix UI components render as designed"
+      },
+      {
+        "type": "assertion",
+        "description": "Check that all interactive controls meet minimum touch target sizes and safe area margins"
+      }
+    ]
+  },
+  {
+    "id": "TC017",
+    "title": "XP Progression and Level System Accuracy",
+    "description": "Confirm that XP points are awarded correctly after course completions, habit completions, and community activity and that user level updates properly across the 51 levels and 4 mastery schools.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Perform activities like completing lessons, marking habits, and engaging in community"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that XP is granted as per defined criteria"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm user level updates correctly in four schools: Ignition, Insight, Transformation, God Mode"
+      },
+      {
+        "type": "assertion",
+        "description": "Check that the XP progress widget and profile radar display accurate level and XP data"
+      }
+    ]
+  },
+  {
+    "id": "TC018",
+    "title": "Error Handling for Network Failures and Loading States",
+    "description": "Test that the application displays appropriate loading indicators and graceful error messages on network delays, API failures, or invalid inputs.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Simulate slow or failed network responses during login, data fetch, and form submissions"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify loading spinners or skeleton loaders display during data fetching"
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure error messages are user-friendly and provide next steps or retry options"
+      },
+      {
+        "type": "action",
+        "description": "Submit forms with invalid or incomplete inputs"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm form validation prevents submission and highlights errors properly"
+      }
+    ]
+  },
+  {
+    "id": "TC019",
+    "title": "Role-Based Access Control Enforcement",
+    "description": "Ensure that different user roles (Free, Student, Teacher, Admin) have access limited to their permissions, especially for course creation and admin features.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as Free user and attempt to access Teacher-only and Admin-only features"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify access is denied and user is redirected or shown appropriate message"
+      },
+      {
+        "type": "action",
+        "description": "Login as Teacher user and verify access to course creation page"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm Teacher can create courses but not access Admin features"
+      },
+      {
+        "type": "action",
+        "description": "Login as Admin and verify unrestricted access to all features"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm Admin access to role management and subscription overrides"
+      }
+    ]
+  }
+]

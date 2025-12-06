@@ -67,10 +67,7 @@ const ToolboxTabCompact = () => {
     frequency_type: 'daily'
   });
   
-  // Skills system state
-  const [allSkills, setAllSkills] = useState([]);
-  const [skillsMap, setSkillsMap] = useState(new Map());
-  const [masterStats, setMasterStats] = useState([]);
+  // Removed unused state variables: allSkills, skillsMap, masterStats
 
   // Load toolbox data from database - NO LOADING STATE
   useEffect(() => {
@@ -84,20 +81,11 @@ const ToolboxTabCompact = () => {
         const { data: skillsData, error: skillsError } = await skillsService.getAllSkills();
         let skillsMap = new Map();
         if (!skillsError && skillsData) {
-          setAllSkills(skillsData);
           skillsMap = new Map(skillsData.map(skill => [skill.id, skill]));
-          setSkillsMap(skillsMap);
           console.log('✅ ToolboxTabCompact: Skills loaded:', skillsData.length);
           console.log('📋 Skills map created with', skillsMap.size, 'entries');
         } else {
           console.error('❌ ToolboxTabCompact: Failed to load skills:', skillsError);
-        }
-
-        // Load master stats
-        const { data: masterStatsData, error: masterStatsError } = await skillsService.getMasterStats();
-        if (!masterStatsError && masterStatsData) {
-          setMasterStats(masterStatsData);
-          console.log('✅ ToolboxTabCompact: Master stats loaded:', masterStatsData.length);
         }
 
         // Load toolbox library from database (always load this)

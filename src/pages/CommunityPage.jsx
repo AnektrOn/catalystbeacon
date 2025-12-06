@@ -11,7 +11,6 @@ import {
   Search,
   TrendingUp,
   Star,
-  Award,
   Target,
   Calendar,
   Eye,

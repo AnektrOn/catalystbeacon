@@ -12,7 +12,7 @@ class CourseService {
    */
   generateChapterId(courseId, chapterNumber) {
     // Use a namespace UUID for chapters (could be any valid UUID)
-    const CHAPTER_NAMESPACE = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+    // const CHAPTER_NAMESPACE = '6ba7b810-9dad-11d1-80b4-00c04fd430c8'; // Not currently used
     const name = `course:${courseId}:chapter:${chapterNumber}`;
 
     // Simple deterministic UUID generation (you may want to use uuid library for proper v5)
@@ -29,7 +29,7 @@ class CourseService {
    * @returns {string} UUID v5 based on course, chapter, and lesson
    */
   generateLessonId(courseId, chapterNumber, lessonNumber) {
-    const LESSON_NAMESPACE = '6ba7b811-9dad-11d1-80b4-00c04fd430c8';
+    // const LESSON_NAMESPACE = '6ba7b811-9dad-11d1-80b4-00c04fd430c8'; // Not currently used
     const name = `course:${courseId}:chapter:${chapterNumber}:lesson:${lessonNumber}`;
 
     const hash = this._simpleHash(name);
@@ -631,7 +631,7 @@ class CourseService {
       }
 
       // Award XP using the database function
-      const { data: xpResult, error: xpError } = await supabase.rpc('award_lesson_xp', {
+      const { error: xpError } = await supabase.rpc('award_lesson_xp', {
         user_id: userId,
         course_id: parseInt(courseId),
         chapter_number: chapterNumber,

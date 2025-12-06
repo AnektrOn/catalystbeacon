@@ -6,11 +6,8 @@ import QuizComponent from '../components/QuizComponent';
 import {
   ArrowLeft,
   CheckCircle,
-  Play,
   ChevronRight,
   ChevronLeft,
-  BookOpen,
-  Clock,
   Maximize2,
   Minimize2,
   Menu,
@@ -21,11 +18,11 @@ import { toast } from 'react-hot-toast';
 const CoursePlayerPage = () => {
   const { courseId, chapterNumber, lessonNumber } = useParams();
   const navigate = useNavigate();
-  const { user, profile, fetchProfile } = useAuth();
+  const { user, fetchProfile } = useAuth();
   const [course, setCourse] = useState(null);
   const [courseStructure, setCourseStructure] = useState(null);
   const [currentLesson, setCurrentLesson] = useState(null);
-  const [currentChapter, setCurrentChapter] = useState(null);
+  // Removed unused currentChapter state
   const [lessonContent, setLessonContent] = useState(null);
   const [lessonDescription, setLessonDescription] = useState(null);
   const [userLessonProgress, setUserLessonProgress] = useState(null);
@@ -44,6 +41,7 @@ const CoursePlayerPage = () => {
     if (courseId && chapterNum && lessonNum) {
       loadLessonData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId, chapterNum, lessonNum, user]);
 
   const loadLessonData = async () => {
@@ -68,7 +66,6 @@ const CoursePlayerPage = () => {
         throw new Error('Lesson not found');
       }
 
-      setCurrentChapter(chapter);
       setCurrentLesson(lesson);
 
       // Load lesson content (use course_id, not UUID)

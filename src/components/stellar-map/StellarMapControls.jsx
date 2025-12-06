@@ -58,6 +58,7 @@ const StellarMapControls = ({
 
       {/* Control Panel */}
       <div
+        id="stellar-map-controls-panel"
         ref={panelRef}
         className={`fixed top-4 left-12 z-40 bg-black/60 p-2 rounded-md shadow-lg transition-all duration-350 ${
           isOpen ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-full pointer-events-none'
@@ -157,26 +158,26 @@ const StellarMapControls = ({
       </div>
 
       {/* Mobile Styles */}
-      <style jsx>{`
+      <style>{`
         @media (max-width: 600px) {
-          .control-panel {
-            top: auto;
-            bottom: 16px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 92vw;
-            padding: 10px 6px 12px;
-            border-radius: 10px;
+          #stellar-map-controls-panel {
+            top: auto !important;
+            bottom: 16px !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            width: 92vw !important;
+            padding: 10px 6px 12px !important;
+            border-radius: 10px !important;
           }
           
-          .control-panel button,
-          .control-panel select {
-            display: block;
-            width: 100%;
-            margin: 6px 0;
-            font-size: 16px;
-            padding: 12px 0;
-            min-height: 44px; /* Touch target size */
+          #stellar-map-controls-panel button,
+          #stellar-map-controls-panel select {
+            display: block !important;
+            width: 100% !important;
+            margin: 6px 0 !important;
+            font-size: 16px !important;
+            padding: 12px 0 !important;
+            min-height: 44px !important;
           }
         }
       `}</style>

@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Clock, Play, Pause, RotateCcw, Coffee, Zap, Award, Maximize2, Minimize2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { useAuth } from '../contexts/AuthContext';
+// Removed unused useAuth import
 
 const TimerPage = () => {
-    const { user } = useAuth();
+    // Removed unused user variable
     const [timeLeft, setTimeLeft] = useState(25 * 60);
     const [isActive, setIsActive] = useState(false);
     const [mode, setMode] = useState('focus'); // 'focus', 'shortBreak', 'longBreak'
@@ -28,6 +28,7 @@ const TimerPage = () => {
         }
 
         return () => clearInterval(timerRef.current);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isActive, timeLeft]);
 
     const handleTimerComplete = () => {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Wrench, Plus, CheckCircle } from 'lucide-react';
+import { Wrench, Plus } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { useMasteryRefresh } from '../../pages/Mastery';
@@ -16,7 +16,7 @@ const ToolboxTabMobile = () => {
   const [toolboxLibrary, setToolboxLibrary] = useState([]);
   const [userToolbox, setUserToolbox] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // Removed unused error state (errors are logged directly)
 
   useEffect(() => {
     const loadToolbox = async () => {
@@ -36,7 +36,7 @@ const ToolboxTabMobile = () => {
         setUserToolbox(userTools || []);
       } catch (err) {
         console.error('Error loading toolbox:', err);
-        setError(err.message);
+        // Error logged above
       } finally {
         setLoading(false);
       }
@@ -90,14 +90,6 @@ const ToolboxTabMobile = () => {
     } catch (err) {
       console.error('Error adding tool:', err);
     }
-  };
-
-  const getToolColor = (title) => {
-    const lower = title?.toLowerCase() || '';
-    if (lower.includes('pomodoro')) return '#8B5CF6';
-    if (lower.includes('mind') || lower.includes('map')) return '#A78BFA';
-    if (lower.includes('meditation')) return '#10B981';
-    return '#6B7280';
   };
 
   if (loading) {

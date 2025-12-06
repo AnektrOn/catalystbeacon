@@ -842,40 +842,6 @@ class MasteryService {
   // ===== CALENDAR =====
 
   /**
-   * Get calendar events for a date range
-   */
-  async getCalendarEvents(userId, startDate, endDate) {
-    try {
-      const { data, error } = await supabase
-        .from('user_calendar_events')
-        .select(`
-          *,
-          user_habits (
-            title,
-            description,
-            xp_reward
-          ),
-          toolbox_library (
-            title,
-            description,
-            xp_reward
-          )
-        `)
-        .eq('user_id', userId)
-        .gte('event_date', startDate)
-        .lte('event_date', endDate)
-        .order('event_date', { ascending: true })
-        .order('event_time', { ascending: true });
-
-      if (error) throw error;
-      return { data, error: null };
-    } catch (error) {
-      console.error('Error fetching calendar events:', error);
-      return { data: null, error };
-    }
-  }
-
-  /**
    * Test database connection and basic operations
    */
   async testConnection() {
@@ -934,4 +900,5 @@ class MasteryService {
   }
 }
 
-export default new MasteryService();
+const masteryService = new MasteryService();
+export default masteryService;

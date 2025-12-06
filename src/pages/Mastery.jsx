@@ -27,7 +27,7 @@ export const useMasteryRefresh = () => {
 const Mastery = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, profile } = useAuth();
+  const { profile } = useAuth();
   const [refreshKey, setRefreshKey] = useState(0);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 

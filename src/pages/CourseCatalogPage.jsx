@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import SEOHead from '../components/SEOHead';
 import courseService from '../services/courseService';
 import schoolService from '../services/schoolService';
-import { BookOpen, Lock, Play, Star, Clock, TrendingUp } from 'lucide-react';
+import { BookOpen, Lock, Play, Clock } from 'lucide-react';
 
 const CourseCatalogPage = () => {
   const { user, profile } = useAuth();
@@ -18,6 +18,7 @@ const CourseCatalogPage = () => {
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const loadData = async () => {

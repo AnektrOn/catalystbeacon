@@ -8,9 +8,7 @@ import {
   Lock,
   CheckCircle,
   Clock,
-  Star,
   ArrowLeft,
-  ChevronRight,
   TrendingUp,
   Award
 } from 'lucide-react';
@@ -19,19 +17,20 @@ import { toast } from 'react-hot-toast';
 const CourseDetailPage = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const [course, setCourse] = useState(null);
   const [courseStructure, setCourseStructure] = useState(null);
   const [userProgress, setUserProgress] = useState(null);
   const [unlockStatus, setUnlockStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [completedLessons, setCompletedLessons] = useState(new Set());
+  // Removed unused completedLessons state
 
   useEffect(() => {
     if (courseId) {
       loadCourseData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId, user]);
 
   const loadCourseData = async () => {
@@ -68,8 +67,8 @@ const CourseDetailPage = () => {
             }));
           }
 
-          // Load completed lessons
-          const { data: lessonsProgress, error: lessonsError } = await courseService.getUserLessonProgress(user.id, fullCourse.course_id);
+          // Load completed lessons (data not currently used but may be needed for future features)
+          await courseService.getUserLessonProgress(user.id, fullCourse.course_id);
           // Note: getUserLessonProgress returns a single record, we need a way to get ALL completed lessons.
           // Since the service doesn't have a "getAllUserLessonProgress" method readily available in the snippet I saw,
           // I will rely on the fact that we can iterate through chapters and check status if needed, 

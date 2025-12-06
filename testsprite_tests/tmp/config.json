@@ -1,0 +1,18 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:3000",
+  "loginUser": "humancatalystnote@gmail.com",
+  "loginPassword": "123456",
+  "executionArgs": {
+    "projectName": "hcuniversity",
+    "projectPath": "/Users/conesaleo/hcuniversity/hcuniversity",
+    "testIds": [],
+    "additionalInstruction": "",
+    "envs": {
+      "API_KEY": "sk-user-xxo0EnUZUkamt0SOQOImwwYdg0JcjMNT2NKxRA5urkzTqU92yjMVnXuxsaSnVW_FwNBUI_fyH6105qs3LHiD7fsw2XAuMkaLY6kzZcBccMioFh2kCLSmGbPt2TYuZkU7B68"
+    }
+  },
+  "proxy": "http://ce449193-918f-42a0-a226-b9810af39303:e77EJZDTNg7Ds4vH3fOPgJ27eG7OmJRY@tun.testsprite.com:8080"
+}

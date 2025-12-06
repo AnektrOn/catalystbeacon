@@ -89,8 +89,14 @@ export function useThreeScene(containerId, coreName, isVisible) {
   const createScene = useCallback(() => {
     const container = document.getElementById(containerId);
     if (!container) {
-      console.error(`Container with ID '${containerId}' not found.`);
+      // Container not ready yet, will retry
       return null;
+    }
+    
+    // Check if scene already exists
+    if (container.querySelector('canvas')) {
+      // Scene already initialized, return existing context
+      return null; // Will be handled by existing context
     }
 
     const W = container.clientWidth || window.innerWidth;
@@ -322,16 +328,26 @@ export function useThreeScene(containerId, coreName, isVisible) {
   }, [context, isVisible]);
 
   /**
-   * Initialize scene on mount
+   * Initialize scene on mount - always initialize, visibility controls rendering
    */
   useEffect(() => {
+    // Always try to create scene, regardless of visibility
     const ctx = createScene();
     if (ctx) {
       setContext(ctx);
+    } else {
+      // Retry after a short delay if container wasn't ready
+      const timer = setTimeout(() => {
+        const retryCtx = createScene();
+        if (retryCtx) {
+          setContext(retryCtx);
+        }
+      }, 200);
+      return () => clearTimeout(timer);
     }
 
     return () => {
-      // Cleanup
+      // Cleanup on unmount only
       if (animationFrameIdRef.current) {
         cancelAnimationFrame(animationFrameIdRef.current);
       }
@@ -349,7 +365,9 @@ export function useThreeScene(containerId, coreName, isVisible) {
         });
         if (ctx.renderer) {
           ctx.renderer.dispose();
-          ctx.container?.removeChild(ctx.renderer.domElement);
+          if (ctx.container && ctx.renderer.domElement.parentNode === ctx.container) {
+            ctx.container.removeChild(ctx.renderer.domElement);
+          }
         }
         if (ctx.composer) ctx.composer.dispose();
       }
@@ -360,7 +378,7 @@ export function useThreeScene(containerId, coreName, isVisible) {
    * Handle resize
    */
   useEffect(() => {
-    if (!context || !isVisible) return;
+    if (!context) return;
 
     const handleResize = () => {
       const container = document.getElementById(containerId);
@@ -378,7 +396,7 @@ export function useThreeScene(containerId, coreName, isVisible) {
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [context, containerId, isVisible]);
+  }, [context, containerId]);
 
   /**
    * Start/stop animation based on visibility

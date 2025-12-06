@@ -500,7 +500,6 @@ const CalendarTab = () => {
   const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   const days = getDaysInMonth(currentDate);
-  const totalEvents = events.length;
   const currentMonth = monthNames[currentDate.getMonth()];
   const currentYear = currentDate.getFullYear();
 

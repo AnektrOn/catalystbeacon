@@ -120,24 +120,61 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     console.log('🔍 AuthContext: Starting authentication check...')
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('👤 AuthContext: Initial session check:', session?.user ? 'User found' : 'No user')
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        console.log('📥 AuthContext: Fetching profile for user:', session.user.id)
-        fetchProfile(session.user.id).finally(() => {
-          console.log('✅ AuthContext: Profile fetch completed, setting loading to false')
-          setLoading(false)
-        })
-      } else {
-        console.log('✅ AuthContext: No user, setting loading to false')
+    // Force timeout to prevent infinite loading (8 seconds max - enough for session + profile fetch)
+    const forceTimeout = setTimeout(() => {
+      console.warn('⏰ AuthContext: Force timeout reached, setting loading to false')
+      setLoading(false)
+    }, 8000)
+
+    let loadingCleared = false
+    const clearLoadingSafely = () => {
+      if (!loadingCleared) {
+        loadingCleared = true
+        clearTimeout(forceTimeout)
         setLoading(false)
       }
-    }).catch((error) => {
-      console.error('❌ AuthContext: Error getting session:', error)
-      setLoading(false)
-    })
+    }
+
+    // Helper to wrap promises with timeout
+    const withTimeout = (promise, ms = 3000) => {
+      return Promise.race([
+        promise,
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('SESSION_CHECK_TIMEOUT')), ms)
+        )
+      ])
+    }
+
+    // Get initial session with timeout
+    withTimeout(supabase.auth.getSession())
+      .then(({ data: { session } }) => {
+        console.log('👤 AuthContext: Initial session check:', session?.user ? 'User found' : 'No user')
+        setUser(session?.user ?? null)
+        if (session?.user) {
+          console.log('📥 AuthContext: Fetching profile for user:', session.user.id)
+          // Fetch profile with its own timeout, but ensure loading is cleared
+          fetchProfile(session.user.id)
+            .then(() => {
+              console.log('✅ AuthContext: Profile fetch completed')
+              clearLoadingSafely()
+            })
+            .catch((err) => {
+              console.error('❌ AuthContext: Profile fetch error:', err)
+              clearLoadingSafely()
+            })
+        } else {
+          console.log('✅ AuthContext: No user, setting loading to false')
+          clearLoadingSafely()
+        }
+      })
+      .catch((error) => {
+        if (error && error.message === 'SESSION_CHECK_TIMEOUT') {
+          console.warn('⏰ AuthContext: Session check timed out, proceeding without blocking UI')
+        } else {
+          console.error('❌ AuthContext: Error getting session:', error)
+        }
+        clearLoadingSafely()
+      })
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -157,7 +194,10 @@ export const AuthProvider = ({ children }) => {
 
     return () => {
       console.log('🧹 AuthContext: Cleaning up auth subscription and timeout')
-      subscription.unsubscribe()
+      clearTimeout(forceTimeout)
+      if (subscription) {
+        subscription.unsubscribe()
+      }
     }
   }, [fetchProfile])
 

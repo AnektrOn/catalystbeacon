@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { User, Star, Flame, Target, BookOpen, Heart, Brain, Sparkles } from 'lucide-react'
+import { User, Star, Flame, Target, BookOpen, Brain } from 'lucide-react'
 import toast from 'react-hot-toast'
 import RadarChart from '../components/profile/RadarChart'
 import ProgressBar from '../components/profile/ProgressBar'
@@ -92,6 +92,7 @@ const ProfilePage = () => {
     };
 
     loadUserData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   const validateForm = () => {

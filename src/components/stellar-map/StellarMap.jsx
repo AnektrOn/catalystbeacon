@@ -101,7 +101,8 @@ const StellarMap = () => {
 
   const visibilityData = useXPVisibility();
 
-  // Create Three.js scenes for each core
+  // Create Three.js scenes for each core - always initialize all three
+  // They'll handle their own visibility internally
   const ignitionContext = useThreeScene('core-ignition3D', 'Ignition', currentCore === 'Ignition');
   const insightContext = useThreeScene('core-insight3D', 'Insight', currentCore === 'Insight');
   const transformationContext = useThreeScene('core-transformation3D', 'Transformation', currentCore === 'Transformation');
@@ -175,9 +176,6 @@ const StellarMap = () => {
 
     const centers = {};
     const meshes = [];
-
-    // Calculate positions
-    const positioned = calculateHierarchyPositions(hierarchyData);
 
     // Render families and constellations
     Object.entries(hierarchyData).forEach(([familyName, constellations]) => {
@@ -383,24 +381,39 @@ const StellarMap = () => {
         aria-hidden="true"
       />
 
-      {/* Canvas Containers */}
+      {/* Canvas Containers - Always rendered with dimensions, visibility controlled by z-index */}
       <div
         id="core-ignition3D"
-        className={`absolute inset-0 ${currentCore === 'Ignition' ? 'block' : 'hidden'}`}
+        className="absolute inset-0"
+        style={{
+          visibility: currentCore === 'Ignition' ? 'visible' : 'hidden',
+          pointerEvents: currentCore === 'Ignition' ? 'auto' : 'none',
+          zIndex: currentCore === 'Ignition' ? 1 : 0
+        }}
         role="tabpanel"
         aria-labelledby="core-ignition-tab"
         aria-hidden={currentCore !== 'Ignition'}
       />
       <div
         id="core-insight3D"
-        className={`absolute inset-0 ${currentCore === 'Insight' ? 'block' : 'hidden'}`}
+        className="absolute inset-0"
+        style={{
+          visibility: currentCore === 'Insight' ? 'visible' : 'hidden',
+          pointerEvents: currentCore === 'Insight' ? 'auto' : 'none',
+          zIndex: currentCore === 'Insight' ? 1 : 0
+        }}
         role="tabpanel"
         aria-labelledby="core-insight-tab"
         aria-hidden={currentCore !== 'Insight'}
       />
       <div
         id="core-transformation3D"
-        className={`absolute inset-0 ${currentCore === 'Transformation' ? 'block' : 'hidden'}`}
+        className="absolute inset-0"
+        style={{
+          visibility: currentCore === 'Transformation' ? 'visible' : 'hidden',
+          pointerEvents: currentCore === 'Transformation' ? 'auto' : 'none',
+          zIndex: currentCore === 'Transformation' ? 1 : 0
+        }}
         role="tabpanel"
         aria-labelledby="core-transformation-tab"
         aria-hidden={currentCore !== 'Transformation'}

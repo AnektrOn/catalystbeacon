@@ -162,5 +162,6 @@ class SchoolService {
   }
 }
 
-export default new SchoolService();
+const schoolService = new SchoolService();
+export default schoolService;
 

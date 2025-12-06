@@ -8,7 +8,7 @@ import { toast } from 'react-hot-toast';
 const CourseCreationPage = () => {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  // Removed unused loading state
   const [saving, setSaving] = useState(false);
   
   // Course metadata

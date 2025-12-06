@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Target, Trash2, CheckCircle, Flame } from 'lucide-react';
+import { Plus, Target, Flame } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
@@ -17,7 +17,7 @@ const HabitsTabMobile = () => {
   const [personalHabits, setPersonalHabits] = useState([]);
   const [habitsLibrary, setHabitsLibrary] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // Removed unused error state (errors are logged directly)
 
   useEffect(() => {
     const loadHabits = async () => {
@@ -67,7 +67,7 @@ const HabitsTabMobile = () => {
         setPersonalHabits(transformed);
       } catch (err) {
         console.error('Error loading habits:', err);
-        setError(err.message);
+        // Error logged above
       } finally {
         setLoading(false);
       }

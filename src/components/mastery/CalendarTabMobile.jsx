@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Grid3X3, Clock, Trash2, CheckCircle, Target } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Grid3X3, Clock } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import masteryService from '../../services/masteryService';
 import { useAuth } from '../../contexts/AuthContext';
@@ -13,12 +13,11 @@ const CalendarTabMobile = () => {
   const { user, fetchProfile } = useAuth();
   const { triggerRefresh } = useMasteryRefresh();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [events, setEvents] = useState([]);
   const [habits, setHabits] = useState([]);
   const [view, setView] = useState('month');
   const [selectedDay, setSelectedDay] = useState(new Date());
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // Removed unused error state (errors are logged directly)
 
   // Helper function to get appropriate color for habits
   const getHabitColor = (title) => {
@@ -39,7 +38,6 @@ const CalendarTabMobile = () => {
       }
       
       setLoading(true);
-      setError(null);
       
       try {
         const { data: userHabits, error: habitsError } = await masteryService.getUserHabits(user.id);
@@ -71,7 +69,6 @@ const CalendarTabMobile = () => {
         setHabits(transformedHabits);
       } catch (error) {
         console.error('Error loading data:', error);
-        setError(error.message);
       } finally {
         setLoading(false);
       }
