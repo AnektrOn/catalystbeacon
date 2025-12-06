@@ -8,17 +8,29 @@ class StellarMapService {
    */
   async getFamiliesByLevel(level) {
     try {
+      if (!level) {
+        return { data: null, error: new Error('Level parameter is required') };
+      }
+
       const { data, error } = await supabase
         .from('constellation_families')
         .select('*')
         .eq('level', level)
         .order('display_order', { ascending: true });
 
-      if (error) throw error;
-      return { data, error: null };
+      if (error) {
+        console.error(`[StellarMapService] Error fetching families for level "${level}":`, error);
+        throw error;
+      }
+
+      if (!data || data.length === 0) {
+        console.warn(`[StellarMapService] No families found for level "${level}"`);
+      }
+
+      return { data: data || [], error: null };
     } catch (error) {
-      console.error('Error fetching families by level:', error);
-      return { data: null, error };
+      console.error('[StellarMapService] getFamiliesByLevel error:', error);
+      return { data: null, error: error instanceof Error ? error : new Error(String(error)) };
     }
   }
 
@@ -166,9 +178,23 @@ class StellarMapService {
    */
   async getNodesGroupedByHierarchy(level, userXP) {
     try {
+      if (!level) {
+        return { data: null, error: new Error('Level parameter is required') };
+      }
+
+      const xp = userXP || 0;
+
       // First get families with constellations
       const { data: families, error: familiesError } = await this.getFamiliesWithConstellations(level);
-      if (familiesError) throw familiesError;
+      if (familiesError) {
+        console.error('[StellarMapService] Failed to fetch families:', familiesError);
+        throw familiesError;
+      }
+
+      if (!families || families.length === 0) {
+        console.warn(`[StellarMapService] No families found for level "${level}"`);
+        return { data: {}, error: null };
+      }
 
       // Then get all nodes for this level that user can see
       const { data: nodes, error: nodesError } = await supabase
@@ -184,21 +210,34 @@ class StellarMapService {
           )
         `)
         .eq('constellations.level', level)
-        .lte('xp_threshold', userXP)
+        .lte('xp_threshold', xp)
         .order('difficulty', { ascending: true });
 
-      if (nodesError) throw nodesError;
+      if (nodesError) {
+        console.error('[StellarMapService] Failed to fetch nodes:', nodesError);
+        throw nodesError;
+      }
 
       // Group nodes by family -> constellation
       const grouped = {};
       
       if (families && nodes) {
         families.forEach(family => {
+          if (!family.name) {
+            console.warn('[StellarMapService] Family missing name:', family);
+            return;
+          }
+
           grouped[family.name] = {};
           
-          if (family.constellations) {
+          if (family.constellations && Array.isArray(family.constellations)) {
             family.constellations.forEach(constellation => {
-              const constellationNodes = nodes.filter(
+              if (!constellation.id || !constellation.name) {
+                console.warn('[StellarMapService] Constellation missing id or name:', constellation);
+                return;
+              }
+
+              const constellationNodes = (nodes || []).filter(
                 node => node.constellations?.id === constellation.id
               );
               
@@ -210,10 +249,19 @@ class StellarMapService {
         });
       }
 
+      const totalNodes = Object.values(grouped).reduce((sum, constellations) => {
+        return sum + Object.values(constellations).reduce((s, nodes) => s + nodes.length, 0);
+      }, 0);
+
+      console.log(`[StellarMapService] Loaded ${totalNodes} nodes for ${level} (XP: ${xp})`);
+
       return { data: grouped, error: null };
     } catch (error) {
-      console.error('Error fetching grouped nodes:', error);
-      return { data: null, error };
+      console.error('[StellarMapService] getNodesGroupedByHierarchy error:', error);
+      return { 
+        data: null, 
+        error: error instanceof Error ? error : new Error(String(error))
+      };
     }
   }
 

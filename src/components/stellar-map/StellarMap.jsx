@@ -1,293 +1,225 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { ThreeSceneManager } from './core/ThreeSceneManager';
+import { NodeRenderer } from './core/NodeRenderer';
+import { InteractionManager } from './core/InteractionManager';
 import { useXPVisibility } from './hooks/useXPVisibility';
-import { useThreeScene } from './hooks/useThreeScene';
-import { useCameraFocus } from './hooks/useCameraFocus';
-import { useNodeInteraction } from './hooks/useNodeInteraction';
-import { usePerformanceOptimization } from './hooks/usePerformanceOptimization';
 import stellarMapService from '../../services/stellarMapService';
-import {
-  positionSubnodeMetatron,
-  PLANET_RADII,
-  calculateFamilyRadius,
-  calculateConstellationRadius,
-  calculateSafeConstellationDistance,
-  calculateFamilyPlacementRadius,
-  getAngularDirection
-} from '../../utils/stellarMapPositioning';
-import { createFamilySphere } from './FamilySphere';
-import { createConstellationSphere } from './ConstellationSphere';
-import { createSubnodeSphere } from './SubnodeSphere';
-import {
-  createFamilyConstellationLine,
-  createIntraConstellationLines
-} from './ConnectionLines';
 import StellarMapControls from './StellarMapControls';
 import NodeTooltip from './NodeTooltip';
+import StellarMapDebugOverlay from './StellarMapDebugOverlay';
+import * as debugHelpers from './utils/debugHelpers';
 
-// Family and constellation halo colors
-const FAMILY_HALO_COLORS = {
-  "Veil Piercers": 0x301934,
-  "Mind Hackers": 0x203020,
-  "Persona Shifters": 0x102030,
-  "Reality Shatters": 0x303010,
-  "Thought Catchers": 0x301030,
-  "Heart Whisperers": 0x103030,
-  "Routine Architects": 0x302010,
-  "Safe Havens": 0x201020,
-  "Path Makers": 0x301820,
-  "Reality Tuners": 0x182030,
-  "Energy Architects": 0x203018,
-  "Inner Illuminators": 0x302810,
-  "Ritual Grid": 0x281830
-};
-
-const CONSTELLATION_HALO_COLORS = {
-  "Puppet Masters": 0x600000,
-  "Smoke & Mirrors": 0x800000,
-  "Golden Shackles": 0xA00000,
-  "Panopticon": 0xC00000,
-  "Lesson Leashes": 0xE00000,
-  "Hidden Commands": 0x006000,
-  "Feed Puppets": 0x008000,
-  "Mind Traps": 0x00A000,
-  "Voice of Deception": 0x00C000,
-  "Mask Breakers": 0x000060,
-  "Avatar Illusions": 0x000080,
-  "I-Dissolvers": 0x0000A0,
-  "Numbers Don't Lie": 0x606000,
-  "Whistleblowers": 0x808000,
-  "Double-Speak": 0xA0A000,
-  "Pause Buttons": 0x301030,
-  "Mirror Moments": 0x501050,
-  "Grounding Gems": 0x701070,
-  "Feeling Detectors": 0x106010,
-  "Calm Cradles": 0x108010,
-  "Mood Markers": 0x10A010,
-  "Tiny Dawns": 0x606010,
-  "Signal Guards": 0x808010,
-  "Reset Pulses": 0xA0A010,
-  "Mind Sanctum": 0x101060,
-  "Breath Portals": 0x101080,
-  "Rhythm Reset": 0x1010A0,
-  "Thought Sculptors": 0x602000,
-  "Mind Cartographers": 0x802000,
-  "Body-Bridge": 0xA02000,
-  "Witness Protocols": 0x006020,
-  "Chance Benders": 0x008020,
-  "Aura Sync": 0x00A020,
-  "Wheel Harmonizers": 0x200060,
-  "Energy Highways": 0x200080,
-  "Prana Weaver": 0x2000A0,
-  "Core Miners": 0x600060,
-  "Voice Bridgers": 0x800080,
-  "Shadow Ledger": 0xA000A0,
-  "Dawn Circuit": 0x002060,
-  "Unity Pulse": 0x002080,
-  "Meta Map": 0x0020A0
-};
+const DEBUG = process.env.NODE_ENV === 'development';
 
 const StellarMap = () => {
   const [currentCore, setCurrentCore] = useState('Ignition');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [hierarchyData, setHierarchyData] = useState({});
-  const [constellationCenters, setConstellationCenters] = useState({});
   const [showWhiteLines, setShowWhiteLines] = useState(true);
-  const [nodeMeshes, setNodeMeshes] = useState([]);
-  
-  const contextsRef = useRef({});
+  const [tooltipData, setTooltipData] = useState({ visible: false, node: null, position: { x: 0, y: 0 } });
+
+  const sceneManagerRef = useRef(null);
+  const nodeRendererRef = useRef({});
+  const interactionManagerRef = useRef({});
+  const containerRefs = useRef({
+    ignition: null,
+    insight: null,
+    transformation: null
+  });
   const constellationCentersRef = useRef({});
+  const nodeMeshesRef = useRef([]);
 
   const visibilityData = useXPVisibility();
 
-  // Create Three.js scenes for each core - always initialize all three
-  // They'll handle their own visibility internally
-  const ignitionContext = useThreeScene('core-ignition3D', 'Ignition', currentCore === 'Ignition');
-  const insightContext = useThreeScene('core-insight3D', 'Insight', currentCore === 'Insight');
-  const transformationContext = useThreeScene('core-transformation3D', 'Transformation', currentCore === 'Transformation');
-
-  // Store contexts
+  // Initialize Three.js scenes
   useEffect(() => {
-    if (ignitionContext) contextsRef.current['Ignition'] = ignitionContext;
-    if (insightContext) contextsRef.current['Insight'] = insightContext;
-    if (transformationContext) contextsRef.current['Transformation'] = transformationContext;
-  }, [ignitionContext, insightContext, transformationContext]);
+    if (DEBUG) {
+      console.log('[StellarMap] Initializing Three.js scenes...');
+      debugHelpers.checkThreeJS();
+      debugHelpers.checkContainers();
+    }
 
-  // Get current context
-  const currentContext = contextsRef.current[currentCore];
+    const manager = new ThreeSceneManager();
 
-  // Camera focus functions
-  const { focusConstellation, focusSubnode } = useCameraFocus(currentContext);
+    // Initialize all three scenes
+    const ignitionCtx = manager.initializeScene('core-ignition3D', 'Ignition');
+    const insightCtx = manager.initializeScene('core-insight3D', 'Insight');
+    const transformationCtx = manager.initializeScene('core-transformation3D', 'Transformation');
 
-  // Node interaction
-  const { hoveredNode, tooltipPosition } = useNodeInteraction(currentContext, nodeMeshes);
+    if (!ignitionCtx || !insightCtx || !transformationCtx) {
+      const errorMsg = 'Failed to initialize 3D scenes. Please refresh the page.';
+      console.error('[StellarMap]', errorMsg);
+      if (DEBUG) {
+        debugHelpers.checkContainers();
+      }
+      setError(errorMsg);
+      return;
+    }
 
-  // Performance optimization
-  usePerformanceOptimization(contextsRef.current);
+    if (DEBUG) {
+      console.log('[StellarMap] All scenes initialized successfully');
+      ['Ignition', 'Insight', 'Transformation'].forEach(coreName => {
+        const ctx = manager.getScene(coreName);
+        if (ctx) {
+          debugHelpers.inspectScene(ctx.scene, ctx.camera, ctx.renderer);
+        }
+      });
+    }
 
-  // Fetch data on mount and when core changes
+    // Create node renderers for each scene
+    nodeRendererRef.current = {
+      Ignition: new NodeRenderer(ignitionCtx.scene),
+      Insight: new NodeRenderer(insightCtx.scene),
+      Transformation: new NodeRenderer(transformationCtx.scene)
+    };
+
+    // Create interaction managers for each scene
+    interactionManagerRef.current = {
+      Ignition: new InteractionManager(
+        ignitionCtx.scene,
+        ignitionCtx.camera,
+        ignitionCtx.renderer,
+        []
+      ),
+      Insight: new InteractionManager(
+        insightCtx.scene,
+        insightCtx.camera,
+        insightCtx.renderer,
+        []
+      ),
+      Transformation: new InteractionManager(
+        transformationCtx.scene,
+        transformationCtx.camera,
+        transformationCtx.renderer,
+        []
+      )
+    };
+
+    // Set up interaction callbacks
+    Object.values(interactionManagerRef.current).forEach(im => {
+      im.setOnNodeHover((data) => {
+        setTooltipData(data);
+      });
+      im.setOnNodeClick((nodeData) => {
+        // Node click handled by InteractionManager (opens link)
+      });
+    });
+
+    // Attach event listeners
+    Object.values(interactionManagerRef.current).forEach(im => {
+      im.attachListeners();
+    });
+
+    sceneManagerRef.current = manager;
+    manager.startAnimation();
+
+    // Handle resize
+    const handleResize = () => {
+      manager.handleResize();
+    };
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      manager.stopAnimation();
+      manager.dispose();
+      Object.values(interactionManagerRef.current).forEach(im => im.dispose());
+    };
+  }, []);
+
+  // Fetch data when core or XP changes
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
         setError(null);
 
+        if (DEBUG) {
+          console.log(`[StellarMap] Loading data for core: ${currentCore}, XP: ${visibilityData.userXP}`);
+        }
+
         const { data, error: fetchError } = await stellarMapService.getNodesGroupedByHierarchy(
           currentCore,
           visibilityData.userXP
         );
 
-        if (fetchError) throw fetchError;
+        if (fetchError) {
+          console.error('[StellarMap] Data fetch error:', fetchError);
+          throw fetchError;
+        }
+
+        if (DEBUG) {
+          debugHelpers.checkNodeData(data);
+          debugHelpers.checkXPVisibility(visibilityData.userXP, currentCore);
+        }
 
         setHierarchyData(data || {});
       } catch (err) {
         console.error('Error loading stellar map data:', err);
-        setError(err.message);
+        setError(err.message || 'Failed to load stellar map data');
       } finally {
         setLoading(false);
       }
     };
 
-    loadData();
+    if (sceneManagerRef.current) {
+      loadData();
+    }
   }, [currentCore, visibilityData.userXP]);
 
-  // Render nodes when data or context changes
+  // Render nodes when data changes
   useEffect(() => {
-    if (!currentContext || !hierarchyData || Object.keys(hierarchyData).length === 0) return;
+    const renderer = nodeRendererRef.current[currentCore];
+    const interactionManager = interactionManagerRef.current[currentCore];
+    const sceneContext = sceneManagerRef.current?.getScene(currentCore);
 
-    const scene = currentContext.scene;
-    if (!scene) return;
-
-    // Clear existing nodes, lines, and halos
-    const objectsToRemove = [];
-    scene.traverse((object) => {
-      if (
-        object.userData?._is3DSubnode ||
-        object.userData?._is3DLine ||
-        object.userData?._is3DHalo ||
-        object.userData?._is3DFamily ||
-        object.userData?._is3DConstellation
-      ) {
-        objectsToRemove.push(object);
-      }
-    });
-    objectsToRemove.forEach(obj => scene.remove(obj));
-
-    const centers = {};
-    const meshes = [];
-
-    // Render families and constellations
-    Object.entries(hierarchyData).forEach(([familyName, constellations]) => {
-      // Calculate family center and radius
-      const familyNodes = Object.values(constellations).flat();
-      const familyTotalNodes = familyNodes.length;
-      const familyRadius = calculateFamilyRadius(familyTotalNodes);
-      
-      // Get family index for positioning
-      const familyList = Object.keys(hierarchyData);
-      const familyIndex = familyList.indexOf(familyName);
-      const maxFamilyRadius = Math.max(...familyList.map(f => 
-        calculateFamilyRadius(Object.values(hierarchyData[f]).flat().length)
-      ));
-      const familyPlacementRadius = calculateFamilyPlacementRadius(maxFamilyRadius, familyList.length);
-      const familyDir = getAngularDirection(familyIndex, familyList.length);
-      const familyCenter = familyDir.clone().multiplyScalar(familyPlacementRadius);
-      
-      const familyColor = FAMILY_HALO_COLORS[familyName] || 0x333333;
-
-      // Create family sphere
-      createFamilySphere(familyName, familyCenter, familyRadius, familyColor, scene);
-
-      // Render constellations within family
-      const constellationList = Object.entries(constellations);
-      constellationList.forEach(([constellationName, nodes], constIndex) => {
-        if (!nodes || nodes.length === 0) return;
-
-        // Calculate constellation position
-        const constRadius = calculateConstellationRadius(nodes.length);
-        const safeDist = calculateSafeConstellationDistance(familyRadius, constRadius);
-        const constDir = getAngularDirection(constIndex, constellationList.length);
-        const constPos = familyCenter.clone().add(constDir.clone().multiplyScalar(safeDist));
-        const constColor = CONSTELLATION_HALO_COLORS[constellationName] || 0x666666;
-
-        centers[constellationName] = constPos.clone();
-        constellationCentersRef.current[constellationName] = constPos.clone();
-
-        // Create constellation sphere
-        createConstellationSphere(
-          constellationName,
-          familyName,
-          constPos,
-          constRadius,
-          constColor,
-          scene
-        );
-
-        // Render subnodes
-        const nodePositions = [];
-        nodes.forEach((node, index) => {
-          const nodeRadius = PLANET_RADII[node.difficulty] || 0.3;
-          const nodePos = positionSubnodeMetatron(
-            index,
-            nodes.length,
-            constPos,
-            constRadius,
-            nodeRadius
-          );
-
-          nodePositions.push(nodePos);
-          const { coreMesh } = createSubnodeSphere(
-            {
-              ...node,
-              constellationAlias: constellationName,
-              familyAlias: familyName
-            },
-            nodePos,
-            scene
-          );
-          meshes.push(coreMesh);
-        });
-
-        // Create connection lines
-        // Gold line from family center to constellation's easiest node
-        if (nodes.length > 0) {
-          const easiestNode = nodes.reduce((min, node) =>
-            node.difficulty < min.difficulty ? node : min
-          );
-          const easiestIndex = nodes.findIndex(n => n.id === easiestNode.id);
-          if (easiestIndex >= 0 && nodePositions[easiestIndex]) {
-            createFamilyConstellationLine(
-              familyCenter,
-              nodePositions[easiestIndex],
-              scene
-            );
-          }
-        }
-
-        // White lines between nodes in constellation
-        if (showWhiteLines && nodePositions.length > 1) {
-          createIntraConstellationLines(nodePositions, scene);
-        }
-      });
-    });
-
-    setConstellationCenters(centers);
-    setNodeMeshes(meshes);
-
-    // Reset camera
-    if (currentContext.controls) {
-      currentContext.controls.target.set(0, 0, 0);
-      const dir = new THREE.Vector3()
-        .subVectors(currentContext.camera.position, new THREE.Vector3(0, 0, 0))
-        .normalize();
-      currentContext.camera.position.copy(dir.multiplyScalar(15));
-      currentContext.controls.update();
+    if (!renderer || !interactionManager || !sceneContext || !hierarchyData || Object.keys(hierarchyData).length === 0) {
+      return;
     }
-  }, [currentContext, hierarchyData, showWhiteLines]);
 
-  // Prepare constellation options for dropdown
-  const constellationOptions = useMemo(() => {
+    // Render nodes
+    if (DEBUG) {
+      console.log(`[StellarMap] Rendering nodes for ${currentCore}...`);
+    }
+
+    const { nodeMeshes, constellationCenters } = renderer.render(hierarchyData, showWhiteLines);
+    nodeMeshesRef.current = nodeMeshes;
+    constellationCentersRef.current = constellationCenters;
+
+    if (DEBUG) {
+      console.log(`[StellarMap] Rendered ${nodeMeshes.length} node meshes`);
+      const sceneContext = sceneManagerRef.current?.getScene(currentCore);
+      if (sceneContext) {
+        debugHelpers.countSceneObjects(sceneContext.scene);
+      }
+    }
+
+    // Update interaction manager with new meshes
+    interactionManager.updateNodeMeshes(nodeMeshes);
+
+    // Reset camera position
+    if (sceneContext.controls) {
+      sceneContext.controls.target.set(0, 0, 0);
+      const dir = new THREE.Vector3()
+        .subVectors(sceneContext.camera.position, new THREE.Vector3(0, 0, 0))
+        .normalize();
+      sceneContext.camera.position.copy(dir.multiplyScalar(15));
+      sceneContext.controls.update();
+    }
+  }, [hierarchyData, currentCore, showWhiteLines]);
+
+  // Update white lines visibility
+  useEffect(() => {
+    const renderer = nodeRendererRef.current[currentCore];
+    if (renderer) {
+      renderer.toggleWhiteLines(showWhiteLines);
+    }
+  }, [showWhiteLines, currentCore]);
+
+  // Prepare constellation and subnode options for controls
+  const constellationOptions = React.useMemo(() => {
     const options = [];
     Object.entries(hierarchyData).forEach(([familyName, constellations]) => {
       Object.keys(constellations).forEach(constellationName => {
@@ -301,8 +233,7 @@ const StellarMap = () => {
     return options;
   }, [hierarchyData]);
 
-  // Prepare subnode options for dropdown
-  const subnodeOptions = useMemo(() => {
+  const subnodeOptions = React.useMemo(() => {
     const nodes = [];
     Object.values(hierarchyData).forEach(constellations => {
       Object.values(constellations).forEach(nodeArray => {
@@ -320,14 +251,26 @@ const StellarMap = () => {
 
   // Handle constellation selection
   const handleConstellationSelect = (familyAlias, constellationAlias) => {
-    focusConstellation(constellationAlias, constellationCentersRef.current);
+    const interactionManager = interactionManagerRef.current[currentCore];
+    const sceneContext = sceneManagerRef.current?.getScene(currentCore);
+
+    if (interactionManager && sceneContext?.controls) {
+      interactionManager.focusConstellation(
+        constellationAlias,
+        constellationCentersRef.current,
+        sceneContext.controls
+      );
+    }
   };
 
   // Handle subnode selection
   const handleSubnodeSelect = (nodeId) => {
-    const nodeMesh = nodeMeshes.find(m => m.userData?.id === nodeId);
-    if (nodeMesh) {
-      focusSubnode(nodeMesh.position);
+    const nodeMesh = nodeMeshesRef.current.find(m => m.userData?.id === nodeId);
+    const interactionManager = interactionManagerRef.current[currentCore];
+    const sceneContext = sceneManagerRef.current?.getScene(currentCore);
+
+    if (nodeMesh && interactionManager && sceneContext?.controls) {
+      interactionManager.focusSubnode(nodeMesh.position, sceneContext.controls);
     }
   };
 
@@ -338,7 +281,7 @@ const StellarMap = () => {
 
   if (loading) {
     return (
-      <div className="w-full h-screen flex items-center justify-center bg-background">
+      <div className="w-full h-screen flex items-center justify-center bg-gradient-radial from-[#0a0a1e] to-black">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading Stellar Map...</p>
@@ -349,12 +292,12 @@ const StellarMap = () => {
 
   if (error) {
     return (
-      <div className="w-full h-screen flex items-center justify-center bg-background p-4">
-        <div className="text-center">
+      <div className="w-full h-screen flex items-center justify-center bg-gradient-radial from-[#0a0a1e] to-black p-4">
+        <div className="text-center max-w-md">
           <p className="text-destructive mb-4">Error loading stellar map: {error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-md"
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
           >
             Reload Page
           </button>
@@ -364,7 +307,7 @@ const StellarMap = () => {
   }
 
   return (
-    <div 
+    <div
       className="relative w-full h-screen overflow-hidden bg-gradient-radial from-[#0a0a1e] to-black"
       role="main"
       aria-label="Stellar Map - 3D visualization of learning content"
@@ -381,8 +324,9 @@ const StellarMap = () => {
         aria-hidden="true"
       />
 
-      {/* Canvas Containers - Always rendered with dimensions, visibility controlled by z-index */}
+      {/* Canvas Containers - Always rendered with dimensions */}
       <div
+        ref={el => containerRefs.current.ignition = el}
         id="core-ignition3D"
         className="absolute inset-0"
         style={{
@@ -395,6 +339,7 @@ const StellarMap = () => {
         aria-hidden={currentCore !== 'Ignition'}
       />
       <div
+        ref={el => containerRefs.current.insight = el}
         id="core-insight3D"
         className="absolute inset-0"
         style={{
@@ -407,6 +352,7 @@ const StellarMap = () => {
         aria-hidden={currentCore !== 'Insight'}
       />
       <div
+        ref={el => containerRefs.current.transformation = el}
         id="core-transformation3D"
         className="absolute inset-0"
         style={{
@@ -433,10 +379,22 @@ const StellarMap = () => {
 
       {/* Tooltip */}
       <NodeTooltip
-        node={hoveredNode?.userData}
-        position={tooltipPosition}
-        visible={tooltipPosition.visible}
+        node={tooltipData.node}
+        position={tooltipData.position}
+        visible={tooltipData.visible}
       />
+
+      {/* Debug Overlay */}
+      {DEBUG && (
+        <StellarMapDebugOverlay
+          currentCore={currentCore}
+          userXP={visibilityData.userXP}
+          visibilityGroup={visibilityData.getGroup(currentCore)}
+          nodeCount={nodeMeshesRef.current.length}
+          familyCount={Object.keys(hierarchyData).length}
+          constellationCount={Object.values(hierarchyData).reduce((sum, c) => sum + Object.keys(c).length, 0)}
+        />
+      )}
     </div>
   );
 };

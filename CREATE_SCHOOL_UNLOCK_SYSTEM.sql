@@ -25,15 +25,30 @@ BEGIN
     END IF;
 END $$;
 
--- Step 3: Clean up duplicate schools first - delete all lowercase/variant entries
--- Keep only the capitalized versions
+-- Step 3: SAFE cleanup of duplicate schools
+-- WARNING: This will delete lowercase/variant entries. Review before executing.
+
+-- Step 3a: Create backup table before any deletions
+CREATE TABLE IF NOT EXISTS schools_backup AS 
+SELECT * FROM schools WHERE 1=0; -- Empty structure
+
+INSERT INTO schools_backup 
+SELECT * FROM schools;
+
+-- Step 3b: Show what will be deleted (VERIFICATION QUERY - RUN THIS FIRST)
+-- Uncomment to preview deletions:
+-- SELECT * FROM schools 
+-- WHERE LOWER(name) IN ('ignition', 'insight', 'transformation', 'god_mode', 'godmode')
+--    AND name NOT IN ('Ignition', 'Insight', 'Transformation', 'God Mode');
+
+-- Step 3c: Delete only known lowercase/variant duplicates
+-- This ONLY deletes specific known variants, not all non-matching schools
 DELETE FROM schools 
 WHERE LOWER(name) IN ('ignition', 'insight', 'transformation', 'god_mode', 'godmode')
    AND name NOT IN ('Ignition', 'Insight', 'Transformation', 'God Mode');
 
--- Also delete any entries that don't match the exact capitalized names we want
-DELETE FROM schools 
-WHERE name NOT IN ('Ignition', 'Insight', 'Transformation', 'God Mode');
+-- Step 3d: Verify remaining schools (should show only the 4 expected schools)
+-- SELECT name, COUNT(*) FROM schools GROUP BY name;
 
 -- Step 4: Ensure name column has unique constraint
 DO $$
