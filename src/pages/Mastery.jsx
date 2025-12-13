@@ -67,10 +67,10 @@ const Mastery = () => {
         <div className="space-y-8 animate-fade-in">
           {/* Hero Section */}
           <div className="glass-panel-floating p-8 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-[#B4833D]/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
+            <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 10%, transparent)' }}></div>
 
             <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#B4833D] to-[#81754B] p-1 shadow-xl">
+              <div className="w-24 h-24 rounded-full p-1 shadow-xl" style={{ background: 'var(--gradient-primary)' }}>
                 <div className="w-full h-full rounded-full bg-black/20 backdrop-blur-sm flex items-center justify-center border-2 border-white/20">
                   <Trophy size={40} className="text-white" />
                 </div>
@@ -87,7 +87,8 @@ const Mastery = () => {
                 {/* XP Progress Bar */}
                 <div className="w-full max-w-md bg-gray-200 dark:bg-gray-700 h-3 rounded-full overflow-hidden">
                   <div
-                    className="bg-[#B4833D] h-full rounded-full"
+                    className="h-full rounded-full"
+                    style={{ backgroundColor: 'var(--color-primary)' }}
                     style={{ width: `${Math.min(((profile?.current_xp || 0) / ((profile?.level || 1) * 1000)) * 100, 100)}%` }}
                   ></div>
                 </div>
@@ -126,8 +127,8 @@ const Mastery = () => {
               onClick={() => navigate('/mastery/achievements')}
               className="glass-card-premium p-6 text-left hover:scale-[1.02] transition-transform group"
             >
-              <div className="p-3 bg-[#B4833D]/10 rounded-xl w-fit mb-4 group-hover:bg-[#B4833D]/20 transition-colors">
-                <Trophy className="text-[#B4833D]" size={24} />
+              <div className="p-3 rounded-xl w-fit mb-4 transition-colors" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 10%, transparent)' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--color-primary) 20%, transparent)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--color-primary) 10%, transparent)'}>
+                <Trophy size={24} style={{ color: 'var(--color-primary)' }} />
               </div>
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">Achievements</h3>
               <p className="text-sm text-gray-500 dark:text-gray-400">View your awards</p>
@@ -163,9 +164,13 @@ const Mastery = () => {
                 key={tab.id}
                 onClick={() => handleTabClick(tab.path)}
                 className={`flex items-center justify-center space-x-2 px-4 py-3 rounded-xl font-semibold transition-all min-h-[48px] ${isActive
-                    ? 'bg-indigo-600 text-white shadow-lg'
+                    ? 'text-white shadow-lg'
                     : 'text-slate-400 hover:text-white'
                   }`}
+                style={isActive ? {
+                  background: 'var(--gradient-primary)',
+                  backgroundColor: 'var(--color-primary)'
+                } : {}}
               >
                 <Icon size={20} />
                 <span className="text-sm whitespace-nowrap">{tab.label}</span>

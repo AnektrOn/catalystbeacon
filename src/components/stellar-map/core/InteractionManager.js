@@ -17,6 +17,9 @@ export class InteractionManager {
     this.onNodeHover = null;
     this.onNodeClick = null;
     this.onNodeFocus = null;
+    this.hoverDebounceTimer = null;
+    this.cachedSubnodeMeshes = null;
+    this.lastMeshUpdateTime = 0;
   }
 
   /**
@@ -24,6 +27,25 @@ export class InteractionManager {
    */
   updateNodeMeshes(nodeMeshes) {
     this.nodeMeshes = nodeMeshes || [];
+    // Invalidate cache when meshes update
+    this.cachedSubnodeMeshes = null;
+    this.lastMeshUpdateTime = Date.now();
+  }
+
+  /**
+   * Get filtered subnode meshes with caching
+   */
+  getSubnodeMeshes() {
+    const now = Date.now();
+    // Cache for 100ms to avoid repeated filtering
+    if (this.cachedSubnodeMeshes && (now - this.lastMeshUpdateTime) < 100) {
+      return this.cachedSubnodeMeshes;
+    }
+
+    this.cachedSubnodeMeshes = this.nodeMeshes.filter(
+      mesh => mesh.userData?._is3DSubnode && mesh.geometry?.type === 'SphereGeometry'
+    );
+    return this.cachedSubnodeMeshes;
   }
 
   /**
@@ -114,11 +136,10 @@ export class InteractionManager {
 
     this.raycaster.setFromCamera(this.mouse, this.camera);
 
-    const subnodeMeshes = this.nodeMeshes.filter(
-      mesh => mesh.userData?._is3DSubnode && mesh.geometry?.type === 'SphereGeometry'
-    );
+    // Use cached subnode meshes
+    const subnodeMeshes = this.getSubnodeMeshes();
 
-    const intersects = this.raycaster.intersectObjects(subnodeMeshes, true);
+    const intersects = this.raycaster.intersectObjects(subnodeMeshes, false); // false = don't check children
     const hitInfo = intersects.find(h =>
       h.object.userData?._is3DSubnode && h.object.userData?.title
     );
@@ -131,10 +152,8 @@ export class InteractionManager {
         this.onNodeClick(nodeData);
       }
 
-      // Navigate to link if available
-      if (nodeData.link) {
-        window.open(nodeData.link, '_blank');
-      }
+      // Note: Link navigation is now handled in StellarMap component
+      // (YouTube modal or new tab based on URL type)
     } else {
       this.selectedNode = null;
     }

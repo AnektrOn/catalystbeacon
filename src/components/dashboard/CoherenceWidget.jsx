@@ -5,15 +5,23 @@ const CoherenceWidget = memo(({ energy = 75, mind = 85, heart = 90 }) => {
     const overall = Math.round((energy + mind + heart) / 3);
 
     const getColor = (value) => {
-        if (value >= 80) return '#6BCF7F';
-        if (value >= 60) return '#FFB75B';
-        return '#FF8A5B';
+        const root = document.documentElement;
+        const computedStyle = window.getComputedStyle(root);
+        if (value >= 80) return computedStyle.getPropertyValue('--color-success').trim() || '#6BCF7F';
+        if (value >= 60) return computedStyle.getPropertyValue('--color-warning').trim() || '#FFB75B';
+        return computedStyle.getPropertyValue('--color-primary').trim() || '#FF8A5B';
     };
 
     return (
         <div className="glass-card-premium p-6 hover:scale-[1.02] transition-transform duration-300">
             <div className="flex items-start justify-between mb-4">
-                <div className="p-3 rounded-xl bg-purple-400/10 text-purple-500">
+                <div 
+                    className="p-3 rounded-xl"
+                    style={{
+                        backgroundColor: 'color-mix(in srgb, var(--color-secondary) 10%, transparent)',
+                        color: 'var(--color-secondary)'
+                    }}
+                >
                     <Brain size={20} />
                 </div>
                 <div className="text-xs font-medium text-gray-400 bg-white/5 px-2 py-1 rounded-lg border border-white/10 uppercase tracking-wider">

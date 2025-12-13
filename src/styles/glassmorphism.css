@@ -79,7 +79,7 @@
   width: var(--sidebar-width-collapsed);
   margin: 16px;
   transition: width var(--sidebar-transition);
-  background: linear-gradient(180deg, rgba(180, 131, 61, 0.1) 0%, rgba(63, 63, 44, 0.1) 100%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-primary, #B4833D) 10%, transparent) 0%, color-mix(in srgb, var(--color-earth-green, #3F3F2C) 10%, transparent) 100%);
   overflow: hidden;
 }
 
@@ -104,9 +104,9 @@
   width: var(--sidebar-width-collapsed);
   margin: 16px;
   transition: width var(--sidebar-transition);
-  background: linear-gradient(180deg, rgba(180, 131, 61, 0.1) 0%, rgba(63, 63, 44, 0.1) 100%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-primary, #B4833D) 10%, transparent) 0%, color-mix(in srgb, var(--color-earth-green, #3F3F2C) 10%, transparent) 100%);
   overflow: hidden;
-  border: 1px solid rgba(180, 131, 61, 0.2);
+  border: 1px solid color-mix(in srgb, var(--color-primary, #B4833D) 20%, transparent);
 }
 
 .glass-sidebar-panel-v2.expanded {
@@ -128,12 +128,12 @@
   @apply p-2 rounded-lg;
   @apply cursor-pointer;
   @apply transition-all duration-200;
-  background: rgba(180, 131, 61, 0.15);
-  border: 1px solid rgba(180, 131, 61, 0.3);
+  background: color-mix(in srgb, var(--color-primary, #B4833D) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary, #B4833D) 30%, transparent);
 }
 
 .glass-toggle-btn:hover {
-  background: rgba(180, 131, 61, 0.25);
+  background: color-mix(in srgb, var(--color-primary, #B4833D) 25%, transparent);
   transform: scale(1.05);
 }
 
@@ -149,14 +149,14 @@
 }
 
 .glass-nav-btn:hover {
-  background: rgba(180, 131, 61, 0.1);
+  background: color-mix(in srgb, var(--color-primary, #B4833D) 10%, transparent);
   transform: translateX(2px);
 }
 
 .glass-nav-btn-active {
   background: var(--gradient-primary);
   color: white;
-  box-shadow: 0 4px 12px rgba(180, 131, 61, 0.4);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary, #B4833D) 40%, transparent);
   transform: translateX(4px);
   @apply p-3 rounded-xl;
   @apply flex items-center gap-3;
@@ -193,7 +193,7 @@
 }
 
 .glass-theme-btn-active {
-  background: rgba(180, 131, 61, 0.3);
+  background: color-mix(in srgb, var(--color-primary, #B4833D) 30%, transparent);
   color: var(--color-dark-goldenrod);
 }
 
@@ -204,12 +204,12 @@
   @apply transition-all duration-200;
   @apply border-2;
   border-color: var(--color-dark-goldenrod);
-  box-shadow: 0 2px 8px rgba(180, 131, 61, 0.3);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-primary, #B4833D) 30%, transparent);
 }
 
 .glass-user-avatar:hover {
   transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(180, 131, 61, 0.5);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary, #B4833D) 50%, transparent);
 }
 
 .glass-user-dropdown {
@@ -220,14 +220,14 @@
   @apply min-w-[220px];
   @apply shadow-2xl;
   @apply z-50;
-  background: rgba(247, 241, 225, 0.8);
+  background: color-mix(in srgb, var(--color-old-lace, #F7F1E1) 80%, transparent);
   backdrop-filter: blur(24px);
   border: 1px solid rgba(255, 255, 255, 0.4);
   animation: dropdownSlide 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dark .glass-user-dropdown {
-  background: rgba(63, 63, 44, 0.8);
+  background: color-mix(in srgb, var(--color-earth-green, #3F3F2C) 80%, transparent);
 }
 
 @keyframes dropdownSlide {
@@ -254,7 +254,7 @@
 }
 
 .glass-dropdown-item:hover {
-  background: rgba(180, 131, 61, 0.1);
+  background: color-mix(in srgb, var(--color-primary, #B4833D) 10%, transparent);
   padding-left: 20px;
 }
 
@@ -265,13 +265,13 @@
 .glass-dropdown-divider {
   @apply my-2 mx-4;
   @apply border-t;
-  border-color: rgba(180, 131, 61, 0.15);
+  border-color: color-mix(in srgb, var(--color-primary, #B4833D) 15%, transparent);
 }
 
 .glass-dropdown-header {
   @apply px-4 py-4;
   @apply border-b;
-  border-color: rgba(180, 131, 61, 0.15);
+  border-color: color-mix(in srgb, var(--color-primary, #B4833D) 15%, transparent);
 }
 
 /* Notification Badge */
@@ -443,7 +443,7 @@
 .glass-nav-btn:focus,
 .glass-theme-btn:focus {
   @apply outline-none;
-  @apply ring-2 ring-[#B4833D]/50;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 50%, transparent);
   @apply ring-offset-2 ring-offset-transparent;
 }
 
@@ -485,7 +485,7 @@
 
 .glass-tab-btn-active {
   @apply bg-white/30 dark:bg-white/20;
-  @apply text-[#B4833D] dark:text-[#E3D8C1];
+  color: var(--color-primary);
   @apply shadow-lg;
 }
 
@@ -516,8 +516,8 @@
 }
 
 .glass-calendar-day-today {
-  @apply bg-[#B4833D]/20;
-  @apply border-[#B4833D]/30;
+  background-color: color-mix(in srgb, var(--color-primary) 20%, transparent);
+  border-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
 }
 
 /* Event Items */
@@ -568,16 +568,17 @@
 .glass-difficulty-badge {
   @apply px-2 py-1 rounded-full;
   @apply text-xs font-medium;
-  @apply bg-[#B4833D]/20 text-[#B4833D] dark:text-[#E3D8C1];
-  @apply border border-[#B4833D]/30;
+  background-color: color-mix(in srgb, var(--color-primary) 20%, transparent);
+  color: var(--color-primary);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
 }
 
 /* Buttons */
 .glass-primary-btn {
   @apply px-4 py-2 rounded-lg;
-  @apply bg-gradient-to-r from-[#B4833D] to-[#81754B];
+  background: var(--gradient-primary);
   @apply text-white font-medium;
-  @apply hover:from-[#B4833D]/90 hover:to-[#81754B]/90;
+  /* Hover state handled by component */
   @apply transition-all duration-200;
   @apply shadow-lg;
   @apply flex items-center;
@@ -611,7 +612,7 @@
   @apply border border-white/30;
   @apply text-gray-800 dark:text-gray-200;
   @apply placeholder-gray-500 dark:placeholder-gray-400;
-  @apply focus:outline-none focus:ring-2 focus:ring-[#B4833D]/50;
+  outline: none;
   @apply transition-all duration-200;
 }
 
@@ -645,6 +646,23 @@
   margin: 16px;
 }
 
+/* Premium Card - Enhanced glass card for widgets */
+.glass-card-premium {
+  @apply glass-effect;
+  @apply rounded-xl;
+  @apply border border-white/20;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+.dark .glass-card-premium {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
 /* Premium Icon Button */
 .glass-icon-premium {
   @apply p-2 rounded-xl;
@@ -659,7 +677,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at center, rgba(180, 131, 61, 0.2) 0%, transparent 70%);
+  background: radial-gradient(circle at center, color-mix(in srgb, var(--color-primary, #B4833D) 20%, transparent) 0%, transparent 70%);
   opacity: 0;
   transition: opacity 0.3s ease;
 }

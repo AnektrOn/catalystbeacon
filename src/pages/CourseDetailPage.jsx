@@ -141,20 +141,21 @@ const CourseDetailPage = () => {
   };
 
   const getSchoolColor = (school) => {
+    // Return style object instead of class string for dynamic colors
     const colors = {
-      'Ignition': 'bg-[#B4833D]/20 text-[#B4833D] border-[#B4833D]/30',
-      'Insight': 'bg-[#66371B]/20 text-[#66371B] dark:text-[#E3D8C1] border-[#66371B]/30',
-      'Transformation': 'bg-[#81754B]/20 text-[#81754B] border-[#81754B]/30',
-      'God Mode': 'bg-[#3F3F2C]/20 text-[#3F3F2C] dark:text-[#F7F1E1] border-[#3F3F2C]/30'
+      'Ignition': { backgroundColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', color: 'var(--color-primary)', borderColor: 'color-mix(in srgb, var(--color-primary) 30%, transparent)' },
+      'Insight': { backgroundColor: 'color-mix(in srgb, var(--color-kobicha) 20%, transparent)', color: 'var(--color-kobicha)', borderColor: 'color-mix(in srgb, var(--color-kobicha) 30%, transparent)' },
+      'Transformation': { backgroundColor: 'color-mix(in srgb, var(--color-secondary) 20%, transparent)', color: 'var(--color-secondary)', borderColor: 'color-mix(in srgb, var(--color-secondary) 30%, transparent)' },
+      'God Mode': { backgroundColor: 'color-mix(in srgb, var(--color-earth-green) 20%, transparent)', color: 'var(--color-earth-green)', borderColor: 'color-mix(in srgb, var(--color-earth-green) 30%, transparent)' }
     };
-    return colors[school] || 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+    return colors[school] || { backgroundColor: 'rgba(107, 114, 128, 0.2)', color: '#9CA3AF', borderColor: 'rgba(107, 114, 128, 0.3)' };
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#B4833D] mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: 'var(--color-primary)' }}></div>
           <p className="text-gray-400 font-medium">Loading course...</p>
         </div>
       </div>
@@ -168,7 +169,10 @@ const CourseDetailPage = () => {
           <p className="text-red-400 mb-6 text-lg">{error || 'Course not found'}</p>
           <button
             onClick={() => navigate('/courses')}
-            className="px-6 py-3 bg-[#B4833D] text-white rounded-xl hover:bg-[#B4833D]/80 transition-all font-medium"
+            className="px-6 py-3 text-white rounded-xl transition-all font-medium"
+            style={{ backgroundColor: 'var(--color-primary)' }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = 'color-mix(in srgb, var(--color-primary) 80%, transparent)'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = 'var(--color-primary)'}
           >
             Back to Catalog
           </button>
@@ -186,9 +190,11 @@ const CourseDetailPage = () => {
       {/* Back Button */}
       <button
         onClick={() => navigate('/courses')}
-        className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-[#B4833D] dark:hover:text-white transition-colors group"
+        className="flex items-center gap-2 text-gray-500 dark:text-gray-400 dark:hover:text-white transition-colors group"
+        onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
+        onMouseLeave={(e) => e.currentTarget.style.color = ''}
       >
-        <div className="p-2 rounded-full bg-white/5 dark:bg-black/20 group-hover:bg-[#B4833D]/10 transition-colors">
+        <div className="p-2 rounded-full bg-white/5 dark:bg-black/20 transition-colors" onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--color-primary) 10%, transparent)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = ''}>
           <ArrowLeft size={20} />
         </div>
         <span className="font-medium">Back to Catalog</span>
@@ -197,7 +203,7 @@ const CourseDetailPage = () => {
       {/* Course Header Card */}
       <div className="glass-card-premium relative overflow-hidden">
         {/* Background Gradient Decoration */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-[#B4833D]/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
+        <div className="absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 10%, transparent)' }}></div>
 
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 relative z-10">
           <div className="flex-1 space-y-4">
@@ -218,7 +224,7 @@ const CourseDetailPage = () => {
 
             {course.topic && (
               <p className="text-xl text-gray-600 dark:text-gray-300 font-light">
-                Topic: <span className="font-medium text-[#B4833D]">{course.topic}</span>
+                Topic: <span className="font-medium" style={{ color: 'var(--color-primary)' }}>{course.topic}</span>
               </p>
             )}
           </div>
@@ -235,7 +241,7 @@ const CourseDetailPage = () => {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
                   <span>Required XP</span>
-                  <span className="font-bold text-[#B4833D]">{unlockStatus?.requiredXp || 0} XP</span>
+                  <span className="font-bold" style={{ color: 'var(--color-primary)' }}>{unlockStatus?.requiredXp || 0} XP</span>
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                   <div
@@ -250,12 +256,12 @@ const CourseDetailPage = () => {
               </div>
             </div>
           ) : (
-            <div className="glass-effect rounded-2xl p-6 border border-[#B4833D]/20 bg-[#B4833D]/5 min-w-[280px]">
+            <div className="glass-effect rounded-2xl p-6 border min-w-[280px]" style={{ borderColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', backgroundColor: 'color-mix(in srgb, var(--color-primary) 5%, transparent)' }}>
               <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-[#B4833D]/20 rounded-lg">
-                  <Award size={24} className="text-[#B4833D]" />
+                <div className="p-2 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)' }}>
+                  <Award size={24} style={{ color: 'var(--color-primary)' }} />
                 </div>
-                <span className="text-[#B4833D] font-bold text-lg">Course Unlocked</span>
+                <span className="font-bold text-lg" style={{ color: 'var(--color-primary)' }}>Course Unlocked</span>
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-300">
                 Ready to master this skill?
@@ -267,22 +273,22 @@ const CourseDetailPage = () => {
         {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
           <div className="glass-effect rounded-xl p-4 border border-white/10 bg-white/5 flex flex-col items-center justify-center text-center hover:bg-white/10 transition-colors">
-            <BookOpen size={24} className="text-[#B4833D] mb-2" />
+            <BookOpen size={24} className="mb-2" style={{ color: 'var(--color-primary)' }} />
             <span className="text-2xl font-bold text-gray-900 dark:text-white">{courseStructure?.chapters?.length || 0}</span>
             <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Chapters</span>
           </div>
           <div className="glass-effect rounded-xl p-4 border border-white/10 bg-white/5 flex flex-col items-center justify-center text-center hover:bg-white/10 transition-colors">
-            <Play size={24} className="text-[#B4833D] mb-2" />
+            <Play size={24} className="mb-2" style={{ color: 'var(--color-primary)' }} />
             <span className="text-2xl font-bold text-gray-900 dark:text-white">{totalLessons}</span>
             <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Lessons</span>
           </div>
           <div className="glass-effect rounded-xl p-4 border border-white/10 bg-white/5 flex flex-col items-center justify-center text-center hover:bg-white/10 transition-colors">
-            <Clock size={24} className="text-[#B4833D] mb-2" />
+            <Clock size={24} className="mb-2" style={{ color: 'var(--color-primary)' }} />
             <span className="text-2xl font-bold text-gray-900 dark:text-white">{course.duration_hours || 0}h</span>
             <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Duration</span>
           </div>
           <div className="glass-effect rounded-xl p-4 border border-white/10 bg-white/5 flex flex-col items-center justify-center text-center hover:bg-white/10 transition-colors">
-            <TrendingUp size={24} className="text-[#B4833D] mb-2" />
+            <TrendingUp size={24} className="mb-2" style={{ color: 'var(--color-primary)' }} />
             <span className="text-2xl font-bold text-gray-900 dark:text-white">{course.xp_threshold || 100}</span>
             <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total XP</span>
           </div>
@@ -293,11 +299,12 @@ const CourseDetailPage = () => {
           <div className="mt-8 pt-6 border-t border-white/10">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Course Progress</span>
-              <span className="text-sm font-bold text-[#B4833D]">{progressPercentage}%</span>
+              <span className="text-sm font-bold" style={{ color: 'var(--color-primary)' }}>{progressPercentage}%</span>
             </div>
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
               <div
-                className="bg-gradient-to-r from-[#B4833D] to-[#81754B] h-full rounded-full transition-all duration-1000 ease-out relative"
+                className="h-full rounded-full transition-all duration-1000 ease-out relative"
+                style={{ background: 'var(--gradient-primary)' }}
                 style={{ width: `${progressPercentage}%` }}
               >
                 <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
@@ -312,9 +319,11 @@ const CourseDetailPage = () => {
             onClick={handleStartCourse}
             disabled={!isUnlocked}
             className={`w-full lg:w-auto px-10 py-4 rounded-xl font-bold text-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3 shadow-xl ${isUnlocked
-              ? 'bg-gradient-to-r from-[#B4833D] to-[#81754B] hover:from-[#B4833D] hover:to-[#66371B] text-white'
+              ? 'text-white'
               : 'bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
               }`}
+            style={isUnlocked ? { background: 'var(--gradient-primary)' } : {}}
+            onMouseEnter={isUnlocked ? (e) => e.currentTarget.style.background = 'var(--gradient-primary)' : undefined}
           >
             {userProgress?.status === 'completed' ? (
               <>
@@ -350,7 +359,7 @@ const CourseDetailPage = () => {
               <div key={chapter.id} className="glass-panel-floating !m-0 overflow-hidden group">
                 <div className="p-5 border-b border-white/5 bg-white/5 flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-[#B4833D]/10 flex items-center justify-center text-[#B4833D] font-bold border border-[#B4833D]/20">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 10%, transparent)', color: 'var(--color-primary)', borderColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', borderWidth: '1px', borderStyle: 'solid' }}>
                       {chapter.chapter_number}
                     </div>
                     <div>
@@ -376,9 +385,11 @@ const CourseDetailPage = () => {
                           onClick={() => handleLessonClick(lesson.chapter_number, lesson.lesson_number)}
                           disabled={!isUnlocked}
                           className={`w-full flex items-center justify-between p-4 transition-all ${isUnlocked
-                            ? 'hover:bg-[#B4833D]/5 cursor-pointer'
+                            ? 'cursor-pointer'
                             : 'opacity-60 cursor-not-allowed'
                             }`}
+                          onMouseEnter={isUnlocked ? (e) => e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--color-primary) 5%, transparent)' : undefined}
+                          onMouseLeave={isUnlocked ? (e) => e.currentTarget.style.backgroundColor = '' : undefined}
                         >
                           <div className="flex items-center gap-4">
                             {isCompleted ? (
@@ -399,7 +410,7 @@ const CourseDetailPage = () => {
 
                           <div className="flex items-center gap-3">
                             {isUnlocked ? (
-                              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-gray-400 group-hover:text-[#B4833D] group-hover:bg-[#B4833D]/10 transition-all">
+                              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-gray-400 transition-all" onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-primary)'; e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--color-primary) 10%, transparent)'; }} onMouseLeave={(e) => { e.currentTarget.style.color = ''; e.currentTarget.style.backgroundColor = ''; }}>
                                 <Play size={14} fill="currentColor" />
                               </div>
                             ) : (

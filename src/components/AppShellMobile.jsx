@@ -3,6 +3,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabaseClient';
 import NotificationBadge from './NotificationBadge';
+import ColorPaletteDropdown from './common/ColorPaletteDropdown';
 import {
   Grid3X3,
   User,
@@ -19,7 +20,8 @@ import {
   Bell,
   ArrowLeft,
   ArrowRight,
-  Type
+  Type,
+  Sparkles
 } from 'lucide-react';
 
 const AppShellMobile = () => {
@@ -78,6 +80,13 @@ const AppShellMobile = () => {
     }
   }, [user]);
 
+  // Debug: Log profile background image changes
+  useEffect(() => {
+    if (profile?.background_image) {
+      console.log('🎨 AppShellMobile: Background image updated:', profile.background_image);
+    }
+  }, [profile?.background_image]);
+
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
   };
@@ -86,6 +95,7 @@ const AppShellMobile = () => {
     { icon: Grid3X3, label: 'Dashboard', path: '/dashboard' },
     { icon: Target, label: 'Mastery', path: '/mastery' },
     { icon: BookOpen, label: 'Courses', path: '/courses' },
+    { icon: Sparkles, label: 'Stellar Map', path: '/stellar-map' },
     { icon: User, label: 'Profile', path: '/profile' },
     { icon: Users, label: 'Community', path: '/community' },
     { icon: Settings, label: 'Settings', path: '/settings' }
@@ -95,7 +105,7 @@ const AppShellMobile = () => {
     { icon: Home, label: 'Home', path: '/dashboard' },
     { icon: Target, label: 'Mastery', path: '/mastery' },
     { icon: BookOpen, label: 'Courses', path: '/courses' },
-    { icon: Users, label: 'Community', path: '/community' },
+    { icon: Sparkles, label: 'Stellar', path: '/stellar-map' },
     { icon: User, label: 'Profile', path: '/profile' }
   ];
 
@@ -109,26 +119,44 @@ const AppShellMobile = () => {
     navigate('/login');
   };
 
+  // Debug: Log current profile state
+  useEffect(() => {
+    console.log('🎨 AppShellMobile: Current profile state:', {
+      hasProfile: !!profile,
+      hasBackgroundImage: !!profile?.background_image,
+      backgroundImageUrl: profile?.background_image
+    });
+  }, [profile]);
+
   return (
     <div className={`min-h-screen ${isDarkMode ? 'dark' : ''}`}>
       {/* Background - User's custom background or earth-tone gradient */}
       <div
-        className="fixed inset-0 bg-cover bg-center bg-no-repeat"
+        key={profile?.background_image || 'default-bg'}
+        className="fixed inset-0 -z-10 transition-all duration-500"
         style={{
           backgroundImage: profile?.background_image
             ? `url(${profile.background_image})`
-            : undefined
+            : 'none',
+          backgroundSize: profile?.background_image ? 'cover' : 'auto',
+          backgroundPosition: profile?.background_image ? 'center' : 'center',
+          backgroundRepeat: profile?.background_image ? 'no-repeat' : 'repeat'
         }}
       >
         {!profile?.background_image && (
-          <div className="absolute inset-0 bg-gradient-to-br from-[#F7F1E1] via-[#E3D8C1] to-[#B4833D] dark:from-[#3F3F2C] dark:via-[#66371B] dark:to-[#81754B]">
+          <div className="absolute inset-0" style={{ background: 'var(--gradient-warm)' }}>
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-20 dark:opacity-10">
-              <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-[#B4833D]/20 blur-3xl"></div>
-              <div className="absolute top-[40%] right-[10%] w-[40%] h-[40%] rounded-full bg-[#81754B]/20 blur-3xl"></div>
+              <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full blur-3xl" style={{ backgroundColor: 'var(--color-primary)', opacity: 0.2 }}></div>
+              <div className="absolute top-[40%] right-[10%] w-[40%] h-[40%] rounded-full blur-3xl" style={{ backgroundColor: 'var(--color-secondary)', opacity: 0.2 }}></div>
             </div>
           </div>
         )}
-        <div className="absolute inset-0 backdrop-blur-sm"></div>
+        <div 
+          className="absolute inset-0 backdrop-blur-sm"
+          style={{
+            backgroundColor: profile?.background_image ? 'rgba(0, 0, 0, 0.1)' : 'transparent'
+          }}
+        ></div>
       </div>
 
       {/* Mobile Header */}
@@ -167,6 +195,9 @@ const AppShellMobile = () => {
 
           {/* Right side actions */}
           <div className="flex items-center space-x-2">
+            {/* Color Palette Dropdown */}
+            <ColorPaletteDropdown />
+            
             {/* Notification Bell */}
             <div className="relative">
               <button className="glass-icon-btn">
@@ -194,10 +225,10 @@ const AppShellMobile = () => {
           <div className="flex flex-col items-center pt-6 pb-4">
             {/* Toggle button */}
             <div className="glass-toggle-btn mb-4">
-              <div className="w-4 h-3 bg-[#B4833D] rounded-sm"></div>
+              <div className="w-4 h-3 rounded-sm" style={{ backgroundColor: 'var(--color-primary)' }}></div>
               <div className="flex space-x-1 mt-1">
-                <div className="w-1 h-1 bg-[#B4833D] rounded-full"></div>
-                <div className="w-1 h-1 bg-[#B4833D] rounded-full"></div>
+                <div className="w-1 h-1 rounded-full" style={{ backgroundColor: 'var(--color-primary)' }}></div>
+                <div className="w-1 h-1 rounded-full" style={{ backgroundColor: 'var(--color-primary)' }}></div>
               </div>
             </div>
 
@@ -283,7 +314,7 @@ const AppShellMobile = () => {
                       className="w-10 h-10 rounded-full"
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#B4833D] to-[#81754B] flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'var(--gradient-primary)' }}>
                       <User size={20} className="text-white" />
                     </div>
                   )}
@@ -312,9 +343,10 @@ const AppShellMobile = () => {
                     key={item.path}
                     onClick={() => handleNavigation(item.path)}
                     className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive
-                      ? 'bg-gradient-to-r from-[#B4833D] to-[#66371B] text-white shadow-lg'
+                      ? 'text-white shadow-lg'
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
                       }`}
+                    style={isActive ? { background: 'var(--gradient-primary)' } : {}}
                   >
                     <Icon size={20} />
                     <span>{item.label}</span>
@@ -360,12 +392,13 @@ const AppShellMobile = () => {
                   key={item.path}
                   onClick={() => handleNavigation(item.path)}
                   className={`mobile-nav-item flex flex-col items-center justify-center px-3 py-2 rounded-xl min-w-[60px] transition-all duration-200 ${isActive
-                    ? 'text-[#B4833D] dark:text-[#B4833D] scale-110'
+                    ? 'scale-110'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                     }`}
-                >
+                  style={isActive ? { color: 'var(--color-primary)' } : {}}
+                  >
                   <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
-                  {isActive && <div className="w-1 h-1 bg-[#B4833D] rounded-full mt-1"></div>}
+                  {isActive && <div className="w-1 h-1 rounded-full mt-1" style={{ backgroundColor: 'var(--color-primary)' }}></div>}
                 </button>
               );
             })}

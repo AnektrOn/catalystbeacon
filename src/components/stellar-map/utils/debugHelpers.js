@@ -1,3 +1,5 @@
+import * as THREE from 'three';
+
 /**
  * Debug utilities for Stellar Map
  * Use these functions to diagnose issues
@@ -282,6 +284,185 @@ export function countSceneObjects(scene) {
 }
 
 /**
+ * Validate node grouping to ensure correct constellation-family relationships
+ * @param {Object} hierarchyData - Hierarchical data structure { familyName: { constellationName: [nodes] } }
+ * @param {string} level - Level name (Ignition, Insight, etc.)
+ * @returns {Object} Validation report with issues found
+ */
+export function validateNodeGrouping(hierarchyData, level) {
+  if (!hierarchyData || Object.keys(hierarchyData).length === 0) {
+    return {
+      valid: false,
+      error: 'Empty hierarchy data',
+      issues: [],
+      summary: {
+        totalFamilies: 0,
+        totalConstellations: 0,
+        totalNodes: 0,
+        misgroupedNodes: 0
+      }
+    };
+  }
+
+  const issues = [];
+  let totalNodes = 0;
+  let misgroupedNodes = 0;
+
+  Object.entries(hierarchyData).forEach(([familyName, constellations]) => {
+    if (!constellations || typeof constellations !== 'object') {
+      issues.push({
+        type: 'invalid_constellations',
+        family: familyName,
+        message: `Family "${familyName}" has invalid constellations structure`
+      });
+      return;
+    }
+
+    Object.entries(constellations).forEach(([constellationName, nodes]) => {
+      if (!Array.isArray(nodes)) {
+        issues.push({
+          type: 'invalid_nodes_array',
+          family: familyName,
+          constellation: constellationName,
+          message: `Constellation "${constellationName}" has invalid nodes array`
+        });
+        return;
+      }
+
+      nodes.forEach((node, index) => {
+        totalNodes++;
+
+        // Check required properties
+        if (!node.id) {
+          issues.push({
+            type: 'missing_id',
+            family: familyName,
+            constellation: constellationName,
+            nodeIndex: index,
+            message: `Node at index ${index} in "${constellationName}" missing id`
+          });
+        }
+
+        if (!node.title) {
+          issues.push({
+            type: 'missing_title',
+            family: familyName,
+            constellation: constellationName,
+            nodeIndex: index,
+            nodeId: node.id,
+            message: `Node ${node.id} in "${constellationName}" missing title`
+          });
+        }
+
+        // Validate constellation alias
+        if (node.constellationAlias && node.constellationAlias !== constellationName) {
+          misgroupedNodes++;
+          issues.push({
+            type: 'mismatched_constellation_alias',
+            family: familyName,
+            constellation: constellationName,
+            nodeId: node.id,
+            nodeTitle: node.title,
+            expected: constellationName,
+            actual: node.constellationAlias,
+            message: `Node ${node.id} (${node.title}) has mismatched constellationAlias: expected "${constellationName}", got "${node.constellationAlias}"`
+          });
+        }
+
+        // Validate family alias
+        if (node.familyAlias && node.familyAlias !== familyName) {
+          misgroupedNodes++;
+          issues.push({
+            type: 'mismatched_family_alias',
+            family: familyName,
+            constellation: constellationName,
+            nodeId: node.id,
+            nodeTitle: node.title,
+            expected: familyName,
+            actual: node.familyAlias,
+            message: `Node ${node.id} (${node.title}) has mismatched familyAlias: expected "${familyName}", got "${node.familyAlias}"`
+          });
+        }
+
+        // Validate constellation_id relationship if available
+        if (node.constellation_id && node.constellations) {
+          if (node.constellations.name !== constellationName) {
+            misgroupedNodes++;
+            issues.push({
+              type: 'mismatched_constellation_relationship',
+              family: familyName,
+              constellation: constellationName,
+              nodeId: node.id,
+              nodeTitle: node.title,
+              expected: constellationName,
+              actual: node.constellations.name,
+              message: `Node ${node.id} (${node.title}) has constellation_id pointing to "${node.constellations.name}" but is grouped under "${constellationName}"`
+            });
+          }
+
+          // Validate constellation's family_id if available
+          if (node.constellations.family_id) {
+            // We can't directly validate this without the family ID, but we can note it
+            // The service layer should handle this validation
+          }
+        }
+
+        // Validate level if available
+        if (level && node.constellations && node.constellations.level && node.constellations.level !== level) {
+          issues.push({
+            type: 'mismatched_level',
+            family: familyName,
+            constellation: constellationName,
+            nodeId: node.id,
+            nodeTitle: node.title,
+            expected: level,
+            actual: node.constellations.level,
+            message: `Node ${node.id} (${node.title}) belongs to constellation with level "${node.constellations.level}" but requested level is "${level}"`
+          });
+        }
+      });
+    });
+  });
+
+  const totalFamilies = Object.keys(hierarchyData).length;
+  const totalConstellations = Object.values(hierarchyData).reduce(
+    (sum, constellations) => sum + Object.keys(constellations).length,
+    0
+  );
+
+  const result = {
+    valid: issues.length === 0,
+    totalFamilies,
+    totalConstellations,
+    totalNodes,
+    misgroupedNodes,
+    issues,
+    summary: {
+      totalFamilies,
+      totalConstellations,
+      totalNodes,
+      misgroupedNodes,
+      issuesByType: issues.reduce((acc, issue) => {
+        acc[issue.type] = (acc[issue.type] || 0) + 1;
+        return acc;
+      }, {})
+    }
+  };
+
+  if (issues.length > 0) {
+    console.warn('[validateNodeGrouping] Validation issues found:', result);
+  } else {
+    console.log('[validateNodeGrouping] All nodes correctly grouped:', {
+      totalFamilies,
+      totalConstellations,
+      totalNodes
+    });
+  }
+
+  return result;
+}
+
+/**
  * Export all debug functions
  */
 export default {
@@ -292,5 +473,6 @@ export default {
   checkXPVisibility,
   startPerformanceMonitor,
   checkMemoryUsage,
-  countSceneObjects
+  countSceneObjects,
+  validateNodeGrouping
 };

@@ -103,9 +103,9 @@ const HabitsTabMobile = () => {
           {
             duration: 4000,
             style: {
-              background: 'rgba(30, 41, 59, 0.95)',
+              background: 'color-mix(in srgb, var(--bg-secondary, #1e293b) 95%, transparent)',
               color: '#fff',
-              border: '1px solid rgba(16, 185, 129, 0.3)',
+              border: '1px solid color-mix(in srgb, var(--color-success, #10b981) 30%, transparent)',
               borderRadius: '12px',
               padding: '16px 20px',
               fontSize: '14px',
@@ -113,7 +113,7 @@ const HabitsTabMobile = () => {
               zIndex: 9999,
             },
             iconTheme: {
-              primary: '#10B981',
+              primary: 'var(--color-success, #10B981)',
               secondary: '#fff',
             },
           }
@@ -151,7 +151,7 @@ const HabitsTabMobile = () => {
       toast.error('Failed to update habit. Please try again.', {
         duration: 3000,
         style: {
-          background: 'rgba(239, 68, 68, 0.95)',
+          background: 'color-mix(in srgb, var(--color-error, #ef4444) 95%, transparent)',
           color: '#fff',
           zIndex: 9999,
         },

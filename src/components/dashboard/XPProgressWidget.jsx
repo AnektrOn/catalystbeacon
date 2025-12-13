@@ -4,19 +4,30 @@ import { Zap } from 'lucide-react';
 const XPProgressWidget = memo(({ level = 1, levelTitle = '', currentXP = 0, nextLevelXP = 1000, phase = 'ignition' }) => {
     const percentage = nextLevelXP > 0 ? Math.min((currentXP / nextLevelXP) * 100, 100) : 0;
 
-    const phaseColors = {
-        ignition: '#FF8A5B',
-        insight: '#A78BFA',
-        transformation: '#6BCF7F',
-        god_mode: '#FFD700'
+    const getPhaseColor = (phase) => {
+        const root = document.documentElement;
+        const computedStyle = window.getComputedStyle(root);
+        const colors = {
+            ignition: computedStyle.getPropertyValue('--color-primary').trim() || '#FF8A5B',
+            insight: computedStyle.getPropertyValue('--color-secondary').trim() || '#A78BFA',
+            transformation: computedStyle.getPropertyValue('--color-success').trim() || '#6BCF7F',
+            god_mode: computedStyle.getPropertyValue('--color-warning').trim() || '#FFD700'
+        };
+        return colors[phase] || colors.ignition;
     };
 
-    const color = phaseColors[phase] || phaseColors.ignition;
+    const color = getPhaseColor(phase);
 
     return (
         <div className="glass-card-premium p-6 hover:scale-[1.02] transition-transform duration-300">
             <div className="flex items-start justify-between mb-4">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-orange-400/10 to-orange-600/10 text-orange-500">
+                <div 
+                    className="p-3 rounded-xl"
+                    style={{
+                        background: `linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 10%, transparent), color-mix(in srgb, var(--color-primary) 20%, transparent))`,
+                        color: 'var(--color-primary)'
+                    }}
+                >
                     <Zap size={20} />
                 </div>
                 <div className="text-xs font-medium text-gray-400 bg-white/5 px-2 py-1 rounded-lg border border-white/10 uppercase tracking-wider">
@@ -29,7 +40,7 @@ const XPProgressWidget = memo(({ level = 1, levelTitle = '', currentXP = 0, next
                     Level {level}
                 </div>
                 {levelTitle && (
-                    <div className="text-sm font-medium text-orange-500 mb-2">
+                    <div className="text-sm font-medium mb-2" style={{ color: 'var(--color-primary)' }}>
                         {levelTitle}
                     </div>
                 )}

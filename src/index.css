@@ -74,11 +74,11 @@
     --earth-green: 60 11% 22%;
     /* #3F3F2C */
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, #B4833D 0%, #66371B 100%);
-    --gradient-secondary: linear-gradient(135deg, #81754B 0%, #3F3F2C 100%);
-    --gradient-warm: linear-gradient(135deg, #F7F1E1 0%, #E3D8C1 100%);
-    --gradient-earth: linear-gradient(135deg, #B4833D 0%, #81754B 50%, #3F3F2C 100%);
+    /* Gradients - These will be dynamically updated by colorPaletteSwitcher */
+    --gradient-primary: linear-gradient(135deg, var(--color-primary) 0%, var(--color-kobicha) 100%);
+    --gradient-secondary: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-earth-green) 100%);
+    --gradient-warm: linear-gradient(135deg, var(--color-old-lace) 0%, var(--color-bone) 100%);
+    --gradient-earth: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 50%, var(--color-earth-green) 100%);
 
     /* Sidebar Dimensions */
     --sidebar-width-collapsed: 80px;
@@ -91,6 +91,14 @@
     --color-success: #10b981;
     --color-warning: #f59e0b;
     --color-error: #ef4444;
+    
+    /* #region agent log */
+    /* Color palette system CSS variables - these should be dynamically updated by colorPaletteSwitcher */
+    --bg-primary: var(--color-old-lace);
+    --bg-secondary: var(--color-bone);
+    --text-primary: var(--color-kobicha);
+    --text-secondary: var(--color-coyote);
+    /* #endregion */
 
     /* Glassmorphism Variables */
     --glass-opacity: 0.08;

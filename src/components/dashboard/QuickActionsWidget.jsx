@@ -10,28 +10,28 @@ const QuickActionsWidget = memo(({ actions = [] }) => {
             id: 'breathwork',
             label: 'Breathwork',
             icon: Wind,
-            color: '#6BCF7F',
+            color: 'var(--color-success, #6BCF7F)',
             action: () => navigate('/mastery/timer')
         },
         {
             id: 'notes',
             label: 'Notes',
             icon: FileText,
-            color: '#FFB75B',
+            color: 'var(--color-warning, #FFB75B)',
             action: () => navigate('/profile')
         },
         {
             id: 'veilkeeper',
             label: 'Veilkeeper',
             icon: Eye,
-            color: '#A78BFA',
+            color: 'var(--color-secondary, #A78BFA)',
             action: () => navigate('/mastery')
         },
         {
             id: 'resume',
             label: 'Resume',
             icon: Zap,
-            color: '#FF8A5B',
+            color: 'var(--color-primary, #FF8A5B)',
             action: () => navigate('/courses')
         }
     ];

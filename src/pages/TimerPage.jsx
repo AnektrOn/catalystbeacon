@@ -13,9 +13,9 @@ const TimerPage = () => {
     const timerRef = useRef(null);
 
     const MODES = {
-        focus: { label: 'Focus', time: 25 * 60, color: '#B4833D', icon: Zap },
-        shortBreak: { label: 'Short Break', time: 5 * 60, color: '#10B981', icon: Coffee },
-        longBreak: { label: 'Long Break', time: 15 * 60, color: '#3B82F6', icon: Coffee },
+        focus: { label: 'Focus', time: 25 * 60, color: 'var(--color-primary)', icon: Zap },
+        shortBreak: { label: 'Short Break', time: 5 * 60, color: 'var(--color-success, #10B981)', icon: Coffee },
+        longBreak: { label: 'Long Break', time: 15 * 60, color: 'var(--color-info, #3B82F6)', icon: Coffee },
     };
 
     useEffect(() => {
@@ -83,7 +83,7 @@ const TimerPage = () => {
     const CurrentIcon = MODES[mode].icon;
 
     return (
-        <div className={`transition-all duration-500 ${isCinemaMode ? 'fixed inset-0 z-50 bg-[#0f0f0f] flex items-center justify-center' : 'space-y-6'}`}>
+        <div className={`transition-all duration-500 ${isCinemaMode ? 'fixed inset-0 z-50 flex items-center justify-center' : 'space-y-6'}`} style={isCinemaMode ? { backgroundColor: 'var(--bg-secondary, #0f0f0f)' } : {}}>
 
             {/* Header (Hidden in Cinema Mode) */}
             {!isCinemaMode && (
@@ -195,7 +195,7 @@ const TimerPage = () => {
             {!isCinemaMode && (
                 <div className="grid md:grid-cols-3 gap-6">
                     <div className="glass-card-premium p-6 flex items-center gap-4">
-                        <div className="p-3 bg-[#B4833D]/10 rounded-xl text-[#B4833D]">
+                        <div className="p-3 rounded-xl" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 10%, transparent)', color: 'var(--color-primary)' }}>
                             <Zap size={24} />
                         </div>
                         <div>

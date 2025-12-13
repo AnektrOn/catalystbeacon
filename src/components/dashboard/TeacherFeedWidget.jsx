@@ -35,7 +35,16 @@ const TeacherFeedWidget = memo(({ posts = [] }) => {
                         Wisdom from the teachers
                     </p>
                 </div>
-                <button className="text-sm font-medium text-blue-500 hover:text-blue-600 flex items-center gap-1 transition-colors">
+                <button 
+                    className="text-sm font-medium flex items-center gap-1 transition-colors"
+                    style={{ color: 'var(--color-info)' }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.color = 'color-mix(in srgb, var(--color-info) 90%, transparent)';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.color = 'var(--color-info)';
+                    }}
+                >
                     View All
                     <ArrowRight size={14} />
                 </button>
@@ -49,12 +58,29 @@ const TeacherFeedWidget = memo(({ posts = [] }) => {
                         className="p-4 rounded-lg bg-white/50 dark:bg-black/20 border border-gray-200 dark:border-white/10 hover:bg-white/70 dark:hover:bg-black/30 transition-all duration-300 cursor-pointer group"
                     >
                         <div className="flex items-start gap-3">
-                            <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-500 flex-shrink-0">
+                            <div 
+                                className="p-2 rounded-lg flex-shrink-0"
+                                style={{
+                                    backgroundColor: 'color-mix(in srgb, var(--color-info) 10%, transparent)',
+                                    color: 'var(--color-info)'
+                                }}
+                            >
                                 <BookOpen size={16} />
                             </div>
 
                             <div className="flex-1 min-w-0">
-                                <h4 className="text-base font-medium text-gray-900 dark:text-white mb-1 group-hover:text-blue-500 transition-colors">
+                                <h4 
+                                    className="text-base font-medium text-gray-900 dark:text-white mb-1 transition-colors"
+                                    style={{
+                                        color: 'inherit'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.color = 'var(--color-info)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.color = '';
+                                    }}
+                                >
                                     "{post.title}"
                                 </h4>
                                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">

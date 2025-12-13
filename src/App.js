@@ -21,6 +21,7 @@ const CourseDetailPage = React.lazy(() => import('./pages/CourseDetailPage'))
 const CoursePlayerPage = React.lazy(() => import('./pages/CoursePlayerPage'))
 const CourseCreationPage = React.lazy(() => import('./pages/CourseCreationPage'))
 const StellarMapPage = React.lazy(() => import('./pages/StellarMapPage'))
+const StellarMap2DPage = React.lazy(() => import('./pages/StellarMap2DPage'))
 
 // Loading component
 const LoadingScreen = () => {
@@ -232,11 +233,18 @@ const AppRoutes = () => {
           </ErrorBoundary>
         } />
 
-        {/* Stellar Map Route */}
+        {/* Stellar Map Routes */}
         <Route path="/stellar-map" element={
           <ErrorBoundary>
             <React.Suspense fallback={<LoadingScreen />}>
               <StellarMapPage />
+            </React.Suspense>
+          </ErrorBoundary>
+        } />
+        <Route path="/stellar-map-2d" element={
+          <ErrorBoundary>
+            <React.Suspense fallback={<LoadingScreen />}>
+              <StellarMap2DPage />
             </React.Suspense>
           </ErrorBoundary>
         } />
@@ -253,6 +261,27 @@ const AppRoutes = () => {
 
 function App() {
   const isMobile = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 767px)').matches
+
+  // #region agent log
+  React.useEffect(() => {
+    const checkColorPalette = () => {
+      try {
+        const root = document.documentElement;
+        const computedStyle = window.getComputedStyle(root);
+        const colorPrimary = computedStyle.getPropertyValue('--color-primary').trim();
+        const colorSecondary = computedStyle.getPropertyValue('--color-secondary').trim();
+        const colorDarkGoldenrod = computedStyle.getPropertyValue('--color-dark-goldenrod').trim();
+        const localStoragePalette = localStorage.getItem('colorPalette');
+        const hasColorPaletteSwitcher = typeof window !== 'undefined' && window.colorPaletteSwitcher;
+        const hasColorPaletteDropdown = document.querySelector('[data-color-palette-dropdown]') !== null;
+        fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.js:254',message:'App mounted - checking color palette system',data:{colorPrimary,colorSecondary,colorDarkGoldenrod,localStoragePalette,hasColorPaletteSwitcher,hasColorPaletteDropdown,hasCSSVariables:!!(colorPrimary||colorSecondary||colorDarkGoldenrod)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      } catch(e) {
+        fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.js:254',message:'Error checking color palette system',data:{error:e.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      }
+    };
+    setTimeout(checkColorPalette, 500);
+  }, []);
+  // #endregion
 
   return (
     <AuthProvider>

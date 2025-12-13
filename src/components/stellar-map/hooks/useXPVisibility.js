@@ -58,7 +58,25 @@ export function getCurrentGroup(coreName, xp) {
  */
 export function useXPVisibility() {
   const { profile } = useAuth();
-  const userXP = profile?.current_xp || 0;
+  
+  // Debug logging
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[useXPVisibility] Profile:', profile);
+    console.log('[useXPVisibility] current_xp:', profile?.current_xp);
+    console.log('[useXPVisibility] current_xp type:', typeof profile?.current_xp);
+    console.log('[useXPVisibility] All profile keys:', profile ? Object.keys(profile) : 'no profile');
+  }
+  
+  // Handle XP - check for null, undefined, or if it's actually 0
+  let userXP = 0;
+  if (profile) {
+    if (profile.current_xp !== null && profile.current_xp !== undefined) {
+      userXP = Number(profile.current_xp) || 0;
+    } else {
+      // If current_xp doesn't exist, try total_xp_earned as fallback
+      userXP = Number(profile.total_xp_earned) || 0;
+    }
+  }
 
   const visibilityData = useMemo(() => {
     const coreGroups = {};

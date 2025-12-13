@@ -23,10 +23,12 @@ const CalendarTabMobile = () => {
   const getHabitColor = (title) => {
     const titleLower = title?.toLowerCase() || '';
     
-    if (titleLower.includes('read') || titleLower.includes('book')) return '#8B5CF6';
-    if (titleLower.includes('workout') || titleLower.includes('exercise')) return '#A78BFA';
-    if (titleLower.includes('meditation') || titleLower.includes('mindfulness')) return '#8B5CF6';
-    return '#6B7280';
+    const root = document.documentElement;
+    const computedStyle = window.getComputedStyle(root);
+    if (titleLower.includes('read') || titleLower.includes('book')) return computedStyle.getPropertyValue('--color-secondary').trim() || '#8B5CF6';
+    if (titleLower.includes('workout') || titleLower.includes('exercise')) return computedStyle.getPropertyValue('--color-secondary').trim() || '#A78BFA';
+    if (titleLower.includes('meditation') || titleLower.includes('mindfulness')) return computedStyle.getPropertyValue('--color-secondary').trim() || '#8B5CF6';
+    return computedStyle.getPropertyValue('--text-secondary').trim() || '#6B7280';
   };
 
   // Load habits and events
@@ -150,9 +152,9 @@ const CalendarTabMobile = () => {
           {
             duration: 4000,
             style: {
-              background: 'rgba(30, 41, 59, 0.95)',
+              background: 'color-mix(in srgb, var(--bg-secondary, #1e293b) 95%, transparent)',
               color: '#fff',
-              border: '1px solid rgba(16, 185, 129, 0.3)',
+              border: '1px solid color-mix(in srgb, var(--color-success, #10b981) 30%, transparent)',
               borderRadius: '12px',
               padding: '16px 20px',
               fontSize: '14px',
@@ -160,7 +162,7 @@ const CalendarTabMobile = () => {
               zIndex: 9999,
             },
             iconTheme: {
-              primary: '#10B981',
+              primary: 'var(--color-success, #10B981)',
               secondary: '#fff',
             },
           }
@@ -198,7 +200,7 @@ const CalendarTabMobile = () => {
       toast.error('Failed to update task. Please try again.', {
         duration: 3000,
         style: {
-          background: 'rgba(239, 68, 68, 0.95)',
+          background: 'color-mix(in srgb, var(--color-error, #ef4444) 95%, transparent)',
           color: '#fff',
           zIndex: 9999,
         },
@@ -310,7 +312,7 @@ const CalendarTabMobile = () => {
                     <div
                       key={idx}
                       className="w-1.5 h-1.5 rounded-full"
-                      style={{ backgroundColor: event.completed ? '#10B981' : event.color }}
+                      style={{ backgroundColor: event.completed ? 'var(--color-success, #10B981)' : event.color }}
                     />
                   ))}
                 </div>

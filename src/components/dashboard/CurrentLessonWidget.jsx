@@ -35,7 +35,13 @@ const CurrentLessonWidget = memo(({
                         </p>
                     )}
                 </div>
-                <div className="p-3 rounded-xl bg-blue-400/10 text-blue-500">
+                <div 
+                    className="p-3 rounded-xl"
+                    style={{
+                        backgroundColor: 'color-mix(in srgb, var(--color-info) 10%, transparent)',
+                        color: 'var(--color-info)'
+                    }}
+                >
                     <BookOpen size={20} />
                 </div>
             </div>
@@ -61,12 +67,16 @@ const CurrentLessonWidget = memo(({
                     <div className="mb-4">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Progress</span>
-                            <span className="text-xs font-medium text-blue-500">{progressPercentage}%</span>
+                            <span className="text-xs font-medium" style={{ color: 'var(--color-info)' }}>{progressPercentage}%</span>
                         </div>
                         <div className="w-full h-2 bg-gray-200 dark:bg-gray-700/50 rounded-full overflow-hidden">
                             <div
-                                className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full transition-all duration-500"
-                                style={{ width: `${progressPercentage}%` }}
+                                className="h-full rounded-full transition-all duration-500"
+                                style={{ 
+                                    width: `${progressPercentage}%`,
+                                    background: 'var(--gradient-primary)',
+                                    backgroundColor: 'var(--color-info)'
+                                }}
                             />
                         </div>
                     </div>
@@ -93,7 +103,19 @@ const CurrentLessonWidget = memo(({
             {!lessonId && (
                 <button
                     onClick={() => navigate('/courses')}
-                    className="w-full py-3 px-4 rounded-lg border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium hover:border-blue-500 hover:text-blue-500 transition-all duration-300"
+                    className="w-full py-3 px-4 rounded-lg border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium transition-all duration-300"
+                    style={{
+                        borderColor: 'var(--color-info)',
+                        color: 'var(--color-info)'
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--color-info)';
+                        e.currentTarget.style.color = 'var(--color-info)';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = '';
+                        e.currentTarget.style.color = '';
+                    }}
                 >
                     Browse Courses
                 </button>

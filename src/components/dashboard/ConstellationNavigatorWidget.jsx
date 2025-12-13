@@ -34,7 +34,13 @@ const ConstellationNavigatorWidget = memo(({
                         {currentSchool} School
                     </p>
                 </div>
-                <div className="p-3 rounded-xl bg-purple-400/10 text-purple-500">
+                <div 
+                    className="p-3 rounded-xl"
+                    style={{
+                        backgroundColor: 'color-mix(in srgb, var(--color-secondary) 10%, transparent)',
+                        color: 'var(--color-secondary)'
+                    }}
+                >
                     <Sparkles size={20} />
                 </div>
             </div>
@@ -55,7 +61,7 @@ const ConstellationNavigatorWidget = memo(({
                                     y1="50"
                                     x2={x2}
                                     y2="50"
-                                    stroke={node.completed ? '#A78BFA' : '#E5E7EB'}
+                                    stroke={node.completed ? 'var(--color-secondary, #A78BFA)' : '#E5E7EB'}
                                     strokeWidth="1"
                                     opacity="0.5"
                                 />
@@ -83,7 +89,7 @@ const ConstellationNavigatorWidget = memo(({
                                         cy={y}
                                         r="10"
                                         fill="none"
-                                        stroke="#A78BFA"
+                                        stroke="var(--color-secondary, #A78BFA)"
                                         strokeWidth="2"
                                         opacity="0.5"
                                     >
@@ -109,8 +115,8 @@ const ConstellationNavigatorWidget = memo(({
                                     cx={x}
                                     cy={y}
                                     r="6"
-                                    fill={node.completed ? '#A78BFA' : node.isCurrent ? '#A78BFA' : '#E5E7EB'}
-                                    stroke={node.isCurrent ? '#A78BFA' : 'none'}
+                                    fill={node.completed ? 'var(--color-secondary, #A78BFA)' : node.isCurrent ? 'var(--color-secondary, #A78BFA)' : '#E5E7EB'}
+                                    stroke={node.isCurrent ? 'var(--color-secondary, #A78BFA)' : 'none'}
                                     strokeWidth="2"
                                     className="transition-all duration-300"
                                 />
@@ -158,16 +164,22 @@ const ConstellationNavigatorWidget = memo(({
 
             {/* Current Node */}
             {currentConstellation.nodes && currentConstellation.nodes.find(n => n.isCurrent) && (
-                <div className="flex items-center justify-between p-3 rounded-lg bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-500/20">
+                <div 
+                    className="flex items-center justify-between p-3 rounded-lg border transition-all duration-300"
+                    style={{
+                        backgroundColor: 'color-mix(in srgb, var(--color-secondary) 10%, transparent)',
+                        borderColor: 'color-mix(in srgb, var(--color-secondary) 20%, transparent)'
+                    }}
+                >
                     <div>
-                        <div className="text-xs text-purple-600 dark:text-purple-400 font-medium mb-1">
+                        <div className="text-xs font-medium mb-1" style={{ color: 'var(--color-secondary)' }}>
                             Current Node
                         </div>
                         <div className="text-sm font-medium text-gray-900 dark:text-white">
                             {currentConstellation.nodes.find(n => n.isCurrent).name}
                         </div>
                     </div>
-                    <ChevronRight size={16} className="text-purple-500" />
+                    <ChevronRight size={16} style={{ color: 'var(--color-secondary)' }} />
                 </div>
             )}
         </div>

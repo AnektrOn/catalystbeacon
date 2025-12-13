@@ -129,7 +129,16 @@ const CommunityPage = () => {
         <div className="flex-shrink-0">
           <button
             onClick={() => setShowCreatePost(true)}
-            className="px-4 py-2 bg-[#B4833D] hover:bg-[#B4833D]/90 text-white rounded-xl font-medium transition-all shadow-lg hover:shadow-[#B4833D]/30 flex items-center space-x-2"
+            className="px-4 py-2 text-white rounded-xl font-medium transition-all shadow-lg flex items-center space-x-2"
+            style={{ backgroundColor: 'var(--color-primary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--color-primary) 90%, transparent)';
+              e.currentTarget.style.boxShadow = '0 10px 30px color-mix(in srgb, var(--color-primary) 30%, transparent)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-primary)';
+              e.currentTarget.style.boxShadow = '';
+            }}
           >
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">Create Post</span>
@@ -147,13 +156,30 @@ const CommunityPage = () => {
             placeholder="Search posts, users, or topics..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#B4833D]/50 focus:border-[#B4833D]/50 backdrop-blur-sm"
+            className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none backdrop-blur-sm"
+            style={{ '--focus-ring': 'color-mix(in srgb, var(--color-primary) 50%, transparent)', '--focus-border': 'color-mix(in srgb, var(--color-primary) 50%, transparent)' }}
+            onFocus={(e) => {
+              e.currentTarget.style.outline = 'none';
+              e.currentTarget.style.boxShadow = '0 0 0 2px color-mix(in srgb, var(--color-primary) 50%, transparent)';
+              e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--color-primary) 50%, transparent)';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.boxShadow = '';
+              e.currentTarget.style.borderColor = '';
+            }}
           />
         </div>
         <select
           value={filterType}
           onChange={(e) => setFilterType(e.target.value)}
-          className="w-full sm:w-auto px-4 py-3 bg-white/50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#B4833D]/50 backdrop-blur-sm"
+          className="w-full sm:w-auto px-4 py-3 bg-white/50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white focus:outline-none backdrop-blur-sm"
+          onFocus={(e) => {
+            e.currentTarget.style.outline = 'none';
+            e.currentTarget.style.boxShadow = '0 0 0 2px color-mix(in srgb, var(--color-primary) 50%, transparent)';
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.boxShadow = '';
+          }}
         >
           <option value="all">All Posts</option>
           <option value="text">Text Posts</option>
@@ -170,9 +196,10 @@ const CommunityPage = () => {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap ${activeTab === tab.id
-                  ? 'bg-[#B4833D] text-white shadow-md'
+                  ? 'text-white shadow-md'
                   : 'text-gray-600 dark:text-gray-400 hover:bg-white/10'
                 }`}
+              style={activeTab === tab.id ? { backgroundColor: 'var(--color-primary)' } : {}}
             >
               <tab.icon className="w-4 h-4" />
               <span>{tab.label}</span>
@@ -194,9 +221,10 @@ const CommunityPage = () => {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${activeTab === tab.id
-                      ? 'bg-[#B4833D] text-white shadow-md'
+                      ? 'text-white shadow-md'
                       : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5'
                     }`}
+                  style={activeTab === tab.id ? { backgroundColor: 'var(--color-primary)' } : {}}
                 >
                   <tab.icon className="w-5 h-5" />
                   <span>{tab.label}</span>
@@ -212,7 +240,7 @@ const CommunityPage = () => {
             <div className="space-y-6">
               {loading ? (
                 <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#B4833D]"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: 'var(--color-primary)' }}></div>
                 </div>
               ) : (
                 posts.map((post) => (
@@ -222,14 +250,15 @@ const CommunityPage = () => {
                       <img
                         src={post.profiles?.avatar_url || post.user?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'}
                         alt={post.profiles?.full_name || post.user?.name || 'User'}
-                        className="w-12 h-12 rounded-full border-2 border-[#B4833D]/20 flex-shrink-0"
+                        className="w-12 h-12 rounded-full border-2 flex-shrink-0"
+                        style={{ borderColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)' }}
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
                           <h4 className="font-bold text-gray-900 dark:text-white text-base truncate">
                             {post.profiles?.full_name || post.user?.name || 'User'}
                           </h4>
-                          <span className="text-xs bg-[#B4833D]/10 text-[#B4833D] px-2 py-0.5 rounded-full inline-block w-fit mt-1 sm:mt-0 font-medium border border-[#B4833D]/20">
+                          <span className="text-xs px-2 py-0.5 rounded-full inline-block w-fit mt-1 sm:mt-0 font-medium" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 10%, transparent)', color: 'var(--color-primary)', borderColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', borderWidth: '1px', borderStyle: 'solid' }}>
                             Level {post.profiles?.level || post.user?.level || 1}
                           </span>
                         </div>
@@ -275,7 +304,7 @@ const CommunityPage = () => {
                           <Heart className={`w-5 h-5 ${post.isLiked ? 'fill-current' : ''}`} />
                           <span className="text-sm font-medium">{post.likes_count || post.likes || 0}</span>
                         </button>
-                        <button className="flex items-center space-x-2 text-gray-500 hover:text-[#B4833D] transition-colors">
+                        <button className="flex items-center space-x-2 text-gray-500 transition-colors" onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'} onMouseLeave={(e) => e.currentTarget.style.color = ''}>
                           <Reply className="w-5 h-5" />
                           <span className="text-sm font-medium">{post.comments_count || post.comments || 0}</span>
                         </button>
@@ -306,7 +335,7 @@ const CommunityPage = () => {
               {leaderboard.length >= 3 ? (
                 <div className="mb-10">
                   <div className="flex justify-center mb-6">
-                    <div className="w-12 h-12 bg-gradient-to-r from-[#B4833D] to-[#81754B] rounded-full flex items-center justify-center shadow-lg">
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg" style={{ background: 'var(--gradient-primary)' }}>
                       <Trophy className="w-6 h-6 text-white" />
                     </div>
                   </div>
@@ -326,7 +355,7 @@ const CommunityPage = () => {
                       </div>
                       <div className="text-center mb-2">
                         <p className="text-gray-900 dark:text-white font-bold text-sm">{leaderboard[1]?.full_name || 'User'}</p>
-                        <p className="text-[#B4833D] text-xs font-medium">
+                        <p className="text-xs font-medium" style={{ color: 'var(--color-primary)' }}>
                           {leaderboard[1]?.current_xp?.toLocaleString() || 0} XP
                         </p>
                       </div>
@@ -341,21 +370,22 @@ const CommunityPage = () => {
                         <img
                           src={leaderboard[0]?.avatar_url || `https://images.unsplash.com/photo-${1500000000000 + 0 * 100000000}?w=60&h=60&fit=crop&crop=face`}
                           alt={leaderboard[0]?.full_name || 'User'}
-                          className="w-24 h-24 rounded-full border-4 border-[#B4833D]"
+                          className="w-24 h-24 rounded-full border-4"
+                          style={{ borderColor: 'var(--color-primary)' }}
                         />
-                        <div className="absolute -top-3 -right-3 w-8 h-8 bg-[#B4833D] rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md">
+                        <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md" style={{ backgroundColor: 'var(--color-primary)' }}>
                           1
                         </div>
                       </div>
                       <div className="text-center mb-2">
                         <p className="text-gray-900 dark:text-white font-bold text-base">{leaderboard[0]?.full_name || 'User'}</p>
-                        <p className="text-[#B4833D] text-sm font-bold">
+                        <p className="text-sm font-bold" style={{ color: 'var(--color-primary)' }}>
                           {leaderboard[0]?.current_xp?.toLocaleString() || 0} XP
                         </p>
                       </div>
-                      <div className="w-24 h-32 bg-[#B4833D]/20 rounded-t-lg flex items-center justify-center border-t border-x border-[#B4833D]/30 relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#B4833D]/10 to-transparent"></div>
-                        <span className="text-[#B4833D] font-bold text-3xl z-10">1</span>
+                      <div className="w-24 h-32 rounded-t-lg flex items-center justify-center border-t border-x relative overflow-hidden" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', borderColor: 'color-mix(in srgb, var(--color-primary) 30%, transparent)' }}>
+                        <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, color-mix(in srgb, var(--color-primary) 10%, transparent), transparent)' }}></div>
+                        <span className="font-bold text-3xl z-10" style={{ color: 'var(--color-primary)' }}>1</span>
                       </div>
                     </div>
 
@@ -373,7 +403,7 @@ const CommunityPage = () => {
                       </div>
                       <div className="text-center mb-2">
                         <p className="text-gray-900 dark:text-white font-bold text-sm">{leaderboard[2]?.full_name || 'User'}</p>
-                        <p className="text-[#B4833D] text-xs font-medium">
+                        <p className="text-xs font-medium" style={{ color: 'var(--color-primary)' }}>
                           {leaderboard[2]?.current_xp?.toLocaleString() || 0} XP
                         </p>
                       </div>
@@ -403,7 +433,7 @@ const CommunityPage = () => {
                     />
                     <div className="flex-1">
                       <h4 className="font-bold text-gray-900 dark:text-white">{user.full_name}</h4>
-                      <p className="text-[#B4833D] text-sm flex items-center">
+                      <p className="text-sm flex items-center" style={{ color: 'var(--color-primary)' }}>
                         <Star className="w-3 h-3 mr-1" />
                         {user.current_xp?.toLocaleString() || 0} XP
                       </p>
@@ -427,7 +457,7 @@ const CommunityPage = () => {
                           <Users className="w-4 h-4" />
                           <span>{challenge.participants || 0} participants</span>
                         </div>
-                        <div className="flex items-center space-x-1 bg-[#B4833D]/10 text-[#B4833D] px-2 py-1 rounded-lg font-medium">
+                        <div className="flex items-center space-x-1 px-2 py-1 rounded-lg font-medium" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 10%, transparent)', color: 'var(--color-primary)' }}>
                           <Star className="w-4 h-4" />
                           <span>{challenge.xp_reward || challenge.xpReward || 0} XP</span>
                         </div>
@@ -440,7 +470,11 @@ const CommunityPage = () => {
                     <button
                       className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 shadow-md ${challenge.isParticipating
                           ? 'bg-green-500/10 text-green-600 border border-green-500/20 cursor-default'
-                          : 'bg-[#B4833D] text-white hover:bg-[#B4833D]/90 hover:shadow-lg hover:scale-105'
+                          : 'text-white hover:shadow-lg hover:scale-105'
+                        }
+                        style={!challenge.isParticipating ? { backgroundColor: 'var(--color-primary)' } : {}}
+                        onMouseEnter={!challenge.isParticipating ? (e) => e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--color-primary) 90%, transparent)' : undefined}
+                        onMouseLeave={!challenge.isParticipating ? (e) => e.currentTarget.style.backgroundColor = 'var(--color-primary)' : undefined}
                         }`}
                     >
                       {challenge.isParticipating ? 'Participating' : 'Join Challenge'}
@@ -473,11 +507,11 @@ const CommunityPage = () => {
               <div className="space-y-4">
                 <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-white/5 rounded-xl">
                   <span className="text-gray-600 dark:text-gray-400 text-sm">Level</span>
-                  <span className="text-[#B4833D] font-bold">{profile?.level || 1}</span>
+                  <span className="font-bold" style={{ color: 'var(--color-primary)' }}>{profile?.level || 1}</span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-white/5 rounded-xl">
                   <span className="text-gray-600 dark:text-gray-400 text-sm">Total XP</span>
-                  <span className="text-[#B4833D] font-bold">{profile?.current_xp || 0}</span>
+                  <span className="font-bold" style={{ color: 'var(--color-primary)' }}>{profile?.current_xp || 0}</span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-white/5 rounded-xl">
                   <span className="text-gray-600 dark:text-gray-400 text-sm">Posts</span>
@@ -493,13 +527,13 @@ const CommunityPage = () => {
             {/* Trending Topics */}
             <div className="glass-panel-floating p-6">
               <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-[#B4833D]" />
+                <TrendingUp className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
                 Trending
               </h3>
               <div className="space-y-3">
                 {['#mindfulness', '#productivity', '#learning', '#habits', '#growth'].map((topic, index) => (
                   <div key={index} className="flex items-center justify-between group cursor-pointer">
-                    <span className="text-gray-600 dark:text-gray-400 group-hover:text-[#B4833D] transition-colors">{topic}</span>
+                    <span className="text-gray-600 dark:text-gray-400 transition-colors" onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'} onMouseLeave={(e) => e.currentTarget.style.color = ''}>{topic}</span>
                     <span className="text-xs text-gray-400 bg-gray-100 dark:bg-white/5 px-2 py-1 rounded-lg">{Math.floor(Math.random() * 1000)} posts</span>
                   </div>
                 ))}

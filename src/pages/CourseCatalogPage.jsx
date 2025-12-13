@@ -86,26 +86,26 @@ const CourseCatalogPage = () => {
 
   const getSchoolColor = (school) => {
     const colors = {
-      'Ignition': 'bg-[#B4833D]/20 text-[#B4833D] border-[#B4833D]/30',
-      'Insight': 'bg-[#66371B]/20 text-[#66371B] dark:text-[#E3D8C1] border-[#66371B]/30',
-      'Transformation': 'bg-[#81754B]/20 text-[#81754B] border-[#81754B]/30',
-      'God Mode': 'bg-[#3F3F2C]/20 text-[#3F3F2C] dark:text-[#F7F1E1] border-[#3F3F2C]/30'
+      'Ignition': { backgroundColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', color: 'var(--color-primary)', borderColor: 'color-mix(in srgb, var(--color-primary) 30%, transparent)' },
+      'Insight': { backgroundColor: 'color-mix(in srgb, var(--color-kobicha) 20%, transparent)', color: 'var(--color-kobicha)', borderColor: 'color-mix(in srgb, var(--color-kobicha) 30%, transparent)' },
+      'Transformation': { backgroundColor: 'color-mix(in srgb, var(--color-secondary) 20%, transparent)', color: 'var(--color-secondary)', borderColor: 'color-mix(in srgb, var(--color-secondary) 30%, transparent)' },
+      'God Mode': { backgroundColor: 'color-mix(in srgb, var(--color-earth-green) 20%, transparent)', color: 'var(--color-earth-green)', borderColor: 'color-mix(in srgb, var(--color-earth-green) 30%, transparent)' }
     };
-    return colors[school] || 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+    return colors[school] || { backgroundColor: 'rgba(107, 114, 128, 0.2)', color: '#9CA3AF', borderColor: 'rgba(107, 114, 128, 0.3)' };
   };
 
   const getDifficultyColor = (difficulty) => {
-    if (!difficulty) return 'text-gray-400';
-    if (difficulty.includes('3D') || difficulty.includes('Focused')) return 'text-[#B4833D]';
-    if (difficulty.includes('Zoomed')) return 'text-[#3F3F2C] dark:text-[#F7F1E1]';
-    return 'text-[#66371B] dark:text-[#E3D8C1]';
+    if (!difficulty) return { color: '#9CA3AF' };
+    if (difficulty.includes('3D') || difficulty.includes('Focused')) return { color: 'var(--color-primary)' };
+    if (difficulty.includes('Zoomed')) return { color: 'var(--color-earth-green)' };
+    return { color: 'var(--color-kobicha)' };
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#B4833D] mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: 'var(--color-primary)' }}></div>
           <p className="text-gray-400">Loading courses...</p>
         </div>
       </div>
@@ -119,7 +119,17 @@ const CourseCatalogPage = () => {
           <p className="text-red-400 mb-4">{error}</p>
           <button
             onClick={loadData}
-            className="px-4 py-2 bg-[#B4833D] text-white rounded-lg hover:bg-[#B4833D]/80"
+            className="px-4 py-2 text-white rounded-lg transition-all duration-300"
+            style={{
+              backgroundColor: 'var(--color-primary)',
+              background: 'var(--gradient-primary)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--color-primary) 90%, transparent)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-primary)';
+            }}
           >
             Retry
           </button>
@@ -150,9 +160,19 @@ const CourseCatalogPage = () => {
           <button
             onClick={() => setSelectedSchool(null)}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedSchool === null
-              ? 'bg-[#B4833D] text-white'
-              : 'bg-white/50 dark:bg-black/20 text-gray-600 dark:text-gray-300 hover:bg-[#B4833D]/10'
+              ? 'text-white'
+              : 'bg-white/50 dark:bg-black/20 text-gray-600 dark:text-gray-300'
               }`}
+            style={selectedSchool === null ? {
+              backgroundColor: 'var(--color-primary)',
+              background: 'var(--gradient-primary)'
+            } : {}}
+            onMouseEnter={selectedSchool !== null ? (e) => {
+              e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--color-primary) 10%, transparent)';
+            } : undefined}
+            onMouseLeave={selectedSchool !== null ? (e) => {
+              e.currentTarget.style.backgroundColor = '';
+            } : undefined}
           >
             All Schools
           </button>
@@ -167,11 +187,21 @@ const CourseCatalogPage = () => {
                 onClick={() => isUnlocked && setSelectedSchool(schoolName)}
                 disabled={!isUnlocked}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors relative ${selectedSchool === schoolName
-                  ? 'bg-[#B4833D] text-white'
+                  ? 'text-white'
                   : isUnlocked
-                    ? 'bg-white/50 dark:bg-black/20 text-gray-600 dark:text-gray-300 hover:bg-[#B4833D]/10'
+                    ? 'bg-white/50 dark:bg-black/20 text-gray-600 dark:text-gray-300'
                     : 'bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed opacity-50'
                   }`}
+                style={selectedSchool === schoolName ? {
+                  backgroundColor: 'var(--color-primary)',
+                  background: 'var(--gradient-primary)'
+                } : isUnlocked ? {} : {}}
+                onMouseEnter={isUnlocked && selectedSchool !== schoolName ? (e) => {
+                  e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--color-primary) 10%, transparent)';
+                } : undefined}
+                onMouseLeave={isUnlocked && selectedSchool !== schoolName ? (e) => {
+                  e.currentTarget.style.backgroundColor = '';
+                } : undefined}
                 title={!isUnlocked ? `Requires ${requiredXp.toLocaleString()} XP to unlock` : ''}
               >
                 {schoolName}
@@ -204,22 +234,29 @@ const CourseCatalogPage = () => {
               return (
                 <div
                   key={schoolName}
-                  className={`glass-card ${!isSchoolUnlocked ? 'opacity-60' : ''}`}
+                  className={`glass-panel-floating p-6 ${!isSchoolUnlocked ? 'opacity-60' : ''}`}
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                        <BookOpen size={24} className="text-[#B4833D]" />
+                        <BookOpen size={24} style={{ color: 'var(--color-primary)' }} />
                         {schoolName}
                       </h2>
                       {!isSchoolUnlocked && (
-                        <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-500/20 text-red-500 border border-red-500/30 flex items-center gap-2">
+                        <span 
+                          className="px-3 py-1 rounded-full text-sm font-medium border flex items-center gap-2"
+                          style={{
+                            backgroundColor: 'color-mix(in srgb, var(--color-error, #ef4444) 20%, transparent)',
+                            color: 'var(--color-error, #ef4444)',
+                            borderColor: 'color-mix(in srgb, var(--color-error, #ef4444) 30%, transparent)'
+                          }}
+                        >
                           <Lock size={14} />
                           Locked - {schoolRequiredXp.toLocaleString()} XP Required
                         </span>
                       )}
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getSchoolColor(schoolName)}`}>
+                    <span className="px-3 py-1 rounded-full text-sm font-medium border" style={getSchoolColor(schoolName)}>
                       {courses.length} {courses.length === 1 ? 'course' : 'courses'}
                     </span>
                   </div>
@@ -246,8 +283,18 @@ const CourseCatalogPage = () => {
                         return (
                           <div
                             key={course.id}
-                            className={`glass-effect rounded-xl p-5 cursor-pointer transition-all hover:scale-[1.02] border border-[#B4833D]/20 hover:border-[#B4833D]/50 ${!isUnlocked ? 'opacity-60' : ''
-                              }`}
+                            className={`glass-effect rounded-xl p-5 cursor-pointer transition-all hover:scale-[1.02] border ${!isUnlocked ? 'opacity-60' : ''}`}
+                            style={{
+                              borderColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)'
+                            }}
+                            onMouseEnter={(e) => {
+                              if (isUnlocked) {
+                                e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--color-primary) 50%, transparent)';
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--color-primary) 20%, transparent)';
+                            }}
                             onClick={() => isUnlocked && handleCourseClick(course.id)}
                           >
                             {/* Lock Overlay */}
@@ -268,7 +315,7 @@ const CourseCatalogPage = () => {
                                 {course.course_title}
                               </h3>
                               <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                                <span className={getDifficultyColor(course.difficulty_level)}>
+                                <span style={getDifficultyColor(course.difficulty_level)}>
                                   {course.difficulty_level || 'N/A'}
                                 </span>
                                 {course.duration_hours > 0 && (
@@ -294,10 +341,17 @@ const CourseCatalogPage = () => {
 
                             {/* Action Button */}
                             <button
-                              className={`w-full py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${isUnlocked
-                                ? 'bg-gradient-to-r from-[#B4833D] to-[#81754B] hover:from-[#B4833D]/90 hover:to-[#81754B]/90 text-white shadow-md'
-                                : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                                }`}
+                              className={`w-full py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-white shadow-md ${!isUnlocked ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed' : ''}`}
+                              style={isUnlocked ? {
+                                background: 'var(--gradient-primary)',
+                                backgroundColor: 'var(--color-primary)'
+                              } : {}}
+                              onMouseEnter={isUnlocked ? (e) => {
+                                e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--color-primary) 90%, transparent)';
+                              } : undefined}
+                              onMouseLeave={isUnlocked ? (e) => {
+                                e.currentTarget.style.backgroundColor = 'var(--color-primary)';
+                              } : undefined}
                               disabled={!isUnlocked}
                               onClick={(e) => {
                                 e.stopPropagation();

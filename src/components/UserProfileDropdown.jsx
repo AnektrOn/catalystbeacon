@@ -50,7 +50,7 @@ const UserProfileDropdown = ({ isOpen, onClose }) => {
                             className="w-10 h-10 rounded-full"
                         />
                     ) : (
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#B4833D] to-[#81754B] flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'var(--gradient-primary)' }}>
                             <User size={20} className="text-white" />
                         </div>
                     )}

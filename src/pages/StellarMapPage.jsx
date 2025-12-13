@@ -4,7 +4,7 @@ import StellarMapErrorBoundary from '../components/stellar-map/StellarMapErrorBo
 
 const StellarMapPage = () => {
   return (
-    <div className="w-full h-screen overflow-hidden">
+    <div className="w-full h-screen overflow-hidden" style={{ padding: 0, margin: 0 }}>
       <StellarMapErrorBoundary>
         <StellarMap />
       </StellarMapErrorBoundary>

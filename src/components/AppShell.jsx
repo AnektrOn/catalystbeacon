@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabaseClient';
 import UserProfileDropdown from './UserProfileDropdown';
 import NotificationBadge from './NotificationBadge';
 import AppShellMobile from './AppShellMobile';
+import ColorPaletteDropdown from './common/ColorPaletteDropdown';
 import {
   Grid3X3,
   Calendar,
@@ -18,7 +19,8 @@ import {
   BookOpen,
   Bell,
   Menu,
-  X
+  X,
+  Sparkles
 } from 'lucide-react';
 
 const AppShell = () => {
@@ -42,6 +44,24 @@ const AppShell = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // #region agent log
+  useEffect(() => {
+    const checkColorPalette = () => {
+      try {
+        const root = document.documentElement;
+        const computedStyle = window.getComputedStyle(root);
+        const colorPrimary = computedStyle.getPropertyValue('--color-primary').trim();
+        const hasColorPaletteDropdown = document.querySelector('[data-color-palette-dropdown]') !== null;
+        const hasColorPaletteSwitcher = typeof window !== 'undefined' && window.colorPaletteSwitcher;
+        fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AppShell.jsx:47',message:'AppShell mounted - checking color palette UI',data:{colorPrimary,hasColorPaletteDropdown,hasColorPaletteSwitcher,hasCSSVariables:!!colorPrimary},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+      } catch(e) {
+        fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AppShell.jsx:47',message:'Error checking color palette UI',data:{error:e.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+      }
+    };
+    setTimeout(checkColorPalette, 1000);
+  }, []);
+  // #endregion
 
   // Load notifications
   useEffect(() => {
@@ -90,6 +110,22 @@ const AppShell = () => {
     }
   }, [user]);
 
+  // Debug: Log profile background image changes
+  useEffect(() => {
+    if (profile?.background_image) {
+      console.log('🎨 AppShell: Background image updated:', profile.background_image);
+    }
+  }, [profile?.background_image]);
+
+  // Debug: Log current profile state
+  useEffect(() => {
+    console.log('🎨 AppShell: Current profile state:', {
+      hasProfile: !!profile,
+      hasBackgroundImage: !!profile?.background_image,
+      backgroundImageUrl: profile?.background_image
+    });
+  }, [profile]);
+
   // Use AppShellMobile for smaller screens
   if (isMobile) {
     return <AppShellMobile />;
@@ -111,6 +147,7 @@ const AppShell = () => {
     { icon: Target, label: 'Mastery', path: '/mastery' },
     { icon: Calendar, label: 'Calendar', path: '/mastery/calendar' },
     { icon: Clock, label: 'Timer', path: '/mastery/timer' },
+    { icon: Sparkles, label: 'Stellar Map', path: '/stellar-map' },
     { icon: User, label: 'Profile', path: '/profile' },
     { icon: Users, label: 'Community', path: '/community' },
     { icon: Settings, label: 'Settings', path: '/settings' }
@@ -124,24 +161,33 @@ const AppShell = () => {
     <div className={`min-h-screen ${isDarkMode ? 'dark' : ''}`}>
       {/* Background - User's custom background or earth-tone gradient */}
       <div
-        className="fixed inset-0 bg-cover bg-center bg-no-repeat -z-10 transition-all duration-500"
+        key={profile?.background_image || 'default-bg'}
+        className="fixed inset-0 -z-10 transition-all duration-500"
         style={{
           backgroundImage: profile?.background_image
             ? `url(${profile.background_image})`
-            : undefined
+            : 'none',
+          backgroundSize: profile?.background_image ? 'cover' : 'auto',
+          backgroundPosition: profile?.background_image ? 'center' : 'center',
+          backgroundRepeat: profile?.background_image ? 'no-repeat' : 'repeat'
         }}
       >
         {!profile?.background_image && (
-          <div className="absolute inset-0 bg-gradient-to-br from-[#F7F1E1] via-[#E3D8C1] to-[#B4833D] dark:from-[#3F3F2C] dark:via-[#66371B] dark:to-[#81754B]">
+          <div className="absolute inset-0" style={{ background: 'var(--gradient-warm)' }}>
             {/* Abstract shapes for visual interest */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-20 dark:opacity-10">
-              <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-[#B4833D]/20 blur-3xl"></div>
-              <div className="absolute top-[40%] right-[10%] w-[40%] h-[40%] rounded-full bg-[#81754B]/20 blur-3xl"></div>
-              <div className="absolute -bottom-[10%] left-[20%] w-[30%] h-[30%] rounded-full bg-[#66371B]/20 blur-3xl"></div>
+              <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full blur-3xl" style={{ backgroundColor: 'var(--color-primary)', opacity: 0.2 }}></div>
+              <div className="absolute top-[40%] right-[10%] w-[40%] h-[40%] rounded-full blur-3xl" style={{ backgroundColor: 'var(--color-secondary)', opacity: 0.2 }}></div>
+              <div className="absolute -bottom-[10%] left-[20%] w-[30%] h-[30%] rounded-full blur-3xl" style={{ backgroundColor: 'var(--color-kobicha)', opacity: 0.2 }}></div>
             </div>
           </div>
         )}
-        <div className="absolute inset-0 backdrop-blur-[1px]"></div>
+        <div 
+          className="absolute inset-0 backdrop-blur-[1px]"
+          style={{
+            backgroundColor: profile?.background_image ? 'rgba(0, 0, 0, 0.1)' : 'transparent'
+          }}
+        ></div>
       </div>
 
       {/* Header - 60% width */}
@@ -154,6 +200,9 @@ const AppShell = () => {
 
           {/* Right side actions */}
           <div className="flex items-center space-x-3 ml-auto">
+            {/* Color Palette Dropdown */}
+            <ColorPaletteDropdown />
+            
             {/* Notification Bell */}
             <div className="relative">
               <button className="glass-icon-btn">
@@ -193,7 +242,7 @@ const AppShell = () => {
         className="app-shell-sidebar fixed left-4 top-20 bottom-4 z-40"
         style={{ width: isSidebarExpanded ? 'var(--sidebar-width-expanded)' : 'var(--sidebar-width-collapsed)' }}
       >
-        <div className={`glass-sidebar-panel-v2 glass-panel-floating ${isSidebarExpanded ? 'expanded' : 'collapsed'}`} style={{ background: 'linear-gradient(180deg, rgba(180, 131, 61, 0.15) 0%, rgba(63, 63, 44, 0.15) 100%)' }}>
+        <div className={`glass-sidebar-panel-v2 glass-panel-floating ${isSidebarExpanded ? 'expanded' : 'collapsed'}`} style={{ background: `linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 15%, transparent) 0%, color-mix(in srgb, var(--color-earth-green) 15%, transparent) 100%)` }}>
           {/* Top section - Toggle button */}
           <div className={`flex ${isSidebarExpanded ? 'justify-between items-center' : 'justify-center'} mb-6`}>
             <button
@@ -211,7 +260,8 @@ const AppShell = () => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path ||
                 (item.path === '/mastery' && location.pathname.startsWith('/mastery')) ||
-                (item.path === '/courses' && location.pathname.startsWith('/courses'));
+                (item.path === '/courses' && location.pathname.startsWith('/courses')) ||
+                (item.path === '/stellar-map' && location.pathname.startsWith('/stellar-map'));
 
               return (
                 <button

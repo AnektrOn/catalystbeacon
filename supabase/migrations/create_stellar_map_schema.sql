@@ -60,13 +60,19 @@ ALTER TABLE constellations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE stellar_map_nodes ENABLE ROW LEVEL SECURITY;
 
 -- Step 6: Create RLS policies (read access for all authenticated users)
-CREATE POLICY "Enable read access for authenticated users" ON constellation_families
+-- Drop existing policies if they exist (for idempotency)
+DROP POLICY IF EXISTS "Enable read access for authenticated users" ON constellation_families;
+DROP POLICY IF EXISTS "Enable read access for authenticated users" ON constellations;
+DROP POLICY IF EXISTS "Enable read access for authenticated users" ON stellar_map_nodes;
+
+-- Create policies with unique names
+CREATE POLICY "constellation_families_read_authenticated" ON constellation_families
     FOR SELECT USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Enable read access for authenticated users" ON constellations
+CREATE POLICY "constellations_read_authenticated" ON constellations
     FOR SELECT USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Enable read access for authenticated users" ON stellar_map_nodes
+CREATE POLICY "stellar_map_nodes_read_authenticated" ON stellar_map_nodes
     FOR SELECT USING (auth.role() = 'authenticated');
 
 -- Step 7: Create function to update updated_at timestamp
@@ -79,6 +85,12 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Step 8: Create triggers for updated_at
+-- Drop existing triggers if they exist (for idempotency)
+DROP TRIGGER IF EXISTS update_constellation_families_updated_at ON constellation_families;
+DROP TRIGGER IF EXISTS update_constellations_updated_at ON constellations;
+DROP TRIGGER IF EXISTS update_stellar_map_nodes_updated_at ON stellar_map_nodes;
+
+-- Create triggers
 CREATE TRIGGER update_constellation_families_updated_at
     BEFORE UPDATE ON constellation_families
     FOR EACH ROW

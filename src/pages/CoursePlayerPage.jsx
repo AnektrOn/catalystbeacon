@@ -234,7 +234,7 @@ const CoursePlayerPage = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#B4833D] mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: 'var(--color-primary)' }}></div>
           <p className="text-gray-400 font-medium">Loading lesson...</p>
         </div>
       </div>
@@ -248,7 +248,10 @@ const CoursePlayerPage = () => {
           <p className="text-red-400 mb-6 text-lg">{error || 'Lesson not found'}</p>
           <button
             onClick={() => navigate(`/courses/${courseId}`)}
-            className="px-6 py-3 bg-[#B4833D] text-white rounded-xl hover:bg-[#B4833D]/80 transition-all font-medium"
+            className="px-6 py-3 text-white rounded-xl transition-all font-medium"
+            style={{ backgroundColor: 'var(--color-primary)' }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = 'color-mix(in srgb, var(--color-primary) 80%, transparent)'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = 'var(--color-primary)'}
           >
             Back to Course
           </button>
@@ -258,7 +261,7 @@ const CoursePlayerPage = () => {
   }
 
   return (
-    <div className={`flex h-[calc(100vh-80px)] overflow-hidden transition-all duration-500 ${cinemaMode ? 'fixed inset-0 z-50 bg-[#0f0f0f]' : ''}`}>
+    <div className={`flex h-[calc(100vh-80px)] overflow-hidden transition-all duration-500 ${cinemaMode ? 'fixed inset-0 z-50' : ''}`} style={cinemaMode ? { backgroundColor: 'var(--bg-secondary, #0f0f0f)' } : {}}>
 
       {/* Sidebar - Course Structure */}
       <div
@@ -291,14 +294,15 @@ const CoursePlayerPage = () => {
                     key={`${lesson.chapter_number}_${lesson.lesson_number}`}
                     onClick={() => handleNavigateLesson(lesson.chapter_number, lesson.lesson_number)}
                     className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${isActive
-                      ? 'bg-[#B4833D]/20 text-[#B4833D] font-medium'
+                      ? 'font-medium'
                       : 'text-gray-600 dark:text-gray-300 hover:bg-white/5'
-                      }`}
+                    }`}
+                    style={isActive ? { backgroundColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', color: 'var(--color-primary)' } : {}}
                   >
                     {isLessonCompleted ? (
                       <CheckCircle size={14} className="text-green-500 flex-shrink-0" />
                     ) : (
-                      <div className={`w-3.5 h-3.5 rounded-full border flex-shrink-0 ${isActive ? 'border-[#B4833D]' : 'border-gray-400'}`}></div>
+                      <div className={`w-3.5 h-3.5 rounded-full border flex-shrink-0 ${isActive ? '' : 'border-gray-400'}`} style={isActive ? { borderColor: 'var(--color-primary)' } : {}}></div>
                     )}
                     <span className="truncate">{lesson.lesson_title}</span>
                   </button>
@@ -313,7 +317,7 @@ const CoursePlayerPage = () => {
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
 
         {/* Top Bar */}
-        <div className={`flex items-center justify-between px-6 py-4 ${cinemaMode ? 'bg-[#0f0f0f]/80 backdrop-blur-md' : ''}`}>
+        <div className={`flex items-center justify-between px-6 py-4 ${cinemaMode ? 'backdrop-blur-md' : ''}`} style={cinemaMode ? { backgroundColor: 'color-mix(in srgb, var(--bg-secondary, #0f0f0f) 80%, transparent)' } : {}}>
           <div className="flex items-center gap-4">
             {cinemaMode && !showSidebar && (
               <button
@@ -327,7 +331,9 @@ const CoursePlayerPage = () => {
             {!cinemaMode && (
               <button
                 onClick={() => navigate(`/courses/${courseId}`)}
-                className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-[#B4833D] dark:hover:text-white transition-colors"
+                className="flex items-center gap-2 text-gray-500 dark:text-gray-400 dark:hover:text-white transition-colors"
+                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
+                onMouseLeave={(e) => e.currentTarget.style.color = ''}
               >
                 <ArrowLeft size={20} />
                 <span className="hidden sm:inline">Back to Course</span>
@@ -352,7 +358,7 @@ const CoursePlayerPage = () => {
 
             {/* Lesson Header */}
             <div className="mb-8 text-center">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#B4833D]/10 text-[#B4833D] text-xs font-bold uppercase tracking-wider mb-4 border border-[#B4833D]/20">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 10%, transparent)', color: 'var(--color-primary)', borderColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', borderWidth: '1px', borderStyle: 'solid' }}>
                 Chapter {chapterNum} • Lesson {lessonNum}
               </div>
               <h1 className="text-3xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4 font-heading leading-tight">
@@ -396,7 +402,7 @@ const CoursePlayerPage = () => {
                   {lessonContent.the_hook && (
                     <div className="glass-panel-floating p-8 !m-0">
                       <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-3">
-                        <span className="text-[#B4833D]">01.</span> The Hook
+                        <span style={{ color: 'var(--color-primary)' }}>01.</span> The Hook
                       </h3>
                       <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
                         {lessonContent.the_hook}
@@ -409,13 +415,13 @@ const CoursePlayerPage = () => {
                     <div className="grid md:grid-cols-2 gap-6">
                       {lessonContent.key_terms_1 && (
                         <div className="glass-card-premium p-6">
-                          <h4 className="font-bold text-[#B4833D] text-lg mb-2">{lessonContent.key_terms_1}</h4>
+                          <h4 className="font-bold text-lg mb-2" style={{ color: 'var(--color-primary)' }}>{lessonContent.key_terms_1}</h4>
                           <p className="text-gray-600 dark:text-gray-300">{lessonContent.key_terms_1_def}</p>
                         </div>
                       )}
                       {lessonContent.key_terms_2 && (
                         <div className="glass-card-premium p-6">
-                          <h4 className="font-bold text-[#B4833D] text-lg mb-2">{lessonContent.key_terms_2}</h4>
+                          <h4 className="font-bold text-lg mb-2" style={{ color: 'var(--color-primary)' }}>{lessonContent.key_terms_2}</h4>
                           <p className="text-gray-600 dark:text-gray-300">{lessonContent.key_terms_2_def}</p>
                         </div>
                       )}
@@ -426,17 +432,17 @@ const CoursePlayerPage = () => {
                   {(lessonContent.core_concepts_1 || lessonContent.core_concepts_2) && (
                     <div className="glass-panel-floating p-8 !m-0">
                       <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
-                        <span className="text-[#B4833D]">02.</span> Core Concepts
+                        <span style={{ color: 'var(--color-primary)' }}>02.</span> Core Concepts
                       </h3>
                       <div className="space-y-6">
                         {lessonContent.core_concepts_1 && (
-                          <div className="pl-6 border-l-2 border-[#B4833D]/30">
+                          <div className="pl-6 border-l-2" style={{ borderColor: 'color-mix(in srgb, var(--color-primary) 30%, transparent)' }}>
                             <h4 className="font-bold text-xl text-gray-900 dark:text-white mb-2">{lessonContent.core_concepts_1}</h4>
                             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{lessonContent.core_concepts_1_def}</p>
                           </div>
                         )}
                         {lessonContent.core_concepts_2 && (
-                          <div className="pl-6 border-l-2 border-[#B4833D]/30">
+                          <div className="pl-6 border-l-2" style={{ borderColor: 'color-mix(in srgb, var(--color-primary) 30%, transparent)' }}>
                             <h4 className="font-bold text-xl text-gray-900 dark:text-white mb-2">{lessonContent.core_concepts_2}</h4>
                             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{lessonContent.core_concepts_2_def}</p>
                           </div>
@@ -454,8 +460,8 @@ const CoursePlayerPage = () => {
                       </div>
                     )}
                     {lessonContent.connect_to_your_life && (
-                      <div className="glass-panel-floating p-8 !m-0 bg-[#B4833D]/5 border-[#B4833D]/20">
-                        <h3 className="text-xl font-bold text-[#B4833D] mb-4">Connect to Your Life</h3>
+                      <div className="glass-panel-floating p-8 !m-0" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 5%, transparent)', borderColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', borderWidth: '1px', borderStyle: 'solid' }}>
+                        <h3 className="text-xl font-bold mb-4" style={{ color: 'var(--color-primary)' }}>Connect to Your Life</h3>
                         <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{lessonContent.connect_to_your_life}</p>
                       </div>
                     )}
@@ -465,12 +471,12 @@ const CoursePlayerPage = () => {
                   {(lessonContent.key_takeaways_1 || lessonContent.key_takeaways_2) && (
                     <div className="glass-panel-floating p-8 !m-0">
                       <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
-                        <span className="text-[#B4833D]">03.</span> Key Takeaways
+                        <span style={{ color: 'var(--color-primary)' }}>03.</span> Key Takeaways
                       </h3>
                       <ul className="space-y-4">
                         {lessonContent.key_takeaways_1 && (
                           <li className="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
-                            <div className="p-2 bg-[#B4833D]/20 rounded-lg text-[#B4833D]">
+                            <div className="p-2 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', color: 'var(--color-primary)' }}>
                               <CheckCircle size={20} />
                             </div>
                             <span className="text-lg text-gray-700 dark:text-gray-200 pt-1">{lessonContent.key_takeaways_1}</span>
@@ -478,7 +484,7 @@ const CoursePlayerPage = () => {
                         )}
                         {lessonContent.key_takeaways_2 && (
                           <li className="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
-                            <div className="p-2 bg-[#B4833D]/20 rounded-lg text-[#B4833D]">
+                            <div className="p-2 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', color: 'var(--color-primary)' }}>
                               <CheckCircle size={20} />
                             </div>
                             <span className="text-lg text-gray-700 dark:text-gray-200 pt-1">{lessonContent.key_takeaways_2}</span>
@@ -512,7 +518,7 @@ const CoursePlayerPage = () => {
                         onClick={() => setShowQuiz(true)}
                         className="group relative px-8 py-4 bg-white/10 hover:bg-white/20 text-gray-900 dark:text-white rounded-full font-bold text-lg shadow-lg border border-white/20 transition-all transform hover:scale-105 active:scale-95 flex items-center gap-3"
                       >
-                        <BrainCircuit size={24} className="text-[#B4833D]" />
+                        <BrainCircuit size={24} style={{ color: 'var(--color-primary)' }} />
                         <span>Take Quiz</span>
                       </button>
                     )}
@@ -520,7 +526,16 @@ const CoursePlayerPage = () => {
                     <button
                       onClick={() => handleCompleteLesson()}
                       disabled={isCompleting}
-                      className="group relative px-8 py-4 bg-[#B4833D] hover:bg-[#B4833D]/90 text-white rounded-full font-bold text-lg shadow-lg hover:shadow-[#B4833D]/30 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden"
+                      className="group relative px-8 py-4 text-white rounded-full font-bold text-lg shadow-lg transition-all transform hover:scale-105 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden"
+                      style={{ backgroundColor: 'var(--color-primary)' }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--color-primary) 90%, transparent)';
+                        e.currentTarget.style.boxShadow = '0 10px 30px color-mix(in srgb, var(--color-primary) 30%, transparent)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--color-primary)';
+                        e.currentTarget.style.boxShadow = '';
+                      }}
                     >
                       <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
                       <div className="relative flex items-center gap-3">
@@ -545,7 +560,9 @@ const CoursePlayerPage = () => {
                   {previousLesson ? (
                     <button
                       onClick={() => handleNavigateLesson(previousLesson.lesson.chapter_number, previousLesson.lesson.lesson_number)}
-                      className="flex items-center gap-2 px-6 py-3 text-gray-500 dark:text-gray-400 hover:text-[#B4833D] dark:hover:text-white transition-colors"
+                      className="flex items-center gap-2 px-6 py-3 text-gray-500 dark:text-gray-400 dark:hover:text-white transition-colors"
+                      onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
+                      onMouseLeave={(e) => e.currentTarget.style.color = ''}
                     >
                       <ChevronLeft size={20} />
                       <span>Previous Lesson</span>
@@ -557,7 +574,9 @@ const CoursePlayerPage = () => {
                   {nextLesson && (
                     <button
                       onClick={() => handleNavigateLesson(nextLesson.lesson.chapter_number, nextLesson.lesson.lesson_number)}
-                      className="flex items-center gap-2 px-6 py-3 text-gray-500 dark:text-gray-400 hover:text-[#B4833D] dark:hover:text-white transition-colors"
+                      className="flex items-center gap-2 px-6 py-3 text-gray-500 dark:text-gray-400 dark:hover:text-white transition-colors"
+                      onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
+                      onMouseLeave={(e) => e.currentTarget.style.color = ''}
                     >
                       <span>Next Lesson</span>
                       <ChevronRight size={20} />

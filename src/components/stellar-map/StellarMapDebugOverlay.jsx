@@ -27,7 +27,7 @@ const StellarMapDebugOverlay = ({
       </div>
       <div className="space-y-1">
         <div><span className="text-gray-400">Core:</span> {currentCore}</div>
-        <div><span className="text-gray-400">User XP:</span> {userXP?.toLocaleString()}</div>
+        <div><span className="text-gray-400">User XP:</span> {userXP !== null && userXP !== undefined ? userXP.toLocaleString() : 'Loading...'}</div>
         <div><span className="text-gray-400">Visibility:</span> {visibilityGroup}</div>
         <div><span className="text-gray-400">Nodes:</span> {nodeCount}</div>
         <div><span className="text-gray-400">Families:</span> {familyCount}</div>

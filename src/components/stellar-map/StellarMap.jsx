@@ -1,14 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
-import * as THREE from 'three';
-import { ThreeSceneManager } from './core/ThreeSceneManager';
-import { NodeRenderer } from './core/NodeRenderer';
-import { InteractionManager } from './core/InteractionManager';
+import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 import { useXPVisibility } from './hooks/useXPVisibility';
 import stellarMapService from '../../services/stellarMapService';
 import StellarMapControls from './StellarMapControls';
 import NodeTooltip from './NodeTooltip';
 import StellarMapDebugOverlay from './StellarMapDebugOverlay';
-import * as debugHelpers from './utils/debugHelpers';
+import YouTubePlayerModal from './YouTubePlayerModal';
+import { Link } from 'react-router-dom';
+import { LayoutGrid } from 'lucide-react';
+
+// Lazy load 3D scene
+const StellarMapScene = lazy(() => import('./r3f/StellarMapScene').then(module => ({ default: module.StellarMapScene })));
 
 const DEBUG = process.env.NODE_ENV === 'development';
 
@@ -19,115 +21,22 @@ const StellarMap = () => {
   const [hierarchyData, setHierarchyData] = useState({});
   const [showWhiteLines, setShowWhiteLines] = useState(true);
   const [tooltipData, setTooltipData] = useState({ visible: false, node: null, position: { x: 0, y: 0 } });
+  const [hoveredNodeId, setHoveredNodeId] = useState(null);
+  const [youtubeModal, setYoutubeModal] = useState({ isOpen: false, nodeData: null, videoId: null });
+  const focusConstellationRef = useRef(null);
+  const focusSubnodeRef = useRef(null);
 
-  const sceneManagerRef = useRef(null);
-  const nodeRendererRef = useRef({});
-  const interactionManagerRef = useRef({});
-  const containerRefs = useRef({
-    ignition: null,
-    insight: null,
-    transformation: null
-  });
-  const constellationCentersRef = useRef({});
-  const nodeMeshesRef = useRef([]);
-
+  const { profile, user, fetchProfile } = useAuth();
   const visibilityData = useXPVisibility();
-
-  // Initialize Three.js scenes
+  
+  // Debug: Log profile and XP
   useEffect(() => {
-    if (DEBUG) {
-      console.log('[StellarMap] Initializing Three.js scenes...');
-      debugHelpers.checkThreeJS();
-      debugHelpers.checkContainers();
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[StellarMap] Profile loaded:', profile);
+      console.log('[StellarMap] Profile current_xp:', profile?.current_xp);
+      console.log('[StellarMap] Visibility data userXP:', visibilityData.userXP);
     }
-
-    const manager = new ThreeSceneManager();
-
-    // Initialize all three scenes
-    const ignitionCtx = manager.initializeScene('core-ignition3D', 'Ignition');
-    const insightCtx = manager.initializeScene('core-insight3D', 'Insight');
-    const transformationCtx = manager.initializeScene('core-transformation3D', 'Transformation');
-
-    if (!ignitionCtx || !insightCtx || !transformationCtx) {
-      const errorMsg = 'Failed to initialize 3D scenes. Please refresh the page.';
-      console.error('[StellarMap]', errorMsg);
-      if (DEBUG) {
-        debugHelpers.checkContainers();
-      }
-      setError(errorMsg);
-      return;
-    }
-
-    if (DEBUG) {
-      console.log('[StellarMap] All scenes initialized successfully');
-      ['Ignition', 'Insight', 'Transformation'].forEach(coreName => {
-        const ctx = manager.getScene(coreName);
-        if (ctx) {
-          debugHelpers.inspectScene(ctx.scene, ctx.camera, ctx.renderer);
-        }
-      });
-    }
-
-    // Create node renderers for each scene
-    nodeRendererRef.current = {
-      Ignition: new NodeRenderer(ignitionCtx.scene),
-      Insight: new NodeRenderer(insightCtx.scene),
-      Transformation: new NodeRenderer(transformationCtx.scene)
-    };
-
-    // Create interaction managers for each scene
-    interactionManagerRef.current = {
-      Ignition: new InteractionManager(
-        ignitionCtx.scene,
-        ignitionCtx.camera,
-        ignitionCtx.renderer,
-        []
-      ),
-      Insight: new InteractionManager(
-        insightCtx.scene,
-        insightCtx.camera,
-        insightCtx.renderer,
-        []
-      ),
-      Transformation: new InteractionManager(
-        transformationCtx.scene,
-        transformationCtx.camera,
-        transformationCtx.renderer,
-        []
-      )
-    };
-
-    // Set up interaction callbacks
-    Object.values(interactionManagerRef.current).forEach(im => {
-      im.setOnNodeHover((data) => {
-        setTooltipData(data);
-      });
-      im.setOnNodeClick((nodeData) => {
-        // Node click handled by InteractionManager (opens link)
-      });
-    });
-
-    // Attach event listeners
-    Object.values(interactionManagerRef.current).forEach(im => {
-      im.attachListeners();
-    });
-
-    sceneManagerRef.current = manager;
-    manager.startAnimation();
-
-    // Handle resize
-    const handleResize = () => {
-      manager.handleResize();
-    };
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      manager.stopAnimation();
-      manager.dispose();
-      Object.values(interactionManagerRef.current).forEach(im => im.dispose());
-    };
-  }, []);
+  }, [profile, visibilityData.userXP]);
 
   // Fetch data when core or XP changes
   useEffect(() => {
@@ -150,11 +59,6 @@ const StellarMap = () => {
           throw fetchError;
         }
 
-        if (DEBUG) {
-          debugHelpers.checkNodeData(data);
-          debugHelpers.checkXPVisibility(visibilityData.userXP, currentCore);
-        }
-
         setHierarchyData(data || {});
       } catch (err) {
         console.error('Error loading stellar map data:', err);
@@ -164,62 +68,95 @@ const StellarMap = () => {
       }
     };
 
-    if (sceneManagerRef.current) {
-      loadData();
-    }
+    loadData();
   }, [currentCore, visibilityData.userXP]);
 
-  // Render nodes when data changes
-  useEffect(() => {
-    const renderer = nodeRendererRef.current[currentCore];
-    const interactionManager = interactionManagerRef.current[currentCore];
-    const sceneContext = sceneManagerRef.current?.getScene(currentCore);
-
-    if (!renderer || !interactionManager || !sceneContext || !hierarchyData || Object.keys(hierarchyData).length === 0) {
-      return;
+  // Handle node hover
+  const handleNodeHover = (nodeData, event) => {
+    if (nodeData) {
+      setHoveredNodeId(nodeData.id);
+      if (event) {
+        setTooltipData({
+          visible: true,
+          node: nodeData,
+          position: { x: event.clientX, y: event.clientY }
+        });
+      }
+    } else {
+      setHoveredNodeId(null);
+      setTooltipData({ visible: false, node: null, position: { x: 0, y: 0 } });
     }
+  };
 
-    // Render nodes
-    if (DEBUG) {
-      console.log(`[StellarMap] Rendering nodes for ${currentCore}...`);
-    }
+  // Extract YouTube video ID from URL
+  const extractYouTubeVideoId = (url) => {
+    if (!url) return null;
 
-    const { nodeMeshes, constellationCenters } = renderer.render(hierarchyData, showWhiteLines);
-    nodeMeshesRef.current = nodeMeshes;
-    constellationCentersRef.current = constellationCenters;
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+      /youtube\.com\/watch\?.*v=([^&\n?#]+)/
+    ];
 
-    if (DEBUG) {
-      console.log(`[StellarMap] Rendered ${nodeMeshes.length} node meshes`);
-      const sceneContext = sceneManagerRef.current?.getScene(currentCore);
-      if (sceneContext) {
-        debugHelpers.countSceneObjects(sceneContext.scene);
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1]) {
+        return match[1];
       }
     }
 
-    // Update interaction manager with new meshes
-    interactionManager.updateNodeMeshes(nodeMeshes);
+    return null;
+  };
 
-    // Reset camera position
-    if (sceneContext.controls) {
-      sceneContext.controls.target.set(0, 0, 0);
-      const dir = new THREE.Vector3()
-        .subVectors(sceneContext.camera.position, new THREE.Vector3(0, 0, 0))
-        .normalize();
-      sceneContext.camera.position.copy(dir.multiplyScalar(15));
-      sceneContext.controls.update();
-    }
-  }, [hierarchyData, currentCore, showWhiteLines]);
+  // Check if URL is a YouTube URL
+  const isYouTubeUrl = (url) => {
+    if (!url) return false;
+    return /youtube\.com|youtu\.be/.test(url);
+  };
 
-  // Update white lines visibility
-  useEffect(() => {
-    const renderer = nodeRendererRef.current[currentCore];
-    if (renderer) {
-      renderer.toggleWhiteLines(showWhiteLines);
+  // Handle node click
+  const handleNodeClick = (nodeData) => {
+    if (!nodeData?.link) return;
+
+    // Check if it's a YouTube URL
+    if (isYouTubeUrl(nodeData.link)) {
+      const videoId = extractYouTubeVideoId(nodeData.link);
+      if (videoId) {
+        // Show YouTube modal
+        setYoutubeModal({
+          isOpen: true,
+          nodeData: nodeData,
+          videoId: videoId
+        });
+      } else {
+        // Invalid YouTube URL, open in new tab
+        console.warn('Could not extract YouTube video ID from URL:', nodeData.link);
+        window.open(nodeData.link, '_blank');
+      }
+    } else {
+      // Not a YouTube URL, open in new tab (existing behavior)
+      window.open(nodeData.link, '_blank');
     }
-  }, [showWhiteLines, currentCore]);
+  };
+
+  // Handle YouTube modal close
+  const handleYoutubeModalClose = () => {
+    setYoutubeModal({ isOpen: false, nodeData: null, videoId: null });
+  };
+
+  // Handle video completion
+  const handleVideoComplete = async (completionData) => {
+    // Refresh profile to update XP display
+    // This will automatically update visibilityData since it depends on profile.current_xp
+    if (user?.id && fetchProfile) {
+      await fetchProfile(user.id);
+    }
+    
+    // The useEffect that loads data will automatically re-run when visibilityData.userXP changes
+    // No manual refresh needed
+  };
 
   // Prepare constellation and subnode options for controls
-  const constellationOptions = React.useMemo(() => {
+  const constellationOptions = useMemo(() => {
     const options = [];
     Object.entries(hierarchyData).forEach(([familyName, constellations]) => {
       Object.keys(constellations).forEach(constellationName => {
@@ -233,7 +170,7 @@ const StellarMap = () => {
     return options;
   }, [hierarchyData]);
 
-  const subnodeOptions = React.useMemo(() => {
+  const subnodeOptions = useMemo(() => {
     const nodes = [];
     Object.values(hierarchyData).forEach(constellations => {
       Object.values(constellations).forEach(nodeArray => {
@@ -249,28 +186,17 @@ const StellarMap = () => {
     setCurrentCore(capitalized);
   };
 
-  // Handle constellation selection
+  // Handle constellation selection (focus camera)
   const handleConstellationSelect = (familyAlias, constellationAlias) => {
-    const interactionManager = interactionManagerRef.current[currentCore];
-    const sceneContext = sceneManagerRef.current?.getScene(currentCore);
-
-    if (interactionManager && sceneContext?.controls) {
-      interactionManager.focusConstellation(
-        constellationAlias,
-        constellationCentersRef.current,
-        sceneContext.controls
-      );
+    if (focusConstellationRef.current) {
+      focusConstellationRef.current(constellationAlias);
     }
   };
 
-  // Handle subnode selection
+  // Handle subnode selection (focus camera)
   const handleSubnodeSelect = (nodeId) => {
-    const nodeMesh = nodeMeshesRef.current.find(m => m.userData?.id === nodeId);
-    const interactionManager = interactionManagerRef.current[currentCore];
-    const sceneContext = sceneManagerRef.current?.getScene(currentCore);
-
-    if (nodeMesh && interactionManager && sceneContext?.controls) {
-      interactionManager.focusSubnode(nodeMesh.position, sceneContext.controls);
+    if (focusSubnodeRef.current) {
+      focusSubnodeRef.current(nodeId);
     }
   };
 
@@ -279,36 +205,15 @@ const StellarMap = () => {
     setShowWhiteLines(!showWhiteLines);
   };
 
-  if (loading) {
-    return (
-      <div className="w-full h-screen flex items-center justify-center bg-gradient-radial from-[#0a0a1e] to-black">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading Stellar Map...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="w-full h-screen flex items-center justify-center bg-gradient-radial from-[#0a0a1e] to-black p-4">
-        <div className="text-center max-w-md">
-          <p className="text-destructive mb-4">Error loading stellar map: {error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-          >
-            Reload Page
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div
-      className="relative w-full h-screen overflow-hidden bg-gradient-radial from-[#0a0a1e] to-black"
+      className="relative overflow-hidden bg-gradient-radial from-[#0a0a1e] to-black"
+      style={{ 
+        width: '70%', 
+        height: '70vh', 
+        margin: '15vh auto 0',
+        padding: 0
+      }}
       role="main"
       aria-label="Stellar Map - 3D visualization of learning content"
     >
@@ -324,46 +229,67 @@ const StellarMap = () => {
         aria-hidden="true"
       />
 
-      {/* Canvas Containers - Always rendered with dimensions */}
-      <div
-        ref={el => containerRefs.current.ignition = el}
-        id="core-ignition3D"
-        className="absolute inset-0"
-        style={{
-          visibility: currentCore === 'Ignition' ? 'visible' : 'hidden',
-          pointerEvents: currentCore === 'Ignition' ? 'auto' : 'none',
-          zIndex: currentCore === 'Ignition' ? 1 : 0
-        }}
-        role="tabpanel"
-        aria-labelledby="core-ignition-tab"
-        aria-hidden={currentCore !== 'Ignition'}
-      />
-      <div
-        ref={el => containerRefs.current.insight = el}
-        id="core-insight3D"
-        className="absolute inset-0"
-        style={{
-          visibility: currentCore === 'Insight' ? 'visible' : 'hidden',
-          pointerEvents: currentCore === 'Insight' ? 'auto' : 'none',
-          zIndex: currentCore === 'Insight' ? 1 : 0
-        }}
-        role="tabpanel"
-        aria-labelledby="core-insight-tab"
-        aria-hidden={currentCore !== 'Insight'}
-      />
-      <div
-        ref={el => containerRefs.current.transformation = el}
-        id="core-transformation3D"
-        className="absolute inset-0"
-        style={{
-          visibility: currentCore === 'Transformation' ? 'visible' : 'hidden',
-          pointerEvents: currentCore === 'Transformation' ? 'auto' : 'none',
-          zIndex: currentCore === 'Transformation' ? 1 : 0
-        }}
-        role="tabpanel"
-        aria-labelledby="core-transformation-tab"
-        aria-hidden={currentCore !== 'Transformation'}
-      />
+      {/* View Switch Link - Link to 2D view */}
+      <div className="absolute top-4 right-4 z-[60] shadow-lg">
+        <Link
+          to="/stellar-map-2d"
+          className="px-4 py-2 rounded-md transition-all flex items-center gap-2 font-medium whitespace-nowrap bg-black/80 text-white hover:bg-white/20 border border-white/20"
+          title="Switch to 2D View (Lightweight, no Three.js)"
+        >
+          <LayoutGrid size={18} />
+          <span>Switch to 2D</span>
+        </Link>
+      </div>
+
+      {/* 3D Scene */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div style={{ width: '100%', height: '100%' }}>
+          <Suspense fallback={
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading 3D view...</p>
+              </div>
+            </div>
+          }>
+            <StellarMapScene
+              coreName={currentCore}
+              hierarchyData={hierarchyData}
+              showWhiteLines={showWhiteLines}
+              onNodeHover={handleNodeHover}
+              onNodeClick={handleNodeClick}
+              hoveredNodeId={hoveredNodeId}
+              onConstellationFocus={(focusFn) => { focusConstellationRef.current = focusFn; }}
+              onSubnodeFocus={(focusFn) => { focusSubnodeRef.current = focusFn; }}
+            />
+          </Suspense>
+        </div>
+      </div>
+
+      {/* Loading Overlay */}
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-50">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading Stellar Map...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error Overlay */}
+      {error && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
+          <div className="text-center max-w-md bg-background/90 p-6 rounded-lg">
+            <p className="text-destructive mb-4">Error loading stellar map: {error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+            >
+              Reload Page
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Controls */}
       <StellarMapControls
@@ -390,11 +316,22 @@ const StellarMap = () => {
           currentCore={currentCore}
           userXP={visibilityData.userXP}
           visibilityGroup={visibilityData.getGroup(currentCore)}
-          nodeCount={nodeMeshesRef.current.length}
+          nodeCount={Object.values(hierarchyData).reduce((sum, constellations) => 
+            sum + Object.values(constellations).reduce((s, nodes) => s + nodes.length, 0), 0
+          )}
           familyCount={Object.keys(hierarchyData).length}
           constellationCount={Object.values(hierarchyData).reduce((sum, c) => sum + Object.keys(c).length, 0)}
         />
       )}
+
+      {/* YouTube Player Modal */}
+      <YouTubePlayerModal
+        isOpen={youtubeModal.isOpen}
+        onClose={handleYoutubeModalClose}
+        nodeData={youtubeModal.nodeData}
+        videoId={youtubeModal.videoId}
+        onComplete={handleVideoComplete}
+      />
     </div>
   );
 };

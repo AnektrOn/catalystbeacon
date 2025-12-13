@@ -41,17 +41,19 @@ const calculateCurrentStreak = (completedDates = []) => {
 // Helper function to get appropriate color for toolbox items
 const getToolboxColor = (title) => {
   const titleLower = title.toLowerCase();
+  const root = document.documentElement;
+  const computedStyle = window.getComputedStyle(root);
   
   if (titleLower.includes('pomodoro') || titleLower.includes('time')) {
-    return '#3B82F6'; // Blue
+    return computedStyle.getPropertyValue('--color-info').trim() || '#3B82F6'; // Blue
   } else if (titleLower.includes('mind') || titleLower.includes('map')) {
-    return '#8B5CF6'; // Purple
+    return computedStyle.getPropertyValue('--color-secondary').trim() || '#8B5CF6'; // Purple
   } else if (titleLower.includes('meditation') || titleLower.includes('mindfulness')) {
-    return '#10B981'; // Green
+    return computedStyle.getPropertyValue('--color-success').trim() || '#10B981'; // Green
   } else if (titleLower.includes('listening') || titleLower.includes('communication')) {
-    return '#F59E0B'; // Orange
+    return computedStyle.getPropertyValue('--color-warning').trim() || '#F59E0B'; // Orange
   } else {
-    return '#6B7280'; // Gray default
+    return computedStyle.getPropertyValue('--text-secondary').trim() || '#6B7280'; // Gray default
   }
 };
 

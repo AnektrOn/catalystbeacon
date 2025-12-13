@@ -304,6 +304,7 @@ export const AuthProvider = ({ children }) => {
     if (!user) return { error: new Error('No user logged in') }
 
     try {
+      console.log('🔄 AuthContext: Updating profile with:', updates)
       const { data, error } = await supabase
         .from('profiles')
         .update(updates)
@@ -313,11 +314,12 @@ export const AuthProvider = ({ children }) => {
 
       if (error) throw error
 
+      console.log('✅ AuthContext: Profile updated, new data:', data)
       setProfile(data)
-      toast.success('Profile updated successfully!')
+      // Don't show toast here - let the caller handle it
       return { data, error: null }
     } catch (error) {
-      console.error('Update profile error:', error)
+      console.error('❌ AuthContext: Update profile error:', error)
       toast.error(error.message)
       return { data: null, error }
     }

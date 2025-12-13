@@ -22,19 +22,21 @@ const CalendarTab = () => {
   // Helper function to get appropriate color for habits
   const getHabitColor = (title) => {
     const titleLower = title.toLowerCase();
+    const root = document.documentElement;
+    const computedStyle = window.getComputedStyle(root);
     
     if (titleLower.includes('read') || titleLower.includes('book')) {
-      return '#10b981'; // Green
+      return computedStyle.getPropertyValue('--color-success').trim() || '#10b981';
     } else if (titleLower.includes('workout') || titleLower.includes('exercise') || titleLower.includes('gym')) {
-      return '#8b5cf6'; // Purple
+      return computedStyle.getPropertyValue('--color-secondary').trim() || '#8b5cf6';
     } else if (titleLower.includes('build') || titleLower.includes('code') || titleLower.includes('program')) {
-      return '#3b82f6'; // Blue
+      return computedStyle.getPropertyValue('--color-info').trim() || '#3b82f6';
     } else if (titleLower.includes('meditation') || titleLower.includes('mindfulness')) {
-      return '#f59e0b'; // Orange
+      return computedStyle.getPropertyValue('--color-warning').trim() || '#f59e0b';
     } else if (titleLower.includes('journal') || titleLower.includes('write')) {
-      return '#ef4444'; // Red
+      return computedStyle.getPropertyValue('--color-error').trim() || '#ef4444';
     } else {
-      return '#6b7280'; // Gray default
+      return computedStyle.getPropertyValue('--text-secondary').trim() || '#6b7280';
     }
   };
 
@@ -342,16 +344,16 @@ const CalendarTab = () => {
           toast.success(`Task Completed! ${habit?.title || 'Task'} • +${xpReward} XP earned`, {
             duration: 4000,
             style: {
-              background: 'rgba(30, 41, 59, 0.95)',
+              background: 'color-mix(in srgb, var(--bg-secondary, #1e293b) 95%, transparent)',
               color: '#fff',
-              border: '1px solid rgba(16, 185, 129, 0.3)',
+              border: '1px solid color-mix(in srgb, var(--color-success, #10b981) 30%, transparent)',
               borderRadius: '12px',
               padding: '16px 20px',
               fontSize: '14px',
               fontWeight: 500,
             },
             iconTheme: {
-              primary: '#10B981',
+              primary: 'var(--color-success, #10B981)',
               secondary: '#fff',
             },
           });
@@ -404,8 +406,8 @@ const CalendarTab = () => {
         toast.error('Failed to update habit. Please try again.', {
           duration: 3000,
           style: {
-            background: 'rgba(239, 68, 68, 0.95)',
-            color: '#fff',
+          background: 'color-mix(in srgb, var(--color-error, #ef4444) 95%, transparent)',
+          color: '#fff',
             borderRadius: '12px',
             padding: '14px 18px',
             fontSize: '13px',

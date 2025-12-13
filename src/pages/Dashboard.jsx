@@ -642,15 +642,15 @@ const Dashboard = () => {
               Dashboard
             </h1>
             <p className="text-lg text-gray-600 dark:text-gray-300">
-              Welcome back, <span className="text-[#B4833D] font-medium">{displayName}</span>
+              Welcome back, <span className="font-medium" style={{ color: 'var(--color-primary)' }}>{displayName}</span>
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className={`px-4 py-1.5 rounded-full text-sm font-medium border ${userRole === 'Free' ? 'bg-[#F7F1E1] text-[#66371B] border-[#B4833D]/20' :
-              userRole === 'Student' ? 'bg-[#E3D8C1] text-[#66371B] border-[#B4833D]/30' :
-                'bg-[#B4833D]/20 text-[#B4833D] border-[#B4833D]/40'
-              }`}>
+            <span className={`px-4 py-1.5 rounded-full text-sm font-medium border`} style={userRole === 'Free' ? { backgroundColor: 'var(--color-old-lace)', color: 'var(--color-kobicha)', borderColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)' } :
+              userRole === 'Student' ? { backgroundColor: 'var(--color-bone)', color: 'var(--color-kobicha)', borderColor: 'color-mix(in srgb, var(--color-primary) 30%, transparent)' } :
+                { backgroundColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', color: 'var(--color-primary)', borderColor: 'color-mix(in srgb, var(--color-primary) 40%, transparent)' }
+            }>
               {userRole} Plan
             </span>
           </div>

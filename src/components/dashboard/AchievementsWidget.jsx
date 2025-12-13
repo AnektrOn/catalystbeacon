@@ -5,7 +5,13 @@ const AchievementsWidget = memo(({ recentAchievements = [], totalCount = 0, next
     return (
         <div className="glass-card-premium p-6 hover:scale-[1.02] transition-transform duration-300">
             <div className="flex items-start justify-between mb-4">
-                <div className="p-3 rounded-xl bg-yellow-400/10 text-yellow-600">
+                <div 
+                    className="p-3 rounded-xl"
+                    style={{
+                        backgroundColor: 'color-mix(in srgb, var(--color-warning) 10%, transparent)',
+                        color: 'var(--color-warning)'
+                    }}
+                >
                     <Trophy size={20} />
                 </div>
                 <div className="text-xs font-medium text-gray-400 bg-white/5 px-2 py-1 rounded-lg border border-white/10 uppercase tracking-wider">
@@ -28,7 +34,11 @@ const AchievementsWidget = memo(({ recentAchievements = [], totalCount = 0, next
                     {recentAchievements.slice(0, 3).map((achievement, index) => (
                         <div
                             key={index}
-                            className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center text-white shadow-lg"
+                            className="w-10 h-10 rounded-full flex items-center justify-center text-white shadow-lg"
+                            style={{
+                                background: 'var(--gradient-primary)',
+                                backgroundColor: 'var(--color-warning)'
+                            }}
                             title={achievement.name}
                         >
                             <Trophy size={16} />
@@ -46,8 +56,12 @@ const AchievementsWidget = memo(({ recentAchievements = [], totalCount = 0, next
                     </div>
                     <div className="w-full h-1.5 bg-gray-200 dark:bg-gray-700/50 rounded-full overflow-hidden">
                         <div
-                            className="h-full bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full transition-all duration-500"
-                            style={{ width: `${(nextUnlock.progress / nextUnlock.total) * 100}%` }}
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{ 
+                                width: `${(nextUnlock.progress / nextUnlock.total) * 100}%`,
+                                background: 'var(--gradient-primary)',
+                                backgroundColor: 'var(--color-warning)'
+                            }}
                         />
                     </div>
                     <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
