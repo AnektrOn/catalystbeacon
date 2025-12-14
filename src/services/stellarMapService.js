@@ -41,11 +41,19 @@ class StellarMapService {
    */
   async getFamiliesWithConstellations(level) {
     try {
+      // Normalize level to match database format (capitalized)
+      const normalizedLevel = level 
+        ? level.charAt(0).toUpperCase() + level.slice(1).toLowerCase()
+        : level;
+      
+      // Handle special case for "God Mode"
+      const finalLevel = normalizedLevel === 'God mode' ? 'God Mode' : normalizedLevel;
+
       const { data, error } = await supabase
         .from('constellation_families')
         .select(`
           *,
-          constellations (
+          constellations!inner (
             id,
             name,
             level,
@@ -53,7 +61,8 @@ class StellarMapService {
             display_order
           )
         `)
-        .eq('level', level)
+        .eq('level', finalLevel)
+        .eq('constellations.level', finalLevel)
         .order('display_order', { ascending: true });
 
       if (error) throw error;
@@ -62,8 +71,35 @@ class StellarMapService {
       if (data) {
         data.forEach(family => {
           if (family.constellations) {
+            // Filter constellations by level (double-check, in case the query didn't work)
+            family.constellations = family.constellations.filter(
+              c => c.level === level
+            );
             family.constellations.sort((a, b) => a.display_order - b.display_order);
           }
+        });
+      }
+
+      if (process.env.NODE_ENV === 'development') {
+        const totalConstellationsBefore = data?.reduce((sum, f) => sum + (f.constellations?.length || 0), 0) || 0;
+        const constellationsByLevel = {};
+        
+        data?.forEach(family => {
+          if (family.constellations) {
+            family.constellations.forEach(c => {
+              const cLevel = c.level || 'unknown';
+              constellationsByLevel[cLevel] = (constellationsByLevel[cLevel] || 0) + 1;
+            });
+          }
+        });
+
+        console.log(`[StellarMapService] getFamiliesWithConstellations for level "${level}" (normalized to "${finalLevel}"):`, {
+          familiesFound: data?.length || 0,
+          totalConstellationsBeforeFilter: totalConstellationsBefore,
+          constellationsByLevel: constellationsByLevel,
+          warning: constellationsByLevel[finalLevel] !== totalConstellationsBefore 
+            ? `Found ${totalConstellationsBefore - (constellationsByLevel[finalLevel] || 0)} constellations with wrong level!` 
+            : 'All constellations match the requested level'
         });
       }
 
@@ -182,18 +218,26 @@ class StellarMapService {
         return { data: null, error: new Error('Level parameter is required') };
       }
 
+      // Normalize level to match database format (capitalized)
+      const normalizedLevel = level 
+        ? level.charAt(0).toUpperCase() + level.slice(1).toLowerCase()
+        : level;
+      
+      // Handle special case for "God Mode"
+      const finalLevel = normalizedLevel === 'God mode' ? 'God Mode' : normalizedLevel;
+
       const xp = userXP || 0;
       const isDevelopment = process.env.NODE_ENV === 'development';
 
-      // First get families with constellations
-      const { data: families, error: familiesError } = await this.getFamiliesWithConstellations(level);
+      // First get families with constellations (pass normalized level)
+      const { data: families, error: familiesError } = await this.getFamiliesWithConstellations(finalLevel);
       if (familiesError) {
         console.error('[StellarMapService] Failed to fetch families:', familiesError);
         throw familiesError;
       }
 
       if (!families || families.length === 0) {
-        console.warn(`[StellarMapService] No families found for level "${level}"`);
+        console.warn(`[StellarMapService] No families found for level "${level}" (normalized: "${finalLevel}")`);
         return { data: {}, error: null };
       }
 
@@ -218,6 +262,18 @@ class StellarMapService {
                 console.warn('[StellarMapService] Constellation missing id or name:', constellation);
               }
               return;
+            }
+
+            // CRITICAL: Validate constellation level matches the requested level
+            if (constellation.level && constellation.level !== finalLevel) {
+              if (isDevelopment) {
+                console.warn(
+                  `[StellarMapService] SKIPPING constellation "${constellation.name}" (${constellation.id}): ` +
+                  `has level "${constellation.level}" but requested level is "${finalLevel}". ` +
+                  `This constellation should not be in a ${finalLevel} family.`
+                );
+              }
+              return; // Skip this constellation - it's for a different level
             }
 
             // Validate constellation belongs to this family
@@ -251,7 +307,7 @@ class StellarMapService {
             family_id
           )
         `)
-        .eq('constellations.level', level)
+        .eq('constellations.level', finalLevel)
         .lte('xp_threshold', xp)
         .order('difficulty', { ascending: true });
 
@@ -292,7 +348,7 @@ class StellarMapService {
 
         if ((totalNodeCount || 0) === 0) {
           console.warn(
-            `[StellarMapService] WARNING: No nodes exist in database for level "${level}". ` +
+            `[StellarMapService] WARNING: No nodes exist in database for level "${level}" (normalized: "${finalLevel}"). ` +
             `Check if nodes have been imported for this level.`
           );
         }
@@ -340,16 +396,16 @@ class StellarMapService {
           // We trust that relationship. Only validate level to ensure we don't show wrong-level nodes.
           // Note: The query already filters by level, but we double-check as a safety measure
           const nodeConstellationLevel = node.constellations?.level;
-          if (nodeConstellationLevel && nodeConstellationLevel !== level) {
+          if (nodeConstellationLevel && nodeConstellationLevel !== finalLevel) {
             if (isDevelopment) {
               console.warn(
                 `[StellarMapService] Node ${node.id} (${node.title}) belongs to constellation ` +
-                `"${constellation.name}" with level "${nodeConstellationLevel}" but requested level is "${level}"`
+                `"${constellation.name}" with level "${nodeConstellationLevel}" but requested level is "${finalLevel}"`
               );
             }
             misgroupedNodes.push({
               node,
-              reason: `Level mismatch: constellation level is ${nodeConstellationLevel}, requested ${level}`
+              reason: `Level mismatch: constellation level is ${nodeConstellationLevel}, requested ${finalLevel}`
             });
             return;
           }

@@ -73,14 +73,14 @@ const StellarMapControls = ({
             <button
               key={core}
               onClick={() => {
-                onCoreChange(core.toLowerCase());
+                onCoreChange(core); // Keep capitalized - database expects "Insight", "Transformation", etc.
                 setIsOpen(false);
               }}
               role="tab"
-              aria-selected={currentCore === core}
+              aria-selected={currentCore === core || currentCore === core.toLowerCase()}
               aria-controls={`core-${core.toLowerCase()}3D`}
               className={`px-4 py-2 text-sm rounded border transition-all ${
-                currentCore === core
+                currentCore === core || currentCore === core.toLowerCase()
                   ? 'bg-white/20 border-white/50 text-white'
                   : 'bg-white/10 border-white/30 text-white hover:bg-white/20'
               }`}
@@ -109,15 +109,43 @@ const StellarMapControls = ({
             defaultValue=""
           >
             <option value="">– Select constellation –</option>
-            {constellations.map(({ familyAlias, constellationAlias, displayName }) => (
-              <option
-                key={`${familyAlias}|${constellationAlias}`}
-                value={`${familyAlias}|${constellationAlias}`}
-                className="bg-black text-white"
-              >
-                {displayName || `${familyAlias} / ${constellationAlias}`}
-              </option>
-            ))}
+            {Array.isArray(constellations) && constellations
+              .filter(constellation => constellation != null) // Filter out null/undefined
+              .map((constellation, index) => {
+                // Handle both old format (with familyAlias/constellationAlias) and new format (with value/label)
+                const familyAlias = constellation?.familyAlias || constellation?.familyName || '';
+                const constellationAlias = constellation?.constellationAlias || constellation?.value || constellation?.label || '';
+                const displayName = constellation?.displayName || constellation?.label || constellation?.value || `${familyAlias} / ${constellationAlias}`;
+                
+                // Generate unique key - always include index to ensure uniqueness, sanitize to avoid special chars
+                const safeFamilyAlias = String(familyAlias || '').replace(/[|]/g, '_');
+                const safeConstellationAlias = String(constellationAlias || '').replace(/[|]/g, '_');
+                let key;
+                if (safeFamilyAlias && safeConstellationAlias) {
+                  key = `constellation-${safeFamilyAlias}-${safeConstellationAlias}-${index}`;
+                } else if (constellation?.value) {
+                  key = `constellation-${String(constellation.value).replace(/[|]/g, '_')}-${index}`;
+                } else if (constellation?.id) {
+                  key = `constellation-${String(constellation.id)}-${index}`;
+                } else {
+                  key = `constellation-${index}`;
+                }
+                
+                // Generate value for the option
+                const value = safeFamilyAlias && safeConstellationAlias 
+                  ? `${safeFamilyAlias}|${safeConstellationAlias}` 
+                  : constellation?.value || safeConstellationAlias || `option-${index}`;
+
+                return (
+                  <option
+                    key={key}
+                    value={value}
+                    className="bg-black text-white"
+                  >
+                    {displayName || `Constellation ${index + 1}`}
+                  </option>
+                );
+              })}
           </select>
         </div>
 
@@ -148,11 +176,20 @@ const StellarMapControls = ({
             defaultValue=""
           >
             <option value="">– Select sub-node –</option>
-            {subnodes.map((node) => (
-              <option key={node.id} value={node.id} className="bg-black text-white">
-                {node.title}
-              </option>
-            ))}
+            {subnodes
+              .filter(node => node != null) // Filter out null/undefined
+              .map((node, index) => {
+                // Ensure unique key - use node.id if available, otherwise use index
+                const key = node.id ? `subnode-${node.id}` : `subnode-${index}`;
+                const value = node.id || node.value || `subnode-${index}`;
+                const title = node.title || node.label || `Subnode ${index + 1}`;
+                
+                return (
+                  <option key={key} value={value} className="bg-black text-white">
+                    {title}
+                  </option>
+                );
+              })}
           </select>
         </div>
       </div>

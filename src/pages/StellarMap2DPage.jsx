@@ -138,10 +138,23 @@ const StellarMap2DPage = () => {
   // Get constellation and subnode options for controls
   const constellationOptions = useMemo(() => {
     const options = [];
-    Object.values(hierarchyData).forEach((family) => {
-      Object.keys(family).forEach((constellationName) => {
-        if (!options.find(opt => opt.value === constellationName)) {
-          options.push({ value: constellationName, label: constellationName });
+    const seenKeys = new Set();
+    
+    Object.entries(hierarchyData).forEach(([familyName, constellations]) => {
+      Object.keys(constellations).forEach((constellationName) => {
+        // Create unique key based on both family and constellation
+        const uniqueKey = `${familyName}|${constellationName}`;
+        
+        // Only add if we haven't seen this combination before
+        if (!seenKeys.has(uniqueKey)) {
+          seenKeys.add(uniqueKey);
+          options.push({ 
+            familyAlias: familyName,
+            constellationAlias: constellationName,
+            value: uniqueKey, // Use unique key as value for consistency
+            label: constellationName,
+            displayName: `${familyName} / ${constellationName}`
+          });
         }
       });
     });
