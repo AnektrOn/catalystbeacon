@@ -131,10 +131,18 @@ const CoursePlayerPage = () => {
   };
 
   const handleCompleteLesson = async (xpBonus = 0) => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CoursePlayerPage.jsx:133',message:'handleCompleteLesson called',data:{hasUser:!!user,userId:user?.id,hasCourse:!!course,courseId:course?.course_id,chapterNum,lessonNum,xpBonus},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+    // #endregion
+    
     if (!user || !course?.course_id) return;
 
     try {
       setIsCompleting(true);
+
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CoursePlayerPage.jsx:140',message:'Calling completeLesson - before',data:{userId:user.id,courseId:course.course_id,chapterNum,lessonNum,xpAmount:50+xpBonus},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
 
       // Complete lesson (awards XP)
       const { data, error: completeError } = await courseService.completeLesson(
@@ -145,19 +153,36 @@ const CoursePlayerPage = () => {
         50 + xpBonus
       );
 
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CoursePlayerPage.jsx:148',message:'completeLesson returned - after',data:{hasError:!!completeError,hasData:!!data,xpAwarded:data?.xpAwarded,hasLessonProgress:!!data?.lessonProgress},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
+
       if (completeError) throw completeError;
 
       setUserLessonProgress({ ...data.lessonProgress, is_completed: true });
 
-      // Refresh profile to update XP
-      if (user.id) {
-        setTimeout(async () => {
-          await fetchProfile(user.id);
-        }, 500);
-      }
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CoursePlayerPage.jsx:160',message:'Calling calculateCourseProgress - before',data:{userId:user.id,courseId:course.course_id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
 
       // Recalculate course progress
       await courseService.calculateCourseProgress(user.id, course.course_id);
+
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CoursePlayerPage.jsx:168',message:'Refreshing profile after course progress calculation - before',data:{userId:user.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
+
+      // Refresh profile to update XP (after course progress is calculated to ensure DB is updated)
+      if (user.id) {
+        await fetchProfile(user.id);
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CoursePlayerPage.jsx:172',message:'fetchProfile completed after lesson completion',data:{userId:user.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+        // #endregion
+      }
+
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CoursePlayerPage.jsx:162',message:'Showing success toast - after all operations',data:{xpAwarded:data.xpAwarded},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
 
       toast.success(`Lesson completed! +${data.xpAwarded} XP earned`, {
         duration: 4000,
@@ -335,7 +360,7 @@ const CoursePlayerPage = () => {
                 onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
                 onMouseLeave={(e) => e.currentTarget.style.color = ''}
               >
-                <ArrowLeft size={20} />
+                <ArrowLeft size={20}  aria-hidden="true"/>
                 <span className="hidden sm:inline">Back to Course</span>
               </button>
             )}
@@ -384,7 +409,7 @@ const CoursePlayerPage = () => {
                     onClick={() => setShowQuiz(false)}
                     className="p-2 hover:bg-white/10 rounded-full transition-colors"
                   >
-                    <ArrowLeft size={20} />
+                    <ArrowLeft size={20}  aria-hidden="true"/>
                   </button>
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Lesson Quiz</h2>
                 </div>
@@ -411,7 +436,7 @@ const CoursePlayerPage = () => {
                   )}
 
                   {/* Key Terms */}
-                  {(lessonContent.key_terms_1 || lessonContent.key_terms_2) && (
+                  {(lessonContent.key_terms_1 || lessonContent.key_terms_2 || lessonContent.key_terms_3 || lessonContent.key_terms_4) && (
                     <div className="grid md:grid-cols-2 gap-6">
                       {lessonContent.key_terms_1 && (
                         <div className="glass-card-premium p-6">
@@ -425,11 +450,23 @@ const CoursePlayerPage = () => {
                           <p className="text-gray-600 dark:text-gray-300">{lessonContent.key_terms_2_def}</p>
                         </div>
                       )}
+                      {lessonContent.key_terms_3 && (
+                        <div className="glass-card-premium p-6">
+                          <h4 className="font-bold text-lg mb-2" style={{ color: 'var(--color-primary)' }}>{lessonContent.key_terms_3}</h4>
+                          <p className="text-gray-600 dark:text-gray-300">{lessonContent.key_terms_3_def}</p>
+                        </div>
+                      )}
+                      {lessonContent.key_terms_4 && (
+                        <div className="glass-card-premium p-6">
+                          <h4 className="font-bold text-lg mb-2" style={{ color: 'var(--color-primary)' }}>{lessonContent.key_terms_4}</h4>
+                          <p className="text-gray-600 dark:text-gray-300">{lessonContent.key_terms_4_def}</p>
+                        </div>
+                      )}
                     </div>
                   )}
 
                   {/* Core Concepts */}
-                  {(lessonContent.core_concepts_1 || lessonContent.core_concepts_2) && (
+                  {(lessonContent.core_concepts_1 || lessonContent.core_concepts_2 || lessonContent.core_concepts_3 || lessonContent.core_concepts_4) && (
                     <div className="glass-panel-floating p-8 !m-0">
                       <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
                         <span style={{ color: 'var(--color-primary)' }}>02.</span> Core Concepts
@@ -445,6 +482,18 @@ const CoursePlayerPage = () => {
                           <div className="pl-6 border-l-2" style={{ borderColor: 'color-mix(in srgb, var(--color-primary) 30%, transparent)' }}>
                             <h4 className="font-bold text-xl text-gray-900 dark:text-white mb-2">{lessonContent.core_concepts_2}</h4>
                             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{lessonContent.core_concepts_2_def}</p>
+                          </div>
+                        )}
+                        {lessonContent.core_concepts_3 && (
+                          <div className="pl-6 border-l-2" style={{ borderColor: 'color-mix(in srgb, var(--color-primary) 30%, transparent)' }}>
+                            <h4 className="font-bold text-xl text-gray-900 dark:text-white mb-2">{lessonContent.core_concepts_3}</h4>
+                            <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{lessonContent.core_concepts_3_def}</p>
+                          </div>
+                        )}
+                        {lessonContent.core_concepts_4 && (
+                          <div className="pl-6 border-l-2" style={{ borderColor: 'color-mix(in srgb, var(--color-primary) 30%, transparent)' }}>
+                            <h4 className="font-bold text-xl text-gray-900 dark:text-white mb-2">{lessonContent.core_concepts_4}</h4>
+                            <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{lessonContent.core_concepts_4_def}</p>
                           </div>
                         )}
                       </div>
@@ -468,7 +517,7 @@ const CoursePlayerPage = () => {
                   </div>
 
                   {/* Key Takeaways */}
-                  {(lessonContent.key_takeaways_1 || lessonContent.key_takeaways_2) && (
+                  {(lessonContent.key_takeaways_1 || lessonContent.key_takeaways_2 || lessonContent.key_takeaways_3 || lessonContent.key_takeaways_4) && (
                     <div className="glass-panel-floating p-8 !m-0">
                       <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
                         <span style={{ color: 'var(--color-primary)' }}>03.</span> Key Takeaways
@@ -488,6 +537,22 @@ const CoursePlayerPage = () => {
                               <CheckCircle size={20} />
                             </div>
                             <span className="text-lg text-gray-700 dark:text-gray-200 pt-1">{lessonContent.key_takeaways_2}</span>
+                          </li>
+                        )}
+                        {lessonContent.key_takeaways_3 && (
+                          <li className="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
+                            <div className="p-2 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', color: 'var(--color-primary)' }}>
+                              <CheckCircle size={20} />
+                            </div>
+                            <span className="text-lg text-gray-700 dark:text-gray-200 pt-1">{lessonContent.key_takeaways_3}</span>
+                          </li>
+                        )}
+                        {lessonContent.key_takeaways_4 && (
+                          <li className="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
+                            <div className="p-2 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', color: 'var(--color-primary)' }}>
+                              <CheckCircle size={20} />
+                            </div>
+                            <span className="text-lg text-gray-700 dark:text-gray-200 pt-1">{lessonContent.key_takeaways_4}</span>
                           </li>
                         )}
                       </ul>
@@ -564,7 +629,7 @@ const CoursePlayerPage = () => {
                       onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
                       onMouseLeave={(e) => e.currentTarget.style.color = ''}
                     >
-                      <ChevronLeft size={20} />
+                      <ChevronLeft size={20}  aria-hidden="true"/>
                       <span>Previous Lesson</span>
                     </button>
                   ) : (
@@ -579,7 +644,7 @@ const CoursePlayerPage = () => {
                       onMouseLeave={(e) => e.currentTarget.style.color = ''}
                     >
                       <span>Next Lesson</span>
-                      <ChevronRight size={20} />
+                      <ChevronRight size={20}  aria-hidden="true"/>
                     </button>
                   )}
                 </div>

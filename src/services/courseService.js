@@ -189,14 +189,30 @@ class CourseService {
    */
   async getCourseStructure(courseId) {
     try {
+      // Handle duplicates by getting the most recent one (or first if multiple)
       const { data, error } = await supabase
         .from('course_structure')
         .select('*')
         .eq('course_id', parseInt(courseId))
-        .single();
+        .order('updated_at', { ascending: false })
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-      if (error) throw error;
-      return { data, error: null };
+      if (error && error.code !== 'PGRST116') {
+        // If there are multiple rows, try to get the first one
+        const { data: allData, error: allError } = await supabase
+          .from('course_structure')
+          .select('*')
+          .eq('course_id', parseInt(courseId))
+          .limit(1)
+          .maybeSingle();
+        
+        if (allError) throw allError;
+        return { data: allData, error: null };
+      }
+
+      return { data: data || null, error: null };
     } catch (error) {
       console.error('Error fetching course structure:', error);
       return { data: null, error };
@@ -209,21 +225,45 @@ class CourseService {
    * @returns {Array} Array of chapters with lessons
    */
   parseCourseStructure(structure) {
-    if (!structure) return [];
+    if (!structure) {
+      console.warn('[CourseService] parseCourseStructure: No structure provided');
+      return [];
+    }
 
     const chapters = [];
-    const chapterCount = structure.chapter_count || 0;
+    // Try to get chapter_count, but also check for chapters manually if count is 0
+    let chapterCount = structure.chapter_count || 0;
+    
+    // If chapter_count is 0, try to detect chapters by checking for chapter_title_1, chapter_title_2, etc.
+    if (chapterCount === 0) {
+      for (let i = 1; i <= 5; i++) {
+        if (structure[`chapter_title_${i}`]) {
+          chapterCount = i;
+        }
+      }
+    }
 
-    for (let i = 1; i <= Math.min(chapterCount, 5); i++) {
+    console.log('[CourseService] parseCourseStructure:', {
+      chapterCount,
+      hasChapter1: !!structure.chapter_title_1,
+      hasLesson1_1: !!structure.lesson_1_1,
+      hasLesson1_2: !!structure.lesson_1_2,
+      structureKeys: Object.keys(structure).filter(k => k.startsWith('chapter') || k.startsWith('lesson'))
+    });
+
+    for (let i = 1; i <= Math.min(chapterCount || 5, 5); i++) {
       const chapterTitle = structure[`chapter_title_${i}`];
       const chapterId = structure[`chapter_id_${i}`];
 
-      if (!chapterTitle) continue;
+      if (!chapterTitle) {
+        console.log(`[CourseService] Skipping chapter ${i}: no chapter_title_${i}`);
+        continue;
+      }
 
       const lessons = [];
       for (let j = 1; j <= 4; j++) {
         const lessonTitle = structure[`lesson_${i}_${j}`];
-        if (lessonTitle) {
+        if (lessonTitle && lessonTitle.trim() !== '') {
           lessons.push({
             chapter_number: i,
             lesson_number: j,
@@ -234,16 +274,18 @@ class CourseService {
         }
       }
 
-      if (lessons.length > 0) {
-        chapters.push({
-          chapter_number: i,
-          chapter_title: chapterTitle,
-          chapter_id: chapterId,
-          lessons: lessons
-        });
-      }
+      console.log(`[CourseService] Chapter ${i} "${chapterTitle}": ${lessons.length} lessons found`);
+
+      // Include chapter even if no lessons (so it shows in UI)
+      chapters.push({
+        chapter_number: i,
+        chapter_title: chapterTitle,
+        chapter_id: chapterId,
+        lessons: lessons
+      });
     }
 
+    console.log(`[CourseService] parseCourseStructure result: ${chapters.length} chapters, ${chapters.reduce((sum, ch) => sum + ch.lessons.length, 0)} total lessons`);
     return chapters;
   }
 

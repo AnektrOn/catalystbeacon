@@ -38,6 +38,7 @@ const DailyRitualWidget = memo(({ completed = false, streak = 0, xpReward = 50 }
                         background: 'var(--gradient-primary)',
                         backgroundColor: 'var(--color-success)'
                     }}
+                    aria-label={`Begin daily ritual to earn ${xpReward} XP`}
                     onMouseEnter={(e) => {
                         e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--color-success) 90%, transparent)';
                     }}

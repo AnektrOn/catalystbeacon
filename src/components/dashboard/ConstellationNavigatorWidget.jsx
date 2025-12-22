@@ -1,4 +1,4 @@
-import React, { useState, memo } from 'react';
+import React, { useState, memo, useMemo, useCallback } from 'react';
 import { Sparkles, ChevronRight } from 'lucide-react';
 
 const ConstellationNavigatorWidget = memo(({
@@ -16,9 +16,19 @@ const ConstellationNavigatorWidget = memo(({
 }) => {
     const [hoveredNode, setHoveredNode] = useState(null);
 
-    const completedCount = currentConstellation.nodes?.filter(n => n.completed).length || 0;
-    const totalCount = currentConstellation.nodes?.length || 0;
-    const progressPercentage = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+    // Memoize expensive calculations
+    const completedCount = useMemo(() => 
+        currentConstellation.nodes?.filter(n => n.completed).length || 0,
+        [currentConstellation.nodes]
+    );
+    const totalCount = useMemo(() => 
+        currentConstellation.nodes?.length || 0,
+        [currentConstellation.nodes]
+    );
+    const progressPercentage = useMemo(() => 
+        totalCount > 0 ? (completedCount / totalCount) * 100 : 0,
+        [completedCount, totalCount]
+    );
 
     return (
         <div className="glass-panel-floating p-6 hover:shadow-xl transition-all duration-300">

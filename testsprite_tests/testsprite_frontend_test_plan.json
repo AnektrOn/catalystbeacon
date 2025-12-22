@@ -1,18 +1,18 @@
 [
   {
     "id": "TC001",
-    "title": "User Registration with Email and Password",
-    "description": "Verify that a new user can register with valid email and password and receives appropriate role assignment.",
+    "title": "User Registration Success",
+    "description": "Verify user can register successfully with valid email and password and is assigned the default Free role.",
     "category": "functional",
     "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Navigate to the signup page"
+        "description": "Navigate to the registration page"
       },
       {
         "type": "action",
-        "description": "Input a valid email address, password, and confirm password"
+        "description": "Input a valid email, strong password, and required fields"
       },
       {
         "type": "action",
@@ -20,18 +20,18 @@
       },
       {
         "type": "assertion",
-        "description": "Check for successful registration confirmation"
+        "description": "Confirm the user account is created successfully and user is assigned Free role"
       },
       {
         "type": "assertion",
-        "description": "Verify that the user is assigned the default Free or Student role based on input"
+        "description": "Verify user is redirected to the Dashboard page after registration"
       }
     ]
   },
   {
     "id": "TC002",
-    "title": "User Login with Correct Credentials",
-    "description": "Check login functionality with valid email and password for all user roles (Free, Student, Teacher, Admin).",
+    "title": "User Login with Valid Credentials",
+    "description": "Verify user can login successfully with registered email and correct password.",
     "category": "functional",
     "priority": "High",
     "steps": [
@@ -41,7 +41,7 @@
       },
       {
         "type": "action",
-        "description": "Input valid email and password credentials of a registered user"
+        "description": "Enter valid email and password"
       },
       {
         "type": "action",
@@ -49,14 +49,18 @@
       },
       {
         "type": "assertion",
-        "description": "Verify user is logged in and redirected to dashboard matching role permissions"
+        "description": "User is authenticated and redirected to the Dashboard"
+      },
+      {
+        "type": "assertion",
+        "description": "User role-based widgets and features display according to their assigned role"
       }
     ]
   },
   {
     "id": "TC003",
-    "title": "User Login with Incorrect Credentials",
-    "description": "Verify login is prevented when invalid email or password is entered.",
+    "title": "Login Failure with Invalid Credentials",
+    "description": "Verify login fails with incorrect email or password and appropriate error is shown.",
     "category": "error handling",
     "priority": "High",
     "steps": [
@@ -66,7 +70,7 @@
       },
       {
         "type": "action",
-        "description": "Input incorrect or unregistered email and/or password"
+        "description": "Enter incorrect email or password"
       },
       {
         "type": "action",
@@ -74,365 +78,236 @@
       },
       {
         "type": "assertion",
-        "description": "Verify error message is displayed and login is rejected"
+        "description": "Display an error message indicating invalid credentials"
+      },
+      {
+        "type": "assertion",
+        "description": "User remains on login page without access to dashboard"
       }
     ]
   },
   {
     "id": "TC004",
-    "title": "Dashboard Widgets Display and Functionality",
-    "description": "Confirm all dashboard widgets load correctly and display accurate data for XP progress, achievements, daily rituals, constellation navigator, current lessons, teacher feed, and quick actions.",
+    "title": "XP Progression and Level Up",
+    "description": "Verify XP is tracked correctly and user level increases appropriately when XP thresholds are met.",
     "category": "functional",
     "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Login as student user and navigate to dashboard"
+        "description": "Complete activities that grant XP such as lessons, habits, challenges"
       },
       {
         "type": "assertion",
-        "description": "Validate XP Progress widget shows correct current progress and level"
+        "description": "Check XP progress widget updates with the acquired XP"
       },
       {
         "type": "assertion",
-        "description": "Ensure Daily Ritual widget lists current habits with correct statuses"
+        "description": "When XP thresholds for level are reached, verify user level increments"
       },
       {
         "type": "assertion",
-        "description": "Verify Coherence widget displays appropriate coherence metrics"
-      },
-      {
-        "type": "assertion",
-        "description": "Check Achievements widget shows earned badges accurately"
-      },
-      {
-        "type": "assertion",
-        "description": "Confirm Current Lesson widget displays active course lesson"
-      },
-      {
-        "type": "assertion",
-        "description": "Check Constellation Navigator and Teacher Feed widgets load data"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify Quick Actions widget navigation links function"
+        "description": "Confirm new level is displayed across dashboard and profile"
       }
     ]
   },
   {
     "id": "TC005",
-    "title": "Course Catalog Browsing and Enrollment",
-    "description": "Verify user can browse course catalog, view detailed course pages, enroll in courses, and see enrollment confirmed.",
+    "title": "Habit Tracking with Streaks",
+    "description": "Verify user can create habits, mark daily completions, and streak counts update properly in habit tracker and calendar.",
     "category": "functional",
     "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Login and navigate to Course Catalog page"
+        "description": "Navigate to habit tracking page"
       },
       {
         "type": "action",
-        "description": "Browse available courses and select one course"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify detailed course page loads with correct information"
+        "description": "Create a new habit with name and schedule"
       },
       {
         "type": "action",
-        "description": "Enroll in the course"
+        "description": "Mark habit as complete for the current day"
       },
       {
         "type": "assertion",
-        "description": "Confirm enrollment success message and course added to user profile"
+        "description": "Streak count increases by one"
+      },
+      {
+        "type": "action",
+        "description": "Advance date and mark habit complete again"
+      },
+      {
+        "type": "assertion",
+        "description": "Streak count continues to increase"
+      },
+      {
+        "type": "action",
+        "description": "Skip a day and check streak reset behavior"
+      },
+      {
+        "type": "assertion",
+        "description": "Streak resets to zero after missed day"
       }
     ]
   },
   {
     "id": "TC006",
-    "title": "Course Video Lesson Playback and Progress Tracking",
-    "description": "Ensure course video lessons play properly and user progress is tracked and saved correctly.",
+    "title": "Course Enrollment and Progress Tracking",
+    "description": "Verify users can browse course catalog, enroll in a course, and course progress is saved after watching lessons.",
     "category": "functional",
     "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Login and open an enrolled course's video lesson"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify video loads, plays, pauses and resumes without errors"
+        "description": "Login and navigate to course catalog page"
       },
       {
         "type": "action",
-        "description": "Watch partial video and navigate away"
+        "description": "Search and select a course"
       },
       {
         "type": "action",
-        "description": "Resume lesson and confirm playback starts from last watched point"
+        "description": "Enroll in the chosen course"
       },
       {
         "type": "assertion",
-        "description": "Confirm progress is updated in course progress tracker"
+        "description": "Enrollment confirmation is shown"
+      },
+      {
+        "type": "action",
+        "description": "Start watching a video lesson within the course player"
+      },
+      {
+        "type": "action",
+        "description": "Watch a portion or full lesson"
+      },
+      {
+        "type": "assertion",
+        "description": "Course progress updates to reflect lesson completion or playback position"
       }
     ]
   },
   {
     "id": "TC007",
-    "title": "Teacher Course Creation and Content Management",
-    "description": "Confirm that teacher role users can access course creation page, create new courses, add video lessons, and save content without errors.",
+    "title": "Teacher Course Creation Flow",
+    "description": "Verify that users with Teacher role can create new courses, add details, upload lessons, and save successfully.",
     "category": "functional",
     "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Login as a teacher and navigate to Course Creation page"
+        "description": "Login as a user with Teacher role"
       },
       {
         "type": "action",
-        "description": "Fill in required course information fields"
+        "description": "Navigate to course creation page"
       },
       {
         "type": "action",
-        "description": "Add at least one video lesson with proper metadata"
+        "description": "Input required course information (title, description, category)"
       },
       {
         "type": "action",
-        "description": "Submit the course creation form"
+        "description": "Upload at least one video lesson"
+      },
+      {
+        "type": "action",
+        "description": "Submit the course for creation"
       },
       {
         "type": "assertion",
-        "description": "Verify no errors occur and new course appears in teacher’s course list"
+        "description": "Course is created and appears in catalog under Teacher's courses"
+      },
+      {
+        "type": "assertion",
+        "description": "No errors encountered during creation"
       }
     ]
   },
   {
     "id": "TC008",
-    "title": "Habit Tracking and Streaks Functionality",
-    "description": "Validate that users can add, edit, complete, and track habits with accurate streak calculations.",
+    "title": "Community Posting and Interaction",
+    "description": "Verify users can create posts, comment, like, and participate in challenges on the social feed.",
     "category": "functional",
     "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Login and navigate to Mastery Habits tab"
+        "description": "Navigate to community page"
       },
       {
         "type": "action",
-        "description": "Create a new habit with appropriate category and settings"
+        "description": "Create a new post with title and rich text content"
       },
       {
         "type": "assertion",
-        "description": "Confirm habit is added and displayed in habit list"
+        "description": "Post appears on social feed immediately"
       },
       {
         "type": "action",
-        "description": "Mark habit as completed for today"
+        "description": "Comment on an existing post"
       },
       {
         "type": "assertion",
-        "description": "Verify streak count increments correctly"
+        "description": "Comment is displayed under the post"
       },
       {
         "type": "action",
-        "description": "Edit and delete habit and confirm expected updates"
+        "description": "Like a post or comment"
+      },
+      {
+        "type": "assertion",
+        "description": "Like count increments accordingly"
+      },
+      {
+        "type": "action",
+        "description": "Join an active community challenge"
+      },
+      {
+        "type": "assertion",
+        "description": "User participation in challenge is recorded and reflected"
       }
     ]
   },
   {
     "id": "TC009",
-    "title": "Toolbox Items Management",
-    "description": "Check that toolbox items can be created, organized, and managed in the toolbox tab.",
+    "title": "Subscription Purchase and Role Upgrade",
+    "description": "Verify users can subscribe to paid plans via Stripe, payment processes securely, and user roles update accordingly.",
     "category": "functional",
-    "priority": "Medium",
+    "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Navigate to the Toolbox tab in Mastery system"
+        "description": "Navigate to Pricing page as a Free user"
       },
       {
         "type": "action",
-        "description": "Add a new toolbox item with relevant details"
+        "description": "Select a paid subscription plan"
+      },
+      {
+        "type": "action",
+        "description": "Enter valid payment information and submit"
       },
       {
         "type": "assertion",
-        "description": "Verify new item appears in toolbox list correctly"
-      },
-      {
-        "type": "action",
-        "description": "Edit the toolbox item’s details"
+        "description": "Payment is processed successfully via Stripe"
       },
       {
         "type": "assertion",
-        "description": "Confirm changes are saved"
+        "description": "User role upgrades to corresponding paid role immediately"
       },
       {
-        "type": "action",
-        "description": "Delete toolbox item and verify it is removed"
+        "type": "assertion",
+        "description": "Access to premium features is enabled"
       }
     ]
   },
   {
     "id": "TC010",
-    "title": "Calendar Integration for Habit Visualization",
-    "description": "Validate user calendar displays habit completions accurately and allows marking completions for past and current days.",
-    "category": "functional",
-    "priority": "Medium",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Navigate to Calendar tab in Mastery system"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify calendar shows habit completions with correct color coding or icons"
-      },
-      {
-        "type": "action",
-        "description": "Mark habit completion for current day via calendar"
-      },
-      {
-        "type": "assertion",
-        "description": "Confirm habit streak updates accordingly"
-      },
-      {
-        "type": "action",
-        "description": "Attempt marking completion on past day"
-      },
-      {
-        "type": "assertion",
-        "description": "Ensure system updates habit status and streak properly without errors"
-      }
-    ]
-  },
-  {
-    "id": "TC011",
-    "title": "Skills System Progress Tracking and Visualization",
-    "description": "Ensure multiple skills in cognitive, creative, discipline, and social categories are tracked accurately and radar chart visualizations render properly.",
-    "category": "functional",
-    "priority": "Medium",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Login and navigate to Skills section"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify skill levels and progress data are displayed accurately"
-      },
-      {
-        "type": "assertion",
-        "description": "Check radar chart renders with correct skill values"
-      },
-      {
-        "type": "action",
-        "description": "Update skill progress or complete related activities"
-      },
-      {
-        "type": "assertion",
-        "description": "Confirm radar chart updates reflecting new data"
-      }
-    ]
-  },
-  {
-    "id": "TC012",
-    "title": "Achievements Display and Progress Update",
-    "description": "Confirm badge achievement system displays earned badges correctly and updates achievement progress based on user activity.",
-    "category": "functional",
-    "priority": "Medium",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Navigate to Achievements page"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify all earned badges are shown with correct metadata"
-      },
-      {
-        "type": "action",
-        "description": "Perform actions to qualify for a new achievement"
-      },
-      {
-        "type": "assertion",
-        "description": "Check for newly earned badges appearing dynamically"
-      }
-    ]
-  },
-  {
-    "id": "TC013",
-    "title": "Social Feed: Post Creation, Commenting, and Liking",
-    "description": "Verify users can create posts, comment, and like posts on community social feed with updates to UI and data.",
-    "category": "functional",
-    "priority": "High",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Navigate to Community page"
-      },
-      {
-        "type": "action",
-        "description": "Create a new post with text and optional media"
-      },
-      {
-        "type": "assertion",
-        "description": "Confirm post appears on feed instantly"
-      },
-      {
-        "type": "action",
-        "description": "Add comment to an existing post"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify comment is displayed beneath the post"
-      },
-      {
-        "type": "action",
-        "description": "Like a post and observe UI state change"
-      },
-      {
-        "type": "assertion",
-        "description": "Ensure like count increments and persists"
-      }
-    ]
-  },
-  {
-    "id": "TC014",
-    "title": "Subscription Payment Processing via Stripe",
-    "description": "Verify that users can subscribe, upgrade, or cancel subscriptions using Stripe integration with secure payment processing and role updates.",
-    "category": "functional",
-    "priority": "High",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Navigate to Pricing page"
-      },
-      {
-        "type": "action",
-        "description": "Select a subscription plan and initiate payment"
-      },
-      {
-        "type": "action",
-        "description": "Enter valid payment details and submit"
-      },
-      {
-        "type": "assertion",
-        "description": "Confirm payment is processed by Stripe successfully"
-      },
-      {
-        "type": "assertion",
-        "description": "Check that user role is updated appropriately in system"
-      },
-      {
-        "type": "action",
-        "description": "Cancel subscription and verify user role downgrade"
-      }
-    ]
-  },
-  {
-    "id": "TC015",
     "title": "Profile Settings Update and Avatar Customization",
-    "description": "Validate that users can update personal settings and change their avatar profile picture with immediate reflection in UI.",
+    "description": "Verify users can update profile settings, including display name and avatar image, and changes persist after save.",
     "category": "functional",
     "priority": "Medium",
     "steps": [
@@ -442,131 +317,152 @@
       },
       {
         "type": "action",
-        "description": "Modify editable profile fields such as display name, email preferences"
+        "description": "Change display name and upload a new avatar image"
       },
       {
         "type": "action",
-        "description": "Change or upload new avatar image"
-      },
-      {
-        "type": "action",
-        "description": "Save settings"
+        "description": "Save profile changes"
       },
       {
         "type": "assertion",
-        "description": "Verify changes are saved and displayed correctly on profile"
+        "description": "Profile updates persist on page reload and reflect in user menu/avatar components"
       }
     ]
   },
   {
-    "id": "TC016",
-    "title": "UI Responsiveness and Mobile Compatibility",
-    "description": "Ensure application UI components and pages render correctly on multiple device sizes with mobile-first glassmorphism design and safe touch targets.",
+    "id": "TC011",
+    "title": "Responsive UI in Mobile and Desktop",
+    "description": "Verify UI components render correctly across mobile and desktop viewports with glassmorphism styling and usable touch targets.",
     "category": "ui",
     "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Access the platform on different screen sizes including phones, tablets, and desktops"
+        "description": "Open the platform in desktop browser and verify dashboard and all pages layout"
       },
       {
         "type": "assertion",
-        "description": "Verify UI elements adjust layout responsively without overlap or cutoff"
+        "description": "UI matches design specifications with glassmorphism effect and widgets visible"
+      },
+      {
+        "type": "action",
+        "description": "Resize window or open on mobile device"
       },
       {
         "type": "assertion",
-        "description": "Confirm glassmorphism effects and shadcn/ui + Radix UI components render as designed"
+        "description": "Layout adapts to mobile with appropriate stacking, navigation, and touch target sizes"
       },
       {
         "type": "assertion",
-        "description": "Check that all interactive controls meet minimum touch target sizes and safe area margins"
+        "description": "No horizontal scroll or clipped content"
+      },
+      {
+        "type": "assertion",
+        "description": "Safe area insets and header/footer spacing are correct"
       }
     ]
   },
   {
-    "id": "TC017",
-    "title": "XP Progression and Level System Accuracy",
-    "description": "Confirm that XP points are awarded correctly after course completions, habit completions, and community activity and that user level updates properly across the 51 levels and 4 mastery schools.",
+    "id": "TC012",
+    "title": "Skills Tracking and Radar Chart Update",
+    "description": "Verify skills progress is tracked in all categories and is accurately visualized on radar charts under profile and mastery pages.",
     "category": "functional",
-    "priority": "High",
+    "priority": "Medium",
     "steps": [
       {
         "type": "action",
-        "description": "Perform activities like completing lessons, marking habits, and engaging in community"
+        "description": "Complete various activities in cognitive, creative, discipline, and social domains"
       },
       {
         "type": "assertion",
-        "description": "Verify that XP is granted as per defined criteria"
+        "description": "Skills service updates stored values correspondingly"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to Skills section or user profile"
       },
       {
         "type": "assertion",
-        "description": "Confirm user level updates correctly in four schools: Ignition, Insight, Transformation, God Mode"
-      },
-      {
-        "type": "assertion",
-        "description": "Check that the XP progress widget and profile radar display accurate level and XP data"
+        "description": "Radar chart visualizes the current skill levels correctly in all categories"
       }
     ]
   },
   {
-    "id": "TC018",
-    "title": "Error Handling for Network Failures and Loading States",
-    "description": "Test that the application displays appropriate loading indicators and graceful error messages on network delays, API failures, or invalid inputs.",
+    "id": "TC013",
+    "title": "Achievements Badge Display and Update",
+    "description": "Verify achievements earned by users are displayed as badges on dashboard and profile, and update immediately after qualifying activity.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Perform achievement-qualifying actions, e.g., completing first course or habit streak milestones"
+      },
+      {
+        "type": "assertion",
+        "description": "New achievement badges appear under Achievements widget and user profile"
+      },
+      {
+        "type": "assertion",
+        "description": "Achievement counts and progress trackers update accordingly"
+      }
+    ]
+  },
+  {
+    "id": "TC014",
+    "title": "Error Handling and Loading States",
+    "description": "Verify that the application displays user-friendly error messages and loading indicators during data fetch failures or slow network.",
     "category": "error handling",
     "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Simulate slow or failed network responses during login, data fetch, and form submissions"
+        "description": "Simulate server errors or network failures on key API calls (e.g., course loading, habit save, subscription payment)"
       },
       {
         "type": "assertion",
-        "description": "Verify loading spinners or skeleton loaders display during data fetching"
+        "description": "Appropriate error messages are displayed indicating the issue"
       },
       {
         "type": "assertion",
-        "description": "Ensure error messages are user-friendly and provide next steps or retry options"
-      },
-      {
-        "type": "action",
-        "description": "Submit forms with invalid or incomplete inputs"
+        "description": "Loading spinners or skeletons display while waiting for data"
       },
       {
         "type": "assertion",
-        "description": "Confirm form validation prevents submission and highlights errors properly"
+        "description": "UI remains responsive and user can retry or navigate away"
       }
     ]
   },
   {
-    "id": "TC019",
+    "id": "TC015",
     "title": "Role-Based Access Control Enforcement",
-    "description": "Ensure that different user roles (Free, Student, Teacher, Admin) have access limited to their permissions, especially for course creation and admin features.",
+    "description": "Verify users cannot access unauthorized features or pages according to their role (Free, Student, Teacher, Admin).",
     "category": "security",
     "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Login as Free user and attempt to access Teacher-only and Admin-only features"
+        "description": "Login as Free user and attempt to access teacher-specific pages or admin panel"
       },
       {
         "type": "assertion",
-        "description": "Verify access is denied and user is redirected or shown appropriate message"
+        "description": "Access is denied or redirected with appropriate message"
       },
       {
         "type": "action",
-        "description": "Login as Teacher user and verify access to course creation page"
+        "description": "Login as Student and try to access subscription management or course creation"
       },
       {
         "type": "assertion",
-        "description": "Confirm Teacher can create courses but not access Admin features"
+        "description": "Access denied enforced"
       },
       {
         "type": "action",
-        "description": "Login as Admin and verify unrestricted access to all features"
+        "description": "Login as Teacher and verify access to course creation and management features"
       },
       {
         "type": "assertion",
-        "description": "Confirm Admin access to role management and subscription overrides"
+        "description": "Access is allowed with full functionality"
       }
     ]
   }

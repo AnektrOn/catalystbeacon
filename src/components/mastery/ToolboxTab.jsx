@@ -477,14 +477,14 @@ const ToolboxTab = () => {
             onClick={() => setActiveTab('library')}
             className={`glass-tab-btn ${activeTab === 'library' ? 'glass-tab-btn-active' : ''}`}
           >
-            <Wrench size={20} className="mr-2" />
+            <Wrench size={20} className="mr-2"  aria-hidden="true"/>
             Library ({toolboxLibrary.length})
           </button>
           <button
             onClick={() => setActiveTab('my-toolbox')}
             className={`glass-tab-btn ${activeTab === 'my-toolbox' ? 'glass-tab-btn-active' : ''}`}
           >
-            <Target size={20} className="mr-2" />
+            <Target size={20} className="mr-2"  aria-hidden="true"/>
             My Toolbox ({userToolbox.length})
           </button>
         </nav>
@@ -536,7 +536,7 @@ const ToolboxTab = () => {
                         onClick={() => addToolToUser(tool)}
                         className="glass-primary-btn"
                       >
-                        <Plus size={16} className="mr-2" />
+                        <Plus size={16} className="mr-2"  aria-hidden="true"/>
                         Add to Toolbox
                       </button>
                     ) : (
@@ -553,7 +553,7 @@ const ToolboxTab = () => {
                         className={`glass-secondary-btn ${tool.converted_to_habit_id ? 'opacity-50 cursor-not-allowed' : ''}`}
                         disabled={tool.converted_to_habit_id}
                       >
-                        <Target size={16} className="mr-2" />
+                        <Target size={16} className="mr-2"  aria-hidden="true"/>
                         {tool.converted_to_habit_id ? 'Already Converted' : 'Convert to Habit'}
                       </button>
                     )}
@@ -588,13 +588,13 @@ const ToolboxTab = () => {
                   {/* Header with icon and title */}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-2">
-                      <Wrench size={20} className="text-white" strokeWidth={1.5} />
+                      <Wrench size={20} className="text-white" strokeWidth={1.5}  aria-hidden="true"/>
                       <h3 className="text-lg font-semibold text-white truncate">
                         {tool.title}
                       </h3>
                     </div>
                     <div className="flex items-center space-x-1">
-                      <Star size={16} className="text-yellow-400" />
+                      <Star size={16} className="text-yellow-400"  aria-hidden="true"/>
                       <span className="text-sm text-yellow-400 font-medium">
                         {tool.xp_earned} XP
                       </span>
@@ -619,7 +619,7 @@ const ToolboxTab = () => {
                           : 'border border-white text-white hover:bg-white hover:text-blue-900'
                       }`}
                     >
-                      <CheckCircle size={16} strokeWidth={1.5} />
+                      <CheckCircle size={16} strokeWidth={1.5}  aria-hidden="true"/>
                       <span>{isUsedToday ? 'Used Today' : 'Use Tool'}</span>
                     </button>
                     
@@ -675,7 +675,7 @@ const ToolboxTab = () => {
                       onClick={() => removeTool(tool.id)}
                       className="text-red-400 hover:text-red-300 transition-colors"
                     >
-                      <Trash2 size={16} strokeWidth={1.5} />
+                      <Trash2 size={16} strokeWidth={1.5}  aria-hidden="true"/>
                     </button>
                   </div>
                 </div>
@@ -685,7 +685,7 @@ const ToolboxTab = () => {
 
           {userToolbox.length === 0 && (
             <div className="glass-card p-8 text-center">
-              <Wrench size={48} className="mx-auto text-gray-400 mb-4" />
+              <Wrench size={48} className="mx-auto text-gray-400 mb-4"  aria-hidden="true"/>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 Your toolbox is empty
               </h3>
@@ -695,7 +695,7 @@ const ToolboxTab = () => {
               <button
                 onClick={() => setActiveTab('library')}
                 className="glass-primary-btn"
-              >
+               role="tab" aria-selected={activeTab === 'library'} aria-label="Toolbox Library" aria-label="Browse toolbox library">
                 Browse Library
               </button>
             </div>

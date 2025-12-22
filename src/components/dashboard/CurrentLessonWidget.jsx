@@ -47,10 +47,10 @@ const CurrentLessonWidget = memo(({
             </div>
 
             {thumbnailUrl && (
-                <div className="relative w-full h-40 rounded-lg overflow-hidden mb-4 group cursor-pointer" onClick={handleResume}>
+                <div className="relative w-full h-40 rounded-lg overflow-hidden mb-4 group cursor-pointer" onClick={handleResume} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && handleResume()} aria-label={`Resume lesson: ${lessonTitle}`}>
                     <img
                         src={thumbnailUrl}
-                        alt={lessonTitle}
+                        alt={`${lessonTitle} thumbnail`}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors flex items-center justify-center">
@@ -93,8 +93,9 @@ const CurrentLessonWidget = memo(({
                     <button
                         onClick={handleResume}
                         className="w-full py-3 px-4 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                        aria-label={`Resume lesson: ${lessonTitle}`}
                     >
-                        <Play size={16} />
+                        <Play size={16} aria-hidden="true" />
                         Resume Lesson
                     </button>
                 </>
@@ -108,6 +109,7 @@ const CurrentLessonWidget = memo(({
                         borderColor: 'var(--color-info)',
                         color: 'var(--color-info)'
                     }}
+                    aria-label="Browse available courses"
                     onMouseEnter={(e) => {
                         e.currentTarget.style.borderColor = 'var(--color-info)';
                         e.currentTarget.style.color = 'var(--color-info)';

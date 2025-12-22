@@ -2,29 +2,35 @@
   "tech_stack": [
     "JavaScript",
     "React",
-    "Supabase",
-    "Stripe",
-    "Tailwind CSS",
     "React Router",
+    "Supabase",
+    "PostgreSQL",
+    "Stripe",
+    "Three.js",
+    "React Three Fiber",
+    "Tailwind CSS",
+    "Radix UI",
     "Express",
-    "PostgreSQL"
+    "Node.js"
   ],
   "features": [
     {
       "name": "Authentication System",
-      "description": "User authentication with email/password, profile management, and role-based access control",
+      "description": "User authentication with email/password, profile management, role-based access control, and session management",
       "files": [
-        "src/contexts/AuthContext.jsx",
         "src/components/auth/LoginForm.jsx",
         "src/components/auth/SignupForm.jsx",
         "src/components/auth/AuthLayout.jsx",
+        "src/contexts/AuthContext.jsx",
         "src/pages/LoginPage.jsx",
         "src/pages/SignupPage.jsx",
+        "src/components/ProtectedRoute.jsx",
+        "src/components/RequireRole.jsx",
         "src/lib/supabaseClient.js"
       ]
     },
     {
-      "name": "Dashboard",
+      "name": "Dashboard System",
       "description": "Main user dashboard with widgets for XP progress, daily rituals, coherence, achievements, current lesson, constellation navigator, teacher feed, and quick actions",
       "files": [
         "src/pages/Dashboard.jsx",
@@ -40,57 +46,61 @@
       ]
     },
     {
-      "name": "Course System",
-      "description": "Course catalog, course details, course player for video lessons, and course creation for teachers",
+      "name": "Course Management System",
+      "description": "Course catalog browsing, course details, video lesson playback, progress tracking, enrollment, and course creation for teachers",
       "files": [
         "src/pages/CourseCatalogPage.jsx",
         "src/pages/CourseDetailPage.jsx",
         "src/pages/CoursePlayerPage.jsx",
         "src/pages/CourseCreationPage.jsx",
-        "src/services/courseService.js"
+        "src/services/courseService.js",
+        "src/components/QuizComponent.jsx"
       ]
     },
     {
       "name": "Mastery System",
-      "description": "Habit tracking, toolbox items, and calendar integration for mastery progression",
+      "description": "Habit tracking, toolbox items management, and calendar integration for mastery progression",
       "files": [
         "src/pages/Mastery.jsx",
         "src/components/mastery/HabitsTab.jsx",
         "src/components/mastery/HabitsTabMobile.jsx",
-        "src/components/mastery/HabitsTabRobust.jsx",
         "src/components/mastery/ToolboxTab.jsx",
-        "src/components/mastery/ToolboxTabMobile.jsx",
-        "src/components/mastery/ToolboxTabRobust.jsx",
+        "src/components/mastery/ToolboxTabCompact.jsx",
         "src/components/mastery/CalendarTab.jsx",
         "src/components/mastery/CalendarTabMobile.jsx",
         "src/services/masteryService.js"
       ]
     },
     {
-      "name": "XP and Leveling System",
-      "description": "XP progression system with 51 levels across 4 schools (Ignition, Insight, Transformation, God Mode)",
+      "name": "Stellar Map System",
+      "description": "Interactive 2D and 3D stellar map visualization for learning content navigation with node grouping, XP-based visibility, and YouTube video integration",
       "files": [
-        "src/services/levelsService.js",
-        "src/services/schoolService.js"
+        "src/pages/StellarMapPage.jsx",
+        "src/pages/StellarMap2DPage.jsx",
+        "src/components/stellar-map/StellarMap.jsx",
+        "src/components/stellar-map/StellarMap2D.jsx",
+        "src/components/stellar-map/r3f/StellarMapScene.jsx",
+        "src/components/stellar-map/r3f/NodeSphere.jsx",
+        "src/components/stellar-map/r3f/CoreSun.jsx",
+        "src/components/stellar-map/r3f/FogSphere.jsx",
+        "src/components/stellar-map/r3f/ConnectionLines.jsx",
+        "src/components/stellar-map/StellarMapControls.jsx",
+        "src/components/stellar-map/NodeTooltip.jsx",
+        "src/components/stellar-map/YouTubePlayerModal.jsx",
+        "src/components/stellar-map/StellarMapDebugOverlay.jsx",
+        "src/components/stellar-map/StellarMapErrorBoundary.jsx",
+        "src/components/stellar-map/core/NodeRenderer.js",
+        "src/components/stellar-map/core/InteractionManager.js",
+        "src/components/stellar-map/core/ThreeSceneManager.js",
+        "src/components/stellar-map/hooks/useXPVisibility.js",
+        "src/components/stellar-map/utils/debugHelpers.js",
+        "src/services/stellarMapService.js",
+        "src/utils/stellarMapPositioning.js"
       ]
     },
     {
-      "name": "Skills System",
-      "description": "Track progress across cognitive, creative, discipline, and social skills",
-      "files": [
-        "src/services/skillsService.js"
-      ]
-    },
-    {
-      "name": "Achievements System",
-      "description": "Display and track user achievements and badges",
-      "files": [
-        "src/pages/Achievements.jsx"
-      ]
-    },
-    {
-      "name": "Community and Social Features",
-      "description": "Social feed, posts, comments, and community interactions",
+      "name": "Social and Community Features",
+      "description": "Social feed with post creation, commenting, and liking functionality",
       "files": [
         "src/pages/CommunityPage.jsx",
         "src/components/social/CreatePostModal.jsx",
@@ -99,78 +109,98 @@
     },
     {
       "name": "Profile Management",
-      "description": "User profile page with settings, progress tracking, and avatar management",
+      "description": "User profile settings, avatar customization, personal information management, and progress visualization",
       "files": [
         "src/pages/ProfilePage.jsx",
         "src/pages/SettingsPage.jsx",
+        "src/components/UserProfileDropdown.jsx",
         "src/components/profile/ProgressBar.jsx",
-        "src/components/profile/RadarChart.jsx",
-        "src/components/UserProfileDropdown.jsx"
+        "src/components/profile/RadarChart.jsx"
       ]
     },
     {
-      "name": "Pricing and Subscription",
+      "name": "Skills and Achievements System",
+      "description": "Skills progress tracking across cognitive, creative, discipline, and social categories, and achievements/badges display",
+      "files": [
+        "src/pages/Achievements.jsx",
+        "src/services/skillsService.js",
+        "src/components/profile/RadarChart.jsx"
+      ]
+    },
+    {
+      "name": "XP and Leveling System",
+      "description": "XP progression system with 51 levels across 4 schools (Ignition, Insight, Transformation, God Mode)",
+      "files": [
+        "src/services/levelsService.js",
+        "src/services/masteryService.js",
+        "src/services/schoolService.js",
+        "src/components/stellar-map/hooks/useXPVisibility.js"
+      ]
+    },
+    {
+      "name": "Payment and Subscription System",
       "description": "Stripe integration for subscription management and payment processing",
       "files": [
         "src/pages/PricingPage.jsx",
-        "src/lib/stripe.js"
+        "src/lib/stripe.js",
+        "server.js"
       ]
     },
     {
-      "name": "UI Components",
-      "description": "Reusable UI components built with shadcn/ui and Radix UI",
+      "name": "Navigation and Layout",
+      "description": "Application shell with navigation, mobile responsiveness, and layout management",
+      "files": [
+        "src/components/AppShell.jsx",
+        "src/components/AppShellMobile.jsx",
+        "src/App.js"
+      ]
+    },
+    {
+      "name": "UI Components Library",
+      "description": "Reusable UI components built with Radix UI and Tailwind CSS",
       "files": [
         "src/components/ui/button.jsx",
-        "src/components/ui/input.jsx",
         "src/components/ui/card.jsx",
         "src/components/ui/dialog.jsx",
         "src/components/ui/dropdown-menu.jsx",
+        "src/components/ui/input.jsx",
         "src/components/ui/tabs.jsx",
         "src/components/ui/avatar.jsx",
         "src/components/ui/badge.jsx",
         "src/components/ui/progress.jsx",
+        "src/components/ui/separator.jsx",
         "src/components/ui/alert.jsx",
         "src/components/ui/checkbox.jsx",
         "src/components/ui/label.jsx",
-        "src/components/ui/separator.jsx",
         "src/components/ui/sheet.jsx",
         "src/components/ui/sonner.jsx"
       ]
     },
     {
-      "name": "Common Components",
-      "description": "Shared components for loading, errors, and navigation",
+      "name": "Color Palette System",
+      "description": "Dynamic color palette switching and theme management",
       "files": [
-        "src/components/common/LoadingSpinner.jsx",
-        "src/components/common/ErrorDisplay.jsx",
-        "src/components/common/SkeletonLoader.jsx",
-        "src/components/ErrorBoundary.jsx",
-        "src/components/ProtectedRoute.jsx",
-        "src/components/RequireRole.jsx",
-        "src/components/AppShell.jsx",
-        "src/components/AppShellMobile.jsx",
-        "src/components/SEOHead.jsx"
+        "src/config/colorPalettes.js",
+        "src/utils/colorPaletteSwitcher.js",
+        "src/components/common/ColorPaletteDropdown.jsx"
       ]
     },
     {
-      "name": "Utilities and Helpers",
-      "description": "Utility functions for error handling, logging, memoization, and permissions",
+      "name": "Common Utilities",
+      "description": "Shared utilities for error handling, logging, memoization, and common functions",
       "files": [
-        "src/lib/utils.js",
-        "src/lib/permissions.js",
         "src/utils/errorHandler.js",
         "src/utils/logger.js",
-        "src/utils/memoization.js"
+        "src/utils/memoization.js",
+        "src/lib/utils.js",
+        "src/lib/permissions.js"
       ]
     },
     {
-      "name": "Styling",
-      "description": "Global styles including glassmorphism effects and mobile responsiveness",
+      "name": "Timer System",
+      "description": "Timer functionality for tracking study sessions and activities",
       "files": [
-        "src/styles/glassmorphism.css",
-        "src/styles/mobile-responsive.css",
-        "src/index.css",
-        "src/App.css"
+        "src/pages/TimerPage.jsx"
       ]
     }
   ]

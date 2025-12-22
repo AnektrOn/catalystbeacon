@@ -1,16 +1,23 @@
-import React, { memo } from 'react';
+import React, { memo, useMemo, useCallback } from 'react';
 import { Brain, Heart, Zap } from 'lucide-react';
 
 const CoherenceWidget = memo(({ energy = 75, mind = 85, heart = 90 }) => {
-    const overall = Math.round((energy + mind + heart) / 3);
+    // Memoize overall calculation
+    const overall = useMemo(() => Math.round((energy + mind + heart) / 3), [energy, mind, heart]);
 
-    const getColor = (value) => {
+    // Memoize color lookup function
+    const getColor = useCallback((value) => {
         const root = document.documentElement;
         const computedStyle = window.getComputedStyle(root);
         if (value >= 80) return computedStyle.getPropertyValue('--color-success').trim() || '#6BCF7F';
         if (value >= 60) return computedStyle.getPropertyValue('--color-warning').trim() || '#FFB75B';
         return computedStyle.getPropertyValue('--color-primary').trim() || '#FF8A5B';
-    };
+    }, []);
+
+    // Memoize color values
+    const energyColor = useMemo(() => getColor(energy), [getColor, energy]);
+    const mindColor = useMemo(() => getColor(mind), [getColor, mind]);
+    const heartColor = useMemo(() => getColor(heart), [getColor, heart]);
 
     return (
         <div className="glass-card-premium p-6 hover:scale-[1.02] transition-transform duration-300">
@@ -44,11 +51,11 @@ const CoherenceWidget = memo(({ energy = 75, mind = 85, heart = 90 }) => {
                     <div
                         className="w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-1 transition-all duration-500"
                         style={{
-                            background: `linear-gradient(135deg, ${getColor(energy)}22, ${getColor(energy)}44)`,
-                            border: `2px solid ${getColor(energy)}`
+                            background: `linear-gradient(135deg, ${energyColor}22, ${energyColor}44)`,
+                            border: `2px solid ${energyColor}`
                         }}
                     >
-                        <Zap size={16} style={{ color: getColor(energy) }} />
+                        <Zap size={16} style={{ color: energyColor }} />
                     </div>
                     <div className="text-xs font-medium text-gray-500">{energy}%</div>
                 </div>
@@ -57,11 +64,11 @@ const CoherenceWidget = memo(({ energy = 75, mind = 85, heart = 90 }) => {
                     <div
                         className="w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-1 transition-all duration-500"
                         style={{
-                            background: `linear-gradient(135deg, ${getColor(mind)}22, ${getColor(mind)}44)`,
-                            border: `2px solid ${getColor(mind)}`
+                            background: `linear-gradient(135deg, ${mindColor}22, ${mindColor}44)`,
+                            border: `2px solid ${mindColor}`
                         }}
                     >
-                        <Brain size={16} style={{ color: getColor(mind) }} />
+                        <Brain size={16} style={{ color: mindColor }} />
                     </div>
                     <div className="text-xs font-medium text-gray-500">{mind}%</div>
                 </div>
@@ -70,11 +77,11 @@ const CoherenceWidget = memo(({ energy = 75, mind = 85, heart = 90 }) => {
                     <div
                         className="w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-1 transition-all duration-500"
                         style={{
-                            background: `linear-gradient(135deg, ${getColor(heart)}22, ${getColor(heart)}44)`,
-                            border: `2px solid ${getColor(heart)}`
+                            background: `linear-gradient(135deg, ${heartColor}22, ${heartColor}44)`,
+                            border: `2px solid ${heartColor}`
                         }}
                     >
-                        <Heart size={16} style={{ color: getColor(heart) }} />
+                        <Heart size={16} style={{ color: heartColor }} />
                     </div>
                     <div className="text-xs font-medium text-gray-500">{heart}%</div>
                 </div>

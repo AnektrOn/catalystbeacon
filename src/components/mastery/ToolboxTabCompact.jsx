@@ -538,7 +538,7 @@ const ToolboxTabCompact = () => {
               <button
                 onClick={() => setActiveTab('library')}
                 className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
-              >
+               role="tab" aria-selected={activeTab === 'library'} aria-label="Toolbox Library">
                 Browse Library
               </button>
             </div>

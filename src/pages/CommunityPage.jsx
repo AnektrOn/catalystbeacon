@@ -300,7 +300,7 @@ const CommunityPage = () => {
                           onClick={() => handleLike(post.id)}
                           className={`flex items-center space-x-2 transition-colors ${post.isLiked ? 'text-red-500' : 'text-gray-500 hover:text-red-500'
                             }`}
-                        >
+                         aria-label={post.isLiked ? "Unlike post" : "Like post"}>
                           <Heart className={`w-5 h-5 ${post.isLiked ? 'fill-current' : ''}`} />
                           <span className="text-sm font-medium">{post.likes_count || post.likes || 0}</span>
                         </button>

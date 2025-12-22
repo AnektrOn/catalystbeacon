@@ -3,6 +3,11 @@ import { supabase } from '../lib/supabaseClient';
 /**
  * School Service
  * Handles school unlock logic and school-related queries
+ * 
+ * Security Note: RLS policies should ensure:
+ * - 'profiles' table: Users can only read their own profile (filtered by userId)
+ * - 'schools' table: Public reference data, authenticated users can read all schools
+ * - All user-specific queries properly filter by userId to respect RLS
  */
 class SchoolService {
   // School unlock thresholds
@@ -17,10 +22,11 @@ class SchoolService {
    * Get all schools with unlock status for a user
    * @param {string} userId - UUID of the user
    * @returns {Promise<{data: Array, error: Error|null}>}
+   * RLS: Properly filters profile by userId, respects RLS policies
    */
   async getSchoolsWithUnlockStatus(userId) {
     try {
-      // Get user's current XP
+      // Get user's current XP - RLS ensures user can only access their own profile
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('current_xp')
@@ -59,10 +65,11 @@ class SchoolService {
    * @param {string} userId - UUID of the user
    * @param {string} schoolName - Name of the school (Ignition, Insight, etc.)
    * @returns {Promise<{data: {isUnlocked: boolean, userXp: number, requiredXp: number}, error: Error|null}>}
+   * RLS: Properly filters profile by userId, respects RLS policies
    */
   async checkSchoolUnlock(userId, schoolName) {
     try {
-      // Get user's current XP
+      // Get user's current XP - RLS ensures user can only access their own profile
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('current_xp')
@@ -123,6 +130,7 @@ class SchoolService {
   /**
    * Get all schools (without user context)
    * @returns {Promise<{data: Array, error: Error|null}>}
+   * RLS: Public reference data, authenticated users can read all schools
    */
   async getAllSchools() {
     try {

@@ -245,6 +245,7 @@ const CourseCreationPage = () => {
           <button
             onClick={() => navigate('/courses')}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            aria-label="Return to courses page"
           >
             Back to Courses
           </button>
@@ -260,8 +261,9 @@ const CourseCreationPage = () => {
         <button
           onClick={() => navigate('/courses')}
           className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+          aria-label="Return to courses page"
         >
-          <ArrowLeft size={20} />
+          <ArrowLeft size={20} aria-hidden="true" />
           <span>Back to Courses</span>
         </button>
       </div>
@@ -274,27 +276,31 @@ const CourseCreationPage = () => {
         
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Course Title *
-            </label>
-            <input
-              type="text"
-              value={courseData.course_title}
-              onChange={(e) => handleCourseDataChange('course_title', e.target.value)}
-              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter course title"
-            />
+          <label htmlFor="course-title" className="block text-sm font-medium text-gray-300 mb-2">
+            Course Title *
+          </label>
+          <input
+            id="course-title"
+            type="text"
+            value={courseData.course_title}
+            onChange={(e) => handleCourseDataChange('course_title', e.target.value)}
+            className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Enter course title"
+            required
+          />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="masterschool" className="block text-sm font-medium text-gray-300 mb-2">
                 Masterschool *
               </label>
               <select
+                id="masterschool"
                 value={courseData.masterschool}
                 onChange={(e) => handleCourseDataChange('masterschool', e.target.value)}
                 className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
               >
                 <option value="Ignition">Ignition</option>
                 <option value="Insight">Insight</option>
@@ -304,10 +310,11 @@ const CourseCreationPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="difficulty-level" className="block text-sm font-medium text-gray-300 mb-2">
                 Difficulty Level
               </label>
               <input
+                id="difficulty-level"
                 type="text"
                 value={courseData.difficulty_level}
                 onChange={(e) => handleCourseDataChange('difficulty_level', e.target.value)}
@@ -318,10 +325,11 @@ const CourseCreationPage = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="course-topic" className="block text-sm font-medium text-gray-300 mb-2">
               Topic
             </label>
             <input
+              id="course-topic"
               type="text"
               value={courseData.topic}
               onChange={(e) => handleCourseDataChange('topic', e.target.value)}
@@ -332,10 +340,11 @@ const CourseCreationPage = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="duration-hours" className="block text-sm font-medium text-gray-300 mb-2">
                 Duration (hours)
               </label>
               <input
+                id="duration-hours"
                 type="number"
                 value={courseData.duration_hours}
                 onChange={(e) => handleCourseDataChange('duration_hours', parseInt(e.target.value) || 0)}
@@ -345,10 +354,11 @@ const CourseCreationPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="xp-threshold" className="block text-sm font-medium text-gray-300 mb-2">
                 XP Threshold
               </label>
               <input
+                id="xp-threshold"
                 type="number"
                 value={courseData.xp_threshold}
                 onChange={(e) => handleCourseDataChange('xp_threshold', parseInt(e.target.value) || 0)}
@@ -367,8 +377,9 @@ const CourseCreationPage = () => {
           <button
             onClick={handleAddChapter}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+            aria-label="Add new chapter to course"
           >
-            <Plus size={18} />
+            <Plus size={18} aria-hidden="true" />
             <span>Add Chapter</span>
           </button>
         </div>
@@ -378,18 +389,21 @@ const CourseCreationPage = () => {
             <div key={chapterIndex} className="bg-slate-800 rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
                 <input
+                  id={`chapter-${chapterIndex}-title`}
                   type="text"
                   value={chapter.chapter_title}
                   onChange={(e) => handleChapterTitleChange(chapterIndex, e.target.value)}
                   className="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder={`Chapter ${chapter.chapter_number} Title`}
+                  aria-label={`Chapter ${chapter.chapter_number} title`}
                 />
                 {chapters.length > 1 && (
                   <button
                     onClick={() => handleRemoveChapter(chapterIndex)}
                     className="ml-2 p-2 text-red-400 hover:text-red-300 transition-colors"
+                    aria-label={`Remove chapter ${chapter.chapter_number}`}
                   >
-                    <Trash2 size={18} />
+                    <Trash2 size={18} aria-hidden="true" />
                   </button>
                 )}
               </div>
@@ -398,18 +412,21 @@ const CourseCreationPage = () => {
                 {chapter.lessons.map((lesson, lessonIndex) => (
                   <div key={lessonIndex} className="flex items-center gap-2">
                     <input
+                      id={`chapter-${chapterIndex}-lesson-${lessonIndex}-title`}
                       type="text"
                       value={lesson.lesson_title}
                       onChange={(e) => handleLessonTitleChange(chapterIndex, lessonIndex, e.target.value)}
                       className="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder={`Lesson ${lesson.lesson_number} Title`}
+                      aria-label={`Chapter ${chapter.chapter_number} lesson ${lesson.lesson_number} title`}
                     />
                     {chapter.lessons.length > 1 && (
                       <button
                         onClick={() => handleRemoveLesson(chapterIndex, lessonIndex)}
                         className="p-2 text-red-400 hover:text-red-300 transition-colors"
+                        aria-label={`Remove lesson ${lesson.lesson_number} from chapter ${chapter.chapter_number}`}
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={16} aria-hidden="true" />
                       </button>
                     )}
                   </div>
@@ -417,8 +434,9 @@ const CourseCreationPage = () => {
                 <button
                   onClick={() => handleAddLesson(chapterIndex)}
                   className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                  aria-label={`Add lesson to chapter ${chapter.chapter_number}`}
                 >
-                  <Plus size={14} />
+                  <Plus size={14} aria-hidden="true" />
                   <span>Add Lesson</span>
                 </button>
               </div>

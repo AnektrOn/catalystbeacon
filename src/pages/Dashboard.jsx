@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
@@ -263,7 +263,7 @@ const Dashboard = () => {
           *,
           course_metadata (
             id,
-            title,
+            course_title,
             thumbnail_url
           )
         `)
@@ -296,7 +296,10 @@ const Dashboard = () => {
 
       // Get the most recent lesson progress for this course
       const courseId = courseProgress.course_metadata_id
-      if (!courseId) return
+      if (!courseId || isNaN(courseId)) {
+        console.warn('Invalid course_metadata_id:', courseProgress.course_metadata_id)
+        return
+      }
       
       try {
         const { data: course, error: courseError } = await courseService.getCourseById(courseId)
@@ -469,16 +472,29 @@ const Dashboard = () => {
       
       if (postsError) {
         console.warn('Error loading teacher feed:', postsError)
-      }
-      
-      if (posts && posts.length > 0) {
         setDashboardData(prev => ({
           ...prev,
-          teacherFeed: { posts }
+          teacherFeed: { posts: [] }
         }))
+        return
       }
+      
+      // Filter posts to only show those from teachers/admins
+      const teacherPosts = posts?.filter(post => {
+        const userRole = post.profiles?.role
+        return userRole === 'Teacher' || userRole === 'Admin' || userRole === 'teacher' || userRole === 'admin'
+      }) || []
+      
+      setDashboardData(prev => ({
+        ...prev,
+        teacherFeed: { posts: teacherPosts }
+      }))
     } catch (error) {
       console.error('Error loading teacher feed:', error)
+      setDashboardData(prev => ({
+        ...prev,
+        teacherFeed: { posts: [] }
+      }))
     }
   }, [])
 
@@ -617,16 +633,18 @@ const Dashboard = () => {
     }
   }, [searchParams, user, fetchProfile, navigate])
 
-  const displayName = profile?.full_name || user?.email || 'User'
-  const userRole = profile?.role || 'Free'
+  const displayName = useMemo(() => profile?.full_name || user?.email || 'User', [profile?.full_name, user?.email])
+  const userRole = useMemo(() => profile?.role || 'Free', [profile?.role])
 
-  // Determine phase based on level
-  const getPhase = (level) => {
+  // Determine phase based on level - memoized for performance
+  const getPhase = useCallback((level) => {
     if (level >= 50) return 'god_mode'
     if (level >= 30) return 'transformation'
     if (level >= 10) return 'insight'
     return 'ignition'
-  }
+  }, [])
+
+  const currentPhase = useMemo(() => getPhase(levelData.level), [getPhase, levelData.level])
 
   return (
     <div className="w-full max-w-7xl mx-auto">

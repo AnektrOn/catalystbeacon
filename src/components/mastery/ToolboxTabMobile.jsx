@@ -110,7 +110,7 @@ const ToolboxTabMobile = () => {
             activeTab === 'my-tools' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400'
           }`}
         >
-          <Wrench size={18} />
+          <Wrench size={18}  aria-hidden="true"/>
           <span>My Tools</span>
         </button>
         <button
@@ -119,7 +119,7 @@ const ToolboxTabMobile = () => {
             activeTab === 'library' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400'
           }`}
         >
-          <Plus size={18} />
+          <Plus size={18}  aria-hidden="true"/>
           <span>Library</span>
         </button>
       </div>
@@ -129,12 +129,12 @@ const ToolboxTabMobile = () => {
         <div className="space-y-4">
           {userToolbox.length === 0 ? (
             <div className="text-center py-12">
-              <Wrench size={48} className="mx-auto mb-4 text-slate-600" />
+              <Wrench size={48} className="mx-auto mb-4 text-slate-600"  aria-hidden="true"/>
               <p className="text-slate-400 mb-4">No tools yet</p>
               <button
                 onClick={() => setActiveTab('library')}
                 className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-indigo-500 transition-all min-h-[48px]"
-              >
+               role="tab" aria-selected={activeTab === 'library'} aria-label="Toolbox Library">
                 Add from Library
               </button>
             </div>

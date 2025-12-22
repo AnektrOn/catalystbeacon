@@ -20,8 +20,11 @@ const CourseCatalogPage = React.lazy(() => import('./pages/CourseCatalogPage'))
 const CourseDetailPage = React.lazy(() => import('./pages/CourseDetailPage'))
 const CoursePlayerPage = React.lazy(() => import('./pages/CoursePlayerPage'))
 const CourseCreationPage = React.lazy(() => import('./pages/CourseCreationPage'))
-const StellarMapPage = React.lazy(() => import('./pages/StellarMapPage'))
 const StellarMap2DPage = React.lazy(() => import('./pages/StellarMap2DPage'))
+const AchievementsPage = React.lazy(() => import('./pages/Achievements'))
+const ForgotPasswordPage = React.lazy(() => import('./pages/ForgotPasswordPage'))
+const TermsPage = React.lazy(() => import('./pages/TermsPage'))
+const PrivacyPage = React.lazy(() => import('./pages/PrivacyPage'))
 
 // Loading component
 const LoadingScreen = () => {
@@ -84,6 +87,21 @@ const AppRoutes = () => {
       <Route path="/pricing" element={
         <React.Suspense fallback={<LoadingScreen />}>
           <PricingPage />
+        </React.Suspense>
+      } />
+      <Route path="/forgot-password" element={
+        <React.Suspense fallback={<LoadingScreen />}>
+          <ForgotPasswordPage />
+        </React.Suspense>
+      } />
+      <Route path="/terms" element={
+        <React.Suspense fallback={<LoadingScreen />}>
+          <TermsPage />
+        </React.Suspense>
+      } />
+      <Route path="/privacy" element={
+        <React.Suspense fallback={<LoadingScreen />}>
+          <PrivacyPage />
         </React.Suspense>
       } />
 
@@ -237,7 +255,7 @@ const AppRoutes = () => {
         <Route path="/stellar-map" element={
           <ErrorBoundary>
             <React.Suspense fallback={<LoadingScreen />}>
-              <StellarMapPage />
+              <StellarMap2DPage />
             </React.Suspense>
           </ErrorBoundary>
         } />
@@ -245,6 +263,15 @@ const AppRoutes = () => {
           <ErrorBoundary>
             <React.Suspense fallback={<LoadingScreen />}>
               <StellarMap2DPage />
+            </React.Suspense>
+          </ErrorBoundary>
+        } />
+
+        {/* Achievements Route */}
+        <Route path="/achievements" element={
+          <ErrorBoundary>
+            <React.Suspense fallback={<LoadingScreen />}>
+              <AchievementsPage />
             </React.Suspense>
           </ErrorBoundary>
         } />

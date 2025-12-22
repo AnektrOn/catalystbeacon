@@ -1,10 +1,15 @@
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { Zap } from 'lucide-react';
 
 const XPProgressWidget = memo(({ level = 1, levelTitle = '', currentXP = 0, nextLevelXP = 1000, phase = 'ignition' }) => {
-    const percentage = nextLevelXP > 0 ? Math.min((currentXP / nextLevelXP) * 100, 100) : 0;
+    // Memoize percentage calculation
+    const percentage = useMemo(() => 
+        nextLevelXP > 0 ? Math.min((currentXP / nextLevelXP) * 100, 100) : 0,
+        [currentXP, nextLevelXP]
+    );
 
-    const getPhaseColor = (phase) => {
+    // Memoize phase color lookup
+    const color = useMemo(() => {
         const root = document.documentElement;
         const computedStyle = window.getComputedStyle(root);
         const colors = {
@@ -14,9 +19,7 @@ const XPProgressWidget = memo(({ level = 1, levelTitle = '', currentXP = 0, next
             god_mode: computedStyle.getPropertyValue('--color-warning').trim() || '#FFD700'
         };
         return colors[phase] || colors.ignition;
-    };
-
-    const color = getPhaseColor(phase);
+    }, [phase]);
 
     return (
         <div className="glass-card-premium p-6 hover:scale-[1.02] transition-transform duration-300">

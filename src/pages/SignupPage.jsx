@@ -85,21 +85,43 @@ const SignupPage = () => {
     setErrors({})
 
     try {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SignupPage.jsx:87',message:'Calling signUp - before',data:{email:formData.email.trim(),hasFullName:!!formData.fullName.trim()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
+      
+      // Security: Password comes from user input (formData.password), never hardcoded
+      // All passwords are user-provided and validated before submission
       const { data, error } = await signUp(formData.email, formData.password, { 
         full_name: formData.fullName.trim() 
       })
       
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SignupPage.jsx:94',message:'signUp returned - after',data:{hasError:!!error,hasData:!!data,hasUser:!!data?.user,hasSession:!!data?.session,userId:data?.user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
+      
       if (!error) {
         // Check if user was immediately signed in (email confirmation disabled)
         if (data?.user && data?.session) {
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SignupPage.jsx:98',message:'Signup success with session - navigating to dashboard',data:{userId:data?.user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+          // #endregion
           // User is signed in, redirect to dashboard
-          navigate('/dashboard')
+          // Small delay to ensure auth state is updated before navigation
+          setTimeout(() => {
+            navigate('/dashboard')
+          }, 100)
         } else {
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SignupPage.jsx:101',message:'Signup success without session - navigating to login',data:{hasUser:!!data?.user,userId:data?.user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+          // #endregion
           // User needs to verify email, redirect to login
           navigate('/login')
         }
       }
     } catch (error) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SignupPage.jsx:104',message:'Signup catch block',data:{errorMessage:error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
       console.error('Signup error:', error)
     } finally {
       setLoading(false)

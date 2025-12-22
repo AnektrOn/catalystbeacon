@@ -45,9 +45,14 @@ export const memoizeAsync = (fn, getKey = (...args) => JSON.stringify(args), ttl
       }
     }
     
-    const result = await fn(...args);
-    cache.set(key, { result, timestamp: now });
-    return result;
+    try {
+      const result = await fn(...args);
+      cache.set(key, { result, timestamp: now });
+      return result;
+    } catch (error) {
+      console.error('Error in memoized async function:', error);
+      throw error;
+    }
   };
 };
 

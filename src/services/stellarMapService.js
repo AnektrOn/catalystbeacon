@@ -734,6 +734,56 @@ class StellarMapService {
       return { data: null, error: error instanceof Error ? error : new Error(String(error)) };
     }
   }
+
+  /**
+   * Get completion status for multiple nodes at once (bulk fetch)
+   * @param {string} userId - User UUID
+   * @param {Array<string>} nodeIds - Array of node UUIDs
+   * @returns {Promise<{data: Map<string, Object>, error: Error|null}>}
+   */
+  async getBulkCompletionStatus(userId, nodeIds) {
+    try {
+      if (!userId || !nodeIds || nodeIds.length === 0) {
+        return { data: new Map(), error: null };
+      }
+
+      const { data, error } = await supabase
+        .from('user_stellar_node_completions')
+        .select('node_id, completed_at, xp_awarded')
+        .eq('user_id', userId)
+        .in('node_id', nodeIds);
+
+      if (error) throw error;
+
+      // Create a map of node_id -> completion data
+      const completionMap = new Map();
+      if (data) {
+        data.forEach(completion => {
+          completionMap.set(completion.node_id, {
+            completed: true,
+            completedAt: completion.completed_at,
+            xpAwarded: completion.xp_awarded
+          });
+        });
+      }
+
+      // Add entries for nodes that aren't completed
+      nodeIds.forEach(nodeId => {
+        if (!completionMap.has(nodeId)) {
+          completionMap.set(nodeId, {
+            completed: false,
+            completedAt: null,
+            xpAwarded: null
+          });
+        }
+      });
+
+      return { data: completionMap, error: null };
+    } catch (error) {
+      console.error('Error fetching bulk completion status:', error);
+      return { data: new Map(), error: error instanceof Error ? error : new Error(String(error)) };
+    }
+  }
 }
 
 const stellarMapService = new StellarMapService();

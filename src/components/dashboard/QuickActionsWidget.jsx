@@ -50,8 +50,15 @@ const QuickActionsWidget = memo(({ actions = [] }) => {
                     return (
                         <button
                             key={action.id}
-                            onClick={action.action}
-                            className="group p-4 rounded-xl bg-white/50 dark:bg-black/20 border border-gray-200 dark:border-white/10 hover:bg-white/70 dark:hover:bg-black/30 hover:scale-105 transition-all duration-300 flex flex-col items-center gap-2"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                console.log('Quick Action clicked:', action.id);
+                                action.action();
+                            }}
+                            className="group p-4 rounded-xl bg-white/50 dark:bg-black/20 border border-gray-200 dark:border-white/10 hover:bg-white/70 dark:hover:bg-black/30 hover:scale-105 transition-all duration-300 flex flex-col items-center gap-2 cursor-pointer"
+                            style={{ pointerEvents: 'auto' }}
+                            aria-label={`${action.label} quick action`}
                         >
                             <div
                                 className="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-110"

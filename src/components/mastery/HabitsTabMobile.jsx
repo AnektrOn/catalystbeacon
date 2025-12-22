@@ -213,7 +213,7 @@ const HabitsTabMobile = () => {
             activeTab === 'my-habits' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400'
           }`}
         >
-          <Target size={18} />
+          <Target size={18}  aria-hidden="true"/>
           <span>My Habits</span>
         </button>
         <button
@@ -222,7 +222,7 @@ const HabitsTabMobile = () => {
             activeTab === 'library' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400'
           }`}
         >
-          <Plus size={18} />
+          <Plus size={18}  aria-hidden="true"/>
           <span>Library</span>
         </button>
       </div>
@@ -232,7 +232,7 @@ const HabitsTabMobile = () => {
         <div className="space-y-4">
           {personalHabits.length === 0 ? (
             <div className="text-center py-12">
-              <Target size={48} className="mx-auto mb-4 text-slate-600" />
+              <Target size={48} className="mx-auto mb-4 text-slate-600"  aria-hidden="true"/>
               <p className="text-slate-400 mb-4">No habits yet</p>
               <button
                 onClick={() => setActiveTab('library')}

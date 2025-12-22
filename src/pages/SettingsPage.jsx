@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, User, Bell, Shield, Palette, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { Settings, User, Bell, Shield, Palette, Upload, X, Image as ImageIcon, CreditCard } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -30,6 +31,11 @@ const AppearanceSection = ({ profile, updateProfile }) => {
 
     const handleFileUpload = async (event) => {
         const file = event.target.files?.[0];
+        
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SettingsPage.jsx:32',message:'handleFileUpload called',data:{hasFile:!!file,fileName:file?.name,fileSize:file?.size,fileType:file?.type,hasProfile:!!profile,profileId:profile?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+        // #endregion
+        
         if (!file) return;
 
         if (!profile || !profile.id) {
@@ -39,18 +45,27 @@ const AppearanceSection = ({ profile, updateProfile }) => {
 
         // Validate file type
         if (!file.type.startsWith('image/')) {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SettingsPage.jsx:42',message:'File type validation failed',data:{fileType:file.type},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+            // #endregion
             toast.error('Please select an image file');
             return;
         }
 
         // Validate file size (max 5MB)
         if (file.size > 5 * 1024 * 1024) {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SettingsPage.jsx:48',message:'File size validation failed',data:{fileSize:file.size,maxSize:5*1024*1024},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+            // #endregion
             toast.error('Image size must be less than 5MB');
             return;
         }
 
         setIsUploading(true);
         try {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SettingsPage.jsx:54',message:'Starting upload - before',data:{fileName:file.name,filePath:`backgrounds/${profile.id}/background-${Date.now()}.${file.name.split('.').pop()}`},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+            // #endregion
             // Upload to Supabase Storage
             // Use 'avatars' bucket or create a 'backgrounds' bucket
             // For now, we'll use the avatars bucket with a different path
@@ -70,7 +85,15 @@ const AppearanceSection = ({ profile, updateProfile }) => {
                     upsert: false
                 });
 
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SettingsPage.jsx:67',message:'Backgrounds bucket upload result',data:{hasError:!!uploadErr,errorMessage:uploadErr?.message,errorCode:uploadErr?.statusCode,hasData:!!uploadData},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+            // #endregion
+
             if (uploadErr) {
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SettingsPage.jsx:74',message:'Backgrounds bucket failed - trying avatars bucket',data:{uploadErrMessage:uploadErr?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                // #endregion
+                
                 // If backgrounds bucket doesn't exist, try avatars bucket
                 const { data: avatarUploadData, error: avatarUploadErr } = await supabase.storage
                     .from('avatars')
@@ -78,6 +101,10 @@ const AppearanceSection = ({ profile, updateProfile }) => {
                         cacheControl: '3600',
                         upsert: false
                     });
+
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SettingsPage.jsx:76',message:'Avatars bucket upload result',data:{hasError:!!avatarUploadErr,errorMessage:avatarUploadErr?.message,errorCode:avatarUploadErr?.statusCode,hasData:!!avatarUploadData},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                // #endregion
 
                 if (avatarUploadErr) {
                     uploadError = avatarUploadErr;
@@ -87,6 +114,9 @@ const AppearanceSection = ({ profile, updateProfile }) => {
                         .from('avatars')
                         .getPublicUrl(`backgrounds/${fileName}`);
                     publicUrl = urlData.publicUrl;
+                    // #region agent log
+                    fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SettingsPage.jsx:87',message:'Got public URL from avatars bucket',data:{publicUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                    // #endregion
                 }
             } else {
                 // Get public URL from backgrounds bucket
@@ -94,13 +124,22 @@ const AppearanceSection = ({ profile, updateProfile }) => {
                     .from('backgrounds')
                     .getPublicUrl(filePath);
                 publicUrl = urlData.publicUrl;
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SettingsPage.jsx:94',message:'Got public URL from backgrounds bucket',data:{publicUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                // #endregion
             }
 
             if (uploadError) {
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SettingsPage.jsx:100',message:'Upload error detected - throwing',data:{uploadError:uploadError?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                // #endregion
                 throw uploadError;
             }
 
             if (!publicUrl) {
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SettingsPage.jsx:104',message:'No public URL - throwing error',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                // #endregion
                 throw new Error('Failed to get image URL');
             }
 
@@ -348,8 +387,170 @@ const AppearanceSection = ({ profile, updateProfile }) => {
     );
 };
 
+const SubscriptionSection = ({ profile }) => {
+    const navigate = useNavigate();
+    const { user } = useAuth();
+    const [isLoading, setIsLoading] = useState(false);
+    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+
+    const handleManageSubscription = async () => {
+        if (!user?.id) {
+            toast.error('You must be logged in to manage your subscription.');
+            return;
+        }
+
+        if (!profile?.stripe_customer_id) {
+            toast.error('No subscription found. Please subscribe first.');
+            navigate('/pricing');
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            const response = await fetch(`${API_URL}/api/create-portal-session`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    userId: user.id
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Failed to create portal session');
+            }
+
+            const { url } = await response.json();
+            if (url) {
+                window.location.href = url;
+            } else {
+                throw new Error('No portal URL returned');
+            }
+        } catch (error) {
+            console.error('Error creating portal session:', error);
+            toast.error(error?.message || 'Failed to open subscription management. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const getSubscriptionStatus = () => {
+        if (!profile) return 'Unknown';
+        const role = profile.role || 'Free';
+        const subscriptionStatus = profile.subscription_status;
+        
+        if (role === 'Free' || !subscriptionStatus) {
+            return 'Free';
+        }
+        
+        return subscriptionStatus === 'active' ? 'Active' : subscriptionStatus || 'Free';
+    };
+
+    const getPlanName = () => {
+        const role = profile?.role || 'Free';
+        if (role === 'Student') return 'Student Plan';
+        if (role === 'Teacher') return 'Teacher Plan';
+        return 'Free Plan';
+    };
+
+    return (
+        <div className="space-y-6">
+            <div>
+                <h3 className="text-lg font-medium">Subscription Management</h3>
+                <p className="text-sm text-muted-foreground">
+                    Manage your subscription, billing, and payment methods.
+                </p>
+            </div>
+            <Separator />
+            <div className="space-y-6">
+                {/* Current Subscription Status */}
+                <div className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-black/20">
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <Label className="text-base font-semibold">Current Plan</Label>
+                            <p className="text-sm text-muted-foreground mt-1">
+                                {getPlanName()}
+                            </p>
+                        </div>
+                        <div className="text-right">
+                            <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                getSubscriptionStatus() === 'Active' 
+                                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                                    : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
+                            }`}>
+                                {getSubscriptionStatus()}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {profile?.subscription_id && (
+                        <div className="text-xs text-muted-foreground mt-2">
+                            Subscription ID: {profile.subscription_id}
+                        </div>
+                    )}
+                </div>
+
+                {/* Actions */}
+                <div className="space-y-3">
+                    {profile?.stripe_customer_id ? (
+                        <Button 
+                            onClick={handleManageSubscription}
+                            disabled={isLoading}
+                            className="w-full"
+                        >
+                            {isLoading ? (
+                                <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                    Opening...
+                                </>
+                            ) : (
+                                <>
+                                    <CreditCard className="mr-2 h-4 w-4" />
+                                    Manage Subscription
+                                </>
+                            )}
+                        </Button>
+                    ) : (
+                        <Button 
+                            onClick={() => navigate('/pricing')}
+                            className="w-full"
+                        >
+                            <CreditCard className="mr-2 h-4 w-4" />
+                            Subscribe to a Plan
+                        </Button>
+                    )}
+
+                    <Button 
+                        variant="outline"
+                        onClick={() => navigate('/pricing')}
+                        className="w-full"
+                    >
+                        View Plans & Pricing
+                    </Button>
+                </div>
+
+                {/* Information */}
+                <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                    <p className="text-sm text-blue-900 dark:text-blue-200">
+                        <strong>Need help?</strong> Use the "Manage Subscription" button to access the Stripe Customer Portal where you can:
+                    </p>
+                    <ul className="text-sm text-blue-800 dark:text-blue-300 mt-2 ml-4 list-disc space-y-1">
+                        <li>Update payment methods</li>
+                        <li>View billing history</li>
+                        <li>Cancel or modify your subscription</li>
+                        <li>Download invoices</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const SettingsPage = () => {
     const { user, profile, updateProfile, loading } = useAuth();
+    const navigate = useNavigate();
     const [activeSection, setActiveSection] = useState('account');
     const [displayName, setDisplayName] = useState('');
     const [email, setEmail] = useState('');
@@ -610,6 +811,14 @@ const SettingsPage = () => {
                         >
                             <Shield className="mr-2 h-4 w-4" />
                             Privacy
+                        </Button>
+                        <Button 
+                            variant="ghost" 
+                            className={`w-full justify-start ${activeSection === 'subscription' ? 'bg-primary/10' : ''}`}
+                            onClick={() => setActiveSection('subscription')}
+                        >
+                            <CreditCard className="mr-2 h-4 w-4" />
+                            Subscription
                         </Button>
                     </nav>
                 </Card>

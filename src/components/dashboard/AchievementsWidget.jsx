@@ -1,7 +1,10 @@
 import React, { memo } from 'react';
-import { Trophy, Lock } from 'lucide-react';
+import { Trophy, Lock, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const AchievementsWidget = memo(({ recentAchievements = [], totalCount = 0, nextUnlock = null }) => {
+    const navigate = useNavigate();
+
     return (
         <div className="glass-card-premium p-6 hover:scale-[1.02] transition-transform duration-300">
             <div className="flex items-start justify-between mb-4">
@@ -14,8 +17,19 @@ const AchievementsWidget = memo(({ recentAchievements = [], totalCount = 0, next
                 >
                     <Trophy size={20} />
                 </div>
-                <div className="text-xs font-medium text-gray-400 bg-white/5 px-2 py-1 rounded-lg border border-white/10 uppercase tracking-wider">
-                    Achievements
+                <div className="flex items-center gap-2">
+                    <div className="text-xs font-medium text-gray-400 bg-white/5 px-2 py-1 rounded-lg border border-white/10 uppercase tracking-wider">
+                        Achievements
+                    </div>
+                    <button
+                        onClick={() => navigate('/achievements')}
+                        className="text-xs font-medium flex items-center gap-1 transition-colors hover:opacity-80"
+                        style={{ color: 'var(--color-warning)' }}
+                        aria-label="View all achievements"
+                    >
+                        View All
+                        <ArrowRight size={12} aria-hidden="true" />
+                    </button>
                 </div>
             </div>
 

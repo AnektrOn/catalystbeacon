@@ -1,0 +1,2683 @@
+{
+  "components": {
+    "checked": [
+      "components/Account.jsx",
+      "components/AppShell.jsx",
+      "components/AppShellMobile.jsx",
+      "components/Auth.jsx",
+      "components/AuthBypass.jsx",
+      "components/ConnectionTest.jsx",
+      "components/Debug.jsx",
+      "components/DebugSignOut.jsx",
+      "components/EnvDebug.jsx",
+      "components/ErrorBoundary.jsx",
+      "components/NotificationBadge.jsx",
+      "components/ProtectedRoute.jsx",
+      "components/QuizComponent.jsx",
+      "components/RequireRole.jsx",
+      "components/SEOHead.jsx",
+      "components/SignupTest.jsx",
+      "components/SimpleSupabaseTest.jsx",
+      "components/SupabaseTest.jsx",
+      "components/TestAuth.jsx",
+      "components/UserProfileDropdown.jsx",
+      "components/auth/AuthLayout.jsx",
+      "components/auth/LoginForm.jsx",
+      "components/auth/SignupForm.jsx",
+      "components/common/ColorPaletteDropdown.jsx",
+      "components/common/ErrorDisplay.jsx",
+      "components/common/LoadingSpinner.jsx",
+      "components/common/SkeletonLoader.jsx",
+      "components/dashboard/AchievementsWidget.jsx",
+      "components/dashboard/CoherenceWidget.jsx",
+      "components/dashboard/ConstellationNavigatorWidget.jsx",
+      "components/dashboard/CurrentLessonWidget.jsx",
+      "components/dashboard/DailyRitualWidget.jsx",
+      "components/dashboard/QuickActionsWidget.jsx",
+      "components/dashboard/TeacherFeedWidget.jsx",
+      "components/dashboard/XPProgressWidget.jsx",
+      "components/mastery/CalendarTab.jsx",
+      "components/mastery/CalendarTabMobile.jsx",
+      "components/mastery/HabitsTab.jsx",
+      "components/mastery/HabitsTabCompact.jsx",
+      "components/mastery/HabitsTabFixed.jsx",
+      "components/mastery/HabitsTabMobile.jsx",
+      "components/mastery/HabitsTabRobust.jsx",
+      "components/mastery/HabitsTabSimple.jsx",
+      "components/mastery/ToolboxTab.jsx",
+      "components/mastery/ToolboxTabCompact.jsx",
+      "components/mastery/ToolboxTabFixed.jsx",
+      "components/mastery/ToolboxTabMobile.jsx",
+      "components/mastery/ToolboxTabRobust.jsx",
+      "components/profile/ProgressBar.jsx",
+      "components/profile/RadarChart.jsx",
+      "components/social/CreatePostModal.jsx",
+      "components/stellar-map/NodeTooltip.jsx",
+      "components/stellar-map/StellarMap.jsx",
+      "components/stellar-map/StellarMap2D.jsx",
+      "components/stellar-map/StellarMapControls.jsx",
+      "components/stellar-map/StellarMapDebugOverlay.jsx",
+      "components/stellar-map/StellarMapErrorBoundary.jsx",
+      "components/stellar-map/YouTubePlayerModal.jsx",
+      "components/stellar-map/core/InteractionManager.js",
+      "components/stellar-map/core/NodeRenderer.js",
+      "components/stellar-map/core/ThreeSceneManager.js",
+      "components/stellar-map/hooks/useXPVisibility.js",
+      "components/stellar-map/r3f/ConnectionLines.jsx",
+      "components/stellar-map/r3f/CoreSun.jsx",
+      "components/stellar-map/r3f/FogSphere.jsx",
+      "components/stellar-map/r3f/NodeSphere.jsx",
+      "components/stellar-map/r3f/StellarMapScene.jsx",
+      "components/stellar-map/utils/debugHelpers.js",
+      "components/test/MasteryTestComponent.jsx",
+      "components/ui/alert.jsx",
+      "components/ui/avatar.jsx",
+      "components/ui/badge.jsx",
+      "components/ui/button.jsx",
+      "components/ui/card.jsx",
+      "components/ui/checkbox.jsx",
+      "components/ui/dialog.jsx",
+      "components/ui/dropdown-menu.jsx",
+      "components/ui/input.jsx",
+      "components/ui/label.jsx",
+      "components/ui/progress.jsx",
+      "components/ui/separator.jsx",
+      "components/ui/sheet.jsx",
+      "components/ui/sonner.jsx",
+      "components/ui/tabs.jsx",
+      "pages/Achievements.jsx",
+      "pages/CommunityPage.jsx",
+      "pages/CourseCatalogPage.jsx",
+      "pages/CourseCreationPage.jsx",
+      "pages/CourseDetailPage.jsx",
+      "pages/CoursePlayerPage.jsx",
+      "pages/Dashboard.jsx",
+      "pages/ForgotPasswordPage.jsx",
+      "pages/LoginPage.jsx",
+      "pages/Mastery.jsx",
+      "pages/PricingPage.jsx",
+      "pages/PrivacyPage.jsx",
+      "pages/ProfilePage.jsx",
+      "pages/SettingsPage.jsx",
+      "pages/SignupPage.jsx",
+      "pages/StellarMap2DPage.jsx",
+      "pages/StellarMapPage.jsx",
+      "pages/TermsPage.jsx",
+      "pages/TimerPage.jsx"
+    ],
+    "issues": [],
+    "missing": []
+  },
+  "routes": {
+    "defined": [
+      "/login",
+      "/signup",
+      "/pricing",
+      "/forgot-password",
+      "/terms",
+      "/privacy",
+      "/test",
+      "/mastery-test",
+      "/dashboard",
+      "/profile",
+      "/mastery",
+      "/mastery/calendar",
+      "/mastery/habits",
+      "/mastery/toolbox",
+      "/mastery/achievements",
+      "/mastery/timer",
+      "/calendar",
+      "/community",
+      "/timer",
+      "/settings",
+      "/courses",
+      "/courses/create",
+      "/courses/:courseId",
+      "/courses/:courseId/chapters/:chapterNumber/lessons/:lessonNumber",
+      "/stellar-map",
+      "/stellar-map-2d",
+      "/achievements",
+      "/",
+      "*"
+    ],
+    "used": [
+      "/login",
+      "/dashboard",
+      "/login",
+      "/mastery/calendar",
+      "/mastery/timer",
+      "/",
+      "/login",
+      "/login",
+      "/login",
+      "/dashboard",
+      "/login",
+      "/login",
+      "/forgot-password",
+      "/signup",
+      "/login",
+      "/terms",
+      "/privacy",
+      "/login",
+      "/achievements",
+      "14",
+      "0",
+      "/courses",
+      "/mastery/timer",
+      "/profile",
+      "/mastery",
+      "/courses",
+      "/community",
+      "/stellar-map-2d",
+      "/courses",
+      "/courses",
+      "/courses",
+      "/courses",
+      "/courses",
+      "/courses",
+      "/login",
+      "/login",
+      "/dashboard",
+      "/signup",
+      "/forgot-password",
+      "/mastery/timer",
+      "/mastery/habits",
+      "/mastery/achievements",
+      "/login",
+      "/signup",
+      "/pricing",
+      "/pricing",
+      "/pricing",
+      "/dashboard",
+      "/login",
+      "/login",
+      "/terms",
+      "/privacy",
+      "/signup"
+    ],
+    "missing": [
+      "14",
+      "0"
+    ],
+    "broken": [
+      "/test",
+      "/mastery-test",
+      "/mastery/toolbox",
+      "/calendar",
+      "/timer",
+      "/settings",
+      "/courses/create",
+      "/courses/:courseId",
+      "/courses/:courseId/chapters/:chapterNumber/lessons/:lessonNumber",
+      "/stellar-map"
+    ]
+  },
+  "services": {
+    "checked": [
+      "services/courseService.js",
+      "services/levelsService.js",
+      "services/masteryService.js",
+      "services/schoolService.js",
+      "services/skillsService.js",
+      "services/socialService.js",
+      "services/stellarMapService.js"
+    ],
+    "issues": [],
+    "missing": []
+  },
+  "database": {
+    "tables": [
+      "user_stellar_node_completions",
+      "notifications",
+      "badges",
+      "user_badges",
+      "constellation_families",
+      "constellations",
+      "stellar_map_nodes"
+    ],
+    "queries": [],
+    "mismatches": [],
+    "unused": []
+  },
+  "errors": {
+    "handlers": [
+      "components/ErrorBoundary.jsx",
+      "components/stellar-map/StellarMapErrorBoundary.jsx",
+      "pages/StellarMap2DPage.jsx",
+      "pages/StellarMapPage.jsx",
+      "App.js"
+    ],
+    "missing": [],
+    "issues": []
+  },
+  "accessibility": {
+    "issues": [
+      {
+        "file": "components/Account.jsx",
+        "line": 69,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "components/Account.jsx",
+        "line": 78,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "components/Account.jsx",
+        "line": 87,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/Account.jsx",
+        "line": 97,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/AppShell.jsx",
+        "line": 210,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/AppShell.jsx",
+        "line": 222,
+        "issue": "Image without alt text",
+        "code": "<img"
+      },
+      {
+        "file": "components/AppShell.jsx",
+        "line": 253,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/AppShell.jsx",
+        "line": 273,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/AppShell.jsx",
+        "line": 296,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/AppShell.jsx",
+        "line": 304,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/AppShellMobile.jsx",
+        "line": 168,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/AppShellMobile.jsx",
+        "line": 207,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/AppShellMobile.jsx",
+        "line": 217,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/AppShellMobile.jsx",
+        "line": 244,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/AppShellMobile.jsx",
+        "line": 262,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/AppShellMobile.jsx",
+        "line": 279,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/AppShellMobile.jsx",
+        "line": 287,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/AppShellMobile.jsx",
+        "line": 315,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/AppShellMobile.jsx",
+        "line": 328,
+        "issue": "Image without alt text",
+        "code": "<img"
+      },
+      {
+        "file": "components/AppShellMobile.jsx",
+        "line": 359,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/AppShellMobile.jsx",
+        "line": 379,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/AppShellMobile.jsx",
+        "line": 411,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/Auth.jsx",
+        "line": 33,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "components/Auth.jsx",
+        "line": 42,
+        "issue": "Button without accessible name",
+        "code": "<button className=\"button block\" disabled={loading}>"
+      },
+      {
+        "file": "components/AuthBypass.jsx",
+        "line": 24,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/QuizComponent.jsx",
+        "line": 86,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/QuizComponent.jsx",
+        "line": 145,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/QuizComponent.jsx",
+        "line": 165,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/QuizComponent.jsx",
+        "line": 173,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/SignupTest.jsx",
+        "line": 60,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "components/SignupTest.jsx",
+        "line": 74,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "components/SignupTest.jsx",
+        "line": 84,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/SimpleSupabaseTest.jsx",
+        "line": 64,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/SupabaseTest.jsx",
+        "line": 57,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/TestAuth.jsx",
+        "line": 23,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/UserProfileDropdown.jsx",
+        "line": 54,
+        "issue": "Image without alt text",
+        "code": "<img"
+      },
+      {
+        "file": "components/common/ColorPaletteDropdown.jsx",
+        "line": 42,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/common/ColorPaletteDropdown.jsx",
+        "line": 62,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/common/ErrorDisplay.jsx",
+        "line": 28,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/dashboard/AchievementsWidget.jsx",
+        "line": 24,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/dashboard/CurrentLessonWidget.jsx",
+        "line": 51,
+        "issue": "Image without alt text",
+        "code": "<img"
+      },
+      {
+        "file": "components/dashboard/CurrentLessonWidget.jsx",
+        "line": 93,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/dashboard/CurrentLessonWidget.jsx",
+        "line": 105,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/dashboard/DailyRitualWidget.jsx",
+        "line": 35,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/dashboard/QuickActionsWidget.jsx",
+        "line": 51,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/dashboard/TeacherFeedWidget.jsx",
+        "line": 42,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/CalendarTab.jsx",
+        "line": 515,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/CalendarTab.jsx",
+        "line": 532,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/CalendarTab.jsx",
+        "line": 543,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/CalendarTab.jsx",
+        "line": 556,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/CalendarTab.jsx",
+        "line": 569,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/CalendarTab.jsx",
+        "line": 589,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/CalendarTab.jsx",
+        "line": 735,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/CalendarTab.jsx",
+        "line": 751,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/CalendarTab.jsx",
+        "line": 774,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/CalendarTab.jsx",
+        "line": 800,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/CalendarTab.jsx",
+        "line": 807,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/CalendarTab.jsx",
+        "line": 837,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/CalendarTab.jsx",
+        "line": 940,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/CalendarTab.jsx",
+        "line": 993,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/CalendarTab.jsx",
+        "line": 1000,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/CalendarTab.jsx",
+        "line": 1026,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/CalendarTab.jsx",
+        "line": 1158,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/CalendarTabMobile.jsx",
+        "line": 228,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/CalendarTabMobile.jsx",
+        "line": 242,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/CalendarTabMobile.jsx",
+        "line": 252,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/CalendarTabMobile.jsx",
+        "line": 261,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/CalendarTabMobile.jsx",
+        "line": 270,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/CalendarTabMobile.jsx",
+        "line": 302,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/CalendarTabMobile.jsx",
+        "line": 358,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTab.jsx",
+        "line": 414,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTab.jsx",
+        "line": 430,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTab.jsx",
+        "line": 440,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTab.jsx",
+        "line": 461,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTab.jsx",
+        "line": 482,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "components/mastery/HabitsTab.jsx",
+        "line": 494,
+        "issue": "Form input without label association",
+        "code": "<textarea"
+      },
+      {
+        "file": "components/mastery/HabitsTab.jsx",
+        "line": 521,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "components/mastery/HabitsTab.jsx",
+        "line": 532,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTab.jsx",
+        "line": 540,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTab.jsx",
+        "line": 565,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTab.jsx",
+        "line": 607,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTab.jsx",
+        "line": 631,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTab.jsx",
+        "line": 673,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabCompact.jsx",
+        "line": 476,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabCompact.jsx",
+        "line": 492,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabCompact.jsx",
+        "line": 503,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabCompact.jsx",
+        "line": 513,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabCompact.jsx",
+        "line": 534,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabCompact.jsx",
+        "line": 540,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabCompact.jsx",
+        "line": 593,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabCompact.jsx",
+        "line": 604,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabCompact.jsx",
+        "line": 672,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabCompact.jsx",
+        "line": 693,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "components/mastery/HabitsTabCompact.jsx",
+        "line": 703,
+        "issue": "Form input without label association",
+        "code": "<textarea"
+      },
+      {
+        "file": "components/mastery/HabitsTabCompact.jsx",
+        "line": 713,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "components/mastery/HabitsTabCompact.jsx",
+        "line": 724,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabCompact.jsx",
+        "line": 730,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabFixed.jsx",
+        "line": 367,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabFixed.jsx",
+        "line": 383,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabFixed.jsx",
+        "line": 394,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabFixed.jsx",
+        "line": 404,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabFixed.jsx",
+        "line": 424,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabFixed.jsx",
+        "line": 450,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabFixed.jsx",
+        "line": 476,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabFixed.jsx",
+        "line": 522,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabFixed.jsx",
+        "line": 543,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "components/mastery/HabitsTabFixed.jsx",
+        "line": 553,
+        "issue": "Form input without label association",
+        "code": "<textarea"
+      },
+      {
+        "file": "components/mastery/HabitsTabFixed.jsx",
+        "line": 563,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "components/mastery/HabitsTabFixed.jsx",
+        "line": 574,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabFixed.jsx",
+        "line": 580,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabMobile.jsx",
+        "line": 210,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabMobile.jsx",
+        "line": 219,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabMobile.jsx",
+        "line": 237,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabMobile.jsx",
+        "line": 272,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabMobile.jsx",
+        "line": 309,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabRobust.jsx",
+        "line": 318,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabRobust.jsx",
+        "line": 334,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabRobust.jsx",
+        "line": 345,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabRobust.jsx",
+        "line": 355,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabRobust.jsx",
+        "line": 375,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabRobust.jsx",
+        "line": 401,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabRobust.jsx",
+        "line": 427,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabRobust.jsx",
+        "line": 472,
+        "issue": "Button without accessible name",
+        "code": "<button className=\"px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700\">"
+      },
+      {
+        "file": "components/mastery/HabitsTabRobust.jsx",
+        "line": 490,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "components/mastery/HabitsTabRobust.jsx",
+        "line": 500,
+        "issue": "Form input without label association",
+        "code": "<textarea"
+      },
+      {
+        "file": "components/mastery/HabitsTabRobust.jsx",
+        "line": 510,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "components/mastery/HabitsTabRobust.jsx",
+        "line": 521,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabRobust.jsx",
+        "line": 527,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabSimple.jsx",
+        "line": 341,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabSimple.jsx",
+        "line": 357,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabSimple.jsx",
+        "line": 379,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabSimple.jsx",
+        "line": 405,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabSimple.jsx",
+        "line": 431,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabSimple.jsx",
+        "line": 464,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "components/mastery/HabitsTabSimple.jsx",
+        "line": 474,
+        "issue": "Form input without label association",
+        "code": "<textarea"
+      },
+      {
+        "file": "components/mastery/HabitsTabSimple.jsx",
+        "line": 484,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "components/mastery/HabitsTabSimple.jsx",
+        "line": 495,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabSimple.jsx",
+        "line": 501,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTab.jsx",
+        "line": 460,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTab.jsx",
+        "line": 476,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTab.jsx",
+        "line": 483,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTab.jsx",
+        "line": 535,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTab.jsx",
+        "line": 548,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTab.jsx",
+        "line": 611,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTab.jsx",
+        "line": 644,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTab.jsx",
+        "line": 674,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTab.jsx",
+        "line": 695,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTab.jsx",
+        "line": 735,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTab.jsx",
+        "line": 741,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabCompact.jsx",
+        "line": 418,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabCompact.jsx",
+        "line": 438,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabCompact.jsx",
+        "line": 448,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabCompact.jsx",
+        "line": 514,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabCompact.jsx",
+        "line": 538,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabCompact.jsx",
+        "line": 587,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabCompact.jsx",
+        "line": 597,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabCompact.jsx",
+        "line": 610,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabCompact.jsx",
+        "line": 651,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabCompact.jsx",
+        "line": 660,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabFixed.jsx",
+        "line": 327,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabFixed.jsx",
+        "line": 347,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabFixed.jsx",
+        "line": 357,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabFixed.jsx",
+        "line": 410,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabFixed.jsx",
+        "line": 434,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabFixed.jsx",
+        "line": 461,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabFixed.jsx",
+        "line": 485,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabFixed.jsx",
+        "line": 492,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabFixed.jsx",
+        "line": 533,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabFixed.jsx",
+        "line": 542,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabMobile.jsx",
+        "line": 107,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabMobile.jsx",
+        "line": 116,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabMobile.jsx",
+        "line": 134,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabMobile.jsx",
+        "line": 165,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabMobile.jsx",
+        "line": 199,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabRobust.jsx",
+        "line": 322,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabRobust.jsx",
+        "line": 342,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabRobust.jsx",
+        "line": 352,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabRobust.jsx",
+        "line": 403,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabRobust.jsx",
+        "line": 427,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabRobust.jsx",
+        "line": 455,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabRobust.jsx",
+        "line": 479,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabRobust.jsx",
+        "line": 486,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabRobust.jsx",
+        "line": 527,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabRobust.jsx",
+        "line": 536,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/social/CreatePostModal.jsx",
+        "line": 90,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/social/CreatePostModal.jsx",
+        "line": 108,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/social/CreatePostModal.jsx",
+        "line": 128,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "components/social/CreatePostModal.jsx",
+        "line": 144,
+        "issue": "Form input without label association",
+        "code": "<textarea"
+      },
+      {
+        "file": "components/social/CreatePostModal.jsx",
+        "line": 161,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "components/social/CreatePostModal.jsx",
+        "line": 177,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "components/social/CreatePostModal.jsx",
+        "line": 193,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "components/social/CreatePostModal.jsx",
+        "line": 211,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "components/social/CreatePostModal.jsx",
+        "line": 224,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/social/CreatePostModal.jsx",
+        "line": 231,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/stellar-map/StellarMap.jsx",
+        "line": 284,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/stellar-map/StellarMap2D.jsx",
+        "line": 356,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/stellar-map/StellarMap2D.jsx",
+        "line": 363,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/stellar-map/StellarMap2D.jsx",
+        "line": 370,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/stellar-map/StellarMapControls.jsx",
+        "line": 45,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/stellar-map/StellarMapControls.jsx",
+        "line": 73,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/stellar-map/StellarMapControls.jsx",
+        "line": 153,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/stellar-map/StellarMapErrorBoundary.jsx",
+        "line": 43,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/stellar-map/YouTubePlayerModal.jsx",
+        "line": 252,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/stellar-map/YouTubePlayerModal.jsx",
+        "line": 277,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/stellar-map/YouTubePlayerModal.jsx",
+        "line": 313,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/test/MasteryTestComponent.jsx",
+        "line": 242,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/test/MasteryTestComponent.jsx",
+        "line": 249,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/ui/input.jsx",
+        "line": 7,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "pages/CommunityPage.jsx",
+        "line": 130,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CommunityPage.jsx",
+        "line": 154,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "pages/CommunityPage.jsx",
+        "line": 195,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CommunityPage.jsx",
+        "line": 220,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CommunityPage.jsx",
+        "line": 250,
+        "issue": "Image without alt text",
+        "code": "<img"
+      },
+      {
+        "file": "pages/CommunityPage.jsx",
+        "line": 269,
+        "issue": "Button without accessible name",
+        "code": "<button className=\"text-gray-400 hover:text-gray-600 dark:hover:text-gray-200\">"
+      },
+      {
+        "file": "pages/CommunityPage.jsx",
+        "line": 299,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CommunityPage.jsx",
+        "line": 311,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CommunityPage.jsx",
+        "line": 347,
+        "issue": "Image without alt text",
+        "code": "<img"
+      },
+      {
+        "file": "pages/CommunityPage.jsx",
+        "line": 370,
+        "issue": "Image without alt text",
+        "code": "<img"
+      },
+      {
+        "file": "pages/CommunityPage.jsx",
+        "line": 395,
+        "issue": "Image without alt text",
+        "code": "<img"
+      },
+      {
+        "file": "pages/CommunityPage.jsx",
+        "line": 429,
+        "issue": "Image without alt text",
+        "code": "<img"
+      },
+      {
+        "file": "pages/CommunityPage.jsx",
+        "line": 470,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseCatalogPage.jsx",
+        "line": 120,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseCatalogPage.jsx",
+        "line": 160,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseCatalogPage.jsx",
+        "line": 185,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseCatalogPage.jsx",
+        "line": 343,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseCreationPage.jsx",
+        "line": 245,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseCreationPage.jsx",
+        "line": 261,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseCreationPage.jsx",
+        "line": 282,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "pages/CourseCreationPage.jsx",
+        "line": 316,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "pages/CourseCreationPage.jsx",
+        "line": 331,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "pages/CourseCreationPage.jsx",
+        "line": 346,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "pages/CourseCreationPage.jsx",
+        "line": 360,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "pages/CourseCreationPage.jsx",
+        "line": 377,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseCreationPage.jsx",
+        "line": 391,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "pages/CourseCreationPage.jsx",
+        "line": 401,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseCreationPage.jsx",
+        "line": 414,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "pages/CourseCreationPage.jsx",
+        "line": 424,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseCreationPage.jsx",
+        "line": 434,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseCreationPage.jsx",
+        "line": 450,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseCreationPage.jsx",
+        "line": 458,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseDetailPage.jsx",
+        "line": 170,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseDetailPage.jsx",
+        "line": 191,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseDetailPage.jsx",
+        "line": 318,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseDetailPage.jsx",
+        "line": 383,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CoursePlayerPage.jsx",
+        "line": 249,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CoursePlayerPage.jsx",
+        "line": 293,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CoursePlayerPage.jsx",
+        "line": 323,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CoursePlayerPage.jsx",
+        "line": 332,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CoursePlayerPage.jsx",
+        "line": 345,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CoursePlayerPage.jsx",
+        "line": 383,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CoursePlayerPage.jsx",
+        "line": 517,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CoursePlayerPage.jsx",
+        "line": 526,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CoursePlayerPage.jsx",
+        "line": 561,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CoursePlayerPage.jsx",
+        "line": 575,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/LoginPage.jsx",
+        "line": 73,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "pages/LoginPage.jsx",
+        "line": 90,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "pages/LoginPage.jsx",
+        "line": 117,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/Mastery.jsx",
+        "line": 104,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/Mastery.jsx",
+        "line": 115,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/Mastery.jsx",
+        "line": 126,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/Mastery.jsx",
+        "line": 163,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/PricingPage.jsx",
+        "line": 166,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/ProfilePage.jsx",
+        "line": 217,
+        "issue": "Button without accessible name",
+        "code": "<button className=\"hidden md:block px-3 py-2 sm:px-4 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 shadow-lg hover:shadow-emerald-500/25\">"
+      },
+      {
+        "file": "pages/ProfilePage.jsx",
+        "line": 220,
+        "issue": "Button without accessible name",
+        "code": "<button className=\"hidden md:block px-3 py-2 sm:px-4 bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 shadow-lg hover:shadow-cyan-500/25\">"
+      },
+      {
+        "file": "pages/ProfilePage.jsx",
+        "line": 223,
+        "issue": "Button without accessible name",
+        "code": "<button className=\"hidden md:block px-3 py-2 sm:px-4 bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-500 hover:to-violet-600 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 shadow-lg hover:shadow-violet-500/25\">"
+      },
+      {
+        "file": "pages/ProfilePage.jsx",
+        "line": 239,
+        "issue": "Image without alt text",
+        "code": "<img"
+      },
+      {
+        "file": "pages/ProfilePage.jsx",
+        "line": 367,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/ProfilePage.jsx",
+        "line": 493,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "pages/ProfilePage.jsx",
+        "line": 508,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "pages/ProfilePage.jsx",
+        "line": 523,
+        "issue": "Form input without label association",
+        "code": "<textarea"
+      },
+      {
+        "file": "pages/ProfilePage.jsx",
+        "line": 538,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "pages/ProfilePage.jsx",
+        "line": 558,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/SettingsPage.jsx",
+        "line": 264,
+        "issue": "Image without alt text",
+        "code": "<img"
+      },
+      {
+        "file": "pages/SettingsPage.jsx",
+        "line": 273,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/SettingsPage.jsx",
+        "line": 290,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "pages/SettingsPage.jsx",
+        "line": 656,
+        "issue": "Form input without label association",
+        "code": "<input type=\"checkbox\" className=\"w-4 h-4 rounded border-gray-300\" defaultChecked />"
+      },
+      {
+        "file": "pages/SettingsPage.jsx",
+        "line": 665,
+        "issue": "Form input without label association",
+        "code": "<input type=\"checkbox\" className=\"w-4 h-4 rounded border-gray-300\" defaultChecked />"
+      },
+      {
+        "file": "pages/SettingsPage.jsx",
+        "line": 674,
+        "issue": "Form input without label association",
+        "code": "<input type=\"checkbox\" className=\"w-4 h-4 rounded border-gray-300\" defaultChecked />"
+      },
+      {
+        "file": "pages/SettingsPage.jsx",
+        "line": 707,
+        "issue": "Form input without label association",
+        "code": "<input type=\"checkbox\" className=\"w-4 h-4 rounded border-gray-300\" defaultChecked />"
+      },
+      {
+        "file": "pages/SettingsPage.jsx",
+        "line": 716,
+        "issue": "Form input without label association",
+        "code": "<input type=\"checkbox\" className=\"w-4 h-4 rounded border-gray-300\" defaultChecked />"
+      },
+      {
+        "file": "pages/SignupPage.jsx",
+        "line": 139,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "pages/SignupPage.jsx",
+        "line": 161,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "pages/SignupPage.jsx",
+        "line": 184,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "pages/SignupPage.jsx",
+        "line": 210,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "pages/SignupPage.jsx",
+        "line": 230,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "pages/SignupPage.jsx",
+        "line": 256,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/StellarMap2DPage.jsx",
+        "line": 241,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/TimerPage.jsx",
+        "line": 95,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/TimerPage.jsx",
+        "line": 109,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/TimerPage.jsx",
+        "line": 120,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/TimerPage.jsx",
+        "line": 174,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/TimerPage.jsx",
+        "line": 185,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      }
+    ],
+    "missing": [
+      {
+        "file": "components/Account.jsx",
+        "issue": "Button without aria-label",
+        "line": 86
+      },
+      {
+        "file": "components/Auth.jsx",
+        "issue": "Button without aria-label",
+        "line": 41
+      },
+      {
+        "file": "components/AuthBypass.jsx",
+        "issue": "Button without aria-label",
+        "line": 23
+      },
+      {
+        "file": "components/QuizComponent.jsx",
+        "issue": "Button without aria-label",
+        "line": 85
+      },
+      {
+        "file": "components/SignupTest.jsx",
+        "issue": "Button without aria-label",
+        "line": 83
+      },
+      {
+        "file": "components/SimpleSupabaseTest.jsx",
+        "issue": "Button without aria-label",
+        "line": 63
+      },
+      {
+        "file": "components/SupabaseTest.jsx",
+        "issue": "Button without aria-label",
+        "line": 56
+      },
+      {
+        "file": "components/TestAuth.jsx",
+        "issue": "Button without aria-label",
+        "line": 22
+      },
+      {
+        "file": "components/mastery/CalendarTabMobile.jsx",
+        "issue": "Button without aria-label",
+        "line": 227
+      },
+      {
+        "file": "components/mastery/HabitsTabCompact.jsx",
+        "issue": "Button without aria-label",
+        "line": 475
+      },
+      {
+        "file": "components/mastery/HabitsTabFixed.jsx",
+        "issue": "Button without aria-label",
+        "line": 366
+      },
+      {
+        "file": "components/mastery/HabitsTabMobile.jsx",
+        "issue": "Button without aria-label",
+        "line": 209
+      },
+      {
+        "file": "components/mastery/HabitsTabRobust.jsx",
+        "issue": "Button without aria-label",
+        "line": 317
+      },
+      {
+        "file": "components/mastery/HabitsTabSimple.jsx",
+        "issue": "Button without aria-label",
+        "line": 340
+      },
+      {
+        "file": "components/social/CreatePostModal.jsx",
+        "issue": "Button without aria-label",
+        "line": 89
+      },
+      {
+        "file": "components/stellar-map/StellarMap2D.jsx",
+        "issue": "Button without aria-label",
+        "line": 355
+      },
+      {
+        "file": "components/stellar-map/StellarMapErrorBoundary.jsx",
+        "issue": "Button without aria-label",
+        "line": 42
+      },
+      {
+        "file": "components/test/MasteryTestComponent.jsx",
+        "issue": "Button without aria-label",
+        "line": 241
+      },
+      {
+        "file": "pages/CourseCatalogPage.jsx",
+        "issue": "Button without aria-label",
+        "line": 119
+      },
+      {
+        "file": "pages/CourseDetailPage.jsx",
+        "issue": "Button without aria-label",
+        "line": 169
+      },
+      {
+        "file": "pages/CoursePlayerPage.jsx",
+        "issue": "Button without aria-label",
+        "line": 248
+      },
+      {
+        "file": "pages/LoginPage.jsx",
+        "issue": "Button without aria-label",
+        "line": 116
+      },
+      {
+        "file": "pages/Mastery.jsx",
+        "issue": "Button without aria-label",
+        "line": 103
+      },
+      {
+        "file": "pages/PricingPage.jsx",
+        "issue": "Button without aria-label",
+        "line": 165
+      },
+      {
+        "file": "pages/ProfilePage.jsx",
+        "issue": "Button without aria-label",
+        "line": 216
+      },
+      {
+        "file": "pages/SettingsPage.jsx",
+        "issue": "Button without aria-label",
+        "line": 272
+      },
+      {
+        "file": "pages/SignupPage.jsx",
+        "issue": "Button without aria-label",
+        "line": 255
+      },
+      {
+        "file": "pages/TimerPage.jsx",
+        "issue": "Button without aria-label",
+        "line": 94
+      }
+    ]
+  },
+  "performance": {
+    "issues": [
+      {
+        "file": "components/mastery/CalendarTab.jsx",
+        "issue": "Large file (1174 lines) - consider splitting",
+        "severity": "medium"
+      },
+      {
+        "file": "components/mastery/HabitsTab.jsx",
+        "issue": "Large file (692 lines) - consider splitting",
+        "severity": "medium"
+      },
+      {
+        "file": "components/mastery/HabitsTabCompact.jsx",
+        "issue": "Large file (745 lines) - consider splitting",
+        "severity": "medium"
+      },
+      {
+        "file": "components/mastery/HabitsTabFixed.jsx",
+        "issue": "Large file (595 lines) - consider splitting",
+        "severity": "medium"
+      },
+      {
+        "file": "components/mastery/HabitsTabRobust.jsx",
+        "issue": "Large file (542 lines) - consider splitting",
+        "severity": "medium"
+      },
+      {
+        "file": "components/mastery/HabitsTabSimple.jsx",
+        "issue": "Large file (516 lines) - consider splitting",
+        "severity": "medium"
+      },
+      {
+        "file": "components/mastery/ToolboxTab.jsx",
+        "issue": "Large file (759 lines) - consider splitting",
+        "severity": "medium"
+      },
+      {
+        "file": "components/mastery/ToolboxTabCompact.jsx",
+        "issue": "Large file (675 lines) - consider splitting",
+        "severity": "medium"
+      },
+      {
+        "file": "components/mastery/ToolboxTabFixed.jsx",
+        "issue": "Large file (557 lines) - consider splitting",
+        "severity": "medium"
+      },
+      {
+        "file": "components/mastery/ToolboxTabRobust.jsx",
+        "issue": "Large file (551 lines) - consider splitting",
+        "severity": "medium"
+      },
+      {
+        "file": "components/stellar-map/StellarMap2D.jsx",
+        "issue": "Large file (832 lines) - consider splitting",
+        "severity": "medium"
+      },
+      {
+        "file": "pages/CommunityPage.jsx",
+        "issue": "Large file (557 lines) - consider splitting",
+        "severity": "medium"
+      },
+      {
+        "file": "pages/CoursePlayerPage.jsx",
+        "issue": "Large file (597 lines) - consider splitting",
+        "severity": "medium"
+      },
+      {
+        "file": "pages/Dashboard.jsx",
+        "issue": "Large file (741 lines) - consider splitting",
+        "severity": "medium"
+      },
+      {
+        "file": "pages/ProfilePage.jsx",
+        "issue": "Large file (572 lines) - consider splitting",
+        "severity": "medium"
+      },
+      {
+        "file": "pages/SettingsPage.jsx",
+        "issue": "Large file (798 lines) - consider splitting",
+        "severity": "medium"
+      },
+      {
+        "file": "services/courseService.js",
+        "issue": "Large file (885 lines) - consider splitting",
+        "severity": "medium"
+      },
+      {
+        "file": "services/masteryService.js",
+        "issue": "Large file (905 lines) - consider splitting",
+        "severity": "medium"
+      },
+      {
+        "file": "services/stellarMapService.js",
+        "issue": "Large file (741 lines) - consider splitting",
+        "severity": "medium"
+      }
+    ],
+    "opportunities": [
+      {
+        "file": "components/Account.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/AppShellMobile.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/ConnectionTest.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/DebugSignOut.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/ErrorBoundary.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/QuizComponent.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/RequireRole.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/SEOHead.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/SignupTest.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/SimpleSupabaseTest.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/SupabaseTest.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/UserProfileDropdown.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/auth/LoginForm.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/auth/SignupForm.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/common/ColorPaletteDropdown.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/common/SkeletonLoader.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/dashboard/AchievementsWidget.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/dashboard/CurrentLessonWidget.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/dashboard/DailyRitualWidget.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/dashboard/QuickActionsWidget.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/mastery/CalendarTab.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/mastery/CalendarTabMobile.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/mastery/HabitsTab.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/mastery/HabitsTabCompact.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/mastery/HabitsTabFixed.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/mastery/HabitsTabMobile.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/mastery/HabitsTabRobust.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/mastery/HabitsTabSimple.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/mastery/ToolboxTab.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/mastery/ToolboxTabCompact.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/mastery/ToolboxTabFixed.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/mastery/ToolboxTabMobile.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/mastery/ToolboxTabRobust.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/profile/RadarChart.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/social/CreatePostModal.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/stellar-map/NodeTooltip.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/stellar-map/StellarMapControls.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/stellar-map/StellarMapDebugOverlay.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/stellar-map/StellarMapErrorBoundary.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/stellar-map/YouTubePlayerModal.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/stellar-map/utils/debugHelpers.js",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/test/MasteryTestComponent.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "pages/CommunityPage.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "pages/CourseCatalogPage.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "pages/CourseCreationPage.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "pages/CourseDetailPage.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "pages/CoursePlayerPage.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "pages/ForgotPasswordPage.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "pages/LoginPage.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "pages/Mastery.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "pages/PricingPage.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "pages/PrivacyPage.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "pages/ProfilePage.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "pages/SettingsPage.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "pages/SignupPage.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "pages/TermsPage.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "pages/TimerPage.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/AppShellMobile.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "components/common/ColorPaletteDropdown.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "components/mastery/CalendarTab.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "components/mastery/CalendarTabMobile.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "components/mastery/HabitsTab.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "components/mastery/HabitsTabCompact.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "components/mastery/HabitsTabFixed.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "components/mastery/HabitsTabMobile.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "components/mastery/HabitsTabRobust.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "components/mastery/HabitsTabSimple.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "components/mastery/ToolboxTab.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "components/mastery/ToolboxTabCompact.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "components/mastery/ToolboxTabFixed.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "components/mastery/ToolboxTabMobile.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "components/mastery/ToolboxTabRobust.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "components/stellar-map/StellarMapControls.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "pages/Achievements.jsx",
+        "suggestion": "Consider lazy loading this page component"
+      },
+      {
+        "file": "pages/CommunityPage.jsx",
+        "suggestion": "Consider lazy loading this page component"
+      },
+      {
+        "file": "pages/CommunityPage.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "pages/CourseCatalogPage.jsx",
+        "suggestion": "Consider lazy loading this page component"
+      },
+      {
+        "file": "pages/CourseCatalogPage.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "pages/CourseCreationPage.jsx",
+        "suggestion": "Consider lazy loading this page component"
+      },
+      {
+        "file": "pages/CourseCreationPage.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "pages/CourseDetailPage.jsx",
+        "suggestion": "Consider lazy loading this page component"
+      },
+      {
+        "file": "pages/CourseDetailPage.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "pages/CoursePlayerPage.jsx",
+        "suggestion": "Consider lazy loading this page component"
+      },
+      {
+        "file": "pages/CoursePlayerPage.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "pages/Dashboard.jsx",
+        "suggestion": "Consider lazy loading this page component"
+      },
+      {
+        "file": "pages/ForgotPasswordPage.jsx",
+        "suggestion": "Consider lazy loading this page component"
+      },
+      {
+        "file": "pages/LoginPage.jsx",
+        "suggestion": "Consider lazy loading this page component"
+      },
+      {
+        "file": "pages/Mastery.jsx",
+        "suggestion": "Consider lazy loading this page component"
+      },
+      {
+        "file": "pages/Mastery.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "pages/PricingPage.jsx",
+        "suggestion": "Consider lazy loading this page component"
+      },
+      {
+        "file": "pages/PrivacyPage.jsx",
+        "suggestion": "Consider lazy loading this page component"
+      },
+      {
+        "file": "pages/ProfilePage.jsx",
+        "suggestion": "Consider lazy loading this page component"
+      },
+      {
+        "file": "pages/ProfilePage.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "pages/SettingsPage.jsx",
+        "suggestion": "Consider lazy loading this page component"
+      },
+      {
+        "file": "pages/SignupPage.jsx",
+        "suggestion": "Consider lazy loading this page component"
+      },
+      {
+        "file": "pages/StellarMap2DPage.jsx",
+        "suggestion": "Consider lazy loading this page component"
+      },
+      {
+        "file": "pages/StellarMapPage.jsx",
+        "suggestion": "Consider lazy loading this page component"
+      },
+      {
+        "file": "pages/TermsPage.jsx",
+        "suggestion": "Consider lazy loading this page component"
+      },
+      {
+        "file": "pages/TimerPage.jsx",
+        "suggestion": "Consider lazy loading this page component"
+      },
+      {
+        "file": "pages/TimerPage.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      }
+    ]
+  },
+  "security": {
+    "issues": [
+      {
+        "file": "services/levelsService.js",
+        "issue": "Database query may not respect RLS policies"
+      },
+      {
+        "file": "services/schoolService.js",
+        "issue": "Database query may not respect RLS policies"
+      },
+      {
+        "file": "pages/SignupPage.jsx",
+        "issue": "Potential hardcoded password",
+        "severity": "high"
+      }
+    ],
+    "missing": []
+  },
+  "consistency": {
+    "issues": [],
+    "violations": []
+  },
+  "imports": {
+    "missing": [],
+    "unused": [],
+    "circular": []
+  },
+  "exports": {
+    "missing": [],
+    "unused": []
+  }
+}

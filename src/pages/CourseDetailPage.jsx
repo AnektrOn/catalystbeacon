@@ -356,7 +356,7 @@ const CourseDetailPage = () => {
         ) : (
           <div className="space-y-4">
             {courseStructure.chapters.map((chapter, chapterIndex) => (
-              <div key={chapter.id} className="glass-panel-floating !m-0 overflow-hidden group">
+              <div key={chapter.chapter_id || `chapter-${chapter.chapter_number}`} className="glass-panel-floating !m-0 overflow-hidden group">
                 <div className="p-5 border-b border-white/5 bg-white/5 flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 10%, transparent)', color: 'var(--color-primary)', borderColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', borderWidth: '1px', borderStyle: 'solid' }}>

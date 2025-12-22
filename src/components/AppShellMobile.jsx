@@ -21,7 +21,10 @@ import {
   ArrowLeft,
   ArrowRight,
   Type,
-  Sparkles
+  Sparkles,
+  CreditCard,
+  Award,
+  Zap
 } from 'lucide-react';
 
 const AppShellMobile = () => {
@@ -33,6 +36,10 @@ const AppShellMobile = () => {
 
   // Load notification count from Supabase
   const [notificationCount, setNotificationCount] = useState(0);
+  
+  // XP and achievement state
+  const [totalXP, setTotalXP] = useState(0);
+  const [lastAchievement, setLastAchievement] = useState(null);
   
   useEffect(() => {
     const loadNotifications = async () => {
@@ -80,6 +87,96 @@ const AppShellMobile = () => {
     }
   }, [user]);
 
+  // Load XP and last achievement
+  useEffect(() => {
+    const loadXPAndAchievement = async () => {
+      if (!user) {
+        setTotalXP(0);
+        setLastAchievement(null);
+        return;
+      }
+
+      try {
+        // Get total XP from profile
+        if (profile?.current_xp !== undefined) {
+          setTotalXP(profile.current_xp);
+        }
+
+        // Get most recent achievement (badge or lesson completion)
+        const achievements = [];
+
+        // Get most recent badge
+        const { data: recentBadge, error: badgeError } = await supabase
+          .from('user_badges')
+          .select(`
+            awarded_at,
+            badges (
+              title,
+              badge_image_url
+            )
+          `)
+          .eq('user_id', user.id)
+          .order('awarded_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (!badgeError && recentBadge) {
+          achievements.push({
+            type: 'badge',
+            title: recentBadge.badges?.title || 'Achievement Unlocked',
+            iconUrl: recentBadge.badges?.badge_image_url,
+            timestamp: recentBadge.awarded_at
+          });
+        }
+
+        // Get most recent lesson completion
+        const { data: recentLesson, error: lessonError } = await supabase
+          .from('user_lesson_progress')
+          .select('completed_at, course_id, chapter_number, lesson_number')
+          .eq('user_id', user.id)
+          .eq('is_completed', true)
+          .not('completed_at', 'is', null)
+          .order('completed_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (!lessonError && recentLesson && recentLesson.completed_at) {
+          // Fetch course title separately
+          let courseTitle = 'Course';
+          if (recentLesson.course_id) {
+            const { data: courseData } = await supabase
+              .from('course_metadata')
+              .select('course_title')
+              .eq('course_id', recentLesson.course_id)
+              .maybeSingle();
+            if (courseData) {
+              courseTitle = courseData.course_title;
+            }
+          }
+
+          achievements.push({
+            type: 'lesson',
+            title: `Lesson Completed`,
+            subtitle: `${courseTitle} • Ch ${recentLesson.chapter_number} L ${recentLesson.lesson_number}`,
+            timestamp: recentLesson.completed_at
+          });
+        }
+
+        // Get the most recent achievement
+        if (achievements.length > 0) {
+          achievements.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+          setLastAchievement(achievements[0]);
+        } else {
+          setLastAchievement(null);
+        }
+      } catch (err) {
+        console.warn('Error loading XP and achievements:', err);
+      }
+    };
+
+    loadXPAndAchievement();
+  }, [user, profile]);
+
   // Debug: Log profile background image changes
   useEffect(() => {
     if (profile?.background_image) {
@@ -95,9 +192,10 @@ const AppShellMobile = () => {
     { icon: Grid3X3, label: 'Dashboard', path: '/dashboard' },
     { icon: Target, label: 'Mastery', path: '/mastery' },
     { icon: BookOpen, label: 'Courses', path: '/courses' },
-    { icon: Sparkles, label: 'Stellar Map', path: '/stellar-map' },
+    { icon: Sparkles, label: 'Stellar Map', path: '/stellar-map-2d' },
     { icon: User, label: 'Profile', path: '/profile' },
     { icon: Users, label: 'Community', path: '/community' },
+    { icon: CreditCard, label: 'Pricing', path: '/pricing' },
     { icon: Settings, label: 'Settings', path: '/settings' }
   ];
 
@@ -105,7 +203,7 @@ const AppShellMobile = () => {
     { icon: Home, label: 'Home', path: '/dashboard' },
     { icon: Target, label: 'Mastery', path: '/mastery' },
     { icon: BookOpen, label: 'Courses', path: '/courses' },
-    { icon: Sparkles, label: 'Stellar', path: '/stellar-map' },
+    { icon: Sparkles, label: 'Stellar', path: '/stellar-map-2d' },
     { icon: User, label: 'Profile', path: '/profile' }
   ];
 
@@ -166,32 +264,64 @@ const AppShellMobile = () => {
           <button
             className="glass-icon-btn lg:hidden"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={isMobileMenuOpen}
           >
-            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            {isMobileMenuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
           </button>
 
           {/* Desktop left navigation */}
           <div className="hidden lg:flex items-center space-x-2">
-            <button className="glass-icon-btn">
-              <Grid3X3 size={16} />
+            <button className="glass-icon-btn" aria-label="View grid">
+              <Grid3X3 size={16} aria-hidden="true" />
             </button>
-            <button className="glass-icon-btn">
-              <ArrowLeft size={16} />
+            <button className="glass-icon-btn" aria-label="Go back">
+              <ArrowLeft size={16} aria-hidden="true" />
             </button>
-            <button className="glass-icon-btn">
-              <ArrowRight size={16} />
+            <button className="glass-icon-btn" aria-label="Go forward">
+              <ArrowRight size={16} aria-hidden="true" />
             </button>
-            <button className="glass-icon-btn">
-              <Type size={16} />
+            <button className="glass-icon-btn" aria-label="Text options">
+              <Type size={16} aria-hidden="true" />
             </button>
           </div>
 
-          {/* Center - Logo/Title */}
-          <div className="flex items-center">
-            <h1 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-              HC University
-            </h1>
-          </div>
+          {/* Center - XP and Last Achievement (compact for mobile) */}
+          {user ? (
+            <div className="flex items-center gap-2 flex-1 justify-center px-2">
+              {/* Total XP */}
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg glass-effect border border-white/10">
+                <Zap size={14} style={{ color: 'var(--color-primary)' }} />
+                <span className="text-xs font-bold text-gray-900 dark:text-white">
+                  {totalXP.toLocaleString()}
+                </span>
+              </div>
+
+              {/* Last Achievement (compact) */}
+              {lastAchievement && (
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg glass-effect border border-white/10 max-w-[140px]">
+                  {lastAchievement.iconUrl ? (
+                    <img 
+                      src={lastAchievement.iconUrl} 
+                      alt={lastAchievement.title}
+                      className="w-4 h-4 rounded-full"
+                    />
+                  ) : (
+                    <Award size={14} style={{ color: 'var(--color-primary)' }} />
+                  )}
+                  <span className="text-xs font-medium text-gray-900 dark:text-white truncate">
+                    {lastAchievement.type === 'lesson' ? 'Lesson' : lastAchievement.title}
+                  </span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center">
+              <h1 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                HC University
+              </h1>
+            </div>
+          )}
 
           {/* Right side actions */}
           <div className="flex items-center space-x-2">
@@ -200,8 +330,11 @@ const AppShellMobile = () => {
             
             {/* Notification Bell */}
             <div className="relative">
-              <button className="glass-icon-btn">
-                <Bell size={18} />
+              <button 
+                className="glass-icon-btn"
+                aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ''}`}
+              >
+                <Bell size={18} aria-hidden="true" />
               </button>
               <NotificationBadge count={notificationCount} />
             </div>
@@ -210,9 +343,10 @@ const AppShellMobile = () => {
             <button
               onClick={toggleTheme}
               className="glass-icon-btn"
+              aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
               title={isDarkMode ? 'Light mode' : 'Dark mode'}
             >
-              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+              {isDarkMode ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
             </button>
           </div>
         </div>
@@ -233,8 +367,12 @@ const AppShellMobile = () => {
             </div>
 
             {/* Active dashboard icon */}
-            <button className="glass-nav-btn-active mb-6">
-              <Grid3X3 size={20} />
+            <button 
+              className="glass-nav-btn-active mb-6"
+              aria-label="Dashboard"
+              aria-current="page"
+            >
+              <Grid3X3 size={20} aria-hidden="true" />
             </button>
           </div>
 
@@ -251,9 +389,11 @@ const AppShellMobile = () => {
                   key={index}
                   onClick={() => handleNavigation(item.path)}
                   className={`glass-nav-btn ${isActive ? 'glass-nav-btn-active' : ''}`}
+                  aria-label={item.label}
+                  aria-current={isActive ? 'page' : undefined}
                   title={item.label}
                 >
-                  <Icon size={20} />
+                  <Icon size={20} aria-hidden="true" />
                 </button>
               );
             })}
@@ -265,16 +405,18 @@ const AppShellMobile = () => {
               <button
                 onClick={toggleTheme}
                 className={`glass-theme-btn ${!isDarkMode ? 'glass-theme-btn-active' : ''}`}
+                aria-label="Switch to light mode"
                 title="Light mode"
               >
-                <Sun size={14} />
+                <Sun size={14} aria-hidden="true" />
               </button>
               <button
                 onClick={toggleTheme}
                 className={`glass-theme-btn ${isDarkMode ? 'glass-theme-btn-active' : ''}`}
+                aria-label="Switch to dark mode"
                 title="Dark mode"
               >
-                <Moon size={14} />
+                <Moon size={14} aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -299,8 +441,9 @@ const AppShellMobile = () => {
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                  aria-label="Close menu"
                 >
-                  <X size={20} />
+                  <X size={20} aria-hidden="true" />
                 </button>
               </div>
 
@@ -347,8 +490,10 @@ const AppShellMobile = () => {
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
                       }`}
                     style={isActive ? { background: 'var(--gradient-primary)' } : {}}
+                    aria-label={`Navigate to ${item.label}`}
+                    aria-current={isActive ? 'page' : undefined}
                   >
-                    <Icon size={20} />
+                    <Icon size={20} aria-hidden="true" />
                     <span>{item.label}</span>
                   </button>
                 );
@@ -360,8 +505,9 @@ const AppShellMobile = () => {
               <button
                 onClick={handleSignOut}
                 className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200"
+                aria-label="Sign out of your account"
               >
-                <LogOut size={20} />
+                <LogOut size={20} aria-hidden="true" />
                 <span>Sign Out</span>
               </button>
             </div>
@@ -396,9 +542,11 @@ const AppShellMobile = () => {
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                     }`}
                   style={isActive ? { color: 'var(--color-primary)' } : {}}
+                  aria-label={item.label}
+                  aria-current={isActive ? 'page' : undefined}
                   >
-                  <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
-                  {isActive && <div className="w-1 h-1 rounded-full mt-1" style={{ backgroundColor: 'var(--color-primary)' }}></div>}
+                  <Icon size={22} strokeWidth={isActive ? 2.5 : 2} aria-hidden="true" />
+                  {isActive && <div className="w-1 h-1 rounded-full mt-1" style={{ backgroundColor: 'var(--color-primary)' }} aria-hidden="true"></div>}
                 </button>
               );
             })}

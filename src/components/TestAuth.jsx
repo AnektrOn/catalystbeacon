@@ -5,9 +5,14 @@ const TestAuth = () => {
   const { user, profile, signOut } = useAuth()
 
   const handleTestSignOut = async () => {
-    console.log('Testing sign out...')
-    const result = await signOut()
-    console.log('Sign out result:', result)
+    try {
+      console.log('Testing sign out...')
+      const result = await signOut()
+      console.log('Sign out result:', result)
+    } catch (error) {
+      console.error('Error during sign out:', error)
+      alert('Failed to sign out. Please try again.')
+    }
   }
 
   return (
