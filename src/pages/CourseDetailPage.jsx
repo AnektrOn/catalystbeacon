@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import courseService from '../services/courseService';
+import { supabase } from '../lib/supabaseClient';
 import {
   BookOpen,
   Play,
@@ -24,7 +25,7 @@ const CourseDetailPage = () => {
   const [unlockStatus, setUnlockStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // Removed unused completedLessons state
+  const [completedLessons, setCompletedLessons] = useState(new Set()); // Store completed lessons as Set for O(1) lookup
 
   useEffect(() => {
     if (courseId) {
@@ -67,19 +68,21 @@ const CourseDetailPage = () => {
             }));
           }
 
-          // Load completed lessons (data not currently used but may be needed for future features)
-          await courseService.getUserLessonProgress(user.id, fullCourse.course_id);
-          // Note: getUserLessonProgress returns a single record, we need a way to get ALL completed lessons.
-          // Since the service doesn't have a "getAllUserLessonProgress" method readily available in the snippet I saw,
-          // I will rely on the fact that we can iterate through chapters and check status if needed, 
-          // OR better, let's just fetch all completed lessons for this course directly if possible.
-          // For now, let's assume we can get this data or we'll fetch it per chapter/lesson if needed.
-          // Actually, let's check `calculateCourseProgress` implementation again - it fetches completed lessons internally.
-          // We can replicate that logic here to populate `completedLessons` set.
+          // Load all completed lessons for this course to show completion status
+          const { data: allCompleted, error: completedError } = await supabase
+            .from('user_lesson_progress')
+            .select('chapter_number, lesson_number')
+            .eq('user_id', user.id)
+            .eq('course_id', parseInt(fullCourse.course_id))
+            .eq('is_completed', true);
 
-          // Fetching all completed lessons for this course manually to populate the UI state
-          // This is a bit of a workaround since we don't have a direct service method for "get all completed lesson IDs"
-          // We'll rely on the structure iteration later.
+          if (!completedError && allCompleted) {
+            // Create a Set of completed lesson keys for O(1) lookup
+            const completedSet = new Set(
+              allCompleted.map(c => `${c.chapter_number}_${c.lesson_number}`)
+            );
+            setCompletedLessons(completedSet);
+          }
         }
       }
     } catch (err) {
@@ -376,8 +379,9 @@ const CourseDetailPage = () => {
                 {chapter.lessons && chapter.lessons.length > 0 && (
                   <div className="divide-y divide-white/5">
                     {chapter.lessons.map((lesson, lessonIndex) => {
-                      // Placeholder for lesson completion check - would need real data here
-                      const isCompleted = false;
+                      // Check if lesson is completed using the completedLessons Set
+                      const lessonKey = `${lesson.chapter_number}_${lesson.lesson_number}`;
+                      const isCompleted = completedLessons.has(lessonKey);
 
                       return (
                         <button

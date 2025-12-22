@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import courseService from '../services/courseService';
+import { supabase } from '../lib/supabaseClient';
 import QuizComponent from '../components/QuizComponent';
 import {
   ArrowLeft,
@@ -33,6 +34,7 @@ const CoursePlayerPage = () => {
   const [showSidebar, setShowSidebar] = useState(true);
   const [quizData, setQuizData] = useState(null);
   const [showQuiz, setShowQuiz] = useState(false);
+  const [completedLessons, setCompletedLessons] = useState(new Set()); // Store completed lessons as Set for O(1) lookup
 
   const chapterNum = parseInt(chapterNumber);
   const lessonNum = parseInt(lessonNumber);
@@ -98,6 +100,30 @@ const CoursePlayerPage = () => {
             lessonNum
           );
           setUserLessonProgress(progress);
+
+          // Load all completed lessons for this course to show completion status in sidebar
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CoursePlayerPage.jsx:93',message:'Loading all completed lessons for course - before',data:{userId:user.id,courseId:fullCourse.course_id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+          // #endregion
+          
+          const { data: allCompleted, error: completedError } = await supabase
+            .from('user_lesson_progress')
+            .select('chapter_number, lesson_number')
+            .eq('user_id', user.id)
+            .eq('course_id', parseInt(fullCourse.course_id))
+            .eq('is_completed', true);
+
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CoursePlayerPage.jsx:103',message:'Loading all completed lessons - after',data:{hasError:!!completedError,completedCount:allCompleted?.length,completedLessons:allCompleted},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+          // #endregion
+
+          if (!completedError && allCompleted) {
+            // Create a Set of completed lesson keys for O(1) lookup
+            const completedSet = new Set(
+              allCompleted.map(c => `${c.chapter_number}_${c.lesson_number}`)
+            );
+            setCompletedLessons(completedSet);
+          }
         }
 
         // Load quiz data from Supabase (if quiz table exists)
@@ -160,6 +186,10 @@ const CoursePlayerPage = () => {
       if (completeError) throw completeError;
 
       setUserLessonProgress({ ...data.lessonProgress, is_completed: true });
+
+      // Update completed lessons Set to reflect the newly completed lesson
+      const lessonKey = `${chapterNum}_${lessonNum}`;
+      setCompletedLessons(prev => new Set([...prev, lessonKey]));
 
       // #region agent log
       fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CoursePlayerPage.jsx:160',message:'Calling calculateCourseProgress - before',data:{userId:user.id,courseId:course.course_id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
@@ -311,8 +341,9 @@ const CoursePlayerPage = () => {
               </div>
               {chapter.lessons?.map((lesson) => {
                 const isActive = lesson.chapter_number === chapterNum && lesson.lesson_number === lessonNum;
-                // Placeholder for completion status
-                const isLessonCompleted = false;
+                // Check if lesson is completed using the completedLessons Set
+                const lessonKey = `${lesson.chapter_number}_${lesson.lesson_number}`;
+                const isLessonCompleted = completedLessons.has(lessonKey);
 
                 return (
                   <button
