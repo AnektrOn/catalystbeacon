@@ -291,7 +291,7 @@ const AppRoutes = () => {
         } />
       </Route>
 
-      {/* Default redirect */}
+      {/* Landing Page - Public route, accessible to all users (authenticated or not) */}
       <Route path="/" element={
         <React.Suspense fallback={<LoadingScreen />}>
           <AwakeningLandingPage />
