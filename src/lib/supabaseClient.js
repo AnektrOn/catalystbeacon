@@ -1,5 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
+// Singleton pattern to ensure only one Supabase client instance is created
+let supabaseInstance = null
+
 // Get Supabase credentials from environment variables
 // Create React App uses REACT_APP_ prefix
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL
@@ -12,7 +15,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
   )
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+// Create client only if it doesn't exist (singleton pattern)
+if (!supabaseInstance) {
+  supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
@@ -26,9 +31,13 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   db: {
     schema: 'public'
   },
-  realtime: {
-    params: {
-      eventsPerSecond: 10
+    realtime: {
+      params: {
+        eventsPerSecond: 10
+      }
     }
-  }
-})
+  })
+}
+
+// Export the singleton instance
+export const supabase = supabaseInstance

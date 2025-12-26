@@ -17,24 +17,6 @@ import {
   getAngularDirection
 } from '../../../utils/stellarMapPositioning';
 
-// #region agent log
-const checkCSSVariables = () => {
-  try {
-    const root = document.documentElement;
-    const computedStyle = window.getComputedStyle(root);
-    const colorPrimary = computedStyle.getPropertyValue('--color-primary').trim();
-    const colorSecondary = computedStyle.getPropertyValue('--color-secondary').trim();
-    const darkGoldenrod = computedStyle.getPropertyValue('--color-dark-goldenrod').trim();
-    fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StellarMapScene.jsx:19',message:'CSS variables check',data:{colorPrimary,colorSecondary,darkGoldenrod,hasVariables:!!(colorPrimary||colorSecondary||darkGoldenrod)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-  } catch(e) {
-    fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StellarMapScene.jsx:19',message:'CSS variables check failed',data:{error:e.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-  }
-};
-if (typeof window !== 'undefined') {
-  setTimeout(checkCSSVariables, 100);
-}
-// #endregion
-
 const FAMILY_HALO_COLORS = {
   "Veil Piercers": 0x301934,
   "Mind Hackers": 0x203020,
@@ -147,10 +129,6 @@ function SceneContent({
       const familyDir = getAngularDirection(familyIndex, familyList.length);
       const familyCenter = familyDir.clone().multiplyScalar(familyPlacementRadius);
       const familyColor = FAMILY_HALO_COLORS[family.name] || 0x333333;
-      
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StellarMapScene.jsx:121',message:'Family color being used',data:{familyName:family.name,colorHex:familyColor.toString(16),isHardcoded:true},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-      // #endregion
 
       // Family fog sphere - Optional, can be disabled for better performance
       // Commented out to improve performance - uncomment if needed for visual clarity
@@ -175,10 +153,6 @@ function SceneContent({
         const constDir = getAngularDirection(constIndex, constellationList.length);
         const constPos = familyCenter.clone().add(constDir.clone().multiplyScalar(safeDist));
         const constColor = CONSTELLATION_HALO_COLORS[constellationName] || 0x666666;
-        
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StellarMapScene.jsx:144',message:'Constellation color being used',data:{constellationName,colorHex:constColor.toString(16),isHardcoded:true},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
 
         centers[constellationName] = [constPos.x, constPos.y, constPos.z];
         

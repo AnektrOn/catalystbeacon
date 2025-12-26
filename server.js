@@ -458,6 +458,343 @@ async function handleInvoicePaymentFailed(invoice) {
   }
 }
 
+// ============================================================================
+// SYSTEME.IO WEBHOOK INTEGRATION
+// ============================================================================
+
+// Middleware to verify Systeme.io webhook signature (if you set up webhook secret)
+const verifySystemeWebhook = (req, res, next) => {
+  // Systeme.io webhook verification
+  // You can add signature verification here if Systeme.io provides it
+  // For now, we'll trust requests from Systeme.io (you should add IP whitelist in production)
+  const webhookSecret = process.env.SYSTEME_WEBHOOK_SECRET
+  
+  if (webhookSecret) {
+    // Add signature verification logic here if Systeme.io provides it
+    // const signature = req.headers['x-systeme-signature']
+    // if (!verifySignature(req.body, signature, webhookSecret)) {
+    //   return res.status(401).json({ error: 'Invalid signature' })
+    // }
+  }
+  
+  next()
+}
+
+// Create user in Supabase from Systeme.io signup
+async function createUserFromSysteme(systemeData) {
+  try {
+    const { email, first_name, last_name, phone, affiliate_id, systeme_contact_id } = systemeData
+    
+    console.log('Creating user from Systeme.io:', { email, first_name, last_name })
+    
+    // Generate a random password (user will need to reset it)
+    const randomPassword = Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12) + 'A1!'
+    
+    // Create user in Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email: email,
+      password: randomPassword,
+      email_confirm: true, // Auto-confirm email
+      user_metadata: {
+        full_name: `${first_name || ''} ${last_name || ''}`.trim() || 'User',
+        systeme_contact_id: systeme_contact_id,
+        affiliate_id: affiliate_id,
+        source: 'systeme_io'
+      }
+    })
+    
+    if (authError) {
+      // If user already exists, find them by email in profiles table
+      if (authError.message.includes('already registered') || authError.message.includes('already exists')) {
+        console.log('User already exists, fetching existing user:', email)
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('email', email)
+          .single()
+        
+        if (existingProfile) {
+          // Update profile with Systeme.io data
+          await supabase
+            .from('profiles')
+            .update({
+              systeme_contact_id: systeme_contact_id,
+              affiliate_id: affiliate_id,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingProfile.id)
+          
+          // Get the auth user
+          const { data: authUsers } = await supabase.auth.admin.listUsers()
+          const authUser = authUsers?.users?.find(u => u.email === email)
+          
+          return { user: authUser || { id: existingProfile.id, email }, isNew: false }
+        }
+      }
+      throw authError
+    }
+    
+    // Profile is automatically created by database trigger, but update it with Systeme.io data
+    if (authData.user) {
+      await supabase
+        .from('profiles')
+        .update({
+          full_name: `${first_name || ''} ${last_name || ''}`.trim() || 'User',
+          systeme_contact_id: systeme_contact_id,
+          affiliate_id: affiliate_id,
+          phone: phone,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', authData.user.id)
+      
+      console.log('User created successfully from Systeme.io:', authData.user.id)
+    }
+    
+    return { user: authData.user, isNew: true }
+  } catch (error) {
+    console.error('Error creating user from Systeme.io:', error)
+    throw error
+  }
+}
+
+// Systeme.io webhook: Contact created (signup)
+app.post('/api/webhook/systeme/contact-created', verifySystemeWebhook, async (req, res) => {
+  try {
+    console.log('Systeme.io contact created webhook received:', req.body)
+    
+    const { email, first_name, last_name, phone, contact_id, affiliate_id } = req.body
+    
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' })
+    }
+    
+    // Create user in Supabase
+    const { user, isNew } = await createUserFromSysteme({
+      email,
+      first_name,
+      last_name,
+      phone,
+      affiliate_id,
+      systeme_contact_id: contact_id
+    })
+    
+    res.json({ 
+      success: true, 
+      userId: user.id,
+      isNew,
+      message: isNew ? 'User created successfully' : 'User already exists, updated with Systeme.io data'
+    })
+  } catch (error) {
+    console.error('Error handling Systeme.io contact created:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Systeme.io webhook: Purchase completed (payment)
+app.post('/api/webhook/systeme/purchase-completed', verifySystemeWebhook, async (req, res) => {
+  try {
+    console.log('Systeme.io purchase completed webhook received:', req.body)
+    
+    const { 
+      email, 
+      contact_id, 
+      order_id, 
+      amount, 
+      currency, 
+      product_name, 
+      affiliate_id,
+      purchase_date 
+    } = req.body
+    
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' })
+    }
+    
+    // Find user by email
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id, role')
+      .eq('email', email)
+      .single()
+    
+    if (!profile) {
+      console.log('User not found for purchase, creating user:', email)
+      // Create user if they don't exist
+      const { user } = await createUserFromSysteme({
+        email,
+        affiliate_id,
+        systeme_contact_id: contact_id
+      })
+      
+      if (user) {
+        // Update with purchase info
+        await supabase
+          .from('profiles')
+          .update({
+            role: 'Student', // Upgrade to Student on purchase
+            subscription_status: 'active',
+            systeme_order_id: order_id,
+            systeme_purchase_amount: amount,
+            systeme_purchase_currency: currency,
+            systeme_product_name: product_name,
+            affiliate_id: affiliate_id,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', user.id)
+        
+        // Create payment record
+        await supabase
+          .from('payments')
+          .insert({
+            user_id: user.id,
+            systeme_order_id: order_id,
+            amount: amount,
+            currency: currency,
+            product_name: product_name,
+            affiliate_id: affiliate_id,
+            status: 'completed',
+            payment_date: purchase_date || new Date().toISOString()
+          })
+          .catch(err => console.log('Payments table might not exist:', err))
+        
+        return res.json({ 
+          success: true, 
+          userId: user.id,
+          message: 'User created and upgraded to Student'
+        })
+      }
+    } else {
+      // Update existing user
+      await supabase
+        .from('profiles')
+        .update({
+          role: 'Student', // Upgrade to Student on purchase
+          subscription_status: 'active',
+          systeme_order_id: order_id,
+          systeme_purchase_amount: amount,
+          systeme_purchase_currency: currency,
+          systeme_product_name: product_name,
+          affiliate_id: affiliate_id,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', profile.id)
+      
+      // Create payment record
+      await supabase
+        .from('payments')
+        .insert({
+          user_id: profile.id,
+          systeme_order_id: order_id,
+          amount: amount,
+          currency: currency,
+          product_name: product_name,
+          affiliate_id: affiliate_id,
+          status: 'completed',
+          payment_date: purchase_date || new Date().toISOString()
+        })
+        .catch(err => console.log('Payments table might not exist:', err))
+      
+      return res.json({ 
+        success: true, 
+        userId: profile.id,
+        message: 'User upgraded to Student'
+      })
+    }
+    
+    res.json({ success: true })
+  } catch (error) {
+    console.error('Error handling Systeme.io purchase completed:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Systeme.io webhook: Affiliate tracking
+app.post('/api/webhook/systeme/affiliate-tracking', verifySystemeWebhook, async (req, res) => {
+  try {
+    console.log('Systeme.io affiliate tracking webhook received:', req.body)
+    
+    const { email, contact_id, affiliate_id, affiliate_name, commission_amount } = req.body
+    
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' })
+    }
+    
+    // Find user by email
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', email)
+      .single()
+    
+    if (profile) {
+      // Update affiliate information
+      await supabase
+        .from('profiles')
+        .update({
+          affiliate_id: affiliate_id,
+          affiliate_name: affiliate_name,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', profile.id)
+      
+      // Create affiliate commission record (if table exists)
+      await supabase
+        .from('affiliate_commissions')
+        .insert({
+          user_id: profile.id,
+          affiliate_id: affiliate_id,
+          affiliate_name: affiliate_name,
+          commission_amount: commission_amount,
+          status: 'pending',
+          created_at: new Date().toISOString()
+        })
+        .catch(err => console.log('Affiliate commissions table might not exist:', err))
+    }
+    
+    res.json({ success: true })
+  } catch (error) {
+    console.error('Error handling Systeme.io affiliate tracking:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Generic Systeme.io webhook handler (for any other events)
+app.post('/api/webhook/systeme', verifySystemeWebhook, async (req, res) => {
+  try {
+    console.log('Systeme.io webhook received:', {
+      event: req.body.event || req.body.type,
+      data: req.body
+    })
+    
+    // Handle different event types
+    const eventType = req.body.event || req.body.type
+    
+    switch (eventType) {
+      case 'contact.created':
+      case 'contact_created':
+        // Handle contact created
+        return res.redirect(307, '/api/webhook/systeme/contact-created')
+      
+      case 'purchase.completed':
+      case 'purchase_completed':
+        // Handle purchase completed
+        return res.redirect(307, '/api/webhook/systeme/purchase-completed')
+      
+      case 'affiliate.tracking':
+      case 'affiliate_tracking':
+        // Handle affiliate tracking
+        return res.redirect(307, '/api/webhook/systeme/affiliate-tracking')
+      
+      default:
+        console.log('Unhandled Systeme.io event type:', eventType)
+        res.json({ received: true, event: eventType })
+    }
+  } catch (error) {
+    console.error('Error handling Systeme.io webhook:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })

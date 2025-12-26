@@ -13,6 +13,8 @@ export const useAuth = () => {
 }
 
 export const AuthProvider = ({ children }) => {
+  // Use refs to track initialization and prevent state loss on remounts
+  const isInitializedRef = React.useRef(false)
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -72,7 +74,8 @@ export const AuthProvider = ({ children }) => {
     }
   }, [])
 
-  const fetchProfile = useCallback(async (userId) => {
+  const fetchProfile = useCallback(async (userId, retryCount = 0) => {
+    const MAX_RETRIES = 2
     try {
       console.log('📥 fetchProfile: Starting profile fetch for user:', userId)
       
@@ -99,9 +102,17 @@ export const AuthProvider = ({ children }) => {
           await createDefaultProfile(userId)
           return
         }
+        
+        // Retry on transient errors (network issues, temporary failures)
+        if (retryCount < MAX_RETRIES && (error.code === 'PGRST301' || error.message?.includes('network') || error.message?.includes('timeout'))) {
+          console.warn(`⏳ fetchProfile: Retrying (${retryCount + 1}/${MAX_RETRIES})...`)
+          await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)))
+          return fetchProfile(userId, retryCount + 1)
+        }
+        
         console.error('❌ fetchProfile: Error fetching profile:', error)
         console.error('❌ fetchProfile: Error details:', error.message, error.code, error.details)
-        setProfile(null)
+        // Don't clear profile on error - preserve existing state to prevent UI flicker
         return
       }
 
@@ -109,15 +120,26 @@ export const AuthProvider = ({ children }) => {
       setProfile(data)
     } catch (error) {
       if (error && error.message === 'PROFILE_FETCH_TIMEOUT') {
-        console.warn('⏳ fetchProfile: Timed out; proceeding without blocking UI')
+        // Retry on timeout
+        if (retryCount < MAX_RETRIES) {
+          console.warn(`⏳ fetchProfile: Timeout, retrying (${retryCount + 1}/${MAX_RETRIES})...`)
+          await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)))
+          return fetchProfile(userId, retryCount + 1)
+        }
+        console.warn('⏳ fetchProfile: Timed out after retries; proceeding without blocking UI')
       } else {
         console.error('❌ fetchProfile: Exception during profile fetch:', error)
       }
-      setProfile(null)
+      // Don't clear profile on error - preserve existing state to prevent UI flicker
     }
   }, [createDefaultProfile])
 
   useEffect(() => {
+    // Prevent re-initialization if we already have a valid session and profile
+    if (isInitializedRef.current && user && profile) {
+      return // Skip re-initialization if we already have valid state
+    }
+    
     console.log('🔍 AuthContext: Starting authentication check...')
 
     // Force timeout to prevent infinite loading (8 seconds max - enough for session + profile fetch)
@@ -147,7 +169,7 @@ export const AuthProvider = ({ children }) => {
 
     // Get initial session with timeout
     withTimeout(supabase.auth.getSession())
-      .then(({ data: { session } }) => {
+      .then(({ data: { session }, error: sessionError }) => {
         console.log('👤 AuthContext: Initial session check:', session?.user ? 'User found' : 'No user')
         setUser(session?.user ?? null)
         if (session?.user) {
@@ -156,6 +178,7 @@ export const AuthProvider = ({ children }) => {
           fetchProfile(session.user.id)
             .then(() => {
               console.log('✅ AuthContext: Profile fetch completed')
+              isInitializedRef.current = true
               clearLoadingSafely()
             })
             .catch((err) => {
@@ -164,6 +187,7 @@ export const AuthProvider = ({ children }) => {
             })
         } else {
           console.log('✅ AuthContext: No user, setting loading to false')
+          isInitializedRef.current = true // Mark as initialized even without user
           clearLoadingSafely()
         }
       })
@@ -176,46 +200,67 @@ export const AuthProvider = ({ children }) => {
         clearLoadingSafely()
       })
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthContext.jsx:180',message:'onAuthStateChange triggered',data:{event,hasSession:!!session,hasUser:!!session?.user,userId:session?.user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-        // #endregion
-        
+    // Listen for auth changes - use a ref to prevent multiple subscriptions
+    let subscription = null
+    try {
+      const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(
+        async (event, session) => {
         console.log('🔄 AuthContext: Auth state changed:', event, session?.user ? 'User found' : 'No user')
+        
+        // Handle different auth events
+        if (event === 'SIGNED_OUT') {
+          // Explicit sign out - clear everything
+          setUser(null)
+          setProfile(null)
+          isInitializedRef.current = false
+          setLoading(false)
+          return
+        }
+        
+        if (event === 'TOKEN_REFRESHED' && !session?.user) {
+          // Token refresh failed - clear profile but keep user if session exists
+          setProfile(null)
+          setLoading(false)
+          return
+        }
+        
+        // For INITIAL_SESSION, SIGNED_IN, or TOKEN_REFRESHED with session
         setUser(session?.user ?? null)
         
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthContext.jsx:184',message:'setUser called in onAuthStateChange',data:{userId:session?.user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-        // #endregion
-        
         if (session?.user) {
-          console.log('📥 AuthContext: Fetching profile after auth change for user:', session.user.id)
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthContext.jsx:186',message:'Calling fetchProfile in onAuthStateChange - before',data:{userId:session.user.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-          // #endregion
-          await fetchProfile(session.user.id)
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthContext.jsx:186',message:'fetchProfile completed in onAuthStateChange - after',data:{userId:session.user.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-          // #endregion
-        } else {
-          setProfile(null)
+          // Only fetch profile if we don't already have it for this user
+          // This prevents unnecessary fetches during navigation
+          if (!profile || profile.id !== session.user.id) {
+            console.log('📥 AuthContext: Fetching profile after auth change for user:', session.user.id)
+            await fetchProfile(session.user.id)
+          }
+          isInitializedRef.current = true
+        } else if (event === 'INITIAL_SESSION') {
+          // INITIAL_SESSION with no session - don't clear profile, just set loading to false
+          // This happens during navigation and we want to preserve state
+          setLoading(false)
+          return
         }
+        
         console.log('✅ AuthContext: Auth state change completed, setting loading to false')
         setLoading(false)
-        
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthContext.jsx:191',message:'onAuthStateChange completed - setLoading false',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-        // #endregion
       }
-    )
+      )
+      
+      subscription = authSubscription
+    } catch (error) {
+      console.error('❌ AuthContext: Error setting up auth listener:', error)
+    }
 
     return () => {
       console.log('🧹 AuthContext: Cleaning up auth subscription and timeout')
       clearTimeout(forceTimeout)
       if (subscription) {
-        subscription.unsubscribe()
+        try {
+          subscription.unsubscribe()
+        } catch (error) {
+          console.error('Error unsubscribing from auth:', error)
+        }
       }
     }
   }, [fetchProfile])
@@ -263,36 +308,17 @@ export const AuthProvider = ({ children }) => {
 
   const signIn = async (email, password) => {
     try {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthContext.jsx:245',message:'signIn called - before supabase call',data:{email:email.trim()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
-      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       })
 
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthContext.jsx:252',message:'signIn supabase returned - after',data:{hasError:!!error,hasData:!!data,hasUser:!!data?.user,hasSession:!!data?.session,userId:data?.user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
-
       if (error) throw error
-      
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthContext.jsx:254',message:'signIn success - before toast',data:{userId:data?.user?.id,currentUserState:user?.id,currentProfileState:profile?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
       
       toast.success('Welcome back!')
       
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthContext.jsx:255',message:'signIn success - returning',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
-      
       return { data, error: null }
     } catch (error) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthContext.jsx:257',message:'signIn error catch',data:{errorMessage:error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
       console.error('Sign in error:', error)
       toast.error(error.message)
       return { data: null, error }

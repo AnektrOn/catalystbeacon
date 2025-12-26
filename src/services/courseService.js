@@ -189,7 +189,9 @@ class CourseService {
    */
   async getCourseStructure(courseId) {
     try {
+      
       // Handle duplicates by getting the most recent one (or first if multiple)
+      const queryStart = Date.now()
       const { data, error } = await supabase
         .from('course_structure')
         .select('*')
@@ -198,6 +200,8 @@ class CourseService {
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
+      
+      const queryDuration = Date.now() - queryStart
 
       if (error && error.code !== 'PGRST116') {
         // If there are multiple rows, try to get the first one
@@ -636,7 +640,9 @@ class CourseService {
    */
   async completeLesson(userId, courseId, chapterNumber, lessonNumber, xpAmount = 50) {
     try {
+      
       // Check if already completed
+      
       const { data: existing } = await this.getUserLessonProgress(userId, courseId, chapterNumber, lessonNumber);
 
       const progressData = {
@@ -650,6 +656,7 @@ class CourseService {
 
       let lessonProgress;
       if (existing) {
+        
         // Update existing progress
         const { data, error } = await supabase
           .from('user_lesson_progress')
@@ -661,6 +668,7 @@ class CourseService {
         if (error) throw error;
         lessonProgress = data;
       } else {
+        
         // Create new progress
         const { data, error } = await supabase
           .from('user_lesson_progress')
@@ -673,7 +681,8 @@ class CourseService {
       }
 
       // Award XP using the database function
-      const { error: xpError } = await supabase.rpc('award_lesson_xp', {
+      
+      const { data: xpResult, error: xpError } = await supabase.rpc('award_lesson_xp', {
         user_id: userId,
         course_id: parseInt(courseId),
         chapter_number: chapterNumber,
@@ -682,10 +691,52 @@ class CourseService {
       });
 
       if (xpError) {
-        console.warn('Error awarding XP (non-critical):', xpError);
-        // Continue even if XP award fails
+        console.error('Error awarding XP:', xpError);
+        // Throw error so it can be handled properly
+        throw new Error(`Failed to award XP: ${xpError.message}`);
       }
 
+      // Supabase RPC returns arrays, so check the first element
+      const xpAwarded = Array.isArray(xpResult) ? xpResult[0] : xpResult;
+      
+      // Check if function returned false (indicating failure)
+      if (xpAwarded === false) {
+        console.warn('⚠️ XP award function returned false - attempting direct profile update as fallback');
+        
+        // Fallback: Try to update XP directly if the function fails
+        // This handles cases where the function doesn't exist or has errors
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('current_xp, total_xp_earned')
+          .eq('id', userId)
+          .single();
+        
+        if (profileError) {
+          throw new Error(`Failed to award XP: Database function returned false and fallback failed: ${profileError.message}`);
+        }
+        
+        const currentXP = profileData?.current_xp || 0;
+        const totalXP = profileData?.total_xp_earned || 0;
+        
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            current_xp: currentXP + xpAmount,
+            total_xp_earned: totalXP + xpAmount,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', userId);
+        
+        if (updateError) {
+          throw new Error(`Failed to award XP: Database function returned false and fallback update failed: ${updateError.message}`);
+        }
+        console.log(`✅ XP awarded via fallback: ${xpAmount} XP added (${currentXP} → ${currentXP + xpAmount})`);
+      }
+
+      if (xpAwarded === true) {
+        console.log(`✅ Successfully awarded ${xpAmount} XP to user ${userId}`);
+      }
+      
       return { data: { lessonProgress, xpAwarded: xpAmount }, error: null };
     } catch (error) {
       console.error('Error completing lesson:', error);

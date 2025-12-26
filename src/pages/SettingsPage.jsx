@@ -32,10 +32,6 @@ const AppearanceSection = ({ profile, updateProfile }) => {
     const handleFileUpload = async (event) => {
         const file = event.target.files?.[0];
         
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SettingsPage.jsx:32',message:'handleFileUpload called',data:{hasFile:!!file,fileName:file?.name,fileSize:file?.size,fileType:file?.type,hasProfile:!!profile,profileId:profile?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-        // #endregion
-        
         if (!file) return;
 
         if (!profile || !profile.id) {
@@ -45,27 +41,18 @@ const AppearanceSection = ({ profile, updateProfile }) => {
 
         // Validate file type
         if (!file.type.startsWith('image/')) {
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SettingsPage.jsx:42',message:'File type validation failed',data:{fileType:file.type},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-            // #endregion
             toast.error('Please select an image file');
             return;
         }
 
         // Validate file size (max 5MB)
         if (file.size > 5 * 1024 * 1024) {
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SettingsPage.jsx:48',message:'File size validation failed',data:{fileSize:file.size,maxSize:5*1024*1024},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-            // #endregion
             toast.error('Image size must be less than 5MB');
             return;
         }
 
         setIsUploading(true);
         try {
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SettingsPage.jsx:54',message:'Starting upload - before',data:{fileName:file.name,filePath:`backgrounds/${profile.id}/background-${Date.now()}.${file.name.split('.').pop()}`},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-            // #endregion
             // Upload to Supabase Storage
             // Use 'avatars' bucket or create a 'backgrounds' bucket
             // For now, we'll use the avatars bucket with a different path
@@ -85,14 +72,7 @@ const AppearanceSection = ({ profile, updateProfile }) => {
                     upsert: false
                 });
 
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SettingsPage.jsx:67',message:'Backgrounds bucket upload result',data:{hasError:!!uploadErr,errorMessage:uploadErr?.message,errorCode:uploadErr?.statusCode,hasData:!!uploadData},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-            // #endregion
-
             if (uploadErr) {
-                // #region agent log
-                fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SettingsPage.jsx:74',message:'Backgrounds bucket failed - trying avatars bucket',data:{uploadErrMessage:uploadErr?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-                // #endregion
                 
                 // If backgrounds bucket doesn't exist, try avatars bucket
                 const { data: avatarUploadData, error: avatarUploadErr } = await supabase.storage
@@ -102,10 +82,6 @@ const AppearanceSection = ({ profile, updateProfile }) => {
                         upsert: false
                     });
 
-                // #region agent log
-                fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SettingsPage.jsx:76',message:'Avatars bucket upload result',data:{hasError:!!avatarUploadErr,errorMessage:avatarUploadErr?.message,errorCode:avatarUploadErr?.statusCode,hasData:!!avatarUploadData},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-                // #endregion
-
                 if (avatarUploadErr) {
                     uploadError = avatarUploadErr;
                 } else {
@@ -114,9 +90,6 @@ const AppearanceSection = ({ profile, updateProfile }) => {
                         .from('avatars')
                         .getPublicUrl(`backgrounds/${fileName}`);
                     publicUrl = urlData.publicUrl;
-                    // #region agent log
-                    fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SettingsPage.jsx:87',message:'Got public URL from avatars bucket',data:{publicUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-                    // #endregion
                 }
             } else {
                 // Get public URL from backgrounds bucket
@@ -124,22 +97,13 @@ const AppearanceSection = ({ profile, updateProfile }) => {
                     .from('backgrounds')
                     .getPublicUrl(filePath);
                 publicUrl = urlData.publicUrl;
-                // #region agent log
-                fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SettingsPage.jsx:94',message:'Got public URL from backgrounds bucket',data:{publicUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-                // #endregion
             }
 
             if (uploadError) {
-                // #region agent log
-                fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SettingsPage.jsx:100',message:'Upload error detected - throwing',data:{uploadError:uploadError?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-                // #endregion
                 throw uploadError;
             }
 
             if (!publicUrl) {
-                // #region agent log
-                fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SettingsPage.jsx:104',message:'No public URL - throwing error',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-                // #endregion
                 throw new Error('Failed to get image URL');
             }
 

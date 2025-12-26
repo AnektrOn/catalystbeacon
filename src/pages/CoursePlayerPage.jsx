@@ -102,9 +102,6 @@ const CoursePlayerPage = () => {
           setUserLessonProgress(progress);
 
           // Load all completed lessons for this course to show completion status in sidebar
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CoursePlayerPage.jsx:93',message:'Loading all completed lessons for course - before',data:{userId:user.id,courseId:fullCourse.course_id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-          // #endregion
           
           const { data: allCompleted, error: completedError } = await supabase
             .from('user_lesson_progress')
@@ -112,10 +109,6 @@ const CoursePlayerPage = () => {
             .eq('user_id', user.id)
             .eq('course_id', parseInt(fullCourse.course_id))
             .eq('is_completed', true);
-
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CoursePlayerPage.jsx:103',message:'Loading all completed lessons - after',data:{hasError:!!completedError,completedCount:allCompleted?.length,completedLessons:allCompleted},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-          // #endregion
 
           if (!completedError && allCompleted) {
             // Create a Set of completed lesson keys for O(1) lookup
@@ -157,18 +150,11 @@ const CoursePlayerPage = () => {
   };
 
   const handleCompleteLesson = async (xpBonus = 0) => {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CoursePlayerPage.jsx:133',message:'handleCompleteLesson called',data:{hasUser:!!user,userId:user?.id,hasCourse:!!course,courseId:course?.course_id,chapterNum,lessonNum,xpBonus},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-    // #endregion
     
     if (!user || !course?.course_id) return;
 
     try {
       setIsCompleting(true);
-
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CoursePlayerPage.jsx:140',message:'Calling completeLesson - before',data:{userId:user.id,courseId:course.course_id,chapterNum,lessonNum,xpAmount:50+xpBonus},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
 
       // Complete lesson (awards XP)
       const { data, error: completeError } = await courseService.completeLesson(
@@ -179,10 +165,6 @@ const CoursePlayerPage = () => {
         50 + xpBonus
       );
 
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CoursePlayerPage.jsx:148',message:'completeLesson returned - after',data:{hasError:!!completeError,hasData:!!data,xpAwarded:data?.xpAwarded,hasLessonProgress:!!data?.lessonProgress},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
-
       if (completeError) throw completeError;
 
       setUserLessonProgress({ ...data.lessonProgress, is_completed: true });
@@ -191,28 +173,13 @@ const CoursePlayerPage = () => {
       const lessonKey = `${chapterNum}_${lessonNum}`;
       setCompletedLessons(prev => new Set([...prev, lessonKey]));
 
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CoursePlayerPage.jsx:160',message:'Calling calculateCourseProgress - before',data:{userId:user.id,courseId:course.course_id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
-
       // Recalculate course progress
       await courseService.calculateCourseProgress(user.id, course.course_id);
-
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CoursePlayerPage.jsx:168',message:'Refreshing profile after course progress calculation - before',data:{userId:user.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
 
       // Refresh profile to update XP (after course progress is calculated to ensure DB is updated)
       if (user.id) {
         await fetchProfile(user.id);
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CoursePlayerPage.jsx:172',message:'fetchProfile completed after lesson completion',data:{userId:user.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-        // #endregion
       }
-
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CoursePlayerPage.jsx:162',message:'Showing success toast - after all operations',data:{xpAwarded:data.xpAwarded},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
 
       toast.success(`Lesson completed! +${data.xpAwarded} XP earned`, {
         duration: 4000,

@@ -20,6 +20,17 @@ import QuickActionsWidget from '../components/dashboard/QuickActionsWidget'
 
 const Dashboard = () => {
   const { user, profile, fetchProfile } = useAuth()
+  
+  // Track navigation and state
+  useEffect(() => {
+    
+    return () => {
+    }
+  }, [])
+  
+  // Track state changes
+  useEffect(() => {
+  }, [user, profile])
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [, setLoading] = useState(true)

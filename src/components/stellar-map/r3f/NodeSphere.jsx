@@ -34,12 +34,6 @@ const NodeSphereComponent = ({
   // Memoize geometry args to prevent recreation - Further reduced for performance
   const coreGeometryArgs = useMemo(() => [nodeRadius, 6, 6], [nodeRadius]);
   const rimGeometryArgs = useMemo(() => [nodeRadius * 1.05, 6, 6], [nodeRadius]);
-  
-  // #region agent log
-  useEffect(() => {
-    fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'NodeSphere.jsx:31',message:'NodeSphere color being used',data:{difficulty,colorHex:style.color.toString(16),isHardcoded:true},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-  }, [difficulty, style.color]);
-  // #endregion
 
   // Animate hover - throttled for performance
   const targetScale = useMemo(() => isHovered ? 1.35 : 1.0, [isHovered]);

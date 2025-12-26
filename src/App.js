@@ -25,6 +25,10 @@ const AchievementsPage = React.lazy(() => import('./pages/Achievements'))
 const ForgotPasswordPage = React.lazy(() => import('./pages/ForgotPasswordPage'))
 const TermsPage = React.lazy(() => import('./pages/TermsPage'))
 const PrivacyPage = React.lazy(() => import('./pages/PrivacyPage'))
+const LandingPage = React.lazy(() => import('./pages/LandingPage'))
+const EnhancedLandingPage = React.lazy(() => import('./pages/EnhancedLandingPage'))
+const ProfessionalLandingPage = React.lazy(() => import('./pages/ProfessionalLandingPage'))
+const AwakeningLandingPage = React.lazy(() => import('./pages/AwakeningLandingPage'))
 
 // Loading component
 const LoadingScreen = () => {
@@ -104,7 +108,17 @@ const AppRoutes = () => {
           <PrivacyPage />
         </React.Suspense>
       } />
-
+      <Route path="/landing" element={
+        <React.Suspense fallback={<LoadingScreen />}>
+          <LandingPage />
+        </React.Suspense>
+      } />
+      <Route path="/landing-3d" element={
+        <React.Suspense fallback={<LoadingScreen />}>
+          <EnhancedLandingPage />
+        </React.Suspense>
+      } />
+      
       {/* Test routes - only in development */}
       {process.env.NODE_ENV === 'development' && (
         <>
@@ -278,7 +292,11 @@ const AppRoutes = () => {
       </Route>
 
       {/* Default redirect */}
-      <Route path="/" element={<AuthRedirect />} />
+      <Route path="/" element={
+        <React.Suspense fallback={<LoadingScreen />}>
+          <AwakeningLandingPage />
+        </React.Suspense>
+      } />
 
       {/* Catch all */}
       <Route path="*" element={<Navigate to="/" replace />} />
@@ -288,27 +306,6 @@ const AppRoutes = () => {
 
 function App() {
   const isMobile = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 767px)').matches
-
-  // #region agent log
-  React.useEffect(() => {
-    const checkColorPalette = () => {
-      try {
-        const root = document.documentElement;
-        const computedStyle = window.getComputedStyle(root);
-        const colorPrimary = computedStyle.getPropertyValue('--color-primary').trim();
-        const colorSecondary = computedStyle.getPropertyValue('--color-secondary').trim();
-        const colorDarkGoldenrod = computedStyle.getPropertyValue('--color-dark-goldenrod').trim();
-        const localStoragePalette = localStorage.getItem('colorPalette');
-        const hasColorPaletteSwitcher = typeof window !== 'undefined' && window.colorPaletteSwitcher;
-        const hasColorPaletteDropdown = document.querySelector('[data-color-palette-dropdown]') !== null;
-        fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.js:254',message:'App mounted - checking color palette system',data:{colorPrimary,colorSecondary,colorDarkGoldenrod,localStoragePalette,hasColorPaletteSwitcher,hasColorPaletteDropdown,hasCSSVariables:!!(colorPrimary||colorSecondary||colorDarkGoldenrod)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-      } catch(e) {
-        fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.js:254',message:'Error checking color palette system',data:{error:e.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-      }
-    };
-    setTimeout(checkColorPalette, 500);
-  }, []);
-  // #endregion
 
   return (
     <AuthProvider>

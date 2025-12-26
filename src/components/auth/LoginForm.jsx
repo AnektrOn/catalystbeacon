@@ -22,7 +22,6 @@ const LoginForm = () => {
     setLoading(false)
   }, [])
 
-
   const validateForm = () => {
     if (!email || !email.trim()) {
       setError('Email is required')
@@ -47,10 +46,6 @@ const LoginForm = () => {
     e.preventDefault()
     setError('')
     
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'LoginForm.jsx:45',message:'LoginForm handleSubmit called',data:{email:email.trim(),hasPassword:!!password.trim()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-    // #endregion
-    
     if (!validateForm()) {
       return
     }
@@ -58,28 +53,15 @@ const LoginForm = () => {
     setLoading(true)
 
     try {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'LoginForm.jsx:56',message:'LoginForm calling signIn - before',data:{email:email.trim()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-      // #endregion
       
       const { error } = await signIn(email, password)
-      
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'LoginForm.jsx:58',message:'LoginForm signIn returned - after',data:{hasError:!!error,errorMessage:error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-      // #endregion
       
       if (error) {
         setError(error.message)
       } else {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'LoginForm.jsx:60',message:'LoginForm success - navigating to dashboard',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-        // #endregion
         navigate('/dashboard')
       }
     } catch (error) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'LoginForm.jsx:62',message:'LoginForm catch block',data:{errorMessage:error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-      // #endregion
       console.error('Login error:', error)
       setError(error.message || 'An unexpected error occurred. Please try again.')
     } finally {

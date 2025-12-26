@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { User, Star, Flame, Target, BookOpen, Brain } from 'lucide-react'
+import { supabase } from '../lib/supabaseClient'
+import { User, Star, Flame, Target, BookOpen, Brain, Upload, X, Image as ImageIcon } from 'lucide-react'
 import toast from 'react-hot-toast'
 import RadarChart from '../components/profile/RadarChart'
 import ProgressBar from '../components/profile/ProgressBar'
@@ -24,8 +25,28 @@ const ProfilePage = () => {
     avatar_url: profile?.avatar_url || '',
     background_image: profile?.background_image || ''
   })
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const [isUploadingBackground, setIsUploadingBackground] = useState(false)
+  const [avatarPreview, setAvatarPreview] = useState(profile?.avatar_url || null)
+  const [backgroundPreview, setBackgroundPreview] = useState(profile?.background_image || null)
+  const avatarInputRef = useRef(null)
+  const backgroundInputRef = useRef(null)
 
   // Load skills, levels, and user progress data
+  // Update form data when profile changes
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        full_name: profile.full_name || '',
+        bio: profile.bio || '',
+        avatar_url: profile.avatar_url || '',
+        background_image: profile.background_image || ''
+      })
+      setAvatarPreview(profile.avatar_url || null)
+      setBackgroundPreview(profile.background_image || null)
+    }
+  }, [profile])
+
   useEffect(() => {
     const loadUserData = async () => {
       try {
@@ -150,6 +171,234 @@ const ProfilePage = () => {
       ...prev,
       [name]: value
     }))
+  }
+
+  const handleAvatarUpload = async (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    if (!user?.id || !profile?.id) {
+      toast.error('You must be logged in to upload images')
+      return
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file')
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size must be less than 5MB')
+      return
+    }
+
+    setIsUploadingAvatar(true)
+    try {
+      // Create preview
+      const previewUrl = URL.createObjectURL(file)
+      setAvatarPreview(previewUrl)
+
+      // Upload to Supabase Storage
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${user.id}/avatar-${Date.now()}.${fileExt}`
+      const filePath = `avatars/${fileName}`
+
+      // Try avatars bucket first, fallback to public bucket
+      let uploadError = null
+      let publicUrl = null
+
+      const { data: uploadData, error: uploadErr } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true // Allow overwriting
+        })
+
+      if (uploadErr) {
+        // If avatars bucket doesn't exist, try creating it or use a different approach
+        toast.error('Storage bucket not configured. Please contact support.')
+        throw uploadErr
+      } else {
+        // Get public URL
+        const { data: urlData } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(filePath)
+        publicUrl = urlData.publicUrl
+      }
+
+      if (!publicUrl) {
+        throw new Error('Failed to get image URL')
+      }
+
+      // Update profile with new avatar URL
+      const { error: updateError } = await updateProfile({
+        avatar_url: publicUrl,
+        updated_at: new Date().toISOString()
+      })
+
+      if (updateError) throw updateError
+
+      setFormData(prev => ({ ...prev, avatar_url: publicUrl }))
+      toast.success('Profile picture uploaded successfully')
+    } catch (error) {
+      console.error('Error uploading avatar:', error)
+      toast.error(error?.message || 'Failed to upload profile picture')
+      setAvatarPreview(profile?.avatar_url || null)
+    } finally {
+      setIsUploadingAvatar(false)
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = ''
+      }
+    }
+  }
+
+  const handleBackgroundUpload = async (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    if (!user?.id || !profile?.id) {
+      toast.error('You must be logged in to upload images')
+      return
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file')
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size must be less than 5MB')
+      return
+    }
+
+    setIsUploadingBackground(true)
+    try {
+      // Create preview
+      const previewUrl = URL.createObjectURL(file)
+      setBackgroundPreview(previewUrl)
+
+      // Upload to Supabase Storage
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${user.id}/background-${Date.now()}.${fileExt}`
+      const filePath = `backgrounds/${fileName}`
+
+      // Try backgrounds bucket first, fallback to avatars bucket
+      let uploadError = null
+      let publicUrl = null
+
+      const { data: uploadData, error: uploadErr } = await supabase.storage
+        .from('backgrounds')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        })
+
+      if (uploadErr) {
+        // Fallback to avatars bucket
+        const { data: avatarUploadData, error: avatarUploadErr } = await supabase.storage
+          .from('avatars')
+          .upload(`backgrounds/${fileName}`, file, {
+            cacheControl: '3600',
+            upsert: true
+          })
+
+        if (avatarUploadErr) {
+          uploadError = avatarUploadErr
+        } else {
+          const { data: urlData } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(`backgrounds/${fileName}`)
+          publicUrl = urlData.publicUrl
+        }
+      } else {
+        const { data: urlData } = supabase.storage
+          .from('backgrounds')
+          .getPublicUrl(filePath)
+        publicUrl = urlData.publicUrl
+      }
+
+      if (uploadError) {
+        throw uploadError
+      }
+
+      if (!publicUrl) {
+        throw new Error('Failed to get image URL')
+      }
+
+      // Update profile with new background image URL
+      const { error: updateError } = await updateProfile({
+        background_image: publicUrl,
+        updated_at: new Date().toISOString()
+      })
+
+      if (updateError) throw updateError
+
+      // Update local state
+      setFormData(prev => ({ ...prev, background_image: publicUrl }))
+      setBackgroundPreview(publicUrl)
+      
+      // Force profile refresh to update background in AppShell
+      if (user?.id) {
+        // The updateProfile function should already refresh the profile
+        // But we can also manually trigger a refresh if needed
+        console.log('✅ Background image uploaded and profile updated:', publicUrl)
+      }
+      
+      toast.success('Background image uploaded successfully')
+    } catch (error) {
+      console.error('Error uploading background image:', error)
+      toast.error(error?.message || 'Failed to upload background image')
+      setBackgroundPreview(profile?.background_image || null)
+    } finally {
+      setIsUploadingBackground(false)
+      if (backgroundInputRef.current) {
+        backgroundInputRef.current.value = ''
+      }
+    }
+  }
+
+  const handleRemoveAvatar = async () => {
+    if (!user?.id || !profile?.id) return
+
+    try {
+      const { error } = await updateProfile({
+        avatar_url: null,
+        updated_at: new Date().toISOString()
+      })
+
+      if (error) throw error
+
+      setFormData(prev => ({ ...prev, avatar_url: '' }))
+      setAvatarPreview(null)
+      toast.success('Profile picture removed')
+    } catch (error) {
+      console.error('Error removing avatar:', error)
+      toast.error('Failed to remove profile picture')
+    }
+  }
+
+  const handleRemoveBackground = async () => {
+    if (!user?.id || !profile?.id) return
+
+    try {
+      const { error } = await updateProfile({
+        background_image: null,
+        updated_at: new Date().toISOString()
+      })
+
+      if (error) throw error
+
+      setFormData(prev => ({ ...prev, background_image: '' }))
+      setBackgroundPreview(null)
+      toast.success('Background image removed')
+    } catch (error) {
+      console.error('Error removing background:', error)
+      toast.error('Failed to remove background image')
+    }
   }
 
   const userRole = profile?.role || 'Free'
@@ -502,18 +751,67 @@ const ProfilePage = () => {
                   </div>
 
                   <div>
-            <label htmlFor="avatar_url" className="block text-sm font-medium text-slate-300 mb-2">
-                      Avatar URL
+            <label htmlFor="avatar_upload" className="block text-sm font-medium text-slate-300 mb-2">
+                      Profile Picture
                     </label>
-                    <input
-                      type="url"
-                      name="avatar_url"
-                      id="avatar_url"
-                      value={formData.avatar_url}
-                      onChange={handleInputChange}
-              className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all duration-200"
-                      placeholder="https://example.com/avatar.jpg"
-                    />
+                    <div className="flex items-center gap-4">
+                      {/* Avatar Preview */}
+                      <div className="relative">
+                        {avatarPreview ? (
+                          <div className="relative group">
+                            <img
+                              src={avatarPreview}
+                              alt="Avatar preview"
+                              className="w-20 h-20 rounded-full object-cover border-2 border-slate-600"
+                            />
+                            <button
+                              type="button"
+                              onClick={handleRemoveAvatar}
+                              className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X size={14} className="text-white" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="w-20 h-20 rounded-full bg-slate-700/50 border-2 border-slate-600 flex items-center justify-center">
+                            <User size={32} className="text-slate-400" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Upload Button */}
+                      <div className="flex-1">
+                        <input
+                          ref={avatarInputRef}
+                          type="file"
+                          id="avatar_upload"
+                          accept="image/*"
+                          onChange={handleAvatarUpload}
+                          className="hidden"
+                        />
+                        <label
+                          htmlFor="avatar_upload"
+                          className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 cursor-pointer ${
+                            isUploadingAvatar
+                              ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
+                              : 'bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-white shadow-lg hover:shadow-cyan-500/25'
+                          }`}
+                        >
+                          {isUploadingAvatar ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                              <span>Uploading...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Upload size={18} />
+                              <span>Upload Picture</span>
+                            </>
+                          )}
+                        </label>
+                        <p className="text-xs text-slate-400 mt-1">Max 5MB, JPG/PNG/GIF/WEBP</p>
+                      </div>
+                    </div>
                   </div>
 
           <div className="md:col-span-2">
@@ -532,26 +830,61 @@ const ProfilePage = () => {
           </div>
 
           <div className="md:col-span-2">
-            <label htmlFor="background_image" className="block text-sm font-medium text-slate-300 mb-2">
-                      Background Image URL
+            <label htmlFor="background_upload" className="block text-sm font-medium text-slate-300 mb-2">
+                      Background Image
                     </label>
-                    <input
-                      type="url"
-                      name="background_image"
-                      id="background_image"
-                      value={formData.background_image}
-                      onChange={handleInputChange}
-              className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all duration-200"
-                      placeholder="https://example.com/background.jpg"
-                    />
-                    {formData.background_image && (
-              <div className="mt-4">
-                        <div 
-                  className="w-full h-32 rounded-xl bg-cover bg-center bg-no-repeat border border-slate-600 shadow-lg"
-                          style={{ backgroundImage: `url(${formData.background_image})` }}
+                    <div className="space-y-4">
+                      {/* Background Preview */}
+                      {backgroundPreview && (
+                        <div className="relative group">
+                          <div 
+                            className="w-full h-32 rounded-xl bg-cover bg-center bg-no-repeat border border-slate-600 shadow-lg"
+                            style={{ backgroundImage: `url(${backgroundPreview})` }}
+                          />
+                          <button
+                            type="button"
+                            onClick={handleRemoveBackground}
+                            className="absolute top-2 right-2 px-3 py-1 bg-red-500 hover:bg-red-600 rounded-lg flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity text-white text-sm"
+                          >
+                            <X size={16} />
+                            <span>Remove</span>
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Upload Button */}
+                      <div>
+                        <input
+                          ref={backgroundInputRef}
+                          type="file"
+                          id="background_upload"
+                          accept="image/*"
+                          onChange={handleBackgroundUpload}
+                          className="hidden"
                         />
+                        <label
+                          htmlFor="background_upload"
+                          className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 cursor-pointer ${
+                            isUploadingBackground
+                              ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
+                              : 'bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-white shadow-lg hover:shadow-cyan-500/25'
+                          }`}
+                        >
+                          {isUploadingBackground ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                              <span>Uploading...</span>
+                            </>
+                          ) : (
+                            <>
+                              <ImageIcon size={18} />
+                              <span>{backgroundPreview ? 'Change Background' : 'Upload Background'}</span>
+                            </>
+                          )}
+                        </label>
+                        <p className="text-xs text-slate-400 mt-1">Max 5MB, JPG/PNG/GIF/WEBP</p>
                       </div>
-                    )}
+                    </div>
                   </div>
 
           <div className="md:col-span-2 flex justify-end">

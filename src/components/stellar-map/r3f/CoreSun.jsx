@@ -62,14 +62,6 @@ export function CoreSun({ coreName }) {
   const flaresRef = useRef();
 
   const core = CORE_STYLES[coreName];
-  
-  // #region agent log
-  useEffect(() => {
-    if (core) {
-      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CoreSun.jsx:64',message:'CoreSun colors being used',data:{coreName,coreColor:core.coreColor.toString(16),surfaceColor:core.surfaceColor.toString(16),isHardcoded:true},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    }
-  }, [core, coreName]);
-  // #endregion
 
   // Sun shader material
   const sunMaterial = useMemo(() => {
