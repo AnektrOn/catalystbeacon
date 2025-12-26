@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 
 const AwakeningLandingPage = () => {
+  // This is a public landing page - accessible to all users (authenticated or not)
+  // No redirects should happen here
   const [scrollY, setScrollY] = useState(0);
   const [glitchActive, setGlitchActive] = useState(false);
   const [particles, setParticles] = useState([]);
