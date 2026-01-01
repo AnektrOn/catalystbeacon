@@ -7,6 +7,8 @@ import SEOHead from '../components/SEOHead'
 import courseService from '../services/courseService'
 import socialService from '../services/socialService'
 import levelsService from '../services/levelsService'
+import useSubscription from '../hooks/useSubscription'
+import UpgradeModal from '../components/UpgradeModal'
 
 // Import Dashboard Widgets
 import XPProgressWidget from '../components/dashboard/XPProgressWidget'
@@ -20,6 +22,8 @@ import QuickActionsWidget from '../components/dashboard/QuickActionsWidget'
 
 const Dashboard = () => {
   const { user, profile, fetchProfile } = useAuth()
+  const { isFreeUser, isAdmin } = useSubscription()
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   
   // Track navigation and state
   useEffect(() => {
@@ -34,6 +38,20 @@ const Dashboard = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [, setLoading] = useState(true)
+  
+  // Show upgrade modal if redirected from restricted route (not for admins)
+  useEffect(() => {
+    const upgradePrompt = searchParams.get('upgradePrompt')
+    const restrictedFeature = searchParams.get('restrictedFeature')
+    if (upgradePrompt === 'true' && !isAdmin) {
+      setShowUpgradeModal(true)
+      // Clean up URL
+      navigate('/dashboard', { replace: true })
+    } else if (upgradePrompt === 'true' && isAdmin) {
+      // Just clean up URL for admins, don't show modal
+      navigate('/dashboard', { replace: true })
+    }
+  }, [searchParams, navigate, isAdmin])
   const [levelData, setLevelData] = useState({
     level: 1,
     levelTitle: '',
@@ -667,10 +685,10 @@ const Dashboard = () => {
       <header className="mb-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-semibold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-4xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
               Dashboard
             </h1>
-            <p className="text-lg text-gray-600 dark:text-gray-300">
+            <p className="text-lg" style={{ color: 'var(--text-secondary)' }}>
               Welcome back, <span className="font-medium" style={{ color: 'var(--color-primary)' }}>{displayName}</span>
             </p>
           </div>
@@ -715,36 +733,84 @@ const Dashboard = () => {
         />
       </div>
 
-      {/* Main Content Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div className="lg:col-span-2">
-          <CurrentLessonWidget
-            lessonId={dashboardData.currentLesson.lessonId}
-            lessonTitle={dashboardData.currentLesson.lessonTitle}
-            courseTitle={dashboardData.currentLesson.courseTitle}
-            progressPercentage={dashboardData.currentLesson.progressPercentage}
-            timeRemaining={dashboardData.currentLesson.timeRemaining}
-            thumbnailUrl={dashboardData.currentLesson.thumbnailUrl}
-          />
-        </div>
+      {/* Main Content Row - Only show for paid users and admins */}
+      {(!isFreeUser || isAdmin) && (
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div className="lg:col-span-2">
+              <CurrentLessonWidget
+                lessonId={dashboardData.currentLesson.lessonId}
+                lessonTitle={dashboardData.currentLesson.lessonTitle}
+                courseTitle={dashboardData.currentLesson.courseTitle}
+                progressPercentage={dashboardData.currentLesson.progressPercentage}
+                timeRemaining={dashboardData.currentLesson.timeRemaining}
+                thumbnailUrl={dashboardData.currentLesson.thumbnailUrl}
+              />
+            </div>
 
-        <div>
-          <QuickActionsWidget />
-        </div>
-      </div>
+            <div>
+              <QuickActionsWidget />
+            </div>
+          </div>
 
-      {/* Constellation Navigator */}
-      <div className="mb-8">
-        <ConstellationNavigatorWidget
-          currentSchool={dashboardData.constellation.currentSchool}
-          currentConstellation={dashboardData.constellation.currentConstellation}
+          {/* Constellation Navigator */}
+          <div className="mb-8">
+            <ConstellationNavigatorWidget
+              currentSchool={dashboardData.constellation.currentSchool}
+              currentConstellation={dashboardData.constellation.currentConstellation}
+            />
+          </div>
+
+          {/* Teacher Feed */}
+          <div className="mb-8">
+            <TeacherFeedWidget posts={dashboardData.teacherFeed.posts} />
+          </div>
+        </>
+      )}
+
+      {/* Upgrade prompt for free users (not admins) */}
+      {isFreeUser && !isAdmin && (
+        <div 
+          className="mb-8 p-6 rounded-xl border"
+          style={{
+            background: `linear-gradient(to right, color-mix(in srgb, var(--color-warning, #F59E0B) 10%, transparent), color-mix(in srgb, var(--color-warning, #F59E0B) 15%, transparent))`,
+            borderColor: 'color-mix(in srgb, var(--color-warning, #F59E0B) 30%, transparent)'
+          }}
+        >
+          <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+            Upgrade to Unlock Full Dashboard
+          </h3>
+          <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>
+            Get access to course progress, constellation navigation, teacher feed, and more!
+          </p>
+          <button
+            onClick={() => navigate('/pricing')}
+            className="px-4 py-2 font-medium rounded-lg transition-all shadow-lg"
+            style={{
+              background: `linear-gradient(to right, var(--color-warning, #F59E0B), color-mix(in srgb, var(--color-warning, #F59E0B) 80%, black))`,
+              color: 'white',
+              boxShadow: '0 10px 15px -3px color-mix(in srgb, var(--color-warning, #F59E0B) 30%, transparent)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = `linear-gradient(to right, color-mix(in srgb, var(--color-warning, #F59E0B) 90%, white), var(--color-warning, #F59E0B))`;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = `linear-gradient(to right, var(--color-warning, #F59E0B), color-mix(in srgb, var(--color-warning, #F59E0B) 80%, black))`;
+            }}
+          >
+            View Plans
+          </button>
+        </div>
+      )}
+
+      {/* Upgrade Modal - Only show for non-admins */}
+      {!isAdmin && (
+        <UpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          restrictedFeature={searchParams.get('restrictedFeature')}
         />
-      </div>
-
-      {/* Teacher Feed */}
-      <div className="mb-8">
-        <TeacherFeedWidget posts={dashboardData.teacherFeed.posts} />
-      </div>
+      )}
     </div>
   )
 }

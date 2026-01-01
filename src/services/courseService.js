@@ -62,10 +62,37 @@ class CourseService {
    */
   async getAllCourses(filters = {}) {
     try {
+      // Optimized: First get course_ids with structures (fast, indexed, minimal data)
+      // Then filter course_metadata by those IDs (also fast with index)
+      const { data: courseStructures, error: structureError } = await supabase
+        .from('course_structure')
+        .select('course_id');
+
+      if (structureError) {
+        console.error('Error fetching course structures:', structureError);
+        // Return the error so the caller knows something went wrong
+        return { data: null, error: structureError };
+      }
+
+      // Extract unique course_ids that have structures, filtering out null/undefined values
+      const courseIdsWithStructure = [...new Set(
+        (courseStructures || [])
+          .map(cs => cs.course_id)
+          .filter(id => id != null && id !== undefined)
+      )];
+
+      // If no courses have structures, return empty array (this is expected behavior)
+      if (courseIdsWithStructure.length === 0) {
+        console.log('No courses with course_structure found');
+        return { data: [], error: null };
+      }
+
+      // Now build the main query with all filters applied
       let query = supabase
         .from('course_metadata')
         .select('*')
         .eq('status', 'published')
+        .in('course_id', courseIdsWithStructure)
         .order('masterschool', { ascending: true })
         .order('xp_threshold', { ascending: true });
 
@@ -106,7 +133,13 @@ class CourseService {
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching courses with filters:', error);
+        console.error('Course IDs with structure:', courseIdsWithStructure.length);
+        throw error;
+      }
+      
+      console.log(`Successfully fetched ${data?.length || 0} courses with course_structure`);
       return { data, error: null };
     } catch (error) {
       console.error('Error fetching courses:', error);
@@ -116,11 +149,12 @@ class CourseService {
 
   /**
    * Get courses grouped by masterschool
+   * @param {Object} filters - Optional filters to pass to getAllCourses
    * @returns {Promise<{data: Object, error: Error|null}>}
    */
-  async getCoursesBySchool() {
+  async getCoursesBySchool(filters = {}) {
     try {
-      const { data, error } = await this.getAllCourses();
+      const { data, error } = await this.getAllCourses(filters);
 
       if (error) throw error;
 
@@ -165,10 +199,14 @@ class CourseService {
         .from('course_metadata')
         .select('*');
 
-      // Check if it's a UUID or integer
-      if (typeof courseId === 'string' && courseId.includes('-')) {
+      // Check if it's a UUID (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+      // UUIDs have multiple dashes in specific positions, not just a negative sign
+      const isUUID = typeof courseId === 'string' && courseId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+      
+      if (isUUID) {
         query = query.eq('id', courseId);
       } else {
+        // It's an integer (could be negative)
         query = query.eq('course_id', parseInt(courseId));
       }
 

@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabaseClient';
 import UserProfileDropdown from './UserProfileDropdown';
 import NotificationBadge from './NotificationBadge';
 import ColorPaletteDropdown from './common/ColorPaletteDropdown';
 import AppShellMobile from './AppShellMobile';
+import useSubscription from '../hooks/useSubscription';
+import UpgradeModal from './UpgradeModal';
 import {
   Grid3X3,
-  Calendar,
-  Clock,
   User,
   Settings,
   Sun,
@@ -22,8 +23,65 @@ import {
   X,
   Sparkles,
   Zap,
-  Award
+  Award,
+  Lock,
+  Map
 } from 'lucide-react';
+
+// Sidebar Navigation Item with hover tooltip
+const SidebarNavItem = ({ item, isActive, isSidebarExpanded, onClick }) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const buttonRef = useRef(null);
+  const Icon = item.icon;
+
+  const handleMouseEnter = () => {
+    if (!isSidebarExpanded && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setTooltipPosition({
+        top: rect.top + rect.height / 2,
+        left: rect.right + 16
+      });
+      setShowTooltip(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setShowTooltip(false);
+  };
+
+  return (
+    <>
+      <button
+        ref={buttonRef}
+        onClick={onClick}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        className={`${isActive ? 'glass-nav-btn-active' : 'glass-nav-btn'} group relative`}
+      >
+        <div className="glass-icon-premium">
+          <Icon size={22} />
+        </div>
+        {isSidebarExpanded ? (
+          <span className="glass-nav-label ml-2">{item.label}</span>
+        ) : null}
+      </button>
+      {!isSidebarExpanded && showTooltip && createPortal(
+        <div
+          className="glass-tooltip-fixed"
+          style={{
+            top: `${tooltipPosition.top}px`,
+            left: `${tooltipPosition.left}px`,
+            transform: 'translateY(-50%)'
+          }}
+        >
+          {item.label}
+        </div>,
+        document.body
+      )}
+    </>
+  );
+};
 
 const AppShell = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -33,6 +91,9 @@ const AppShell = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { profile, user } = useAuth();
+  const { isFreeUser, isAdmin } = useSubscription();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [restrictedFeature, setRestrictedFeature] = useState(null);
   
   // XP and achievement state
   const [totalXP, setTotalXP] = useState(0);
@@ -170,19 +231,24 @@ const AppShell = () => {
     setIsSidebarExpanded(!isSidebarExpanded);
   };
 
-  const sidebarItems = [
-    { icon: Grid3X3, label: 'Dashboard', path: '/dashboard' },
-    { icon: BookOpen, label: 'Courses', path: '/courses' },
-    { icon: Target, label: 'Mastery', path: '/mastery' },
-    { icon: Calendar, label: 'Calendar', path: '/mastery/calendar' },
-    { icon: Clock, label: 'Timer', path: '/mastery/timer' },
-    { icon: Sparkles, label: 'Stellar Map', path: '/stellar-map-2d' },
-    { icon: User, label: 'Profile', path: '/profile' },
-    { icon: Users, label: 'Community', path: '/community' },
-    { icon: Settings, label: 'Settings', path: '/settings' }
+  // Define all sidebar items
+  const allSidebarItems = [
+    { icon: Grid3X3, label: 'Dashboard', path: '/dashboard', restricted: false },
+    { icon: BookOpen, label: 'Courses', path: '/courses', restricted: true, feature: 'courses' },
+    { icon: Target, label: 'Mastery', path: '/mastery', restricted: false },
+    { icon: Map, label: 'Roadmap', path: '/roadmap/ignition', restricted: false },
+    { icon: Sparkles, label: 'Stellar Map', path: '/stellar-map-2d', restricted: true, feature: 'stellarMap' },
+    { icon: User, label: 'Profile', path: '/profile', restricted: true, feature: 'profile' },
+    { icon: Users, label: 'Community', path: '/community', restricted: true, feature: 'community' },
+    { icon: Settings, label: 'Settings', path: '/settings', restricted: false }
   ];
+  
+  // Filter out restricted items for free users (admins see everything)
+  const sidebarItems = (isFreeUser && !isAdmin)
+    ? allSidebarItems.filter(item => !item.restricted)
+    : allSidebarItems;
 
-  const handleNavigation = (path) => {
+  const handleNavigation = (path, item) => {
     navigate(path);
   };
 
@@ -204,7 +270,9 @@ const AppShell = () => {
           <div 
             className="absolute inset-0 backdrop-blur-[1px]"
             style={{
-              backgroundColor: 'rgba(0, 0, 0, 0.1)'
+              backgroundColor: isDarkMode 
+                ? 'color-mix(in srgb, var(--bg-secondary) 20%, transparent)'
+                : 'color-mix(in srgb, var(--bg-primary) 10%, transparent)'
             }}
           ></div>
         </div>
@@ -212,13 +280,44 @@ const AppShell = () => {
         <div
           key={`bg-default-${profile?.id || 'no-user'}`}
           className="fixed inset-0 -z-10 transition-all duration-500"
+          style={{
+            backgroundColor: isDarkMode ? 'var(--bg-secondary)' : 'var(--bg-primary)'
+          }}
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-[#F7F1E1] via-[#E3D8C1] to-[#B4833D] dark:from-[#3F3F2C] dark:via-[#66371B] dark:to-[#81754B]">
+          <div 
+            className="absolute inset-0"
+            style={{
+              background: isDarkMode 
+                ? `linear-gradient(to bottom right, var(--bg-secondary, #1F2937), var(--color-earth-green, #3F3F2C), var(--bg-secondary, #1F2937))`
+                : `linear-gradient(to bottom right, var(--color-old-lace, #F7F1E1), var(--color-bone, #E3D8C1), var(--color-primary, #B4833D))`
+            }}
+          >
             {/* Abstract shapes for visual interest */}
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-20 dark:opacity-10">
-              <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-[#B4833D]/20 blur-3xl"></div>
-              <div className="absolute top-[40%] right-[10%] w-[40%] h-[40%] rounded-full bg-[#81754B]/20 blur-3xl"></div>
-              <div className="absolute -bottom-[10%] left-[20%] w-[30%] h-[30%] rounded-full bg-[#66371B]/20 blur-3xl"></div>
+            <div 
+              className="absolute top-0 left-0 w-full h-full overflow-hidden"
+              style={{ opacity: isDarkMode ? 0.1 : 0.2 }}
+            >
+              <div 
+                className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full blur-3xl"
+                style={{ backgroundColor: isDarkMode 
+                  ? 'color-mix(in srgb, var(--color-primary) 15%, transparent)'
+                  : 'color-mix(in srgb, var(--color-primary) 20%, transparent)'
+                }}
+              ></div>
+              <div 
+                className="absolute top-[40%] right-[10%] w-[40%] h-[40%] rounded-full blur-3xl"
+                style={{ backgroundColor: isDarkMode
+                  ? 'color-mix(in srgb, var(--color-secondary) 15%, transparent)'
+                  : 'color-mix(in srgb, var(--color-secondary) 20%, transparent)'
+                }}
+              ></div>
+              <div 
+                className="absolute -bottom-[10%] left-[20%] w-[30%] h-[30%] rounded-full blur-3xl"
+                style={{ backgroundColor: isDarkMode
+                  ? 'color-mix(in srgb, var(--color-primary) 10%, transparent)'
+                  : 'color-mix(in srgb, var(--color-kobicha) 20%, transparent)'
+                }}
+              ></div>
             </div>
           </div>
         </div>
@@ -238,7 +337,7 @@ const AppShell = () => {
               {/* Total XP */}
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg glass-effect border border-white/10">
                 <Zap size={16} style={{ color: 'var(--color-primary)' }} />
-                <span className="text-sm font-bold text-gray-900 dark:text-white">
+                <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
                   {totalXP.toLocaleString()}
                 </span>
               </div>
@@ -255,7 +354,7 @@ const AppShell = () => {
                   ) : (
                     <Award size={16} style={{ color: 'var(--color-primary)' }} />
                   )}
-                  <span className="text-sm font-medium text-gray-900 dark:text-white truncate" title={lastAchievement.subtitle || lastAchievement.title}>
+                  <span className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }} title={lastAchievement.subtitle || lastAchievement.title}>
                     {lastAchievement.type === 'lesson' ? 'Lesson' : lastAchievement.title}
                   </span>
                 </div>
@@ -307,7 +406,9 @@ const AppShell = () => {
         className="app-shell-sidebar fixed left-4 top-20 bottom-4 z-40"
         style={{ width: isSidebarExpanded ? 'var(--sidebar-width-expanded)' : 'var(--sidebar-width-collapsed)' }}
       >
-        <div className={`glass-sidebar-panel-v2 glass-panel-floating ${isSidebarExpanded ? 'expanded' : 'collapsed'}`} style={{ background: 'linear-gradient(180deg, rgba(180, 131, 61, 0.15) 0%, rgba(63, 63, 44, 0.15) 100%)' }}>
+        <div 
+          className={`glass-sidebar-panel-v2 glass-panel-floating ${isSidebarExpanded ? 'expanded' : 'collapsed'}`}
+        >
           {/* Top section - Toggle button */}
           <div className={`flex ${isSidebarExpanded ? 'justify-between items-center' : 'justify-center'} mb-6`}>
             <button
@@ -326,23 +427,17 @@ const AppShell = () => {
               const isActive = location.pathname === item.path ||
                 (item.path === '/mastery' && location.pathname.startsWith('/mastery')) ||
                 (item.path === '/courses' && location.pathname.startsWith('/courses')) ||
+                (item.path === '/roadmap/ignition' && location.pathname.startsWith('/roadmap')) ||
                 (item.path === '/stellar-map-2d' && (location.pathname.startsWith('/stellar-map') || location.pathname === '/stellar-map-2d'));
 
               return (
-                <button
+                <SidebarNavItem
                   key={index}
-                  onClick={() => handleNavigation(item.path)}
-                  className={`${isActive ? 'glass-nav-btn-active' : 'glass-nav-btn'} group relative`}
-                >
-                  <div className="glass-icon-premium">
-                    <Icon size={22} />
-                  </div>
-                  {isSidebarExpanded ? (
-                    <span className="glass-nav-label ml-2">{item.label}</span>
-                  ) : (
-                    <div className="glass-tooltip">{item.label}</div>
-                  )}
-                </button>
+                  item={item}
+                  isActive={isActive}
+                  isSidebarExpanded={isSidebarExpanded}
+                  onClick={() => handleNavigation(item.path, item)}
+                />
               );
             })}
           </nav>
@@ -384,6 +479,18 @@ const AppShell = () => {
           </div>
         </div>
       </main>
+
+      {/* Upgrade Modal - Only show for non-admins */}
+      {!isAdmin && (
+        <UpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => {
+            setShowUpgradeModal(false);
+            setRestrictedFeature(null);
+          }}
+          restrictedFeature={restrictedFeature}
+        />
+      )}
     </div>
   );
 };

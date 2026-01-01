@@ -31,16 +31,23 @@ const CoherenceWidget = memo(({ energy = 75, mind = 85, heart = 90 }) => {
                 >
                     <Brain size={20} />
                 </div>
-                <div className="text-xs font-medium text-gray-400 bg-white/5 px-2 py-1 rounded-lg border border-white/10 uppercase tracking-wider">
+                <div 
+                    className="text-xs font-medium px-2 py-1 rounded-lg border uppercase tracking-wider"
+                    style={{
+                        color: 'var(--text-secondary)',
+                        backgroundColor: 'color-mix(in srgb, var(--bg-primary) 5%, transparent)',
+                        borderColor: 'color-mix(in srgb, var(--bg-primary) 10%, transparent)'
+                    }}
+                >
                     Coherence
                 </div>
             </div>
 
             <div className="mb-4">
-                <div className="text-3xl font-semibold text-gray-900 dark:text-white mb-1">
+                <div className="text-3xl font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
                     {overall}%
                 </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">
+                <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                     Overall balance
                 </div>
             </div>
@@ -57,7 +64,7 @@ const CoherenceWidget = memo(({ energy = 75, mind = 85, heart = 90 }) => {
                     >
                         <Zap size={16} style={{ color: energyColor }} />
                     </div>
-                    <div className="text-xs font-medium text-gray-500">{energy}%</div>
+                    <div className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{energy}%</div>
                 </div>
 
                 <div className="flex-1 text-center">
@@ -70,7 +77,7 @@ const CoherenceWidget = memo(({ energy = 75, mind = 85, heart = 90 }) => {
                     >
                         <Brain size={16} style={{ color: mindColor }} />
                     </div>
-                    <div className="text-xs font-medium text-gray-500">{mind}%</div>
+                    <div className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{mind}%</div>
                 </div>
 
                 <div className="flex-1 text-center">
@@ -83,7 +90,7 @@ const CoherenceWidget = memo(({ energy = 75, mind = 85, heart = 90 }) => {
                     >
                         <Heart size={16} style={{ color: heartColor }} />
                     </div>
-                    <div className="text-xs font-medium text-gray-500">{heart}%</div>
+                    <div className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{heart}%</div>
                 </div>
             </div>
         </div>

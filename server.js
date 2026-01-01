@@ -7,6 +7,24 @@ const rateLimit = require('express-rate-limit')
 const app = express()
 const PORT = process.env.PORT || 3001
 
+// Stripe Price IDs from environment variables
+const STRIPE_PRICE_IDS = {
+  STUDENT_MONTHLY: process.env.STRIPE_STUDENT_MONTHLY_PRICE_ID || 'price_1RutXI2MKT6Humxnh0WBkhCp',
+  STUDENT_YEARLY: process.env.STRIPE_STUDENT_YEARLY_PRICE_ID || 'price_1SB9e52MKT6Humxnx7qxZ2hj',
+  TEACHER_MONTHLY: process.env.STRIPE_TEACHER_MONTHLY_PRICE_ID || 'price_1SBPN62MKT6HumxnBoQgAdd0',
+  TEACHER_YEARLY: process.env.STRIPE_TEACHER_YEARLY_PRICE_ID || 'price_1SB9co2MKT6HumxnOSALvAM4'
+}
+
+// Helper function to determine role from price ID
+function getRoleFromPriceId(priceId) {
+  if (priceId === STRIPE_PRICE_IDS.STUDENT_MONTHLY || priceId === STRIPE_PRICE_IDS.STUDENT_YEARLY) {
+    return 'Student'
+  } else if (priceId === STRIPE_PRICE_IDS.TEACHER_MONTHLY || priceId === STRIPE_PRICE_IDS.TEACHER_YEARLY) {
+    return 'Teacher'
+  }
+  return 'Free'
+}
+
 // Supabase client
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -145,13 +163,8 @@ app.get('/api/payment-success', paymentLimiter, async (req, res) => {
     })
 
     // Determine role based on price
-    let role = 'Free'
     const priceId = subscription.items.data[0].price.id
-    if (priceId === 'price_1RutXI2MKT6Humxnh0WBkhCp') {
-      role = 'Student'
-    } else if (priceId === 'price_1SBPN62MKT6HumxnBoQgAdd0') {
-      role = 'Teacher'
-    }
+    const role = getRoleFromPriceId(priceId)
 
     console.log('Determined role:', role, 'for price ID:', priceId)
 
@@ -333,12 +346,7 @@ async function handleSubscriptionCreated(subscription) {
   if (profile) {
     // Get the price ID to determine the plan type
     const priceId = subscription.items.data[0]?.price.id
-    let role = 'Student' // default
-    
-    // Determine role based on price ID
-    if (priceId === 'price_1SBPN62MKT6HumxnBoQgAdd0') {
-      role = 'Teacher'
-    }
+    const role = getRoleFromPriceId(priceId)
 
     console.log('Subscription created, updating role to:', role)
 
@@ -367,12 +375,7 @@ async function handleSubscriptionUpdate(subscription) {
   if (profile) {
     // Get the price ID to determine if role should change
     const priceId = subscription.items.data[0]?.price.id
-    let role = 'Student' // default
-    
-    // Determine role based on price ID
-    if (priceId === 'price_1SBPN62MKT6HumxnBoQgAdd0') {
-      role = 'Teacher'
-    }
+    const role = getRoleFromPriceId(priceId)
 
     console.log('Subscription updated, setting role to:', role)
 

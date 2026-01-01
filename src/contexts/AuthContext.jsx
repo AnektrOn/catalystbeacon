@@ -2,6 +2,21 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { supabase } from '../lib/supabaseClient'
 import toast from 'react-hot-toast'
 
+// Safe cache access - returns null if DataCacheProvider is not available
+let dataCacheContext = null
+const getDataCache = () => {
+  try {
+    if (!dataCacheContext) {
+      const { DataCacheContext: CacheContext } = require('./DataCacheContext')
+      // We can't use useContext here, so we'll access it via a ref pattern
+      return null
+    }
+    return dataCacheContext
+  } catch (e) {
+    return null
+  }
+}
+
 const AuthContext = createContext({})
 
 export const useAuth = () => {
@@ -18,6 +33,10 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  
+  // Get cache context (will be null if DataCacheProvider is not available)
+  // We need to import and use it conditionally, but hooks must be called unconditionally
+  // So we'll handle it in fetchProfile by checking if cache methods exist
 
   const createDefaultProfile = useCallback(async (userId) => {
     try {
@@ -74,12 +93,88 @@ export const AuthProvider = ({ children }) => {
     }
   }, [])
 
-  const fetchProfile = useCallback(async (userId, retryCount = 0) => {
+  const fetchProfile = useCallback(async (userId, retryCount = 0, forceRefresh = false) => {
     const MAX_RETRIES = 2
     try {
       console.log('📥 fetchProfile: Starting profile fetch for user:', userId)
       
-      // Guard against long-hanging requests by racing with a timeout
+      // Try to get cache context dynamically (if available)
+      let dataCache = null
+      try {
+        const { useDataCache } = require('./DataCacheContext')
+        // Can't call hook here, so we'll check sessionStorage directly for cache
+        const cacheKey = `profile_${userId}`
+        const stored = sessionStorage.getItem('app_data_cache')
+        if (stored && !forceRefresh) {
+          try {
+            const parsed = JSON.parse(stored)
+            const cached = parsed?.data?.[cacheKey]
+            if (cached?.data) {
+              const age = Date.now() - cached.timestamp
+              if (age < cached.ttl) {
+                console.log('✅ fetchProfile: Using cached profile from sessionStorage')
+                setProfile(cached.data)
+                return
+              }
+            }
+          } catch (e) {
+            // Ignore cache parse errors
+          }
+        }
+      } catch (e) {
+        // Cache not available, continue with direct fetch
+      }
+      
+      // Try to get from cache first (unless forcing refresh) - legacy code path
+      if (dataCache && !forceRefresh) {
+        const cacheKey = `profile_${userId}`
+        const cached = dataCache.getCached(cacheKey)
+        if (cached?.data) {
+          const age = Date.now() - cached.timestamp
+          if (age < cached.ttl) {
+            console.log('✅ fetchProfile: Using cached profile data')
+            setProfile(cached.data)
+            return
+          }
+        }
+        
+        // Use cache fetch function
+        try {
+          const result = await dataCache.fetchWithCache(
+            cacheKey,
+            async () => {
+              const withTimeout = (promise, ms = 5000) => {
+                return Promise.race([
+                  promise,
+                  new Promise((_, reject) => setTimeout(() => reject(new Error('PROFILE_FETCH_TIMEOUT')), ms))
+                ])
+              }
+
+              const { data, error } = await withTimeout(
+                supabase
+                  .from('profiles')
+                  .select('*')
+                  .eq('id', userId)
+                  .single()
+              )
+              
+              if (error) throw error
+              return { data }
+            },
+            { force: forceRefresh, ttl: 300000 } // 5 minute TTL for profile
+          )
+          
+          if (result?.data) {
+            setProfile(result.data)
+            return
+          }
+        } catch (cacheError) {
+          console.warn('📦 fetchProfile: Cache fetch failed, falling back to direct fetch:', cacheError)
+          // Fall through to direct fetch
+        }
+      }
+      
+      // Direct fetch (no cache or cache failed)
       const withTimeout = (promise, ms = 5000) => {
         return Promise.race([
           promise,
@@ -118,6 +213,11 @@ export const AuthProvider = ({ children }) => {
 
       console.log('✅ fetchProfile: Profile fetched successfully:', data)
       setProfile(data)
+      
+      // Cache the profile if cache is available
+      if (dataCache && data) {
+        dataCache.setCached(`profile_${userId}`, data, 300000) // 5 minute TTL
+      }
     } catch (error) {
       if (error && error.message === 'PROFILE_FETCH_TIMEOUT') {
         // Retry on timeout

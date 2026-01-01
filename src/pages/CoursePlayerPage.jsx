@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import courseService from '../services/courseService';
 import { supabase } from '../lib/supabaseClient';
 import QuizComponent from '../components/QuizComponent';
+import LessonTracker from '../components/Roadmap/LessonTracker';
 import {
   ArrowLeft,
   CheckCircle,
@@ -58,6 +59,50 @@ const CoursePlayerPage = () => {
       if (structureError) throw structureError;
 
       setCourse(fullCourse);
+
+      // Check if we need to build structure from course_content (for roadmap navigation)
+      if (!fullCourse?.chapters || fullCourse.chapters.length === 0) {
+        console.warn('No chapters in course_structure, building from course_content...');
+        
+        // Load ALL lessons for this course from course_content
+        const { data: allLessons, error: allLessonsError } = await supabase
+          .from('course_content')
+          .select('*')
+          .eq('course_id', parseInt(courseId))
+          .order('chapter_number', { ascending: true })
+          .order('lesson_number', { ascending: true });
+
+        if (allLessonsError) {
+          console.error('Error loading lessons from course_content:', allLessonsError);
+          throw allLessonsError;
+        }
+
+        // Group lessons by chapter
+        const chaptersMap = {};
+        (allLessons || []).forEach(lessonData => {
+          const chNum = lessonData.chapter_number;
+          if (!chaptersMap[chNum]) {
+            chaptersMap[chNum] = {
+              chapter_number: chNum,
+              chapter_title: lessonData.attached_to_chapter || `Chapter ${chNum}`,
+              chapter_id: lessonData.chapter_id,
+              lessons: []
+            };
+          }
+          chaptersMap[chNum].lessons.push({
+            lesson_id: lessonData.lesson_id,
+            lesson_title: lessonData.lesson_title,
+            lesson_number: lessonData.lesson_number,
+            chapter_number: lessonData.chapter_number,
+            chapter_id: lessonData.chapter_id
+          });
+        });
+
+        // Convert to array and sort
+        fullCourse.chapters = Object.values(chaptersMap).sort((a, b) => a.chapter_number - b.chapter_number);
+        console.log(`✅ Built ${fullCourse.chapters.length} chapters from course_content`);
+      }
+
       setCourseStructure(fullCourse);
 
       // Find current chapter and lesson
@@ -65,22 +110,26 @@ const CoursePlayerPage = () => {
       const lesson = chapter?.lessons?.find(l => l.lesson_number === lessonNum);
 
       if (!chapter || !lesson) {
+        console.error('Lesson not found after fallback. Chapter:', chapter, 'Lesson:', lesson);
         throw new Error('Lesson not found');
       }
 
+      console.log('✅ Current lesson loaded:', lesson.lesson_title);
       setCurrentLesson(lesson);
 
       // Load lesson content (use course_id, not UUID)
-      if (fullCourse?.course_id) {
+      const actualCourseId = fullCourse?.course_id || parseInt(courseId);
+      if (actualCourseId) {
         const { data: content, error: contentError } = await courseService.getLessonContent(
-          fullCourse.course_id,
+          actualCourseId,
           chapterNum,
           lessonNum
         );
         if (contentError && contentError.code !== 'PGRST116') {
           console.warn('Lesson content not found:', contentError);
-        } else {
+        } else if (content) {
           setLessonContent(content);
+          console.log('✅ Lesson content loaded');
         }
 
         // Load lesson description
@@ -652,6 +701,19 @@ const CoursePlayerPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Lesson Tracker - Only show if course has masterschool */}
+      {course?.masterschool && currentLesson && currentLesson.lesson_id && (
+        <LessonTracker
+          courseId={parseInt(courseId)}
+          chapterNumber={chapterNum}
+          lessonNumber={lessonNum}
+          lessonId={currentLesson.lesson_id}
+          lessonTitle={currentLesson.lesson_title}
+          masterschool={course.masterschool}
+          enabled={true}
+        />
+      )}
     </div>
   );
 };

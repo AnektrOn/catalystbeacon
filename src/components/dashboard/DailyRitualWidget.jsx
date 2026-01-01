@@ -17,16 +17,23 @@ const DailyRitualWidget = memo(({ completed = false, streak = 0, xpReward = 50 }
                 >
                     <Flame size={20} />
                 </div>
-                <div className="text-xs font-medium text-gray-400 bg-white/5 px-2 py-1 rounded-lg border border-white/10 uppercase tracking-wider">
+                <div 
+                    className="text-xs font-medium px-2 py-1 rounded-lg border uppercase tracking-wider"
+                    style={{
+                        color: 'var(--text-secondary)',
+                        backgroundColor: 'color-mix(in srgb, var(--bg-primary) 5%, transparent)',
+                        borderColor: 'color-mix(in srgb, var(--bg-primary) 10%, transparent)'
+                    }}
+                >
                     Ritual
                 </div>
             </div>
 
             <div className="mb-4">
-                <div className="text-3xl font-semibold text-gray-900 dark:text-white mb-1">
+                <div className="text-3xl font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
                     {streak}-day
                 </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">
+                <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                     {completed ? 'Completed today' : 'streak'}
                 </div>
             </div>

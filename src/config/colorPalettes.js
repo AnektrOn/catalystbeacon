@@ -257,6 +257,62 @@ export const colorPalettes = {
       '--gradient-warm': 'linear-gradient(135deg, #F7F1E1 0%, #E3D8C1 100%)',
       '--gradient-earth': 'linear-gradient(135deg, #B4833D 0%, #81754B 50%, #3F3F2C 100%)',
     }
+  },
+  
+  // Black and White with accent color
+  blackwhite: {
+    name: 'Black & White',
+    description: 'Classic monochrome with accent',
+    colors: {
+      '--color-primary': '#3B82F6', // Blue accent
+      '--color-secondary': '#60A5FA',
+      '--color-success': '#10B981',
+      '--color-warning': '#F59E0B',
+      '--color-error': '#EF4444',
+      '--color-info': '#3B82F6',
+      '--bg-primary': '#FFFFFF',
+      '--bg-secondary': '#F5F5F5',
+      '--text-primary': '#000000',
+      '--text-secondary': '#4A4A4A',
+      '--color-old-lace': '#FFFFFF',
+      '--color-bone': '#F5F5F5',
+      '--color-dark-goldenrod': '#3B82F6', // Accent color
+      '--color-kobicha': '#000000',
+      '--color-coyote': '#4A4A4A',
+      '--color-earth-green': '#1A1A1A',
+      '--gradient-primary': 'linear-gradient(135deg, #3B82F6 0%, #1E3A8A 100%)',
+      '--gradient-secondary': 'linear-gradient(135deg, #60A5FA 0%, #1E40AF 100%)',
+      '--gradient-warm': 'linear-gradient(135deg, #FFFFFF 0%, #F5F5F5 100%)',
+      '--gradient-earth': 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 50%, #1A1A1A 100%)',
+    }
+  },
+  
+  // White and Black (inverted) with accent color
+  whiteblack: {
+    name: 'White & Black',
+    description: 'Inverted monochrome with accent',
+    colors: {
+      '--color-primary': '#60A5FA', // Light blue accent
+      '--color-secondary': '#818CF8',
+      '--color-success': '#34D399',
+      '--color-warning': '#FBBF24',
+      '--color-error': '#F87171',
+      '--color-info': '#60A5FA',
+      '--bg-primary': '#000000',
+      '--bg-secondary': '#1A1A1A',
+      '--text-primary': '#FFFFFF',
+      '--text-secondary': '#D1D5DB',
+      '--color-old-lace': '#1A1A1A',
+      '--color-bone': '#2A2A2A',
+      '--color-dark-goldenrod': '#60A5FA', // Accent color
+      '--color-kobicha': '#FFFFFF',
+      '--color-coyote': '#D1D5DB',
+      '--color-earth-green': '#000000',
+      '--gradient-primary': 'linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%)',
+      '--gradient-secondary': 'linear-gradient(135deg, #818CF8 0%, #6366F1 100%)',
+      '--gradient-warm': 'linear-gradient(135deg, #1A1A1A 0%, #2A2A2A 100%)',
+      '--gradient-earth': 'linear-gradient(135deg, #60A5FA 0%, #818CF8 50%, #000000 100%)',
+    }
   }
 };
 

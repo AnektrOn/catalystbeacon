@@ -29,6 +29,12 @@ const ColorPaletteDropdown = () => {
   }, []);
 
   const palettes = getAllPalettes();
+  
+  // Debug: Log available palettes
+  useEffect(() => {
+    console.log('🎨 Available color palettes:', Object.keys(palettes));
+    console.log('🎨 Total palettes:', Object.keys(palettes).length);
+  }, [palettes]);
 
   const handlePaletteSelect = (paletteKey) => {
     colorPaletteSwitcher.switchTo(paletteKey);

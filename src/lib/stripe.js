@@ -5,21 +5,23 @@ import { loadStripe } from '@stripe/stripe-js'
 const STRIPE_PUBLISHABLE_KEY = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY
 
 if (!STRIPE_PUBLISHABLE_KEY) {
-  throw new Error(
+  console.warn(
     'Missing Stripe publishable key. ' +
     'Please set REACT_APP_STRIPE_PUBLISHABLE_KEY in your .env file.'
   )
 }
 
-// Initialize Stripe with error handling
-const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY)
+// Initialize Stripe with error handling (only if key exists)
+const stripePromise = STRIPE_PUBLISHABLE_KEY ? loadStripe(STRIPE_PUBLISHABLE_KEY) : null
 
-// Price IDs for the subscription plans
+// Price IDs for the subscription plans (from environment variables)
+// Create React App uses REACT_APP_ prefix
+// Fallback to test IDs if not set in env
 export const PRICE_IDS = {
-  STUDENT_MONTHLY: 'price_1RutXI2MKT6Humxnh0WBkhCp',
-  STUDENT_YEARLY: 'price_1SB9e52MKT6Humxnx7qxZ2hj',
-  TEACHER_MONTHLY: 'price_1SBPN62MKT6HumxnBoQgAdd0',
-  TEACHER_YEARLY: 'price_1SB9co2MKT6HumxnOSALvAM4'
+  STUDENT_MONTHLY: process.env.REACT_APP_STRIPE_STUDENT_MONTHLY_PRICE_ID || 'price_1RutXI2MKT6Humxnh0WBkhCp',
+  STUDENT_YEARLY: process.env.REACT_APP_STRIPE_STUDENT_YEARLY_PRICE_ID || 'price_1SB9e52MKT6Humxnx7qxZ2hj',
+  TEACHER_MONTHLY: process.env.REACT_APP_STRIPE_TEACHER_MONTHLY_PRICE_ID || 'price_1SBPN62MKT6HumxnBoQgAdd0',
+  TEACHER_YEARLY: process.env.REACT_APP_STRIPE_TEACHER_YEARLY_PRICE_ID || 'price_1SB9co2MKT6HumxnOSALvAM4'
 }
 
 // Get API URL from environment variables

@@ -1,0 +1,256 @@
+.complete-lesson-modal__overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.complete-lesson-modal {
+  background: linear-gradient(135deg, rgba(30, 30, 50, 0.95) 0%, rgba(20, 20, 40, 0.95) 100%);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.complete-lesson-modal__content {
+  text-align: center;
+}
+
+.complete-lesson-modal__content--success {
+  animation: celebrate 0.6s ease-out;
+}
+
+@keyframes celebrate {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.complete-lesson-modal__success-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  animation: bounce 0.6s ease-out;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+.complete-lesson-modal__title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: white;
+  margin: 0 0 0.5rem 0;
+}
+
+.complete-lesson-modal__lesson-title {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 2rem 0;
+}
+
+.complete-lesson-modal__message {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0 0 2rem 0;
+  line-height: 1.6;
+}
+
+.complete-lesson-modal__error {
+  padding: 1rem;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 8px;
+  color: #fca5a5;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+/* Rewards */
+.complete-lesson-modal__rewards {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.complete-lesson-modal__reward {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.complete-lesson-modal__reward:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateX(4px);
+}
+
+.complete-lesson-modal__reward-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+}
+
+.complete-lesson-modal__reward-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.complete-lesson-modal__reward-label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.complete-lesson-modal__reward-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: white;
+  margin-top: 0.25rem;
+}
+
+/* Unlock Message */
+.complete-lesson-modal__unlock-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: rgba(74, 222, 128, 0.2);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  border-radius: 8px;
+  color: #4ade80;
+  font-weight: 500;
+  margin-bottom: 2rem;
+}
+
+.complete-lesson-modal__unlock-icon {
+  font-size: 1.5rem;
+}
+
+/* Actions */
+.complete-lesson-modal__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.complete-lesson-modal__button {
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.complete-lesson-modal__button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.complete-lesson-modal__button--primary {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(96, 165, 250, 0.3);
+}
+
+.complete-lesson-modal__button--primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(96, 165, 250, 0.4);
+}
+
+.complete-lesson-modal__button--secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.complete-lesson-modal__button--secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .complete-lesson-modal {
+    padding: 1.5rem;
+  }
+
+  .complete-lesson-modal__title {
+    font-size: 1.5rem;
+  }
+
+  .complete-lesson-modal__success-icon {
+    font-size: 3rem;
+  }
+
+  .complete-lesson-modal__reward {
+    padding: 0.75rem;
+  }
+
+  .complete-lesson-modal__reward-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+}
+

@@ -1,0 +1,62 @@
+/* Winding S-Curve Path - Duolingo Style */
+
+.roadmap-path-container {
+  position: relative;
+  width: 100%;
+  min-height: 100%;
+}
+
+.roadmap-path-svg {
+  pointer-events: none;
+  z-index: 0;
+}
+
+.roadmap-path-nodes {
+  position: relative;
+  z-index: 1;
+}
+
+/* Animated completion path */
+.roadmap-path-completed {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: drawPath 1.5s ease-out forwards;
+}
+
+@keyframes drawPath {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Animated traveling dot */
+.roadmap-path-dot {
+  filter: drop-shadow(0 0 8px rgba(180, 131, 61, 0.6));
+}
+
+/* Node position container */
+.roadmap-path-node-position {
+  width: 90px;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .roadmap-path-svg {
+    width: 100%;
+    transform: translateX(-50%) scale(0.8);
+  }
+
+  .roadmap-path-node-position {
+    width: 70px;
+    height: 70px;
+  }
+}
+
+/* Smooth transitions */
+.roadmap-path-completed {
+  transition: stroke-dashoffset 0.5s ease;
+}

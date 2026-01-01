@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Target, Star, BookOpen, Dumbbell, Flame, Trash2, CheckCircle } from 'lucide-react';
+import { Plus, Target, Star, BookOpen, Dumbbell, Flame, Trash2, CheckCircle, Lock } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { useMasteryRefresh } from '../../pages/Mastery';
 import skillsService from '../../services/skillsService';
 import masteryService from '../../services/masteryService';
+import useSubscription from '../../hooks/useSubscription';
+import UpgradeModal from '../UpgradeModal';
 
 // Helper function to calculate current streak from completion dates
 const calculateCurrentStreak = (completedDates) => {
@@ -59,11 +61,13 @@ const getHabitIconAndColor = (title) => {
 const HabitsTabCompact = () => {
   const { user, fetchProfile } = useAuth();
   const { triggerRefresh } = useMasteryRefresh();
+  const { isFreeUser, isAdmin } = useSubscription();
   const [activeTab, setActiveTab] = useState('library');
   const [personalHabits, setPersonalHabits] = useState([]);
   const [habitsLibrary, setHabitsLibrary] = useState([]);
   const [error, setError] = useState(null);
   const [showAddHabit, setShowAddHabit] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [newHabit, setNewHabit] = useState({
     title: '',
     description: '',
@@ -356,6 +360,13 @@ const HabitsTabCompact = () => {
   const handleCreateHabit = async () => {
     if (!user || !newHabit.title.trim()) return;
     
+    // Prevent creation for free users (admins can create)
+    if (isFreeUser && !isAdmin) {
+      setShowUpgradeModal(true);
+      setShowAddHabit(false);
+      return;
+    }
+    
     try {
       console.log('📝 HabitsTabCompact: Creating new habit:', newHabit.title);
       
@@ -489,13 +500,25 @@ const HabitsTabCompact = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-gray-900">Habits</h2>
-        <button
-          onClick={() => setShowAddHabit(true)}
-          className="flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
-        >
-          <Plus className="w-4 h-4 mr-1" />
-          Add
-        </button>
+        {(!isFreeUser || isAdmin) && (
+          <button
+            onClick={() => setShowAddHabit(true)}
+            className="flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Add
+          </button>
+        )}
+        {isFreeUser && !isAdmin && (
+          <button
+            onClick={() => setShowUpgradeModal(true)}
+            className="flex items-center px-3 py-1.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 text-sm"
+            title="Upgrade to create custom habits"
+          >
+            <Lock className="w-4 h-4 mr-1" />
+            Upgrade to Create
+          </button>
+        )}
       </div>
 
       {/* Tabs */}
@@ -537,12 +560,22 @@ const HabitsTabCompact = () => {
                 >
                   Browse Library
                 </button>
-                <button
-                  onClick={() => setShowAddHabit(true)}
-                  className="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
-                >
-                  Create Custom
-                </button>
+                {(!isFreeUser || isAdmin) ? (
+                  <button
+                    onClick={() => setShowAddHabit(true)}
+                    className="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+                  >
+                    Create Custom
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setShowUpgradeModal(true)}
+                    className="px-3 py-1.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 text-sm"
+                  >
+                    <Lock className="w-4 h-4 inline mr-1" />
+                    Upgrade to Create
+                  </button>
+                )}
               </div>
             </div>
           ) : (
@@ -682,8 +715,17 @@ const HabitsTabCompact = () => {
         </div>
       )}
 
+      {/* Upgrade Modal - Only show for non-admins */}
+      {!isAdmin && (
+        <UpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          restrictedFeature="habits"
+        />
+      )}
+
       {/* Create Habit Modal */}
-      {showAddHabit && (
+      {showAddHabit && (!isFreeUser || isAdmin) && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold mb-4">Create New Habit</h3>

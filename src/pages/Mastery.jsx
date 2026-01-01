@@ -2,6 +2,7 @@ import React, { useState, createContext, useContext, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Calendar, Target, Wrench, Clock, Trophy, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import useSubscription from '../hooks/useSubscription';
 
 // Import components
 import CalendarTab from '../components/mastery/CalendarTab';
@@ -28,6 +29,7 @@ const Mastery = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { profile } = useAuth();
+  const { isFreeUser, isAdmin } = useSubscription();
   const [refreshKey, setRefreshKey] = useState(0);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
@@ -45,14 +47,19 @@ const Mastery = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const tabs = [
-    { id: 'overview', label: 'Hub', icon: LayoutDashboard, path: '/mastery' },
-    { id: 'calendar', label: 'Calendar', icon: Calendar, path: '/mastery/calendar' },
-    { id: 'habits', label: 'Habits', icon: Target, path: '/mastery/habits' },
-    { id: 'timer', label: 'Focus', icon: Clock, path: '/mastery/timer' },
-    { id: 'achievements', label: 'Awards', icon: Trophy, path: '/mastery/achievements' },
-    { id: 'toolbox', label: 'Toolbox', icon: Wrench, path: '/mastery/toolbox' }
+  // For free users, only show Habits and Toolbox tabs (admins see everything)
+  const allTabs = [
+    { id: 'overview', label: 'Hub', icon: LayoutDashboard, path: '/mastery', restricted: true },
+    { id: 'calendar', label: 'Calendar', icon: Calendar, path: '/mastery/calendar', restricted: false },
+    { id: 'habits', label: 'Habits', icon: Target, path: '/mastery/habits', restricted: false },
+    { id: 'timer', label: 'Focus', icon: Clock, path: '/mastery/timer', restricted: true },
+    { id: 'achievements', label: 'Awards', icon: Trophy, path: '/mastery/achievements', restricted: true },
+    { id: 'toolbox', label: 'Toolbox', icon: Wrench, path: '/mastery/toolbox', restricted: false }
   ];
+  
+  const tabs = (isFreeUser && !isAdmin)
+    ? allTabs.filter(tab => !tab.restricted)
+    : allTabs;
 
   const handleTabClick = (path) => {
     navigate(path);
@@ -60,6 +67,12 @@ const Mastery = () => {
 
   const renderContent = () => {
     const path = location.pathname;
+
+    // Redirect free users from overview to habits (admins can access overview)
+    if (path === '/mastery' && isFreeUser && !isAdmin) {
+      navigate('/mastery/habits', { replace: true });
+      return null;
+    }
 
     if (path === '/mastery') {
       // Gaming Hub Overview

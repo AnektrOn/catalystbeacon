@@ -9,37 +9,38 @@
 
 /* Base glass effect - Enhanced blur and saturation */
 .glass-effect {
-  background: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--bg-primary, rgba(255, 255, 255, 0.95)) 8%, transparent);
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid color-mix(in srgb, var(--color-primary, #B4833D) 20%, rgba(255, 255, 255, 0.2));
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    inset 0 1px 0 color-mix(in srgb, var(--color-primary, #B4833D) 10%, rgba(255, 255, 255, 0.2));
 }
 
 /* Dark mode glass effect */
 .dark .glass-effect {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--bg-secondary, rgba(0, 0, 0, 0.8)) 25%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary, #B4833D) 15%, rgba(255, 255, 255, 0.1));
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.6),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    inset 0 1px 0 color-mix(in srgb, var(--color-primary, #B4833D) 5%, rgba(255, 255, 255, 0.05));
 }
 
 /* Header - Premium Slim Glass Strip */
 .glass-header-browser {
   @apply glass-effect;
   @apply flex items-center justify-between px-6 py-2;
-  @apply text-gray-800 dark:text-gray-200;
+  color: var(--text-primary, #333);
   border-radius: 100px;
   height: 60px;
   width: 95%;
   /* Mobile width */
   margin: 16px auto;
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  background: color-mix(in srgb, var(--bg-primary, rgba(255, 255, 255, 0.95)) 85%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--color-primary, #B4833D) 30%, rgba(255, 255, 255, 0.3)) !important;
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--color-primary, #B4833D) 20%, rgba(0, 0, 0, 0.1));
 }
 
 @media (min-width: 1024px) {
@@ -51,7 +52,7 @@
 
 .glass-icon-btn {
   @apply p-2 rounded-lg;
-  @apply text-gray-600 dark:text-gray-300;
+  color: var(--text-secondary, #666);
   @apply hover:bg-white/20 dark:hover:bg-white/10;
   @apply transition-all duration-200;
   @apply backdrop-blur-sm;
@@ -73,14 +74,15 @@
   @apply glass-effect;
   @apply flex flex-col;
   @apply h-full;
-  @apply text-gray-800 dark:text-gray-200;
+  color: var(--text-primary, #333);
   border-radius: 24px;
   padding: 16px 12px;
   width: var(--sidebar-width-collapsed);
   margin: 16px;
   transition: width var(--sidebar-transition);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--color-primary, #B4833D) 10%, transparent) 0%, color-mix(in srgb, var(--color-earth-green, #3F3F2C) 10%, transparent) 100%);
+  background: color-mix(in srgb, var(--bg-primary, rgba(255, 255, 255, 0.95)) 85%, transparent) !important;
   overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--color-primary, #B4833D) 30%, rgba(255, 255, 255, 0.3)) !important;
 }
 
 .glass-sidebar-panel.expanded {
@@ -98,15 +100,15 @@
   @apply glass-effect;
   @apply flex flex-col;
   @apply h-full;
-  @apply text-gray-800 dark:text-gray-200;
+  color: var(--text-primary, #333);
   border-radius: 24px;
   padding: 16px 12px;
   width: var(--sidebar-width-collapsed);
   margin: 16px;
   transition: width var(--sidebar-transition);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--color-primary, #B4833D) 10%, transparent) 0%, color-mix(in srgb, var(--color-earth-green, #3F3F2C) 10%, transparent) 100%);
+  background: color-mix(in srgb, var(--bg-primary, rgba(255, 255, 255, 0.95)) 85%, transparent) !important;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--color-primary, #B4833D) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary, #B4833D) 30%, rgba(255, 255, 255, 0.3)) !important;
 }
 
 .glass-sidebar-panel-v2.expanded {
@@ -139,7 +141,7 @@
 
 .glass-nav-btn {
   @apply p-3 rounded-xl;
-  @apply text-gray-600 dark:text-gray-300;
+  color: var(--text-secondary, #666);
   @apply transition-all duration-200;
   @apply backdrop-blur-sm;
   @apply flex items-center gap-3;
@@ -155,7 +157,7 @@
 
 .glass-nav-btn-active {
   background: var(--gradient-primary);
-  color: white;
+  color: var(--text-primary, #fff);
   box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary, #B4833D) 40%, transparent);
   transform: translateX(4px);
   @apply p-3 rounded-xl;
@@ -333,11 +335,11 @@
   @apply rounded-2xl;
   @apply p-8;
   @apply h-full;
-  @apply text-gray-800 dark:text-gray-200;
+  color: var(--text-primary, #333);
   @apply overflow-auto;
   margin: 16px;
   border: none !important;
-  background: rgba(255, 255, 255, 0.05);
+  background: color-mix(in srgb, var(--bg-primary) 50%, transparent) !important;
   box-shadow: none;
   /* Let the background shine through */
 }
@@ -348,17 +350,17 @@
 }
 
 .glass-main-panel::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--bg-primary) 10%, transparent);
   border-radius: 3px;
 }
 
 .glass-main-panel::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
+  background: color-mix(in srgb, var(--color-primary) 30%, transparent);
   border-radius: 3px;
 }
 
 .glass-main-panel::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
+  background: color-mix(in srgb, var(--color-primary) 50%, transparent);
 }
 
 /* Responsive Design */
@@ -475,7 +477,7 @@
 
 .glass-tab-btn {
   @apply px-4 py-2 rounded-lg;
-  @apply text-gray-600 dark:text-gray-300;
+  color: var(--text-secondary, #666);
   @apply hover:bg-white/20 dark:hover:bg-white/10;
   @apply transition-all duration-200;
   @apply backdrop-blur-sm;
@@ -500,7 +502,7 @@
   @apply glass-effect;
   @apply rounded-xl;
   @apply p-6;
-  @apply text-gray-800 dark:text-gray-200;
+  color: var(--text-primary, #333);
 }
 
 /* Calendar Components */
@@ -512,7 +514,7 @@
   @apply hover:bg-white/10;
   @apply transition-all duration-200;
   @apply flex flex-col;
-  @apply text-gray-800 dark:text-gray-200;
+  color: var(--text-primary, #333);
 }
 
 .glass-calendar-day-today {
@@ -597,7 +599,7 @@
 
 .glass-icon-btn {
   @apply p-2 rounded-lg;
-  @apply text-gray-600 dark:text-gray-300;
+  color: var(--text-secondary, #666);
   @apply hover:bg-white/20 dark:hover:bg-white/10;
   @apply transition-all duration-200;
   @apply backdrop-blur-sm;
@@ -610,7 +612,7 @@
   @apply w-full px-3 py-2 rounded-lg;
   @apply bg-white/20 dark:bg-white/10;
   @apply border border-white/30;
-  @apply text-gray-800 dark:text-gray-200;
+  color: var(--text-primary, #333);
   @apply placeholder-gray-500 dark:placeholder-gray-400;
   outline: none;
   @apply transition-all duration-200;
@@ -622,7 +624,7 @@
   @apply rounded-xl;
   @apply p-6;
   @apply max-w-md w-full mx-4;
-  @apply text-gray-800 dark:text-gray-200;
+  color: var(--text-primary, #333);
 }
 
 /* Sidebar collapsed state fixes */
@@ -666,7 +668,7 @@
 /* Premium Icon Button */
 .glass-icon-premium {
   @apply p-2 rounded-xl;
-  @apply text-gray-600 dark:text-gray-300;
+  color: var(--text-secondary, #666);
   @apply transition-all duration-300;
   @apply flex items-center justify-center;
   position: relative;
@@ -686,11 +688,44 @@
   opacity: 1;
 }
 
-/* Tooltip for Collapsed Sidebar */
+/* Tooltip for Collapsed Sidebar - Fixed positioning to escape sidebar overflow */
+.glass-tooltip-fixed {
+  position: fixed;
+  padding: 0.375rem 0.75rem;
+  background: rgba(255, 255, 255, 0.95);
+  color: rgb(31, 41, 55);
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 9999;
+  backdrop-filter: blur(8px);
+  animation: tooltipFadeIn 0.2s ease-out;
+}
+
+.dark .glass-tooltip-fixed {
+  background: rgba(0, 0, 0, 0.95);
+  color: rgb(229, 231, 235);
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+/* Legacy tooltip for backwards compatibility */
 .glass-tooltip {
   @apply absolute left-full ml-4 px-3 py-1.5;
   @apply bg-white/90 dark:bg-black/90;
-  @apply text-gray-800 dark:text-gray-200;
+  color: var(--text-primary, #333);
   @apply text-sm font-medium;
   @apply rounded-lg shadow-lg;
   @apply whitespace-nowrap;

@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabaseClient';
 import NotificationBadge from './NotificationBadge';
 import ColorPaletteDropdown from './common/ColorPaletteDropdown';
+import useSubscription from '../hooks/useSubscription';
 import {
   Grid3X3,
   User,
@@ -33,6 +34,7 @@ const AppShellMobile = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { profile, signOut, user } = useAuth();
+  const { isFreeUser, isAdmin } = useSubscription();
 
   // Load notification count from Supabase
   const [notificationCount, setNotificationCount] = useState(0);
@@ -188,24 +190,33 @@ const AppShellMobile = () => {
     setIsDarkMode(!isDarkMode);
   };
 
-  const sidebarItems = [
-    { icon: Grid3X3, label: 'Dashboard', path: '/dashboard' },
-    { icon: Target, label: 'Mastery', path: '/mastery' },
-    { icon: BookOpen, label: 'Courses', path: '/courses' },
-    { icon: Sparkles, label: 'Stellar Map', path: '/stellar-map-2d' },
-    { icon: User, label: 'Profile', path: '/profile' },
-    { icon: Users, label: 'Community', path: '/community' },
-    { icon: CreditCard, label: 'Pricing', path: '/pricing' },
-    { icon: Settings, label: 'Settings', path: '/settings' }
+  const allSidebarItems = [
+    { icon: Grid3X3, label: 'Dashboard', path: '/dashboard', restricted: false },
+    { icon: Target, label: 'Mastery', path: '/mastery', restricted: false },
+    { icon: BookOpen, label: 'Courses', path: '/courses', restricted: true },
+    { icon: Sparkles, label: 'Stellar Map', path: '/stellar-map-2d', restricted: true },
+    { icon: User, label: 'Profile', path: '/profile', restricted: true },
+    { icon: Users, label: 'Community', path: '/community', restricted: true },
+    { icon: CreditCard, label: 'Pricing', path: '/pricing', restricted: false },
+    { icon: Settings, label: 'Settings', path: '/settings', restricted: false }
   ];
 
-  const bottomNavItems = [
-    { icon: Home, label: 'Home', path: '/dashboard' },
-    { icon: Target, label: 'Mastery', path: '/mastery' },
-    { icon: BookOpen, label: 'Courses', path: '/courses' },
-    { icon: Sparkles, label: 'Stellar', path: '/stellar-map-2d' },
-    { icon: User, label: 'Profile', path: '/profile' }
+  const allBottomNavItems = [
+    { icon: Home, label: 'Home', path: '/dashboard', restricted: false },
+    { icon: Target, label: 'Mastery', path: '/mastery', restricted: false },
+    { icon: BookOpen, label: 'Courses', path: '/courses', restricted: true },
+    { icon: Sparkles, label: 'Stellar', path: '/stellar-map-2d', restricted: true },
+    { icon: User, label: 'Profile', path: '/profile', restricted: true }
   ];
+
+  // Filter out restricted items for free users (admins see everything)
+  const sidebarItems = (isFreeUser && !isAdmin)
+    ? allSidebarItems.filter(item => !item.restricted)
+    : allSidebarItems;
+
+  const bottomNavItems = (isFreeUser && !isAdmin)
+    ? allBottomNavItems.filter(item => !item.restricted)
+    : allBottomNavItems;
 
   const handleNavigation = (path) => {
     navigate(path);
@@ -242,17 +253,46 @@ const AppShellMobile = () => {
         }}
       >
         {!profile?.background_image && (
-          <div className="absolute inset-0" style={{ background: 'var(--gradient-warm)' }}>
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-20 dark:opacity-10">
-              <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full blur-3xl" style={{ backgroundColor: 'var(--color-primary)', opacity: 0.2 }}></div>
-              <div className="absolute top-[40%] right-[10%] w-[40%] h-[40%] rounded-full blur-3xl" style={{ backgroundColor: 'var(--color-secondary)', opacity: 0.2 }}></div>
+          <div 
+            className="absolute inset-0"
+            style={{
+              backgroundColor: isDarkMode ? 'var(--bg-secondary)' : 'var(--bg-primary)',
+              background: isDarkMode 
+                ? `linear-gradient(to bottom right, var(--bg-secondary), var(--color-earth-green), var(--bg-secondary))`
+                : `linear-gradient(to bottom right, var(--color-old-lace), var(--color-bone), var(--color-primary))`
+            }}
+          >
+            <div 
+              className="absolute top-0 left-0 w-full h-full overflow-hidden"
+              style={{ opacity: isDarkMode ? 0.1 : 0.2 }}
+            >
+              <div 
+                className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full blur-3xl"
+                style={{ 
+                  backgroundColor: isDarkMode
+                    ? 'color-mix(in srgb, var(--color-primary) 15%, transparent)'
+                    : 'color-mix(in srgb, var(--color-primary) 20%, transparent)'
+                }}
+              ></div>
+              <div 
+                className="absolute top-[40%] right-[10%] w-[40%] h-[40%] rounded-full blur-3xl"
+                style={{ 
+                  backgroundColor: isDarkMode
+                    ? 'color-mix(in srgb, var(--color-secondary) 15%, transparent)'
+                    : 'color-mix(in srgb, var(--color-secondary) 20%, transparent)'
+                }}
+              ></div>
             </div>
           </div>
         )}
         <div 
           className="absolute inset-0 backdrop-blur-sm"
           style={{
-            backgroundColor: profile?.background_image ? 'rgba(0, 0, 0, 0.1)' : 'transparent'
+            backgroundColor: profile?.background_image 
+              ? (isDarkMode 
+                  ? 'color-mix(in srgb, var(--bg-secondary) 20%, transparent)'
+                  : 'color-mix(in srgb, var(--bg-primary) 10%, transparent)')
+              : 'transparent'
           }}
         ></div>
       </div>

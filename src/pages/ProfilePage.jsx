@@ -1,15 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabaseClient'
-import { User, Star, Flame, Target, BookOpen, Brain, Upload, X, Image as ImageIcon } from 'lucide-react'
+import { User, Star, Flame, Target, BookOpen, Brain, Upload, X, Image as ImageIcon, Lock } from 'lucide-react'
 import toast from 'react-hot-toast'
 import RadarChart from '../components/profile/RadarChart'
 import ProgressBar from '../components/profile/ProgressBar'
 import skillsService from '../services/skillsService'
 import levelsService from '../services/levelsService'
+import useSubscription from '../hooks/useSubscription'
+import UpgradeModal from '../components/UpgradeModal'
 
 const ProfilePage = () => {
-  const { user, profile, updateProfile } = useAuth()
+  const { user, profile, updateProfile, loading: authLoading } = useAuth()
+  const { isFreeUser, isAdmin } = useSubscription()
+  const navigate = useNavigate()
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [loading, setLoading] = useState(false)
   const [skills, setSkills] = useState([]) // eslint-disable-line no-unused-vars
   const [masterStats, setMasterStats] = useState([])
@@ -32,7 +38,13 @@ const ProfilePage = () => {
   const avatarInputRef = useRef(null)
   const backgroundInputRef = useRef(null)
 
-  // Load skills, levels, and user progress data
+  // Redirect free users to settings immediately (admins have full access)
+  useEffect(() => {
+    if (!authLoading && isFreeUser && !isAdmin && user) {
+      navigate('/settings', { replace: true })
+    }
+  }, [isFreeUser, isAdmin, user, navigate, authLoading])
+
   // Update form data when profile changes
   useEffect(() => {
     if (profile) {
@@ -47,6 +59,7 @@ const ProfilePage = () => {
     }
   }, [profile])
 
+  // Load skills, levels, and user progress data
   useEffect(() => {
     const loadUserData = async () => {
       try {

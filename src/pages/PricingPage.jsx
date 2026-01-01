@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
+import { PRICE_IDS } from '../lib/stripe'
 
 const PricingPage = () => {
   const { user, profile } = useAuth()
@@ -38,7 +39,7 @@ const PricingPage = () => {
       ],
       buttonText: 'Subscribe',
       buttonStyle: 'bg-blue-600 hover:bg-blue-700',
-      priceId: 'price_1RutXI2MKT6Humxnh0WBkhCp'
+      priceId: PRICE_IDS.STUDENT_MONTHLY
     },
     {
       name: 'Teacher',
@@ -55,7 +56,7 @@ const PricingPage = () => {
       ],
       buttonText: 'Subscribe',
       buttonStyle: 'bg-purple-600 hover:bg-purple-700',
-      priceId: 'price_1SBPN62MKT6HumxnBoQgAdd0'
+      priceId: PRICE_IDS.TEACHER_MONTHLY
     }
   ]
 

@@ -1,9 +1,11 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { DataCacheProvider } from './contexts/DataCacheContext'
 import { Toaster } from 'react-hot-toast'
 import ErrorBoundary from './components/ErrorBoundary'
 import AppShell from './components/AppShell'
+import ProtectedSubscriptionRoute from './components/ProtectedSubscriptionRoute'
 import './styles/glassmorphism.css'
 import './styles/mobile-responsive.css'
 
@@ -29,6 +31,7 @@ const LandingPage = React.lazy(() => import('./pages/LandingPage'))
 const EnhancedLandingPage = React.lazy(() => import('./pages/EnhancedLandingPage'))
 const ProfessionalLandingPage = React.lazy(() => import('./pages/ProfessionalLandingPage'))
 const AwakeningLandingPage = React.lazy(() => import('./pages/AwakeningLandingPage'))
+const RoadmapIgnition = React.lazy(() => import('./pages/RoadmapIgnition'))
 
 // Loading component
 const LoadingScreen = () => {
@@ -216,12 +219,14 @@ const AppRoutes = () => {
         {/* Redirect standalone calendar to mastery calendar for now */}
         <Route path="/calendar" element={<Navigate to="/mastery/calendar" replace />} />
 
-        {/* Community Routes */}
+        {/* Community Routes - Protected */}
         <Route path="/community" element={
           <ErrorBoundary>
-            <React.Suspense fallback={<LoadingScreen />}>
-              <CommunityPage />
-            </React.Suspense>
+            <ProtectedSubscriptionRoute requiredFeature="community">
+              <React.Suspense fallback={<LoadingScreen />}>
+                <CommunityPage />
+              </React.Suspense>
+            </ProtectedSubscriptionRoute>
           </ErrorBoundary>
         } />
 
@@ -235,58 +240,88 @@ const AppRoutes = () => {
           </ErrorBoundary>
         } />
 
-        {/* Course Routes */}
-        <Route path="/courses" element={
+        {/* Roadmap Routes - Protected */}
+        <Route path="/roadmap/ignition" element={
           <ErrorBoundary>
             <React.Suspense fallback={<LoadingScreen />}>
-              <CourseCatalogPage />
+              <RoadmapIgnition />
             </React.Suspense>
+          </ErrorBoundary>
+        } />
+        <Route path="/roadmap/ignition/:statLink" element={
+          <ErrorBoundary>
+            <React.Suspense fallback={<LoadingScreen />}>
+              <RoadmapIgnition />
+            </React.Suspense>
+          </ErrorBoundary>
+        } />
+
+        {/* Course Routes - Protected */}
+        <Route path="/courses" element={
+          <ErrorBoundary>
+            <ProtectedSubscriptionRoute requiredFeature="courses">
+              <React.Suspense fallback={<LoadingScreen />}>
+                <CourseCatalogPage />
+              </React.Suspense>
+            </ProtectedSubscriptionRoute>
           </ErrorBoundary>
         } />
         <Route path="/courses/create" element={
           <ErrorBoundary>
-            <React.Suspense fallback={<LoadingScreen />}>
-              <CourseCreationPage />
-            </React.Suspense>
+            <ProtectedSubscriptionRoute requiredFeature="courses">
+              <React.Suspense fallback={<LoadingScreen />}>
+                <CourseCreationPage />
+              </React.Suspense>
+            </ProtectedSubscriptionRoute>
           </ErrorBoundary>
         } />
         <Route path="/courses/:courseId" element={
           <ErrorBoundary>
-            <React.Suspense fallback={<LoadingScreen />}>
-              <CourseDetailPage />
-            </React.Suspense>
+            <ProtectedSubscriptionRoute requiredFeature="courses">
+              <React.Suspense fallback={<LoadingScreen />}>
+                <CourseDetailPage />
+              </React.Suspense>
+            </ProtectedSubscriptionRoute>
           </ErrorBoundary>
         } />
         <Route path="/courses/:courseId/chapters/:chapterNumber/lessons/:lessonNumber" element={
           <ErrorBoundary>
-            <React.Suspense fallback={<LoadingScreen />}>
-              <CoursePlayerPage />
-            </React.Suspense>
+            <ProtectedSubscriptionRoute requiredFeature="courses">
+              <React.Suspense fallback={<LoadingScreen />}>
+                <CoursePlayerPage />
+              </React.Suspense>
+            </ProtectedSubscriptionRoute>
           </ErrorBoundary>
         } />
 
-        {/* Stellar Map Routes */}
+        {/* Stellar Map Routes - Protected */}
         <Route path="/stellar-map" element={
           <ErrorBoundary>
-            <React.Suspense fallback={<LoadingScreen />}>
-              <StellarMap2DPage />
-            </React.Suspense>
+            <ProtectedSubscriptionRoute requiredFeature="stellarMap">
+              <React.Suspense fallback={<LoadingScreen />}>
+                <StellarMap2DPage />
+              </React.Suspense>
+            </ProtectedSubscriptionRoute>
           </ErrorBoundary>
         } />
         <Route path="/stellar-map-2d" element={
           <ErrorBoundary>
-            <React.Suspense fallback={<LoadingScreen />}>
-              <StellarMap2DPage />
-            </React.Suspense>
+            <ProtectedSubscriptionRoute requiredFeature="stellarMap">
+              <React.Suspense fallback={<LoadingScreen />}>
+                <StellarMap2DPage />
+              </React.Suspense>
+            </ProtectedSubscriptionRoute>
           </ErrorBoundary>
         } />
 
-        {/* Achievements Route */}
+        {/* Achievements Route - Protected */}
         <Route path="/achievements" element={
           <ErrorBoundary>
-            <React.Suspense fallback={<LoadingScreen />}>
-              <AchievementsPage />
-            </React.Suspense>
+            <ProtectedSubscriptionRoute requiredFeature="achievements">
+              <React.Suspense fallback={<LoadingScreen />}>
+                <AchievementsPage />
+              </React.Suspense>
+            </ProtectedSubscriptionRoute>
           </ErrorBoundary>
         } />
       </Route>
@@ -308,23 +343,31 @@ function App() {
   const isMobile = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 767px)').matches
 
   return (
-    <AuthProvider>
-      <Router>
-        <div className="App font-sans antialiased text-foreground bg-background min-h-screen">
-          <AppRoutes />
-          <Toaster
-            position={isMobile ? 'top-center' : 'top-right'}
-            toastOptions={{
-              style: isMobile ? { marginTop: '64px', zIndex: 10000 } : { zIndex: 10000 },
+    <DataCacheProvider>
+      <AuthProvider>
+        <Router>
+          <div 
+            className="App font-sans antialiased min-h-screen"
+            style={{
+              color: 'var(--text-primary)',
+              backgroundColor: 'var(--bg-primary)'
             }}
-            containerStyle={{
-              zIndex: 10000,
-              position: 'fixed',
-            }}
-          />
-        </div>
-      </Router>
-    </AuthProvider>
+          >
+            <AppRoutes />
+            <Toaster
+              position={isMobile ? 'top-center' : 'top-right'}
+              toastOptions={{
+                style: isMobile ? { marginTop: '64px', zIndex: 10000 } : { zIndex: 10000 },
+              }}
+              containerStyle={{
+                zIndex: 10000,
+                position: 'fixed',
+              }}
+            />
+          </div>
+        </Router>
+      </AuthProvider>
+    </DataCacheProvider>
   )
 }
 

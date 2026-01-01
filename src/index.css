@@ -148,7 +148,8 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
     font-family: var(--font-family-primary);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;

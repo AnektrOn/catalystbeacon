@@ -33,13 +33,20 @@ const XPProgressWidget = memo(({ level = 1, levelTitle = '', currentXP = 0, next
                 >
                     <Zap size={20} />
                 </div>
-                <div className="text-xs font-medium text-gray-400 bg-white/5 px-2 py-1 rounded-lg border border-white/10 uppercase tracking-wider">
+                <div 
+                    className="text-xs font-medium px-2 py-1 rounded-lg border uppercase tracking-wider"
+                    style={{
+                        color: 'var(--text-secondary)',
+                        backgroundColor: 'color-mix(in srgb, var(--bg-primary) 5%, transparent)',
+                        borderColor: 'color-mix(in srgb, var(--bg-primary) 10%, transparent)'
+                    }}
+                >
                     Level
                 </div>
             </div>
 
             <div className="mb-4">
-                <div className="text-3xl font-semibold text-gray-900 dark:text-white mb-1">
+                <div className="text-3xl font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
                     Level {level}
                 </div>
                 {levelTitle && (
@@ -47,14 +54,17 @@ const XPProgressWidget = memo(({ level = 1, levelTitle = '', currentXP = 0, next
                         {levelTitle}
                     </div>
                 )}
-                <div className="text-sm text-gray-500 dark:text-gray-400">
+                <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                     {currentXP.toLocaleString()} / {nextLevelXP.toLocaleString()} XP
                 </div>
             </div>
 
             {/* Progress Ring */}
             <div className="relative w-full">
-                <div className="w-full h-2 bg-gray-200 dark:bg-gray-700/50 rounded-full overflow-hidden">
+                <div 
+                    className="w-full h-2 rounded-full overflow-hidden"
+                    style={{ backgroundColor: 'color-mix(in srgb, var(--bg-secondary) 50%, transparent)' }}
+                >
                     <div
                         className="h-full rounded-full transition-all duration-1000 ease-out"
                         style={{
