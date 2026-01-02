@@ -108,6 +108,8 @@ const PricingPage = () => {
           }
           
           const supabaseEndpoint = `${SUPABASE_URL}/functions/v1/create-checkout-session`
+          const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY
+          
           console.log('Using Supabase Edge Function:', supabaseEndpoint)
           console.log('Request payload:', { priceId, planType })
           
@@ -116,6 +118,7 @@ const PricingPage = () => {
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${authSession.access_token}`,
+              'apikey': supabaseAnonKey || '',
             },
             body: JSON.stringify({
               priceId: priceId,
