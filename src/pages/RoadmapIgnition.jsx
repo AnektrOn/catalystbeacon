@@ -17,11 +17,11 @@ import './RoadmapIgnition.css';
 const RoadmapIgnition = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { statLink } = useParams();
+  const { statLink } = useParams(); // URL param (keeping name for compatibility)
 
   const [lessons, setLessons] = useState([]);
   const [groupedLessons, setGroupedLessons] = useState({});
-  const [currentStatLink, setCurrentStatLink] = useState(statLink || null);
+  const [currentMasterSkill, setCurrentMasterSkill] = useState(statLink || null);
   const [progress, setProgress] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -89,20 +89,20 @@ const RoadmapIgnition = () => {
         setLoading(true);
         setError(null);
 
-        // Load lessons grouped by stat link
-        console.log('Fetching lessons by stat link...');
+        // Load lessons grouped by master skill (no duplicates)
+        console.log('Fetching lessons by master skill...');
         const grouped = await roadmapService.getRoadmapByStatLink(masterschool);
-        console.log('Grouped lessons:', Object.keys(grouped));
+        console.log('Grouped by master skills:', Object.keys(grouped));
         setGroupedLessons(grouped);
 
-        // Get first stat link if none selected
-        const statLinks = Object.keys(grouped);
-        const selectedStat = currentStatLink || statLinks[0] || 'general';
-        setCurrentStatLink(selectedStat);
+        // Get first master skill if none selected
+        const masterSkills = Object.keys(grouped);
+        const selectedSkill = currentMasterSkill || masterSkills[0] || 'General';
+        setCurrentMasterSkill(selectedSkill);
 
-        // Set lessons for current stat link
-        const currentLessons = grouped[selectedStat]?.lessons || [];
-        console.log(`📚 Setting ${currentLessons.length} lessons for stat link: ${selectedStat}`);
+        // Set lessons for current master skill
+        const currentLessons = grouped[selectedSkill]?.lessons || [];
+        console.log(`📚 Setting ${currentLessons.length} lessons for master skill: ${selectedSkill}`);
         setLessons(currentLessons);
 
         // Load user progress
@@ -127,12 +127,12 @@ const RoadmapIgnition = () => {
     };
 
     loadRoadmap();
-  }, [user, masterschool, currentStatLink]);
+  }, [user, masterschool, currentMasterSkill]);
 
-  // Handle stat link change
-  const handleStatLinkChange = (statLink) => {
-    setCurrentStatLink(statLink);
-    navigate(`/roadmap/ignition/${statLink}`);
+  // Handle master skill change
+  const handleMasterSkillChange = (masterSkill) => {
+    setCurrentMasterSkill(masterSkill);
+    navigate(`/roadmap/ignition/${masterSkill}`);
   };
 
   // Handle notification dismiss
@@ -168,8 +168,8 @@ const RoadmapIgnition = () => {
   };
 
   // Compute derived values
-  const statLinks = Object.keys(groupedLessons);
-  const currentGroup = groupedLessons[currentStatLink] || {};
+  const masterSkills = Object.keys(groupedLessons);
+  const currentGroup = groupedLessons[currentMasterSkill] || {};
   const totalLessons = currentGroup.total || 0;
   const completedCount = lessons.filter(l => {
     const key = `${l.course_id}-${l.chapter_number}-${l.lesson_number}`;
@@ -213,8 +213,8 @@ const RoadmapIgnition = () => {
           <div>Total Lessons: {lessons.length}</div>
           <div>Unlocked: {unlockedLessons.size}</div>
           <div>Completed: {completedSet.size}</div>
-          <div>Stat Links: {Object.keys(groupedLessons).join(', ')}</div>
-          <div>Current Stat: {currentStatLink}</div>
+          <div>          Master Skills: {Object.keys(groupedLessons).join(', ')}</div>
+          <div>Current Skill: {currentMasterSkill}</div>
         </div>
       )}
 
@@ -251,18 +251,18 @@ const RoadmapIgnition = () => {
         </div>
       )}
 
-      {/* Stat Link Tabs */}
-      {statLinks.length > 1 && (
+      {/* Master Skill Tabs */}
+      {masterSkills.length > 1 && (
         <div className="roadmap-ignition__tabs">
-          {statLinks.map(statLink => (
+          {masterSkills.map(masterSkill => (
             <button
-              key={statLink}
-              className={`roadmap-ignition__tab ${currentStatLink === statLink ? 'roadmap-ignition__tab--active' : ''}`}
-              onClick={() => handleStatLinkChange(statLink)}
+              key={masterSkill}
+              className={`roadmap-ignition__tab ${currentMasterSkill === masterSkill ? 'roadmap-ignition__tab--active' : ''}`}
+              onClick={() => handleMasterSkillChange(masterSkill)}
             >
-              {statLink}
+              {masterSkill}
               <span className="roadmap-ignition__tab-count">
-                {groupedLessons[statLink]?.total || 0}
+                {groupedLessons[masterSkill]?.total || 0}
               </span>
             </button>
           ))}

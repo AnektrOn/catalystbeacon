@@ -11,7 +11,7 @@ class RoadmapService {
    * @param {string|null} statLink - Optional: filter by specific stat link
    * @returns {Promise<Array>} Sorted array of lessons
    */
-  async getRoadmapLessons(masterschool, statLink = null) {
+  async getRoadmapLessons(masterschool) {
     try {
       // Query course_content and course_metadata directly (more reliable)
       console.log('Fetching roadmap lessons for:', masterschool);
@@ -33,9 +33,8 @@ class RoadmapService {
         return [];
       }
 
-      console.log(`✅ Found ${courses.length} courses for ${masterschool}:`, courses.map(c => c.course_title));
+      console.log(`✅ Found ${courses.length} courses for ${masterschool}`);
       const courseIds = courses.map(c => c.course_id);
-      console.log('Course IDs:', courseIds);
 
       // Get all lessons for these courses
       const { data: lessons, error: lessonsError } = await supabase
@@ -69,27 +68,21 @@ class RoadmapService {
           masterschool: course?.masterschool || masterschool,
           difficulty_numeric: difficultyNumeric,
           stats_linked: course?.stats_linked || [],
+          master_skill_linked: course?.master_skill_linked || 'General',
           lesson_xp_reward: difficultyNumeric * 10
         };
       });
 
-      // Filter by stat link if provided
-      let filtered = merged;
-      if (statLink) {
-        filtered = merged.filter(lesson => 
-          lesson.stats_linked && lesson.stats_linked.includes(statLink)
-        );
-      }
-
-      // Sort
-      const sorted = this._sortLessons(filtered, statLink);
-      console.log(`✅ Returning ${sorted.length} sorted lessons for roadmap`);
+      // Sort by difficulty, master skill, then course/chapter/lesson
+      const sorted = this._sortLessons(merged);
+      console.log(`✅ Returning ${sorted.length} sorted lessons (${new Set(sorted.map(l => l.master_skill_linked)).size} master skills)`);
       
       if (sorted.length > 0) {
         console.log('First 3 lessons:', sorted.slice(0, 3).map(l => ({
           title: l.lesson_title,
           course: l.course_title,
-          difficulty: l.difficulty_numeric
+          difficulty: l.difficulty_numeric,
+          masterSkill: l.master_skill_linked
         })));
       }
       
@@ -102,47 +95,43 @@ class RoadmapService {
 
 
   /**
-   * Get lessons grouped by stat link for pagination
+   * Get lessons grouped by master skill for pagination (no duplicates)
    * @param {string} masterschool - 'Ignition', 'Insight', or 'Transformation'
-   * @returns {Promise<Object>} Object with stat links as keys and lesson arrays as values
+   * @returns {Promise<Object>} Object with master skills as keys and lesson arrays as values
    */
   async getRoadmapByStatLink(masterschool) {
     try {
       const lessons = await this.getRoadmapLessons(masterschool);
       
-      // Group lessons by stat link
+      // Group lessons by master_skill_linked (singular, no duplicates)
       const grouped = {};
       
       lessons.forEach(lesson => {
-        const statsLinked = lesson.stats_linked || [];
+        const masterSkill = lesson.master_skill_linked || 'General';
         
-        // If lesson has no stats, put in 'general' category
-        if (statsLinked.length === 0) {
-          if (!grouped['general']) grouped['general'] = [];
-          grouped['general'].push(lesson);
-        } else {
-          // Add lesson to each stat link it belongs to
-          statsLinked.forEach(stat => {
-            if (!grouped[stat]) grouped[stat] = [];
-            grouped[stat].push(lesson);
-          });
+        if (!grouped[masterSkill]) {
+          grouped[masterSkill] = [];
         }
+        
+        grouped[masterSkill].push(lesson);
       });
 
-      // Limit each stat link group to 10 lessons per page
+      // Limit each master skill group to 10 lessons per page
       const paginated = {};
-      Object.keys(grouped).forEach(statLink => {
-        const lessons = grouped[statLink];
-        paginated[statLink] = {
-          total: lessons.length,
-          pages: Math.ceil(lessons.length / 10),
-          lessons: lessons
+      Object.keys(grouped).forEach(masterSkill => {
+        const skillLessons = grouped[masterSkill];
+        paginated[masterSkill] = {
+          total: skillLessons.length,
+          pages: Math.ceil(skillLessons.length / 10),
+          lessons: skillLessons
         };
       });
 
+      console.log('📊 Grouped by master skill:', Object.keys(paginated));
+
       return paginated;
     } catch (error) {
-      console.error('Error grouping roadmap by stat link:', error);
+      console.error('Error grouping roadmap by master skill:', error);
       throw error;
     }
   }
@@ -539,22 +528,21 @@ class RoadmapService {
   // ===== PRIVATE HELPER METHODS =====
 
   /**
-   * Sort lessons by difficulty, stat link, and course/chapter/lesson order
+   * Sort lessons by difficulty, master skill, and course/chapter/lesson order
    * @private
    */
-  _sortLessons(lessons, statLink = null) {
+  _sortLessons(lessons, masterSkill = null) {
     return lessons.sort((a, b) => {
       // First, sort by difficulty
       if (a.difficulty_numeric !== b.difficulty_numeric) {
         return a.difficulty_numeric - b.difficulty_numeric;
       }
 
-      // If filtering by stat link, prioritize lessons with that stat
-      if (statLink) {
-        const aHasStat = (a.stats_linked || []).includes(statLink);
-        const bHasStat = (b.stats_linked || []).includes(statLink);
-        if (aHasStat && !bHasStat) return -1;
-        if (!aHasStat && bHasStat) return 1;
+      // Then by master_skill_linked (alphabetically)
+      const aSkill = a.master_skill_linked || 'ZZZ'; // Put undefined at end
+      const bSkill = b.master_skill_linked || 'ZZZ';
+      if (aSkill !== bSkill) {
+        return aSkill.localeCompare(bSkill);
       }
 
       // Then by course_id

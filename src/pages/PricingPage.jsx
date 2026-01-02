@@ -51,21 +51,21 @@ const PricingPage = () => {
       priceId: PRICE_IDS?.STUDENT_MONTHLY
     },
     {
-      name: 'Teacher',
-      price: '€150',
-      period: 'month',
-      description: 'Create and manage content',
+      name: 'Student',
+      price: '€550',
+      period: 'year',
+      description: 'Best value - Save 17% with annual billing',
       features: [
-        'Everything in Student',
-        'Content creation tools',
-        'Analytics dashboard',
-        'Student management',
-        'Revenue sharing',
-        'Priority support'
+        'All courses and lessons',
+        'Advanced progress tracking',
+        'Priority support',
+        'Community features',
+        'Mobile app access',
+        'Save €110 per year'
       ],
       buttonText: 'Subscribe',
-      buttonStyle: 'bg-purple-600 hover:bg-purple-700',
-      priceId: PRICE_IDS?.TEACHER_MONTHLY
+      buttonStyle: 'bg-green-600 hover:bg-green-700',
+      priceId: PRICE_IDS?.STUDENT_YEARLY
     }
   ]
 
@@ -84,27 +84,63 @@ const PricingPage = () => {
     setLoading(true)
 
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001'
       const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL
+      const API_URL = process.env.REACT_APP_API_URL
       
-      // Determine plan type from price ID
-      const planType = priceId.includes('TEACHER') || priceId.includes('teacher') ? 'teacher' : 'student'
+      // Determine plan type from price ID (always student now)
+      const planType = 'student'
       
-      // Try Supabase Edge Function first if available
-      if (SUPABASE_URL) {
-        try {
-          // Get the user's session token for Supabase Edge Function
-          const { data: { session } } = await supabase.auth.getSession()
-          
-          if (session) {
+      // Use API server if configured (preferred for production)
+      if (API_URL && !API_URL.includes('localhost')) {
+        console.log('Using API server:', `${API_URL}/api/create-checkout-session`)
+        const response = await fetch(`${API_URL}/api/create-checkout-session`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            priceId: priceId,
+            userId: user.id,
+            userEmail: user.email
+          }),
+        })
+
+        // Check if response is OK before parsing
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}: ${response.statusText}` }))
+          throw new Error(errorData.error || `Server error: ${response.status}`)
+        }
+
+        const session = await response.json()
+
+        if (session.error) {
+          throw new Error(session.error)
+        }
+
+        if (!session.url) {
+          throw new Error('No checkout URL received from server')
+        }
+
+        // Redirect to Stripe Checkout using the session URL
+        window.location.href = session.url
+      } else {
+        // Try Supabase Edge Function as fallback (if deployed)
+        if (SUPABASE_URL) {
+          try {
+            const { data: { session: authSession }, error: sessionError } = await supabase.auth.getSession()
+            
+            if (sessionError || !authSession) {
+              throw new Error('You must be logged in to subscribe')
+            }
+            
             const supabaseEndpoint = `${SUPABASE_URL}/functions/v1/create-checkout-session`
-            console.log('Attempting to use Supabase Edge Function:', supabaseEndpoint)
+            console.log('Trying Supabase Edge Function:', supabaseEndpoint)
             
             const response = await fetch(supabaseEndpoint, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${session.access_token}`,
+                'Authorization': `Bearer ${authSession.access_token}`,
               },
               body: JSON.stringify({
                 priceId: priceId,
@@ -112,59 +148,28 @@ const PricingPage = () => {
               }),
             })
             
-            if (response.ok) {
-              const sessionData = await response.json()
-              if (sessionData.error) {
-                throw new Error(sessionData.error)
-              }
-              if (!sessionData.url) {
-                throw new Error('No checkout URL received from server')
-              }
-              window.location.href = sessionData.url
-              return
-            } else {
-              const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}` }))
-              throw new Error(errorData.error || `Supabase function error: ${response.status}`)
+            if (!response.ok) {
+              throw new Error(`Edge Function not deployed (${response.status}). Please set REACT_APP_API_URL or deploy the Edge Function.`)
             }
+            
+            const sessionData = await response.json()
+            if (sessionData.error) {
+              throw new Error(sessionData.error)
+            }
+            if (!sessionData.url) {
+              throw new Error('No checkout URL received')
+            }
+            
+            window.location.href = sessionData.url
+            return
+          } catch (edgeFunctionError) {
+            console.error('Edge Function error:', edgeFunctionError)
+            throw new Error('Payment service unavailable. Please set REACT_APP_API_URL to your backend server URL or deploy the Supabase Edge Function.')
           }
-        } catch (supabaseError) {
-          console.warn('Supabase Edge Function failed, trying local server:', supabaseError)
-          // Fall through to try local server
+        } else {
+          throw new Error('No payment endpoint configured. Please set REACT_APP_API_URL or REACT_APP_SUPABASE_URL in your environment variables.')
         }
       }
-      
-      // Fall back to local server
-      console.log('Attempting to use local server:', `${API_URL}/api/create-checkout-session`)
-      const response = await fetch(`${API_URL}/api/create-checkout-session`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          priceId: priceId,
-          userId: user.id,
-          userEmail: user.email
-        }),
-      })
-
-      // Check if response is OK before parsing
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}: ${response.statusText}` }))
-        throw new Error(errorData.error || `Server error: ${response.status}`)
-      }
-
-      const session = await response.json()
-
-      if (session.error) {
-        throw new Error(session.error)
-      }
-
-      if (!session.url) {
-        throw new Error('No checkout URL received from server')
-      }
-
-      // Redirect to Stripe Checkout using the session URL
-      window.location.href = session.url
     } catch (error) {
       console.error('Error creating checkout session:', error)
       
@@ -172,7 +177,7 @@ const PricingPage = () => {
       let errorMessage = 'Something went wrong. Please try again.'
       
       if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
-        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000'
+        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001'
         errorMessage = `Cannot connect to server at ${API_URL}. Please make sure the server is running.`
       } else if (error.message) {
         errorMessage = error.message
@@ -224,6 +229,19 @@ const PricingPage = () => {
         hasActiveSubscription: hasActiveSubscription
       })
     }
+    
+    // Debug environment variables (without exposing secrets)
+    console.log('🔧 Pricing Page - Environment Config:', {
+      hasSupabaseUrl: !!process.env.REACT_APP_SUPABASE_URL,
+      supabaseUrl: process.env.REACT_APP_SUPABASE_URL ? 'Set' : 'Missing',
+      hasApiUrl: !!process.env.REACT_APP_API_URL,
+      apiUrl: process.env.REACT_APP_API_URL || 'Not set (will use Supabase)',
+      hasStripeKey: !!process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY,
+      hasPriceIds: {
+        student: !!process.env.REACT_APP_STRIPE_STUDENT_MONTHLY_PRICE_ID,
+        teacher: !!process.env.REACT_APP_STRIPE_TEACHER_MONTHLY_PRICE_ID
+      }
+    })
   }, [user, profile, currentPlan, hasActiveSubscription])
 
   return (
@@ -238,7 +256,7 @@ const PricingPage = () => {
           </p>
         </div>
 
-        <div className="mt-12 space-y-4 sm:mt-16 sm:space-y-0 sm:grid sm:grid-cols-3 sm:gap-6 lg:gap-8">
+        <div className="mt-12 space-y-4 sm:mt-16 sm:space-y-0 sm:grid sm:grid-cols-3 sm:gap-6 lg:gap-8 max-w-5xl mx-auto">
           {plans.map((plan) => (
             <div
               key={plan.name}
