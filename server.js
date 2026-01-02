@@ -1,6 +1,13 @@
-// Load environment variables from server.env file
+// Load environment variables from server.env file FIRST
 const path = require('path')
 require('dotenv').config({ path: path.join(__dirname, 'server.env') })
+
+// Verify Stripe key is loaded (for debugging)
+if (!process.env.STRIPE_SECRET_KEY) {
+  console.error('ERROR: STRIPE_SECRET_KEY is not set in server.env!')
+  console.error('Loaded env vars:', Object.keys(process.env).filter(k => k.includes('STRIPE')))
+  process.exit(1)
+}
 
 const express = require('express')
 const cors = require('cors')
