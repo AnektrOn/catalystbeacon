@@ -98,7 +98,61 @@ const PricingPage = () => {
       // Determine plan type from price ID (always student now)
       const planType = 'student'
       
-      // Use API server if configured (preferred for production)
+      // Prioritize Supabase Edge Function (if available)
+      if (SUPABASE_URL) {
+        try {
+          const { data: { session: authSession }, error: sessionError } = await supabase.auth.getSession()
+          
+          if (sessionError || !authSession) {
+            throw new Error('You must be logged in to subscribe')
+          }
+          
+          const supabaseEndpoint = `${SUPABASE_URL}/functions/v1/create-checkout-session`
+          console.log('Using Supabase Edge Function:', supabaseEndpoint)
+          console.log('Request payload:', { priceId, planType })
+          
+          const response = await fetch(supabaseEndpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${authSession.access_token}`,
+            },
+            body: JSON.stringify({
+              priceId: priceId,
+              planType: planType
+            }),
+          })
+          
+          console.log('Response status:', response.status, response.statusText)
+          
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ 
+              error: `HTTP ${response.status}: ${response.statusText}` 
+            }))
+            console.error('Supabase function error:', errorData)
+            throw new Error(errorData.error || `Server error: ${response.status}`)
+          }
+          
+          const sessionData = await response.json()
+          console.log('Checkout session created:', sessionData)
+          
+          if (sessionData.error) {
+            throw new Error(sessionData.error)
+          }
+          if (!sessionData.url) {
+            throw new Error('No checkout URL received from server')
+          }
+          
+          // Redirect to Stripe Checkout
+          window.location.href = sessionData.url
+          return
+        } catch (supabaseError) {
+          console.error('Supabase Edge Function error:', supabaseError)
+          // Fall through to try API server if available
+        }
+      }
+      
+      // Fall back to API server if Supabase failed or not available
       if (API_URL && !API_URL.includes('localhost')) {
         console.log('Using API server:', `${API_URL}/api/create-checkout-session`)
         const response = await fetch(`${API_URL}/api/create-checkout-session`, {
@@ -132,51 +186,8 @@ const PricingPage = () => {
         // Redirect to Stripe Checkout using the session URL
         window.location.href = session.url
       } else {
-        // Try Supabase Edge Function as fallback (if deployed)
-        if (SUPABASE_URL) {
-          try {
-            const { data: { session: authSession }, error: sessionError } = await supabase.auth.getSession()
-            
-            if (sessionError || !authSession) {
-              throw new Error('You must be logged in to subscribe')
-            }
-            
-            const supabaseEndpoint = `${SUPABASE_URL}/functions/v1/create-checkout-session`
-            console.log('Trying Supabase Edge Function:', supabaseEndpoint)
-            
-            const response = await fetch(supabaseEndpoint, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authSession.access_token}`,
-              },
-              body: JSON.stringify({
-                priceId: priceId,
-                planType: planType
-              }),
-            })
-            
-            if (!response.ok) {
-              throw new Error(`Edge Function not deployed (${response.status}). Please set REACT_APP_API_URL or deploy the Edge Function.`)
-            }
-            
-            const sessionData = await response.json()
-            if (sessionData.error) {
-              throw new Error(sessionData.error)
-            }
-            if (!sessionData.url) {
-              throw new Error('No checkout URL received')
-            }
-            
-            window.location.href = sessionData.url
-            return
-          } catch (edgeFunctionError) {
-            console.error('Edge Function error:', edgeFunctionError)
-            throw new Error('Payment service unavailable. Please set REACT_APP_API_URL to your backend server URL or deploy the Supabase Edge Function.')
-          }
-        } else {
-          throw new Error('No payment endpoint configured. Please set REACT_APP_API_URL or REACT_APP_SUPABASE_URL in your environment variables.')
-        }
+        // No payment endpoint available
+        throw new Error('No payment endpoint configured. Please set REACT_APP_SUPABASE_URL in your environment variables.')
       }
     } catch (error) {
       console.error('Error creating checkout session:', error)
