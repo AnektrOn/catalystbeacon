@@ -48,7 +48,8 @@ const PricingPage = () => {
       ],
       buttonText: 'Subscribe',
       buttonStyle: 'bg-blue-600 hover:bg-blue-700',
-      priceId: PRICE_IDS?.STUDENT_MONTHLY
+      priceId: PRICE_IDS?.STUDENT_MONTHLY,
+      paymentLink: process.env.REACT_APP_STRIPE_PAYMENT_LINK_MONTHLY || null
     },
     {
       name: 'Student',
@@ -65,13 +66,20 @@ const PricingPage = () => {
       ],
       buttonText: 'Subscribe',
       buttonStyle: 'bg-green-600 hover:bg-green-700',
-      priceId: PRICE_IDS?.STUDENT_YEARLY
+      priceId: PRICE_IDS?.STUDENT_YEARLY,
+      paymentLink: process.env.REACT_APP_STRIPE_PAYMENT_LINK_YEARLY || null
     }
   ]
 
-  const handleSubscribe = async (priceId) => {
+  const handleSubscribe = async (priceId, paymentLink) => {
     if (!user) {
       navigate('/login')
+      return
+    }
+
+    // If there's a payment link, use it directly (simplest method)
+    if (paymentLink) {
+      window.location.href = paymentLink
       return
     }
 
@@ -309,7 +317,7 @@ const PricingPage = () => {
               </div>
 
               <button
-                onClick={() => handleSubscribe(plan.priceId)}
+                onClick={() => handleSubscribe(plan.priceId, plan.paymentLink)}
                 disabled={plan.disabled || loading || (plan.name === currentPlan && hasActiveSubscription)}
                 className={`mt-8 block w-full py-3 px-6 border border-transparent rounded-md text-center text-sm font-medium text-white ${plan.buttonStyle} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed`}
               >
