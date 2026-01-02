@@ -2,10 +2,14 @@
 const path = require('path')
 require('dotenv').config({ path: path.join(__dirname, 'server.env') })
 
-// Verify Stripe key is loaded (for debugging)
+// Debug: Check what Stripe vars are loaded
+console.log('STRIPE_SECRET_KEY loaded:', process.env.STRIPE_SECRET_KEY ? 'YES (' + process.env.STRIPE_SECRET_KEY.substring(0, 10) + '...)' : 'NO')
+console.log('All STRIPE vars:', Object.keys(process.env).filter(k => k.includes('STRIPE')))
+
+// Verify Stripe key is loaded
 if (!process.env.STRIPE_SECRET_KEY) {
   console.error('ERROR: STRIPE_SECRET_KEY is not set in server.env!')
-  console.error('Loaded env vars:', Object.keys(process.env).filter(k => k.includes('STRIPE')))
+  console.error('Please check server.env file')
   process.exit(1)
 }
 
