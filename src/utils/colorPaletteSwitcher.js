@@ -50,6 +50,15 @@ export function switchTo(paletteKey, save = true) {
     root.style.setProperty(variable, value);
   });
   
+  // #region agent log
+  const computedBgPrimary = getComputedStyle(root).getPropertyValue('--bg-primary').trim();
+  const computedBgSecondary = getComputedStyle(root).getPropertyValue('--bg-secondary').trim();
+  const computedTextPrimary = getComputedStyle(root).getPropertyValue('--text-primary').trim();
+  const computedColorPrimary = getComputedStyle(root).getPropertyValue('--color-primary').trim();
+  const hasDarkClass = root.classList.contains('dark');
+  fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'colorPaletteSwitcher.js:49',message:'Palette switch - CSS variables applied',data:{paletteKey,computedBgPrimary,computedBgSecondary,computedTextPrimary,computedColorPrimary,hasDarkClass},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,D'})}).catch(()=>{});
+  // #endregion
+  
   currentPaletteKey = paletteKey;
   
   // Save to localStorage

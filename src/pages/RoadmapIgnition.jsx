@@ -90,9 +90,18 @@ const RoadmapIgnition = () => {
         setError(null);
 
         // Load lessons grouped by master skill (no duplicates)
-        console.log('Fetching lessons by master skill...');
+        console.log('🔍 Fetching lessons by master skill...');
         const grouped = await roadmapService.getRoadmapByStatLink(masterschool);
-        console.log('Grouped by master skills:', Object.keys(grouped));
+        console.log('📊 Grouped by master skills:', grouped);
+        console.log('📊 Master skill keys:', Object.keys(grouped));
+        
+        if (Object.keys(grouped).length === 0) {
+          console.error('❌ No grouped lessons found!');
+          setError('No lessons found. Make sure courses are assigned to Ignition masterschool.');
+          setLoading(false);
+          return;
+        }
+        
         setGroupedLessons(grouped);
 
         // Get first master skill if none selected

@@ -18,13 +18,14 @@
     inset 0 1px 0 color-mix(in srgb, var(--color-primary, #B4833D) 10%, rgba(255, 255, 255, 0.2));
 }
 
-/* Dark mode glass effect */
+/* Dark mode glass effect - Darkens the current palette */
 .dark .glass-effect {
-  background: color-mix(in srgb, var(--bg-secondary, rgba(0, 0, 0, 0.8)) 25%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-primary, #B4833D) 15%, rgba(255, 255, 255, 0.1));
+  background: color-mix(in srgb, var(--bg-primary) 40%, rgba(0, 0, 0, 0.6));
+  border: 1px solid color-mix(in srgb, var(--color-primary) 30%, rgba(255, 255, 255, 0.2));
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.6),
-    inset 0 1px 0 color-mix(in srgb, var(--color-primary, #B4833D) 5%, rgba(255, 255, 255, 0.05));
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 color-mix(in srgb, var(--color-primary) 15%, rgba(255, 255, 255, 0.15));
+  color: var(--text-primary, #F9FAFB);
 }
 
 /* Header - Premium Slim Glass Strip */
@@ -338,10 +339,23 @@
   color: var(--text-primary, #333);
   @apply overflow-auto;
   margin: 16px;
-  border: none !important;
-  background: color-mix(in srgb, var(--bg-primary) 50%, transparent) !important;
-  box-shadow: none;
-  /* Let the background shine through */
+  backdrop-filter: blur(3px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background: color-mix(in srgb, var(--bg-primary) 60%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 20%, rgba(255, 255, 255, 0.2)) !important;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 color-mix(in srgb, var(--color-primary) 10%, rgba(255, 255, 255, 0.2));
+}
+
+/* Dark mode main panel */
+.dark .glass-main-panel {
+  background: color-mix(in srgb, var(--bg-primary) 50%, rgba(0, 0, 0, 0.5)) !important;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 30%, rgba(255, 255, 255, 0.2)) !important;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 color-mix(in srgb, var(--color-primary) 15%, rgba(255, 255, 255, 0.15));
+  color: var(--text-primary, #F9FAFB);
 }
 
 /* Custom scrollbar for glass panels */
@@ -400,26 +414,26 @@
 
   /* Make glassmorphism more subtle on mobile for better readability */
   .glass-effect {
-    background: rgba(255, 255, 255, 0.25);
+    background: color-mix(in srgb, var(--bg-primary) 25%, transparent);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
   }
 
   .dark .glass-effect {
-    background: rgba(0, 0, 0, 0.35);
+    background: color-mix(in srgb, var(--bg-secondary) 35%, transparent);
   }
 }
 
 /* Fallback when backdrop-filter is not supported */
 @supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
   .glass-effect {
-    background: rgba(255, 255, 255, 0.85);
+    background: color-mix(in srgb, var(--bg-primary) 85%, transparent);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
 
   .dark .glass-effect {
-    background: rgba(0, 0, 0, 0.8);
+    background: color-mix(in srgb, var(--bg-secondary) 80%, transparent);
   }
 }
 
@@ -653,16 +667,16 @@
   @apply glass-effect;
   @apply rounded-xl;
   @apply border border-white/20;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--color-primary) 20%, rgba(0, 0, 0, 0.1));
+  background: color-mix(in srgb, var(--bg-primary) 10%, transparent);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
 }
 
 .dark .glass-card-premium {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  background: color-mix(in srgb, var(--bg-secondary) 30%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 15%, rgba(255, 255, 255, 0.15));
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--color-primary) 20%, rgba(0, 0, 0, 0.5));
 }
 
 /* Premium Icon Button */

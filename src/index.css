@@ -148,11 +148,17 @@
   }
 
   body {
-    background-color: var(--bg-primary);
+    background-color: transparent;
     color: var(--text-primary);
     font-family: var(--font-family-primary);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Dark mode - Ensure text is readable (light colors) */
+  .dark {
+    --text-primary: #F9FAFB;
+    --text-secondary: #D1D5DB;
   }
 
   h1,

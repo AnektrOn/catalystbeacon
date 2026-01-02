@@ -295,9 +295,11 @@ const ProfilePage = () => {
       setBackgroundPreview(previewUrl)
 
       // Upload to Supabase Storage
+      // Path must start with user ID for RLS policy: {userId}/background-{timestamp}.{ext}
       const fileExt = file.name.split('.').pop()
       const fileName = `${user.id}/background-${Date.now()}.${fileExt}`
-      const filePath = `backgrounds/${fileName}`
+      // Don't include 'backgrounds/' prefix - we're already uploading to the 'backgrounds' bucket
+      const filePath = fileName
 
       // Try backgrounds bucket first, fallback to avatars bucket
       let uploadError = null
@@ -311,10 +313,11 @@ const ProfilePage = () => {
         })
 
       if (uploadErr) {
-        // Fallback to avatars bucket
+        console.warn('Backgrounds bucket upload failed, trying avatars bucket:', uploadErr);
+        // Fallback to avatars bucket - use same path structure
         const { data: avatarUploadData, error: avatarUploadErr } = await supabase.storage
           .from('avatars')
-          .upload(`backgrounds/${fileName}`, file, {
+          .upload(filePath, file, {
             cacheControl: '3600',
             upsert: true
           })
@@ -324,7 +327,7 @@ const ProfilePage = () => {
         } else {
           const { data: urlData } = supabase.storage
             .from('avatars')
-            .getPublicUrl(`backgrounds/${fileName}`)
+            .getPublicUrl(filePath)
           publicUrl = urlData.publicUrl
         }
       } else {

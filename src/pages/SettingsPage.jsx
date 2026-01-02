@@ -15,6 +15,9 @@ const AppearanceSection = ({ profile, updateProfile }) => {
     const [backgroundImageUrl, setBackgroundImageUrl] = useState('');
     const [isUploading, setIsUploading] = useState(false);
     const [previewUrl, setPreviewUrl] = useState(null);
+    const [backgroundFit, setBackgroundFit] = useState('cover');
+    const [backgroundPosition, setBackgroundPosition] = useState('center');
+    const [backgroundZoom, setBackgroundZoom] = useState(100);
     const fileInputRef = React.useRef(null);
 
     useEffect(() => {
@@ -26,6 +29,10 @@ const AppearanceSection = ({ profile, updateProfile }) => {
                 setBackgroundImage('');
                 setPreviewUrl(null);
             }
+            // Load background settings
+            setBackgroundFit(profile.background_fit || 'cover');
+            setBackgroundPosition(profile.background_position || 'center');
+            setBackgroundZoom(profile.background_zoom || 100);
         }
     }, [profile]);
 
@@ -54,11 +61,11 @@ const AppearanceSection = ({ profile, updateProfile }) => {
         setIsUploading(true);
         try {
             // Upload to Supabase Storage
-            // Use 'avatars' bucket or create a 'backgrounds' bucket
-            // For now, we'll use the avatars bucket with a different path
+            // Path must start with user ID for RLS policy: {userId}/background-{timestamp}.{ext}
             const fileExt = file.name.split('.').pop();
             const fileName = `${profile.id}/background-${Date.now()}.${fileExt}`;
-            const filePath = `backgrounds/${fileName}`;
+            // Don't include 'backgrounds/' prefix - we're already uploading to the 'backgrounds' bucket
+            const filePath = fileName;
 
             // Try to upload to a 'backgrounds' bucket, fallback to 'avatars' if it doesn't exist
             let uploadError = null;
@@ -73,11 +80,12 @@ const AppearanceSection = ({ profile, updateProfile }) => {
                 });
 
             if (uploadErr) {
-                
+                console.warn('Backgrounds bucket upload failed, trying avatars bucket:', uploadErr);
                 // If backgrounds bucket doesn't exist, try avatars bucket
+                // For avatars bucket, use the same path structure
                 const { data: avatarUploadData, error: avatarUploadErr } = await supabase.storage
                     .from('avatars')
-                    .upload(`backgrounds/${fileName}`, file, {
+                    .upload(filePath, file, {
                         cacheControl: '3600',
                         upsert: false
                     });
@@ -88,7 +96,7 @@ const AppearanceSection = ({ profile, updateProfile }) => {
                     // Get public URL from avatars bucket
                     const { data: urlData } = supabase.storage
                         .from('avatars')
-                        .getPublicUrl(`backgrounds/${fileName}`);
+                        .getPublicUrl(filePath);
                     publicUrl = urlData.publicUrl;
                 }
             } else {
@@ -107,12 +115,17 @@ const AppearanceSection = ({ profile, updateProfile }) => {
                 throw new Error('Failed to get image URL');
             }
 
-            // Update profile with new background image URL
+            // Update profile with new background image URL (preserve existing settings)
             console.log('📸 SettingsPage: Updating profile with background image URL:', publicUrl);
-            const { error: updateError, data: updatedProfile } = await updateProfile({
+            const updateData = {
                 background_image: publicUrl,
                 updated_at: new Date().toISOString()
-            });
+            };
+            // Preserve existing background settings if they exist
+            if (profile.background_fit) updateData.background_fit = profile.background_fit;
+            if (profile.background_position) updateData.background_position = profile.background_position;
+            if (profile.background_zoom) updateData.background_zoom = profile.background_zoom;
+            const { error: updateError, data: updatedProfile } = await updateProfile(updateData);
 
             if (updateError) throw updateError;
 
@@ -160,10 +173,15 @@ const AppearanceSection = ({ profile, updateProfile }) => {
         try {
             const urlToSave = backgroundImageUrl.trim();
             console.log('📸 SettingsPage: Updating profile with background image URL:', urlToSave);
-            const { error, data: updatedProfile } = await updateProfile({
+            const updateData = {
                 background_image: urlToSave,
                 updated_at: new Date().toISOString()
-            });
+            };
+            // Preserve existing background settings if they exist
+            if (profile.background_fit) updateData.background_fit = profile.background_fit;
+            if (profile.background_position) updateData.background_position = profile.background_position;
+            if (profile.background_zoom) updateData.background_zoom = profile.background_zoom;
+            const { error, data: updatedProfile } = await updateProfile(updateData);
 
             if (error) throw error;
 
@@ -263,13 +281,26 @@ const AppearanceSection = ({ profile, updateProfile }) => {
                     {previewUrl && (
                         <div className="mb-4">
                             <div className="relative w-full h-48 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
-                                <img
-                                    src={previewUrl}
-                                    alt="Background preview"
-                                    className="w-full h-full object-cover"
-                                    onError={() => {
-                                        setPreviewUrl(null);
-                                        toast.error('Failed to load image. Please check the URL.');
+                                <div
+                                    style={{
+                                        backgroundImage: `url("${previewUrl}")`,
+                                        backgroundSize: (() => {
+                                            const fit = backgroundFit || 'cover';
+                                            const zoom = backgroundZoom || 100;
+                                            
+                                            if (fit === 'cover' || fit === 'contain') {
+                                                return `${zoom}%`;
+                                            } else if (fit === 'auto') {
+                                                return 'auto';
+                                            } else if (fit === '100% 100%') {
+                                                return '100% 100%';
+                                            }
+                                            return 'cover';
+                                        })(),
+                                        backgroundPosition: backgroundPosition || 'center',
+                                        backgroundRepeat: 'no-repeat',
+                                        width: '100%',
+                                        height: '100%'
                                     }}
                                 />
                                 <button
@@ -344,6 +375,92 @@ const AppearanceSection = ({ profile, updateProfile }) => {
                                 </Button>
                             </div>
                         </div>
+
+                        {/* Background Settings */}
+                        {previewUrl && (
+                            <div className="space-y-4 pt-4 border-t">
+                                <div>
+                                    <Label htmlFor="background-fit">Background Fit</Label>
+                                    <select
+                                        id="background-fit"
+                                        value={backgroundFit}
+                                        onChange={(e) => {
+                                            const newFit = e.target.value;
+                                            setBackgroundFit(newFit);
+                                            updateProfile({
+                                                background_fit: newFit,
+                                                updated_at: new Date().toISOString()
+                                            });
+                                        }}
+                                        className="mt-2 w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-background text-foreground"
+                                    >
+                                        <option value="cover">Cover (Fill)</option>
+                                        <option value="contain">Contain (Fit)</option>
+                                        <option value="auto">Auto</option>
+                                        <option value="100% 100%">Stretch</option>
+                                    </select>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        How the image should fit the screen
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <Label htmlFor="background-position">Background Position</Label>
+                                    <select
+                                        id="background-position"
+                                        value={backgroundPosition}
+                                        onChange={(e) => {
+                                            const newPosition = e.target.value;
+                                            setBackgroundPosition(newPosition);
+                                            updateProfile({
+                                                background_position: newPosition,
+                                                updated_at: new Date().toISOString()
+                                            });
+                                        }}
+                                        className="mt-2 w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-background text-foreground"
+                                    >
+                                        <option value="center">Center</option>
+                                        <option value="top">Top</option>
+                                        <option value="bottom">Bottom</option>
+                                        <option value="left">Left</option>
+                                        <option value="right">Right</option>
+                                        <option value="top left">Top Left</option>
+                                        <option value="top right">Top Right</option>
+                                        <option value="bottom left">Bottom Left</option>
+                                        <option value="bottom right">Bottom Right</option>
+                                    </select>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        Where to position the image
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <Label htmlFor="background-zoom">
+                                        Background Zoom: {backgroundZoom}%
+                                    </Label>
+                                    <input
+                                        id="background-zoom"
+                                        type="range"
+                                        min="50"
+                                        max="200"
+                                        step="5"
+                                        value={backgroundZoom}
+                                        onChange={(e) => {
+                                            const newZoom = parseInt(e.target.value);
+                                            setBackgroundZoom(newZoom);
+                                            updateProfile({
+                                                background_zoom: newZoom,
+                                                updated_at: new Date().toISOString()
+                                            });
+                                        }}
+                                        className="mt-2 w-full"
+                                    />
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        Adjust the zoom level (50% - 200%)
+                                    </p>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

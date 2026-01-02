@@ -9,6 +9,7 @@ import ColorPaletteDropdown from './common/ColorPaletteDropdown';
 import AppShellMobile from './AppShellMobile';
 import useSubscription from '../hooks/useSubscription';
 import UpgradeModal from './UpgradeModal';
+import { getCurrentPalette, switchTo } from '../utils/colorPaletteSwitcher';
 import {
   Grid3X3,
   User,
@@ -84,7 +85,31 @@ const SidebarNavItem = ({ item, isActive, isSidebarExpanded, onClick }) => {
 };
 
 const AppShell = () => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  // Initialize dark mode from localStorage or system preference
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('darkMode');
+      if (saved !== null) {
+        return saved === 'true';
+      }
+      // Check system preference
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
+  
+  // Apply dark class to document.documentElement on mount and when isDarkMode changes
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isDarkMode) {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    // Save to localStorage
+    localStorage.setItem('darkMode', isDarkMode.toString());
+  }, [isDarkMode]);
+  
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
@@ -202,15 +227,33 @@ const AppShell = () => {
   // Debug: Log background image state
   useEffect(() => {
     if (profile && !isMobile) {
+      const root = document.documentElement;
+      const bgElement = document.querySelector('[class*="fixed inset-0"][style*="backgroundImage"]');
+      const computedBg = bgElement ? getComputedStyle(bgElement).backgroundImage : 'not found';
+      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AppShell.jsx:228',message:'Background image debug',data:{hasProfile:!!profile,hasBackgroundImage:!!profile?.background_image,backgroundImageUrl:profile?.background_image,profileId:profile?.id,computedBg,isMobile},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'background-image'})}).catch(()=>{});
       console.log('🖼️ AppShell Desktop: Background image state:', {
         hasProfile: !!profile,
         hasBackgroundImage: !!profile?.background_image,
         backgroundImageUrl: profile?.background_image,
         profileId: profile?.id,
+        computedBg,
         fullProfile: profile
       });
     }
   }, [profile, isMobile]);
+
+  // #region agent log
+  useEffect(() => {
+    const root = document.documentElement;
+    const computedBgPrimary = getComputedStyle(root).getPropertyValue('--bg-primary').trim();
+    const computedBgSecondary = getComputedStyle(root).getPropertyValue('--bg-secondary').trim();
+    const computedTextPrimary = getComputedStyle(root).getPropertyValue('--text-primary').trim();
+    const computedColorPrimary = getComputedStyle(root).getPropertyValue('--color-primary').trim();
+    const glassCard = document.querySelector('.glass-card-premium, .glass-effect');
+    const glassCardBg = glassCard ? getComputedStyle(glassCard).backgroundColor : 'not found';
+    fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AppShell.jsx:214',message:'Render - CSS variables and glass card',data:{isDarkMode,computedBgPrimary,computedBgSecondary,computedTextPrimary,computedColorPrimary,glassCardBg,hasDarkClass:root.classList.contains('dark')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B,C'})}).catch(()=>{});
+  }, [isDarkMode]);
+  // #endregion
 
   // Use AppShellMobile for smaller screens
   if (isMobile) {
@@ -224,7 +267,37 @@ const AppShell = () => {
   const notificationCount = 3;
 
   const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
+    // #region agent log
+    const newDarkMode = !isDarkMode;
+    const root = document.documentElement;
+    const computedBgPrimary = getComputedStyle(root).getPropertyValue('--bg-primary').trim();
+    const computedBgSecondary = getComputedStyle(root).getPropertyValue('--bg-secondary').trim();
+    const computedTextPrimary = getComputedStyle(root).getPropertyValue('--text-primary').trim();
+    const computedColorPrimary = getComputedStyle(root).getPropertyValue('--color-primary').trim();
+    const currentPalette = getCurrentPalette();
+    fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AppShell.jsx:267',message:'Dark mode toggle - BEFORE',data:{isDarkMode,newDarkMode,currentPalette,computedBgPrimary,computedBgSecondary,computedTextPrimary,computedColorPrimary,hasDarkClass:root.classList.contains('dark')},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix'})}).catch(()=>{});
+    // #endregion
+    
+    // Simply toggle dark class - let CSS handle the styling
+    // Don't automatically switch palettes - let user control palette independently
+    if (newDarkMode) {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    
+    setIsDarkMode(newDarkMode);
+    
+    // #region agent log
+    setTimeout(() => {
+      const afterBgPrimary = getComputedStyle(root).getPropertyValue('--bg-primary').trim();
+      const afterBgSecondary = getComputedStyle(root).getPropertyValue('--bg-secondary').trim();
+      const afterTextPrimary = getComputedStyle(root).getPropertyValue('--text-primary').trim();
+      const afterColorPrimary = getComputedStyle(root).getPropertyValue('--color-primary').trim();
+      const afterPalette = getCurrentPalette();
+      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AppShell.jsx:285',message:'Dark mode toggle - AFTER',data:{isDarkMode:newDarkMode,afterPalette,afterBgPrimary,afterBgSecondary,afterTextPrimary,afterColorPrimary,hasDarkClass:root.classList.contains('dark')},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix'})}).catch(()=>{});
+    }, 100);
+    // #endregion
   };
 
   const toggleSidebar = () => {
@@ -253,26 +326,69 @@ const AppShell = () => {
   };
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'dark' : ''}`}>
+    <div className="min-h-screen" style={{ position: 'relative' }}>
       {/* Background - User's custom background or earth-tone gradient */}
       {profile?.background_image ? (
         <div
           key={`bg-img-${profile.id}-${profile.background_image.substring(0, 50)}`}
-          className="fixed inset-0 -z-10 transition-all duration-500"
+          className="fixed inset-0 transition-all duration-500"
           style={{
             backgroundImage: `url("${profile.background_image}")`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
+            backgroundSize: (() => {
+              const fit = profile.background_fit || 'cover';
+              const zoom = profile.background_zoom || 100;
+              
+              if (fit === 'cover') {
+                // For cover, use zoom percentage
+                return `${zoom}%`;
+              } else if (fit === 'contain') {
+                // For contain, use zoom percentage
+                return `${zoom}%`;
+              } else if (fit === 'auto') {
+                return 'auto';
+              } else if (fit === '100% 100%') {
+                return '100% 100%';
+              }
+              return 'cover';
+            })(),
+            backgroundPosition: profile.background_position || 'center',
             backgroundRepeat: 'no-repeat',
-            backgroundAttachment: 'fixed'
+            backgroundAttachment: 'fixed',
+            zIndex: -1,
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            pointerEvents: 'none'
+          }}
+          ref={(el) => {
+            if (el) {
+              const computed = getComputedStyle(el);
+              fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AppShell.jsx:332',message:'Background div rendered',data:{bgUrl:profile.background_image,computedZIndex:computed.zIndex,computedBg:computed.backgroundImage,computedDisplay:computed.display,computedPosition:computed.position,offsetWidth:el.offsetWidth,offsetHeight:el.offsetHeight},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'background-image'})}).catch(()=>{});
+            }
           }}
         >
+          {/* #region agent log */}
+          {(() => {
+            const bgUrl = profile.background_image;
+            const img = new Image();
+            img.onload = () => {
+              fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AppShell.jsx:331',message:'Background image loaded',data:{bgUrl,loaded:true,width:img.width,height:img.height},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'background-image'})}).catch(()=>{});
+            };
+            img.onerror = () => {
+              fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AppShell.jsx:331',message:'Background image failed to load',data:{bgUrl,loaded:false,error:'Image load error'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'background-image'})}).catch(()=>{});
+            };
+            img.src = bgUrl;
+            return null;
+          })()}
+          {/* #endregion */}
           <div 
             className="absolute inset-0 backdrop-blur-[1px]"
             style={{
               backgroundColor: isDarkMode 
-                ? 'color-mix(in srgb, var(--bg-secondary) 20%, transparent)'
-                : 'color-mix(in srgb, var(--bg-primary) 10%, transparent)'
+                ? 'color-mix(in srgb, var(--bg-secondary) 10%, transparent)'
+                : 'color-mix(in srgb, var(--bg-primary) 3%, transparent)'
             }}
           ></div>
         </div>

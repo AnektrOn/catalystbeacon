@@ -1,8 +1,11 @@
 .roadmap-ignition {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 0; /* Remove padding - let glass-main-panel handle it */
   min-height: 100vh;
+  background: transparent !important; /* Inherit from AppShell - force override */
+  position: relative;
+  z-index: 1;
 }
 
 /* Header */
