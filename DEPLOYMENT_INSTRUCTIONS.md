@@ -7,9 +7,18 @@
 SSH into your server and run:
 
 ```bash
-cd /path/to/your/hcuniversity
+# Replace with YOUR actual server path where hcuniversity is deployed
+# Example: cd /var/www/hcuniversity
+# Example: cd ~/hcuniversity
+# Example: cd /home/deploy/hcuniversity
+#  THE GOOD ONE : pcd ~/domains/humancatalystbeacon.com/public_html/app
+cd YOUR_SERVER_PATH_HERE
+
+# Pull latest code from GitHub
 git pull origin main
 ```
+
+**Note:** If you don't know your server path, run `pwd` on your server to find it.
 
 ### Step 2: Install Dependencies (if any new ones)
 
@@ -78,30 +87,50 @@ WHERE course_id IN (
 ### For VPS/Cloud Server:
 
 ```bash
-# SSH into server
-ssh user@your-server-ip
+# REPLACE THESE with your actual values:
+# YOUR_SERVER_IP = your server's IP address
+# YOUR_SERVER_PATH = where hcuniversity is installed (e.g., /var/www/hcuniversity)
 
-# Navigate to project
-cd /path/to/hcuniversity
+# SSH into server
+ssh your-username@YOUR_SERVER_IP
+
+# Navigate to project directory
+cd YOUR_SERVER_PATH
 
 # Pull changes
 git pull origin main
 
-# Install dependencies
+# Install any new dependencies
 npm install
 
-# Build
+# Build for production
 npm run build
 
-# Restart (choose your method)
+# Restart server (choose ONE method based on your setup):
+
+# Method 1: PM2 (most common)
 pm2 restart hcuniversity
-# OR
+
+# Method 2: Systemd service
 sudo systemctl restart hcuniversity
-# OR
+
+# Method 3: Direct node process
 pkill -f "node server.js" && nohup npm start &
 
 # Exit SSH
 exit
+```
+
+**Don't know your setup?** Run these on your server to find out:
+```bash
+# Check if using PM2
+pm2 list
+
+# Check if using systemd
+systemctl status hcuniversity
+
+# Find your project path
+find ~ -name "hcuniversity" -type d 2>/dev/null
 ```
 
 ### For Vercel:

@@ -723,6 +723,8 @@ const SettingsPage = () => {
                         </div>
                     </div>
                 );
+            case 'subscription':
+                return <SubscriptionSection profile={profile} />;
             default:
                 return null;
         }
