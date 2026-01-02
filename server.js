@@ -1,3 +1,7 @@
+// Load environment variables from server.env file
+const path = require('path')
+require('dotenv').config({ path: path.join(__dirname, 'server.env') })
+
 const express = require('express')
 const cors = require('cors')
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
