@@ -848,7 +848,8 @@ app.use(express.static(buildPath, {
 // Catch-all handler: send back React's index.html file for any non-API routes
 // This is necessary for React Router to work properly in production
 // IMPORTANT: This must be LAST, after all API routes and static file serving
-app.get('*', (req, res, next) => {
+// Use app.use() instead of app.get('*') for Express 5 compatibility
+app.use((req, res, next) => {
   // Skip API routes
   if (req.path.startsWith('/api/')) {
     return next()
