@@ -30,23 +30,41 @@ ORDER BY school_name;
 2. Find `CourseCatalogPage` component
 3. Check the `schoolNames` state value
 
+## Current School Names in Database
+
+Your database contains the following `school_name` values:
+
+1. **Institute of Applied Sovereignty** (1 course)
+2. **Institute of Behavioral Design** (1 course)
+3. **Institute of Cognitive Defense** (8 courses)
+4. **Institute of Economic Architecture** (23 courses)
+5. **Institute of Emotional Integration** (5 courses)
+6. **Institute of Energetic Anatomy** (17 courses)
+7. **Institute of Historical Deconstruction** (2 courses)
+8. **Institute of Quantum Mechanics** (3 courses)
+9. **Institute of Reality Engineering** (1 course)
+10. **Institute of Systemic Analysis** (3 courses)
+
 ## Adding Background Images
 
 1. **Add images to** `public/assets/schools/` directory
    - Recommended format: `.jpg`, `.png`, or `.webp`
    - Recommended size: 1200x800px to 2000x1200px
    - Optimize for web (under 500KB)
+   - Suggested naming: `institute-of-[name]-bg.jpg` (lowercase, hyphens)
 
-2. **Update the mapping** in `src/pages/CourseCatalogPage.jsx` (around line 210):
+2. **Update the mapping** in `src/pages/CourseCatalogPage.jsx` (around line 225):
+   - Uncomment the line for the school you want to add an image to
+   - Update the file path to match your image filename
    ```javascript
    const schoolImageMap = {
-     'Institute': '/assets/schools/institute-bg.jpg',
-     'Mental Fitness': '/assets/schools/mental-fitness-bg.jpg',
-     // Add more mappings here
+     'Institute of Economic Architecture': '/assets/schools/institute-of-economic-architecture-bg.jpg',
+     'Institute of Energetic Anatomy': '/assets/schools/institute-of-energetic-anatomy-bg.jpg',
+     // Uncomment and add more as needed
    };
    ```
 
-3. **Use exact school_name values** - The mapping is case-sensitive and must match exactly what's in your database.
+3. **Use exact school_name values** - The mapping is case-sensitive and must match exactly what's in your database (including spaces and capitalization).
 
 ## Notes
 

@@ -213,28 +213,46 @@ const CourseCatalogPage = () => {
   // Background image mapping for school_name (NOT masterschool)
   // This function maps the school_name field from course_metadata to background images
   // 
-  // TO GET THE LIST OF SCHOOL_NAME VALUES:
-  // 1. Check browser console - it will log all unique school_name values when courses load
-  // 2. Or run this SQL in Supabase: SELECT DISTINCT school_name FROM course_metadata ORDER BY school_name;
-  // 3. The schoolNames state also contains all unique values (check React DevTools)
-  //
   // TO ADD BACKGROUND IMAGES:
   // 1. Add your images to public/assets/schools/ directory
-  // 2. Update the schoolImageMap below with exact school_name values from your database
+  // 2. Uncomment and update the image paths below for each school
   // 3. Use the EXACT school_name value (case-sensitive) as the key
   const getSchoolBackgroundImage = (schoolName) => {
     if (!schoolName) return null;
     
     // Map school_name (from course_metadata.school_name) to background image path
     // Images should be placed in public/assets/schools/ directory
-    // Use the EXACT school_name value from your database (check console logs)
+    // Use the EXACT school_name value from your database
     const schoolImageMap = {
-      // Example mappings (replace with your actual school_name values):
-      // 'Institute': '/assets/schools/institute-bg.jpg',
-      // 'Mental Fitness': '/assets/schools/mental-fitness-bg.jpg',
-      // Add more mappings here as you add images
-      // 
-      // Current school_name values will be logged to console when page loads
+      // Institute of Applied Sovereignty (1 course)
+      // 'Institute of Applied Sovereignty': '/assets/schools/institute-of-applied-sovereignty-bg.jpg',
+      
+      // Institute of Behavioral Design (1 course)
+      // 'Institute of Behavioral Design': '/assets/schools/institute-of-behavioral-design-bg.jpg',
+      
+      // Institute of Cognitive Defense (8 courses)
+      // 'Institute of Cognitive Defense': '/assets/schools/institute-of-cognitive-defense-bg.jpg',
+      
+      // Institute of Economic Architecture (23 courses)
+      // 'Institute of Economic Architecture': '/assets/schools/institute-of-economic-architecture-bg.jpg',
+      
+      // Institute of Emotional Integration (5 courses)
+      // 'Institute of Emotional Integration': '/assets/schools/institute-of-emotional-integration-bg.jpg',
+      
+      // Institute of Energetic Anatomy (17 courses)
+      // 'Institute of Energetic Anatomy': '/assets/schools/institute-of-energetic-anatomy-bg.jpg',
+      
+      // Institute of Historical Deconstruction (2 courses)
+      // 'Institute of Historical Deconstruction': '/assets/schools/institute-of-historical-deconstruction-bg.jpg',
+      
+      // Institute of Quantum Mechanics (3 courses)
+      // 'Institute of Quantum Mechanics': '/assets/schools/institute-of-quantum-mechanics-bg.jpg',
+      
+      // Institute of Reality Engineering (1 course)
+      // 'Institute of Reality Engineering': '/assets/schools/institute-of-reality-engineering-bg.jpg',
+      
+      // Institute of Systemic Analysis (3 courses)
+      // 'Institute of Systemic Analysis': '/assets/schools/institute-of-systemic-analysis-bg.jpg',
     };
     
     // Return the image path for this school_name, or null if not mapped
