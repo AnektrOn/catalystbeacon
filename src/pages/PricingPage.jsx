@@ -172,7 +172,8 @@ const PricingPage = () => {
       // Fall back to API server if Supabase Edge Function failed
       // Determine API URL: use env var, or same origin in production, or localhost in dev
       let apiBaseUrl = API_URL
-      if (!apiBaseUrl) {
+      // Always use window.location.origin in production, even if API_URL is set to localhost
+      if (!apiBaseUrl || apiBaseUrl === 'http://localhost:3001' || apiBaseUrl.includes('localhost')) {
         if (process.env.NODE_ENV === 'development') {
           apiBaseUrl = 'http://localhost:3001'
         } else {
