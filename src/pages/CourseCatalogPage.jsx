@@ -121,6 +121,7 @@ const CourseCatalogPage = () => {
   };
 
   const handleCourseClick = (courseId) => {
+    // courseId can be either UUID (id) or course_id (integer)
     navigate(`/courses/${courseId}`);
   };
 
@@ -156,7 +157,7 @@ const CourseCatalogPage = () => {
           ...course,
           schoolName,
           isUnlocked: isSchoolUnlocked,
-          userProgress: coursesBySchool[schoolName]?.find(c => c.id === course.id)?.userProgress || null
+          userProgress: course.userProgress || null
         });
       });
     });
@@ -419,10 +420,11 @@ const CourseCatalogPage = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {schoolCourses.map((course) => {
                       const schoolRequiredXp = typeof school === 'object' ? school.requiredXp : 0;
+                      const courseIdentifier = course.id || course.course_id || course.uuid;
                       
                       return (
                         <div
-                          key={course.id}
+                          key={courseIdentifier}
                           className={`glass-effect rounded-xl p-4 cursor-pointer transition-all hover:scale-[1.02] border relative ${
                             !course.isUnlocked ? 'opacity-60' : ''
                           }`}
@@ -437,7 +439,7 @@ const CourseCatalogPage = () => {
                           onMouseLeave={(e) => {
                             e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--color-primary) 20%, transparent)';
                           }}
-                          onClick={() => course.isUnlocked && handleCourseClick(course.id)}
+                          onClick={() => course.isUnlocked && handleCourseClick(courseIdentifier)}
                         >
                           {/* Lock Overlay */}
                           {!course.isUnlocked && (
@@ -484,7 +486,7 @@ const CourseCatalogPage = () => {
                             disabled={!course.isUnlocked}
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (course.isUnlocked) handleCourseClick(course.id);
+                              if (course.isUnlocked) handleCourseClick(courseIdentifier);
                             }}
                           >
                             {course.isUnlocked ? (
@@ -518,18 +520,19 @@ const CourseCatalogPage = () => {
             {paginatedCourses.map((course) => {
               const school = displaySchools.find(s => (typeof s === 'string' ? s : s.name) === course.schoolName);
               const schoolRequiredXp = typeof school === 'object' ? school.requiredXp : 0;
+              const courseIdentifier = course.id || course.course_id || course.uuid;
 
               if (viewMode === 'list') {
                 return (
                   <div
-                    key={course.id}
+                    key={courseIdentifier}
                     className={`glass-effect rounded-lg p-4 cursor-pointer transition-all hover:scale-[1.01] border flex items-center gap-4 ${
                       !course.isUnlocked ? 'opacity-60' : ''
                     }`}
                     style={{
                       borderColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)'
                     }}
-                    onClick={() => course.isUnlocked && handleCourseClick(course.id)}
+                    onClick={() => course.isUnlocked && handleCourseClick(courseIdentifier)}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 mb-2">
@@ -572,7 +575,7 @@ const CourseCatalogPage = () => {
                       disabled={!course.isUnlocked}
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (course.isUnlocked) handleCourseClick(course.id);
+                        if (course.isUnlocked) handleCourseClick(courseIdentifier);
                       }}
                     >
                       {course.isUnlocked ? (
@@ -591,7 +594,7 @@ const CourseCatalogPage = () => {
               // Grid view
               return (
                 <div
-                  key={course.id}
+                  key={courseIdentifier}
                   className={`glass-effect rounded-xl p-4 cursor-pointer transition-all hover:scale-[1.02] border relative ${
                     !course.isUnlocked ? 'opacity-60' : ''
                   }`}
@@ -606,7 +609,7 @@ const CourseCatalogPage = () => {
                   onMouseLeave={(e) => {
                     e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--color-primary) 20%, transparent)';
                   }}
-                  onClick={() => course.isUnlocked && handleCourseClick(course.id)}
+                  onClick={() => course.isUnlocked && handleCourseClick(courseIdentifier)}
                 >
                   {/* Lock Overlay */}
                   {!course.isUnlocked && (
@@ -660,7 +663,7 @@ const CourseCatalogPage = () => {
                     disabled={!course.isUnlocked}
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (course.isUnlocked) handleCourseClick(course.id);
+                      if (course.isUnlocked) handleCourseClick(courseIdentifier);
                     }}
                   >
                     {course.isUnlocked ? (
