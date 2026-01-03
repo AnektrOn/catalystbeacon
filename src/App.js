@@ -7,7 +7,6 @@ import { Toaster } from 'react-hot-toast'
 import ErrorBoundary from './components/ErrorBoundary'
 import AppShell from './components/AppShell'
 import ProtectedSubscriptionRoute from './components/ProtectedSubscriptionRoute'
-import EnvTest from './components/EnvTest'
 import CosmicLoader from './components/ui/CosmicLoader'
 import './styles/glassmorphism.css'
 import './styles/mobile-responsive.css'
@@ -352,8 +351,6 @@ function App() {
                   position: 'fixed',
                 }}
               />
-              {/* Temporary: Environment variable test - remove after fixing */}
-              {process.env.NODE_ENV === 'development' && <EnvTest />}
             </div>
           </PageTransitionProvider>
         </Router>
