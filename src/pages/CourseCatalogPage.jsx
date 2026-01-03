@@ -155,7 +155,12 @@ const CourseCatalogPage = () => {
             }
           });
         });
-        setSchoolNames(Array.from(uniqueSchoolNames).sort());
+        const sortedSchoolNames = Array.from(uniqueSchoolNames).sort();
+        setSchoolNames(sortedSchoolNames);
+        
+        // Log school_name values for reference
+        console.log('📚 Unique school_name values found:', sortedSchoolNames);
+        console.log('📚 Total unique school_name values:', sortedSchoolNames.length);
       } else {
         setCoursesBySchool(data || {});
         
@@ -168,7 +173,12 @@ const CourseCatalogPage = () => {
             }
           });
         });
-        setSchoolNames(Array.from(uniqueSchoolNames).sort());
+        const sortedSchoolNames = Array.from(uniqueSchoolNames).sort();
+        setSchoolNames(sortedSchoolNames);
+        
+        // Log school_name values for reference
+        console.log('📚 Unique school_name values found:', sortedSchoolNames);
+        console.log('📚 Total unique school_name values:', sortedSchoolNames.length);
       }
     } catch (err) {
       console.error('Error loading data:', err);
@@ -202,18 +212,29 @@ const CourseCatalogPage = () => {
 
   // Background image mapping for school_name (NOT masterschool)
   // This function maps the school_name field from course_metadata to background images
-  // Add your school_name values and their corresponding image paths here
+  // 
+  // TO GET THE LIST OF SCHOOL_NAME VALUES:
+  // 1. Check browser console - it will log all unique school_name values when courses load
+  // 2. Or run this SQL in Supabase: SELECT DISTINCT school_name FROM course_metadata ORDER BY school_name;
+  // 3. The schoolNames state also contains all unique values (check React DevTools)
+  //
+  // TO ADD BACKGROUND IMAGES:
+  // 1. Add your images to public/assets/schools/ directory
+  // 2. Update the schoolImageMap below with exact school_name values from your database
+  // 3. Use the EXACT school_name value (case-sensitive) as the key
   const getSchoolBackgroundImage = (schoolName) => {
     if (!schoolName) return null;
     
     // Map school_name (from course_metadata.school_name) to background image path
     // Images should be placed in public/assets/schools/ directory
-    // Use the EXACT school_name value from your database
+    // Use the EXACT school_name value from your database (check console logs)
     const schoolImageMap = {
       // Example mappings (replace with your actual school_name values):
       // 'Institute': '/assets/schools/institute-bg.jpg',
       // 'Mental Fitness': '/assets/schools/mental-fitness-bg.jpg',
       // Add more mappings here as you add images
+      // 
+      // Current school_name values will be logged to console when page loads
     };
     
     // Return the image path for this school_name, or null if not mapped
@@ -669,17 +690,17 @@ const CourseCatalogPage = () => {
                   {/* Courses Grid for this School */}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {schoolCourses.map((course) => {
-                      const schoolRequiredXp = typeof school === 'object' ? school.requiredXp : 0;
+              const schoolRequiredXp = typeof school === 'object' ? school.requiredXp : 0;
                       const courseIdentifier = course.id || course.course_id || course.uuid;
                       const backgroundImage = getSchoolBackgroundImage(course.schoolNameField || course.school_name);
 
-                      return (
-                        <div
+                return (
+                  <div
                           key={courseIdentifier}
                           className={`rounded-xl cursor-pointer transition-all hover:scale-[1.02] border-2 relative overflow-hidden ${
                             !course.isUnlocked ? 'opacity-75' : ''
-                          }`}
-                          style={{
+                    }`}
+                    style={{
                             minHeight: '280px',
                             borderColor: 'rgba(255, 255, 255, 0.1)',
                             boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)'
@@ -740,9 +761,9 @@ const CourseCatalogPage = () => {
                                   textShadow: backgroundImage ? '0 2px 4px rgba(0, 0, 0, 0.3)' : 'none'
                                 }}
                               >
-                                {course.schoolName}
-                              </span>
-                            </div>
+                          {course.schoolName}
+                        </span>
+                      </div>
 
                             {/* Course Header */}
                             <div className="mb-3 flex-grow">
@@ -750,18 +771,18 @@ const CourseCatalogPage = () => {
                                 {course.course_title}
                               </h3>
                               <div className={`flex items-center gap-2 text-xs ${backgroundImage ? 'text-white/90' : 'text-gray-500 dark:text-gray-400'}`}>
-                                <span style={getDifficultyColor(course.difficulty_level)}>
-                                  {course.difficulty_level || 'N/A'}
-                                </span>
-                                {course.duration_hours > 0 && (
-                                  <>
-                                    <span>•</span>
-                                    <span className="flex items-center gap-1">
+                        <span style={getDifficultyColor(course.difficulty_level)}>
+                          {course.difficulty_level || 'N/A'}
+                        </span>
+                        {course.duration_hours > 0 && (
+                          <>
+                            <span>•</span>
+                            <span className="flex items-center gap-1">
                                       <Clock size={12} />
-                                      {course.duration_hours}h
-                                    </span>
-                                  </>
-                                )}
+                              {course.duration_hours}h
+                            </span>
+                          </>
+                        )}
                               </div>
                             </div>
 
@@ -791,11 +812,11 @@ const CourseCatalogPage = () => {
                                 <>
                                   <Lock size={16} />
                                   Locked
-                                </>
-                              )}
+                          </>
+                        )}
                             </button>
-                          </div>
-                        </div>
+                      </div>
+                    </div>
                       );
                     })}
                   </div>
@@ -943,43 +964,43 @@ const CourseCatalogPage = () => {
                                 </div>
 
                                 {/* Bottom Section - Action Button */}
-                                <button
+                    <button
                                   className={`w-full py-4 rounded-2xl font-bold text-base transition-all flex items-center justify-center gap-3 text-white shadow-2xl ${
                                     !course.isUnlocked 
                                       ? 'bg-gray-500/50 cursor-not-allowed' 
                                       : 'hover:scale-[1.02] active:scale-[0.98]'
-                                  }`}
-                                  style={course.isUnlocked ? {
+                      }`}
+                      style={course.isUnlocked ? {
                                     background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%)',
                                     boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
-                                  } : {}}
-                                  disabled={!course.isUnlocked}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
+                      } : {}}
+                      disabled={!course.isUnlocked}
+                      onClick={(e) => {
+                        e.stopPropagation();
                                     if (course.isUnlocked) handleCourseClick(courseIdentifier);
-                                  }}
+                      }}
                                   onTouchStart={(e) => e.stopPropagation()}
                                   onTouchMove={(e) => e.stopPropagation()}
                                   onTouchEnd={(e) => e.stopPropagation()}
-                                >
-                                  {course.isUnlocked ? (
-                                    <>
+                    >
+                      {course.isUnlocked ? (
+                        <>
                                       <Play size={24} fill="currentColor" />
                                       <span className="tracking-wide">
                                         {course.userProgress ? 'Continue Learning' : 'Start Course'}
                                       </span>
-                                    </>
-                                  ) : (
+                        </>
+                      ) : (
                                     <>
                                       <Lock size={24} />
                                       <span>Locked</span>
                                     </>
-                                  )}
-                                </button>
+                      )}
+                    </button>
                               </div>
                             </div>
-                          </div>
-                        );
+                  </div>
+                );
                       })}
                     </div>
                   </div>
@@ -1066,24 +1087,24 @@ const CourseCatalogPage = () => {
                   const courseIdentifier = course.id || course.course_id || course.uuid;
                   const backgroundImage = getSchoolBackgroundImage(course.schoolNameField || course.school_name);
 
-                  return (
-                    <div
+              return (
+                <div
                       key={courseIdentifier}
                       className={`rounded-xl cursor-pointer transition-all hover:scale-[1.02] border-2 relative overflow-hidden ${
                         !course.isUnlocked ? 'opacity-75' : ''
-                      }`}
-                      style={{
+                  }`}
+                  style={{
                         minHeight: '280px',
                         borderColor: 'rgba(255, 255, 255, 0.1)',
                         boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (course.isUnlocked) {
+                  }}
+                  onMouseEnter={(e) => {
+                    if (course.isUnlocked) {
                           e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
                           e.currentTarget.style.boxShadow = '0 12px 32px rgba(0, 0, 0, 0.3)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
+                    }
+                  }}
+                  onMouseLeave={(e) => {
                         e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
                         e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.2)';
                       }}
@@ -1107,20 +1128,20 @@ const CourseCatalogPage = () => {
 
                       {/* Content Layer */}
                       <div className={`relative z-10 flex flex-col h-full min-h-[280px] p-4 ${backgroundImage ? 'text-white' : ''}`}>
-                        {/* Lock Overlay */}
-                        {!course.isUnlocked && (
+                  {/* Lock Overlay */}
+                  {!course.isUnlocked && (
                           <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-20 rounded-xl">
-                            <div className="text-center">
+                      <div className="text-center">
                               <Lock size={28} className="text-white mx-auto mb-2 opacity-80" />
                               <p className="text-sm font-medium text-white">
-                                {schoolRequiredXp.toLocaleString()} XP required
-                              </p>
-                            </div>
-                          </div>
-                        )}
+                          {schoolRequiredXp.toLocaleString()} XP required
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
-                        {/* School Badge */}
-                        <div className="mb-3">
+                  {/* School Badge */}
+                  <div className="mb-3">
                           <span 
                             className="px-2 py-1 rounded-lg text-xs font-semibold tracking-wide uppercase border-2 backdrop-blur-md inline-block"
                             style={{
@@ -1133,65 +1154,65 @@ const CourseCatalogPage = () => {
                               textShadow: backgroundImage ? '0 2px 4px rgba(0, 0, 0, 0.3)' : 'none'
                             }}
                           >
-                            {course.schoolName}
-                          </span>
-                        </div>
+                      {course.schoolName}
+                    </span>
+                  </div>
 
-                        {/* Course Header */}
+                  {/* Course Header */}
                         <div className="mb-3 flex-grow">
                           <h3 className={`text-base font-bold mb-2 line-clamp-2 min-h-[2.5rem] ${backgroundImage ? 'text-white drop-shadow-lg' : 'text-gray-800 dark:text-white'}`}>
-                            {course.course_title}
-                          </h3>
+                      {course.course_title}
+                    </h3>
                           <div className={`flex items-center gap-2 text-xs ${backgroundImage ? 'text-white/90' : 'text-gray-500 dark:text-gray-400'}`}>
-                            <span style={getDifficultyColor(course.difficulty_level)}>
-                              {course.difficulty_level || 'N/A'}
-                            </span>
-                            {course.duration_hours > 0 && (
-                              <>
-                                <span>•</span>
-                                <span className="flex items-center gap-1">
-                                  <Clock size={12} />
-                                  {course.duration_hours}h
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </div>
+                      <span style={getDifficultyColor(course.difficulty_level)}>
+                        {course.difficulty_level || 'N/A'}
+                      </span>
+                      {course.duration_hours > 0 && (
+                        <>
+                          <span>•</span>
+                          <span className="flex items-center gap-1">
+                            <Clock size={12} />
+                            {course.duration_hours}h
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
 
-                        {/* Action Button */}
-                        <button
+                  {/* Action Button */}
+                  <button
                           className={`w-full py-2.5 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 text-sm text-white shadow-lg ${
                             !course.isUnlocked 
                               ? 'bg-gray-500/50 cursor-not-allowed' 
                               : 'hover:scale-[1.02] active:scale-[0.98]'
-                          }`}
-                          style={course.isUnlocked ? {
+                    }`}
+                    style={course.isUnlocked ? {
                             background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%)',
                             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
-                          } : {}}
-                          disabled={!course.isUnlocked}
-                          onClick={(e) => {
-                            e.stopPropagation();
+                    } : {}}
+                    disabled={!course.isUnlocked}
+                    onClick={(e) => {
+                      e.stopPropagation();
                             if (course.isUnlocked) handleCourseClick(courseIdentifier);
-                          }}
-                        >
-                          {course.isUnlocked ? (
-                            <>
+                    }}
+                  >
+                    {course.isUnlocked ? (
+                      <>
                               <Play size={16} fill="currentColor" />
-                              {course.userProgress ? 'Continue' : 'Start'}
-                            </>
-                          ) : (
-                            <>
+                        {course.userProgress ? 'Continue' : 'Start'}
+                      </>
+                    ) : (
+                      <>
                               <Lock size={16} />
-                              Locked
-                            </>
-                          )}
-                        </button>
+                        Locked
+                      </>
+                    )}
+                  </button>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                </div>
+              );
+            })}
+          </div>
             </>
           ) : (
             /* List View */

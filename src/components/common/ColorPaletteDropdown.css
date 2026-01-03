@@ -161,10 +161,32 @@
 
 /* Mobile responsiveness */
 @media (max-width: 768px) {
+  .color-palette-dropdown-container {
+    position: relative;
+  }
+
   .color-palette-dropdown {
     right: auto;
     left: 0;
     min-width: 260px;
+    max-width: calc(100vw - 32px);
+    position: fixed;
+    top: auto;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10000;
+  }
+
+  .color-palette-trigger {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .color-palette-item {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 48px; /* Better touch target on mobile */
   }
 }
 

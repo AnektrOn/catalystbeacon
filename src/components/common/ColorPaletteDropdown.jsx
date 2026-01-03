@@ -20,11 +20,14 @@ const ColorPaletteDropdown = () => {
     };
 
     window.addEventListener('colorPaletteChanged', handlePaletteChange);
+    // Support both mouse and touch events for mobile compatibility
     document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
 
     return () => {
       window.removeEventListener('colorPaletteChanged', handlePaletteChange);
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
     };
   }, []);
 
@@ -46,6 +49,11 @@ const ColorPaletteDropdown = () => {
       <button
         className="color-palette-trigger glass-icon-btn"
         onClick={() => setIsOpen(!isOpen)}
+        onTouchEnd={(e) => {
+          // Prevent double-firing on mobile
+          e.preventDefault();
+          setIsOpen(!isOpen);
+        }}
         aria-label="Change color palette"
         aria-expanded={isOpen}
       >
@@ -68,6 +76,11 @@ const ColorPaletteDropdown = () => {
                   key={key}
                   className={`color-palette-item ${isSelected ? 'selected' : ''}`}
                   onClick={() => handlePaletteSelect(key)}
+                  onTouchEnd={(e) => {
+                    // Prevent double-firing on mobile
+                    e.preventDefault();
+                    handlePaletteSelect(key);
+                  }}
                   aria-label={`Select ${palette.name} theme`}
                 >
                   <div className="color-palette-preview">
