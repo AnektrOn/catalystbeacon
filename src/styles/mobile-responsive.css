@@ -12,6 +12,23 @@
 
 /* ==================== BASE MOBILE STYLES ==================== */
 
+/* Prevent horizontal overflow on mobile */
+@media (max-width: 767px) {
+  html,
+  body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+
+  body {
+    position: relative;
+  }
+
+  * {
+    max-width: 100%;
+  }
+}
+
 /* Touch-friendly tap targets (minimum 44x44px) */
 @media (max-width: 767px) {
 
