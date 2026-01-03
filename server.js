@@ -194,6 +194,12 @@ app.get('/api/payment-success', paymentLimiter, async (req, res) => {
     const role = getRoleFromPriceId(priceId)
 
     console.log('Determined role:', role, 'for price ID:', priceId)
+    console.log('Current user role before update:', session.metadata?.currentRole || 'Unknown')
+    
+    // Ensure we're updating from Free to Student/Teacher
+    if (!session.metadata?.userId) {
+      throw new Error('Missing userId in session metadata')
+    }
 
     // Update user profile
     const { data, error } = await supabase
