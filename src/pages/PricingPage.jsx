@@ -117,11 +117,8 @@ const PricingPage = () => {
           }
           
           const supabaseEndpoint = `${SUPABASE_URL}/functions/v1/create-checkout-session`
-          const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY
           
-          if (!supabaseAnonKey) {
-            throw new Error('Supabase anon key is missing')
-          }
+          const accessToken = authSession.access_token
           
           console.log('Using Supabase Edge Function:', supabaseEndpoint)
           console.log('Request payload:', { priceId, planType })
@@ -130,8 +127,7 @@ const PricingPage = () => {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${supabaseAnonKey}`,
-              'apikey': supabaseAnonKey,
+              'Authorization': `Bearer ${accessToken}`,
             },
             body: JSON.stringify({
               priceId: priceId,
@@ -142,6 +138,12 @@ const PricingPage = () => {
           console.log('Response status:', response.status, response.statusText)
           
           if (!response.ok) {
+            // If 401, 503, or other server errors, fall through to API server
+            if (response.status === 401 || response.status === 503 || response.status >= 500) {
+              console.warn(`Supabase Edge Function returned ${response.status}, falling back to API server`)
+              throw new Error('FALLBACK_TO_API_SERVER') // Special error to trigger fallback
+            }
+            
             const errorData = await response.json().catch(() => ({ 
               error: `HTTP ${response.status}: ${response.statusText}` 
             }))
@@ -164,12 +166,25 @@ const PricingPage = () => {
           return
         } catch (supabaseError) {
           console.error('Supabase Edge Function error:', supabaseError)
-          // If Supabase Edge Function doesn't exist, try API server fallback
-          // Don't throw here - let it fall through to API server check
+          
+          // Always fall back to API server if Edge Function fails
+          // (401, 503, network errors, etc.)
+          if (supabaseError.message === 'FALLBACK_TO_API_SERVER' || 
+              supabaseError.message?.includes('Failed to fetch') ||
+              supabaseError.message?.includes('401') ||
+              supabaseError.message?.includes('503') ||
+              supabaseError.message?.includes('Unauthorized') ||
+              supabaseError.message?.includes('NetworkError')) {
+            console.log('Falling back to API server due to:', supabaseError.message)
+            // Continue to API server fallback below
+          } else {
+            // For other errors, still try API server as fallback
+            console.log('Supabase Edge Function failed, falling back to API server')
+          }
         }
       }
       
-      // Fall back to API server if Supabase Edge Function failed
+      // Fall back to API server if Supabase Edge Function failed or doesn't exist
       // Determine API URL: use env var, or same origin in production, or localhost in dev
       let apiBaseUrl = API_URL
       // Always use window.location.origin in production, even if API_URL is set to localhost
@@ -182,7 +197,9 @@ const PricingPage = () => {
         }
       }
       
-      console.log('Supabase Edge Function failed, falling back to API server:', `${apiBaseUrl}/api/create-checkout-session`)
+      console.log('Using API server:', `${apiBaseUrl}/api/create-checkout-session`)
+      
+      try {
         const response = await fetch(`${apiBaseUrl}/api/create-checkout-session`, {
           method: 'POST',
           headers: {
@@ -195,13 +212,27 @@ const PricingPage = () => {
           }),
         })
 
+        console.log('API server response status:', response.status, response.statusText)
+
         // Check if response is OK before parsing
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}: ${response.statusText}` }))
-          throw new Error(errorData.error || `Server error: ${response.status}`)
+          // Try to get error message from response
+          let errorMessage = `HTTP ${response.status}: ${response.statusText}`
+          try {
+            const errorData = await response.json()
+            errorMessage = errorData.error || errorMessage
+          } catch (e) {
+            // If response is not JSON, use status text
+            const text = await response.text().catch(() => '')
+            if (text) errorMessage = text
+          }
+          
+          console.error('API server error:', errorMessage)
+          throw new Error(errorMessage)
         }
 
         const session = await response.json()
+        console.log('Checkout session received:', { id: session.id, hasUrl: !!session.url })
 
         if (session.error) {
           throw new Error(session.error)
@@ -212,7 +243,12 @@ const PricingPage = () => {
         }
 
         // Redirect to Stripe Checkout using the session URL
+        console.log('Redirecting to Stripe Checkout...')
         window.location.href = session.url
+      } catch (apiError) {
+        console.error('API server error:', apiError)
+        throw apiError // Re-throw to be caught by outer catch
+      }
     } catch (error) {
       console.error('Error creating checkout session:', error)
       

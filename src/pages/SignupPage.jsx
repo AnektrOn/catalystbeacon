@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import toast from 'react-hot-toast'
+import { Eye, EyeOff, ArrowLeft, ArrowRight } from 'lucide-react'
 
 const SignupPage = () => {
   const [formData, setFormData] = useState({
@@ -10,6 +12,8 @@ const SignupPage = () => {
     fullName: '',
     agreeToTerms: false
   })
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
   
@@ -85,18 +89,19 @@ const SignupPage = () => {
     setErrors({})
 
     try {
-      
       // Security: Password comes from user input (formData.password), never hardcoded
       // All passwords are user-provided and validated before submission
       const { data, error } = await signUp(formData.email, formData.password, { 
         full_name: formData.fullName.trim() 
       })
       
-      if (!error) {
+      if (error) {
+        toast.error(error.message || 'Failed to create account')
+      } else if (!error) {
+        toast.success('Account created successfully!')
         // Check if user was immediately signed in (email confirmation disabled)
         if (data?.user && data?.session) {
           // User is signed in, redirect to dashboard
-          // Small delay to ensure auth state is updated before navigation
           setTimeout(() => {
             navigate('/dashboard')
           }, 100)
@@ -107,175 +112,209 @@ const SignupPage = () => {
       }
     } catch (error) {
       console.error('Signup error:', error)
+      toast.error('An unexpected error occurred')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="auth-container min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
-      <div className="auth-card max-w-md w-full space-y-6 sm:space-y-8 bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-2xl p-6 sm:p-8 border border-slate-600/50 shadow-2xl">
-        <div>
-          <div className="flex justify-center mb-4">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-400 flex items-center justify-center shadow-lg">
-              <span className="text-2xl sm:text-3xl">🚀</span>
+    <div className="min-h-screen flex bg-[#0a0a0a]">
+      {/* Left Side - Hero Image (Hidden on mobile) */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/20 via-transparent to-cyan-900/20 z-10"></div>
+        <img
+          src="https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2940&auto=format&fit=crop"
+          alt="Inspiring landscape"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute bottom-8 left-8 text-white z-20">
+          <p className="text-sm opacity-70">Begin your transformation journey</p>
+        </div>
+      </div>
+
+      {/* Right Side - Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12">
+        <div className="w-full max-w-md">
+          {/* Logo */}
+          <div className="mb-12">
+            <div className="flex items-center space-x-3">
+              <img 
+                src="/hc-logo.png" 
+                alt="HC University Logo" 
+                className="w-12 h-12 object-contain"
+              />
+              <span className="text-white text-xl font-semibold tracking-wide">Human Catalyst University</span>
             </div>
           </div>
-          <h2 className="text-center text-2xl sm:text-3xl font-extrabold text-white">
-            Create your account
-          </h2>
-          <p className="mt-2 text-center text-xs sm:text-sm text-slate-300">
-            Or{' '}
-            <Link
-              to="/login"
-              className="font-medium text-emerald-400 hover:text-emerald-300 transition-colors"
+
+          {/* Header */}
+          <div className="mb-8">
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all mb-6"
             >
-              sign in to your existing account
-            </Link>
-          </p>
-        </div>
-        <form className="auth-form mt-6 sm:mt-8 space-y-4 sm:space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-3 sm:space-y-4">
-            <div>
-              <label htmlFor="fullName" className="block text-xs sm:text-sm font-medium text-slate-300 mb-2">
-                Full Name
-              </label>
-              <input
-                id="fullName"
-                name="fullName"
-                type="text"
-                required
-                className={`appearance-none relative block w-full px-3 sm:px-4 py-2.5 sm:py-3 border ${
-                  errors.fullName ? 'border-red-500' : 'border-slate-600/50'
-                } placeholder-slate-400 text-white bg-slate-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm sm:text-base`}
-                placeholder="Enter your full name"
-                value={formData.fullName}
-                onChange={handleChange}
-                disabled={loading}
-              />
-              {errors.fullName && (
-                <p className="mt-1.5 text-xs sm:text-sm text-red-400">{errors.fullName}</p>
-              )}
-            </div>
+              <ArrowLeft className="w-5 h-5" />
+            </button>
             
+            <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">
+              Create Your Account to Unleash Your Dreams
+            </h1>
+            
+            <p className="text-white/60 text-sm">
+              Already have an account?{' '}
+              <Link
+                to="/login"
+                className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
+              >
+                Log in
+              </Link>
+            </p>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-xs sm:text-sm font-medium text-slate-300 mb-2">
-                Email Address
-              </label>
               <input
                 id="email"
                 name="email"
                 type="email"
                 autoComplete="email"
                 required
-                className={`appearance-none relative block w-full px-3 sm:px-4 py-2.5 sm:py-3 border ${
-                  errors.email ? 'border-red-500' : 'border-slate-600/50'
-                } placeholder-slate-400 text-white bg-slate-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm sm:text-base`}
-                placeholder="Enter your email"
+                className={`w-full px-4 py-3.5 bg-white/5 border ${
+                  errors.email ? 'border-red-500' : 'border-white/10'
+                } rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent transition-all`}
+                placeholder="Your Email"
                 value={formData.email}
                 onChange={handleChange}
                 disabled={loading}
               />
               {errors.email && (
-                <p className="mt-1.5 text-xs sm:text-sm text-red-400">{errors.email}</p>
+                <p className="mt-1.5 text-xs text-red-400">{errors.email}</p>
               )}
             </div>
-            
+
             <div>
-              <label htmlFor="password" className="block text-xs sm:text-sm font-medium text-slate-300 mb-2">
-                Password
-              </label>
+              <input
+                id="fullName"
+                name="fullName"
+                type="text"
+                required
+                className={`w-full px-4 py-3.5 bg-white/5 border ${
+                  errors.fullName ? 'border-red-500' : 'border-white/10'
+                } rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent transition-all`}
+                placeholder="Full Name"
+                value={formData.fullName}
+                onChange={handleChange}
+                disabled={loading}
+              />
+              {errors.fullName && (
+                <p className="mt-1.5 text-xs text-red-400">{errors.fullName}</p>
+              )}
+            </div>
+
+            <div className="relative">
               <input
                 id="password"
                 name="password"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 autoComplete="new-password"
                 required
-                className={`appearance-none relative block w-full px-3 sm:px-4 py-2.5 sm:py-3 border ${
-                  errors.password ? 'border-red-500' : 'border-slate-600/50'
-                } placeholder-slate-400 text-white bg-slate-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm sm:text-base`}
-                placeholder="Create a strong password"
+                className={`w-full px-4 py-3.5 bg-white/5 border ${
+                  errors.password ? 'border-red-500' : 'border-white/10'
+                } rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent transition-all pr-12`}
+                placeholder="Password"
                 value={formData.password}
                 onChange={handleChange}
                 disabled={loading}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
+              >
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
+              </button>
               {errors.password && (
-                <p className="mt-1.5 text-xs sm:text-sm text-red-400">{errors.password}</p>
+                <p className="mt-1.5 text-xs text-red-400">{errors.password}</p>
               )}
-              <p className="mt-1.5 text-[10px] sm:text-xs text-slate-400">
-                Must be at least 6 characters with uppercase, lowercase, and number
-              </p>
             </div>
-            
-            <div>
-              <label htmlFor="confirmPassword" className="block text-xs sm:text-sm font-medium text-slate-300 mb-2">
-                Confirm Password
-              </label>
+
+            <div className="relative">
               <input
                 id="confirmPassword"
                 name="confirmPassword"
-                type="password"
+                type={showConfirmPassword ? 'text' : 'password'}
                 autoComplete="new-password"
                 required
-                className={`appearance-none relative block w-full px-3 sm:px-4 py-2.5 sm:py-3 border ${
-                  errors.confirmPassword ? 'border-red-500' : 'border-slate-600/50'
-                } placeholder-slate-400 text-white bg-slate-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm sm:text-base`}
-                placeholder="Confirm your password"
+                className={`w-full px-4 py-3.5 bg-white/5 border ${
+                  errors.confirmPassword ? 'border-red-500' : 'border-white/10'
+                } rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent transition-all pr-12`}
+                placeholder="Confirm Password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 disabled={loading}
               />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
+              </button>
               {errors.confirmPassword && (
-                <p className="mt-1.5 text-xs sm:text-sm text-red-400">{errors.confirmPassword}</p>
+                <p className="mt-1.5 text-xs text-red-400">{errors.confirmPassword}</p>
               )}
             </div>
 
-            <div className="flex items-start">
-              <input
-                id="agreeToTerms"
-                name="agreeToTerms"
-                type="checkbox"
-                checked={formData.agreeToTerms}
-                onChange={handleChange}
-                disabled={loading}
-                className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600 focus:ring-emerald-500 border-slate-600 rounded bg-slate-700/50 mt-0.5"
-              />
-              <label htmlFor="agreeToTerms" className="ml-2 sm:ml-3 block text-xs sm:text-sm text-slate-300">
-                I agree to the{' '}
-                <Link to="/terms" className="text-emerald-400 hover:text-emerald-300">
-                  Terms of Service
-                </Link>{' '}
-                and{' '}
-                <Link to="/privacy" className="text-emerald-400 hover:text-emerald-300">
-                  Privacy Policy
-                </Link>
-              </label>
-            </div>
-            {errors.agreeToTerms && (
-              <p className="text-xs sm:text-sm text-red-400">{errors.agreeToTerms}</p>
-            )}
-          </div>
-
-          <div>
             <button
               type="submit"
               disabled={loading}
-              className="auth-button group relative w-full flex justify-center py-3 sm:py-3.5 px-4 border border-transparent text-sm sm:text-base font-medium rounded-xl text-white bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-emerald-500/25"
+              className="w-full py-3.5 px-4 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-medium rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 group mt-6"
             >
               {loading ? (
-                <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-2 sm:mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Creating account...
-                </span>
+                  <span>Creating...</span>
+                </>
               ) : (
-                'Create account'
+                <>
+                  <span>Start Creating</span>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </>
               )}
             </button>
+          </form>
+
+          {/* Footer */}
+          <div className="mt-6 text-center text-xs text-white/40">
+            <p>
+              By signing up, you agree to our{' '}
+              <Link to="/terms" className="text-white/60 hover:text-white transition-colors">
+                Terms of Service
+              </Link>
+              ,{' '}
+              <Link to="/privacy" className="text-white/60 hover:text-white transition-colors">
+                Privacy Policy
+              </Link>{' '}
+              and{' '}
+              <Link to="/cookies" className="text-white/60 hover:text-white transition-colors">
+                Data Usage Practices
+              </Link>
+            </p>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   )
