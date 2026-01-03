@@ -294,19 +294,40 @@ const CourseCatalogPage = () => {
     setMobileCardIndex(0); // Reset mobile slideshow index
   }, [selectedSchool, selectedSchoolName, searchQuery]);
 
-  // Swipe handlers for mobile slideshow
+  // Swipe handlers for mobile slideshow (only on mobile)
   const minSwipeDistance = 50;
 
   const onTouchStart = (e) => {
+    // Only handle touch on mobile devices
+    if (window.innerWidth >= 768) return;
+    
+    // Prevent touch on buttons and interactive elements
+    const target = e.target;
+    if (target.tagName === 'BUTTON' || target.closest('button')) {
+      return;
+    }
+    
     setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
   };
 
   const onTouchMove = (e) => {
+    // Only handle touch on mobile devices
+    if (window.innerWidth >= 768) return;
+    
+    // Prevent touch on buttons and interactive elements
+    const target = e.target;
+    if (target.tagName === 'BUTTON' || target.closest('button')) {
+      return;
+    }
+    
     setTouchEnd(e.targetTouches[0].clientX);
   };
 
   const onTouchEnd = () => {
+    // Only handle touch on mobile devices
+    if (window.innerWidth >= 768) return;
+    
     if (!touchStart || !touchEnd) return;
     
     const distance = touchStart - touchEnd;
@@ -319,6 +340,10 @@ const CourseCatalogPage = () => {
     if (isRightSwipe && mobileCardIndex > 0) {
       setMobileCardIndex(prev => prev - 1);
     }
+    
+    // Reset touch values
+    setTouchStart(null);
+    setTouchEnd(null);
   };
 
   const goToNextCard = () => {
@@ -743,6 +768,7 @@ const CourseCatalogPage = () => {
                   onTouchStart={onTouchStart}
                   onTouchMove={onTouchMove}
                   onTouchEnd={onTouchEnd}
+                  style={{ touchAction: 'pan-y' }}
                 >
                   {/* Slideshow Container */}
                   <div className="overflow-hidden rounded-2xl">
@@ -768,7 +794,7 @@ const CourseCatalogPage = () => {
                                 !course.isUnlocked ? 'opacity-75' : ''
                               }`}
                               style={{
-                                minHeight: '600px',
+                                minHeight: '520px',
                                 borderColor: 'rgba(255, 255, 255, 0.1)',
                                 boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
                               }}
@@ -791,7 +817,7 @@ const CourseCatalogPage = () => {
                               )}
 
                               {/* Content Layer */}
-                              <div className="relative z-10 flex flex-col h-full min-h-[600px] p-8">
+                              <div className="relative z-10 flex flex-col h-full min-h-[520px] p-6">
                                 {/* Lock Overlay */}
                                 {!course.isUnlocked && (
                                   <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-20 rounded-3xl">
@@ -805,7 +831,7 @@ const CourseCatalogPage = () => {
                                 )}
 
                                 {/* Top Section - School Badge */}
-                                <div className="mb-6">
+                                <div className="mb-5">
                                   <span 
                                     className="px-4 py-2 rounded-xl text-xs font-semibold tracking-wide uppercase border-2 backdrop-blur-md inline-block"
                                     style={{
@@ -824,7 +850,7 @@ const CourseCatalogPage = () => {
                                 <div className="flex-grow flex flex-col justify-end pb-6">
                                   {/* Course Title - Large, Bold, High Contrast */}
                                   <h3 
-                                    className="text-4xl font-bold text-white mb-5 leading-tight drop-shadow-lg"
+                                    className="text-3xl font-bold text-white mb-4 leading-tight drop-shadow-lg"
                                     style={{
                                       textShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
                                       lineHeight: '1.2',
@@ -835,7 +861,7 @@ const CourseCatalogPage = () => {
                                   </h3>
 
                                   {/* Metadata Row - Secondary Information */}
-                                  <div className="flex flex-wrap items-center gap-4 mb-5 text-white/90">
+                                  <div className="flex flex-wrap items-center gap-3 mb-4 text-white/90">
                                     {course.difficulty_level && (
                                       <div className="flex items-center gap-2">
                                         <span 
@@ -861,7 +887,7 @@ const CourseCatalogPage = () => {
 
                                   {/* Topic/Description - Tertiary Information */}
                                   {course.topic && (
-                                    <p className="text-base text-white/80 mb-6 leading-relaxed drop-shadow-md">
+                                    <p className="text-sm text-white/80 mb-5 leading-relaxed drop-shadow-md line-clamp-2">
                                       {course.topic}
                                     </p>
                                   )}
@@ -869,7 +895,7 @@ const CourseCatalogPage = () => {
 
                                 {/* Bottom Section - Action Button */}
                                 <button
-                                  className={`w-full py-5 rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-3 text-white shadow-2xl ${
+                                  className={`w-full py-4 rounded-2xl font-bold text-base transition-all flex items-center justify-center gap-3 text-white shadow-2xl ${
                                     !course.isUnlocked 
                                       ? 'bg-gray-500/50 cursor-not-allowed' 
                                       : 'hover:scale-[1.02] active:scale-[0.98]'
@@ -883,6 +909,9 @@ const CourseCatalogPage = () => {
                                     e.stopPropagation();
                                     if (course.isUnlocked) handleCourseClick(courseIdentifier);
                                   }}
+                                  onTouchStart={(e) => e.stopPropagation()}
+                                  onTouchMove={(e) => e.stopPropagation()}
+                                  onTouchEnd={(e) => e.stopPropagation()}
                                 >
                                   {course.isUnlocked ? (
                                     <>
@@ -921,6 +950,9 @@ const CourseCatalogPage = () => {
                           backgroundColor: 'rgba(255, 255, 255, 0.1)',
                           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
                         }}
+                        onTouchStart={(e) => e.stopPropagation()}
+                        onTouchMove={(e) => e.stopPropagation()}
+                        onTouchEnd={(e) => e.stopPropagation()}
                       >
                         <ChevronLeft size={28} className="text-white drop-shadow-lg" strokeWidth={3} />
                       </button>
@@ -936,6 +968,9 @@ const CourseCatalogPage = () => {
                           backgroundColor: 'rgba(255, 255, 255, 0.1)',
                           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
                         }}
+                        onTouchStart={(e) => e.stopPropagation()}
+                        onTouchMove={(e) => e.stopPropagation()}
+                        onTouchEnd={(e) => e.stopPropagation()}
                       >
                         <ChevronRight size={28} className="text-white drop-shadow-lg" strokeWidth={3} />
                       </button>
@@ -957,6 +992,9 @@ const CourseCatalogPage = () => {
                           style={{
                             boxShadow: index === mobileCardIndex ? '0 2px 8px rgba(255, 255, 255, 0.5)' : 'none'
                           }}
+                          onTouchStart={(e) => e.stopPropagation()}
+                          onTouchMove={(e) => e.stopPropagation()}
+                          onTouchEnd={(e) => e.stopPropagation()}
                         />
                       ))}
                     </div>
