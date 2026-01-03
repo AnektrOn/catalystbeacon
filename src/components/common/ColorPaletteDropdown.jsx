@@ -60,7 +60,8 @@ const ColorPaletteDropdown = () => {
           <div className="color-palette-dropdown-list">
             {Object.entries(palettes).map(([key, palette]) => {
               const isSelected = key === currentPalette;
-              const primaryColor = palette.colors['--color-primary'];
+              // Get primary color from light variant (for preview)
+              const primaryColor = palette.light['--color-primary'] || '#B4833D';
               
               return (
                 <button
@@ -74,7 +75,12 @@ const ColorPaletteDropdown = () => {
                       className="color-palette-preview-color"
                       style={{ backgroundColor: primaryColor }}
                     />
-                    <div className="color-palette-preview-gradient" style={{ background: palette.colors['--gradient-primary'] }} />
+                    <div 
+                      className="color-palette-preview-gradient" 
+                      style={{ 
+                        background: `linear-gradient(135deg, ${primaryColor} 0%, ${palette.light['--color-secondary'] || primaryColor} 100%)` 
+                      }} 
+                    />
                   </div>
                   <div className="color-palette-info">
                     <span className="color-palette-name">{palette.name}</span>

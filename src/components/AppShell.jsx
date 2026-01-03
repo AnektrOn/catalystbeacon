@@ -9,7 +9,7 @@ import ColorPaletteDropdown from './common/ColorPaletteDropdown';
 import AppShellMobile from './AppShellMobile';
 import useSubscription from '../hooks/useSubscription';
 import UpgradeModal from './UpgradeModal';
-import { getCurrentPalette } from '../utils/colorPaletteSwitcher';
+import { getCurrentPalette, switchTo } from '../utils/colorPaletteSwitcher';
 import {
   Grid3X3,
   User,
@@ -265,19 +265,11 @@ const AppShell = () => {
   const notificationCount = 3;
 
   const toggleTheme = () => {
-    // #region agent log
     const newDarkMode = !isDarkMode;
     const root = document.documentElement;
-    const computedBgPrimary = getComputedStyle(root).getPropertyValue('--bg-primary').trim();
-    const computedBgSecondary = getComputedStyle(root).getPropertyValue('--bg-secondary').trim();
-    const computedTextPrimary = getComputedStyle(root).getPropertyValue('--text-primary').trim();
-    const computedColorPrimary = getComputedStyle(root).getPropertyValue('--color-primary').trim();
     const currentPalette = getCurrentPalette();
-    fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AppShell.jsx:267',message:'Dark mode toggle - BEFORE',data:{isDarkMode,newDarkMode,currentPalette,computedBgPrimary,computedBgSecondary,computedTextPrimary,computedColorPrimary,hasDarkClass:root.classList.contains('dark')},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix'})}).catch(()=>{});
-    // #endregion
     
-    // Simply toggle dark class - let CSS handle the styling
-    // Don't automatically switch palettes - let user control palette independently
+    // Toggle dark class
     if (newDarkMode) {
       root.classList.add('dark');
     } else {
@@ -286,16 +278,9 @@ const AppShell = () => {
     
     setIsDarkMode(newDarkMode);
     
-    // #region agent log
-    setTimeout(() => {
-      const afterBgPrimary = getComputedStyle(root).getPropertyValue('--bg-primary').trim();
-      const afterBgSecondary = getComputedStyle(root).getPropertyValue('--bg-secondary').trim();
-      const afterTextPrimary = getComputedStyle(root).getPropertyValue('--text-primary').trim();
-      const afterColorPrimary = getComputedStyle(root).getPropertyValue('--color-primary').trim();
-      const afterPalette = getCurrentPalette();
-      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AppShell.jsx:285',message:'Dark mode toggle - AFTER',data:{isDarkMode:newDarkMode,afterPalette,afterBgPrimary,afterBgSecondary,afterTextPrimary,afterColorPrimary,hasDarkClass:root.classList.contains('dark')},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix'})}).catch(()=>{});
-    }, 100);
-    // #endregion
+    // Re-apply current palette with new dark mode state
+    // This will automatically select the correct variant (light/dark)
+    switchTo(currentPalette, false); // Don't save, just re-apply
   };
 
   const toggleSidebar = () => {

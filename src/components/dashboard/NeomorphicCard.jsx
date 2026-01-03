@@ -1,8 +1,10 @@
 import React from 'react'
+import ModernCard from './ModernCard'
 import './NeomorphicCard.css'
 
 /**
  * Base Neomorphic Card Component
+ * Wrapper around ModernCard for backward compatibility
  * Foundation for all dashboard cards with consistent styling
  */
 const NeomorphicCard = ({ 
@@ -22,21 +24,20 @@ const NeomorphicCard = ({
   }
 
   const classes = [
-    'neo-card',
     sizeClasses[size],
-    elevated && 'neo-card-elevated',
-    interactive && 'neo-card-interactive',
     className
   ].filter(Boolean).join(' ')
 
   return (
-    <div 
+    <ModernCard
       className={classes}
+      elevated={elevated}
+      interactive={interactive}
       onClick={onClick}
       style={style}
     >
       {children}
-    </div>
+    </ModernCard>
   )
 }
 

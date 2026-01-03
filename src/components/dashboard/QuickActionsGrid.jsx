@@ -18,14 +18,14 @@ import './QuickActionsGrid.css'
  */
 
 const DEFAULT_ACTIONS = [
-  { id: 'courses', icon: BookOpen, label: 'Courses', color: '#B4833D' },
-  { id: 'achievements', icon: Trophy, label: 'Achievements', color: '#B4833D' },
-  { id: 'calendar', icon: Calendar, label: 'Calendar', color: '#81754B' },
-  { id: 'goals', icon: Target, label: 'Goals', color: '#81754B' },
-  { id: 'community', icon: Users, label: 'Community', color: '#66371B' },
-  { id: 'favorites', icon: Star, label: 'Favorites', color: '#66371B' },
-  { id: 'boost', icon: Zap, label: 'Boost', color: '#B4833D' },
-  { id: 'settings', icon: Settings, label: 'Settings', color: '#81754B' },
+  { id: 'courses', icon: BookOpen, label: 'Courses' },
+  { id: 'achievements', icon: Trophy, label: 'Achievements' },
+  { id: 'calendar', icon: Calendar, label: 'Calendar' },
+  { id: 'goals', icon: Target, label: 'Goals' },
+  { id: 'community', icon: Users, label: 'Community' },
+  { id: 'favorites', icon: Star, label: 'Favorites' },
+  { id: 'boost', icon: Zap, label: 'Boost' },
+  { id: 'settings', icon: Settings, label: 'Settings' },
 ]
 
 const QuickActionsGrid = ({ 
@@ -48,10 +48,7 @@ const QuickActionsGrid = ({
               onClick={() => onActionClick?.(action.id)}
               aria-label={action.label}
             >
-              <div 
-                className="quick-action-icon-wrapper"
-                style={{ '--action-color': action.color }}
-              >
+              <div className="quick-action-icon-wrapper">
                 <Icon className="quick-action-icon" size={24} strokeWidth={2} />
               </div>
               <span className="quick-action-label">{action.label}</span>

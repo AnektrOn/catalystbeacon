@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabaseClient';
 import SEOHead from '../components/SEOHead';
 import courseService from '../services/courseService';
 import schoolService from '../services/schoolService';
-import { BookOpen, Lock, Play, Clock, Search, Grid, List, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { BookOpen, Lock, Play, Clock, Search, Grid, List, ChevronLeft, ChevronRight, X, Layers } from 'lucide-react';
 
 const CourseCatalogPage = () => {
   const { user, profile } = useAuth();
@@ -17,7 +17,7 @@ const CourseCatalogPage = () => {
   const [error, setError] = useState(null);
   const [selectedSchool, setSelectedSchool] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [viewMode, setViewMode] = useState('grid'); // 'grid', 'list', or 'grouped'
   const [currentPage, setCurrentPage] = useState(1);
   const coursesPerPage = 12;
 
@@ -186,6 +186,19 @@ const CourseCatalogPage = () => {
     return filtered;
   }, [allCourses, selectedSchool, searchQuery]);
 
+  // Group courses by school for grouped view
+  const groupedCoursesBySchool = useMemo(() => {
+    const grouped = {};
+    filteredCourses.forEach(course => {
+      const schoolName = course.schoolName || 'Other';
+      if (!grouped[schoolName]) {
+        grouped[schoolName] = [];
+      }
+      grouped[schoolName].push(course);
+    });
+    return grouped;
+  }, [filteredCourses]);
+
   // Pagination
   const totalPages = Math.ceil(filteredCourses.length / coursesPerPage);
   const startIndex = (currentPage - 1) * coursesPerPage;
@@ -257,6 +270,7 @@ const CourseCatalogPage = () => {
                   ? 'bg-white/20 dark:bg-black/20' 
                   : 'bg-white/10 dark:bg-black/10 hover:bg-white/15'
               }`}
+              title="Grid View"
             >
               <Grid size={20} />
             </button>
@@ -267,8 +281,20 @@ const CourseCatalogPage = () => {
                   ? 'bg-white/20 dark:bg-black/20' 
                   : 'bg-white/10 dark:bg-black/10 hover:bg-white/15'
               }`}
+              title="List View"
             >
               <List size={20} />
+            </button>
+            <button
+              onClick={() => setViewMode('grouped')}
+              className={`p-2 rounded-lg transition-colors ${
+                viewMode === 'grouped' 
+                  ? 'bg-white/20 dark:bg-black/20' 
+                  : 'bg-white/10 dark:bg-black/10 hover:bg-white/15'
+              }`}
+              title="Grouped by School View"
+            >
+              <Layers size={20} />
             </button>
           </div>
         </div>
@@ -368,6 +394,120 @@ const CourseCatalogPage = () => {
             </button>
           )}
         </div>
+      ) : viewMode === 'grouped' ? (
+        <>
+          {/* Grouped View by School */}
+          <div className="space-y-8 mb-6">
+            {Object.keys(groupedCoursesBySchool).map((schoolName) => {
+              const schoolCourses = groupedCoursesBySchool[schoolName];
+              const school = displaySchools.find(s => (typeof s === 'string' ? s : s.name) === schoolName);
+              const schoolColor = getSchoolColor(schoolName);
+              
+              return (
+                <div key={schoolName} className="space-y-4">
+                  {/* School Header */}
+                  <div className="flex items-center gap-3 pb-2 border-b" style={{ borderColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)' }}>
+                    <h2 className="text-2xl font-bold" style={{ color: schoolColor.color }}>
+                      {schoolName}
+                    </h2>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      ({schoolCourses.length} {schoolCourses.length === 1 ? 'course' : 'courses'})
+                    </span>
+                  </div>
+                  
+                  {/* Courses Grid for this School */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {schoolCourses.map((course) => {
+                      const schoolRequiredXp = typeof school === 'object' ? school.requiredXp : 0;
+                      
+                      return (
+                        <div
+                          key={course.id}
+                          className={`glass-effect rounded-xl p-4 cursor-pointer transition-all hover:scale-[1.02] border relative ${
+                            !course.isUnlocked ? 'opacity-60' : ''
+                          }`}
+                          style={{
+                            borderColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (course.isUnlocked) {
+                              e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--color-primary) 50%, transparent)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--color-primary) 20%, transparent)';
+                          }}
+                          onClick={() => course.isUnlocked && handleCourseClick(course.id)}
+                        >
+                          {/* Lock Overlay */}
+                          {!course.isUnlocked && (
+                            <div className="absolute inset-0 bg-black/60 rounded-xl flex items-center justify-center z-10">
+                              <div className="text-center">
+                                <Lock size={24} className="text-gray-400 mx-auto mb-2" />
+                                <p className="text-xs text-gray-300">
+                                  {schoolRequiredXp.toLocaleString()} XP required
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Course Header */}
+                          <div className="mb-3">
+                            <h3 className="text-base font-semibold text-gray-800 dark:text-white mb-2 line-clamp-2 min-h-[2.5rem]">
+                              {course.course_title}
+                            </h3>
+                            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                              <span style={getDifficultyColor(course.difficulty_level)}>
+                                {course.difficulty_level || 'N/A'}
+                              </span>
+                              {course.duration_hours > 0 && (
+                                <>
+                                  <span>•</span>
+                                  <span className="flex items-center gap-1">
+                                    <Clock size={12} />
+                                    {course.duration_hours}h
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Action Button */}
+                          <button
+                            className={`w-full py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm text-white shadow-md ${
+                              !course.isUnlocked ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed' : ''
+                            }`}
+                            style={course.isUnlocked ? {
+                              background: 'var(--gradient-primary)',
+                              backgroundColor: 'var(--color-primary)'
+                            } : {}}
+                            disabled={!course.isUnlocked}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (course.isUnlocked) handleCourseClick(course.id);
+                            }}
+                          >
+                            {course.isUnlocked ? (
+                              <>
+                                <Play size={14} />
+                                {course.userProgress ? 'Continue' : 'Start'}
+                              </>
+                            ) : (
+                              <>
+                                <Lock size={14} />
+                                Locked
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
       ) : (
         <>
           {/* Course Cards */}
@@ -541,7 +681,7 @@ const CourseCatalogPage = () => {
           </div>
 
           {/* Pagination */}
-          {totalPages > 1 && (
+          {viewMode !== 'grouped' && totalPages > 1 && (
             <div className="flex items-center justify-center gap-2 mt-6">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}

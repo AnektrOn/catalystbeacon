@@ -38,9 +38,9 @@ const XPCircleWidget = ({
             cy="100"
             r="90"
             fill="none"
-            stroke="var(--color-bone)"
+            stroke="#1a1a1d"
             strokeWidth="12"
-            opacity="0.3"
+            opacity="0.8"
           />
           
           {/* Progress arc */}
@@ -62,8 +62,8 @@ const XPCircleWidget = ({
           {/* Gradient definition */}
           <defs>
             <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="var(--color-dark-goldenrod)" />
-              <stop offset="100%" stopColor="var(--color-kobicha)" />
+              <stop offset="0%" stopColor="var(--color-primary)" />
+              <stop offset="100%" stopColor="var(--color-secondary)" />
             </linearGradient>
           </defs>
         </svg>

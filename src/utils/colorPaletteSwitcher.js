@@ -1,6 +1,6 @@
 /**
  * Color Palette Switcher
- * Core logic for switching between color palettes
+ * Core logic for switching between color palettes with light/dark mode support
  */
 
 import { colorPalettes, DEFAULT_PALETTE, STORAGE_KEY } from '../config/colorPalettes';
@@ -8,19 +8,31 @@ import { colorPalettes, DEFAULT_PALETTE, STORAGE_KEY } from '../config/colorPale
 let currentPaletteKey = DEFAULT_PALETTE;
 
 /**
+ * Check if dark mode is currently active
+ * @returns {boolean} True if dark mode is active
+ */
+export function isDarkMode() {
+  if (typeof window === 'undefined') return false;
+  return document.documentElement.classList.contains('dark');
+}
+
+/**
  * Initialize the color palette system
  * Loads saved palette from localStorage or uses default
+ * Applies appropriate variant based on dark mode state
  */
 export function init() {
   if (typeof window === 'undefined') return;
   
   try {
     const savedPalette = localStorage.getItem(STORAGE_KEY);
-    if (savedPalette && colorPalettes[savedPalette]) {
-      switchTo(savedPalette, false); // Don't save to localStorage since we just loaded it
-    } else {
-      switchTo(DEFAULT_PALETTE, false);
-    }
+    const paletteKey = (savedPalette && colorPalettes[savedPalette]) ? savedPalette : DEFAULT_PALETTE;
+    
+    // Apply palette with current dark mode state
+    switchTo(paletteKey, false); // Don't save to localStorage since we just loaded it
+    
+    // Listen for dark mode changes
+    setupDarkModeListener();
   } catch (error) {
     console.error('Error initializing color palette:', error);
     switchTo(DEFAULT_PALETTE, false);
@@ -28,7 +40,32 @@ export function init() {
 }
 
 /**
+ * Setup listener for dark mode changes
+ * Re-applies current palette when dark mode toggles
+ */
+function setupDarkModeListener() {
+  if (typeof window === 'undefined') return;
+  
+  // Use MutationObserver to watch for dark class changes
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+        // Dark mode changed, re-apply current palette
+        const currentPalette = getCurrentPalette();
+        switchTo(currentPalette, false); // Don't save, just re-apply
+      }
+    });
+  });
+  
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['class']
+  });
+}
+
+/**
  * Switch to a specific color palette
+ * Automatically applies light or dark variant based on current dark mode state
  * @param {string} paletteKey - The key of the palette to switch to
  * @param {boolean} save - Whether to save to localStorage (default: true)
  */
@@ -43,21 +80,15 @@ export function switchTo(paletteKey, save = true) {
   }
   
   const root = document.documentElement;
-  const colors = palette.colors;
+  const isDark = isDarkMode();
   
-  // Apply all CSS variables
-  Object.entries(colors).forEach(([variable, value]) => {
+  // Select appropriate variant
+  const variant = isDark ? palette.dark : palette.light;
+  
+  // Apply all CSS variables from the selected variant
+  Object.entries(variant).forEach(([variable, value]) => {
     root.style.setProperty(variable, value);
   });
-  
-  // #region agent log
-  const computedBgPrimary = getComputedStyle(root).getPropertyValue('--bg-primary').trim();
-  const computedBgSecondary = getComputedStyle(root).getPropertyValue('--bg-secondary').trim();
-  const computedTextPrimary = getComputedStyle(root).getPropertyValue('--text-primary').trim();
-  const computedColorPrimary = getComputedStyle(root).getPropertyValue('--color-primary').trim();
-  const hasDarkClass = root.classList.contains('dark');
-  fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'colorPaletteSwitcher.js:49',message:'Palette switch - CSS variables applied',data:{paletteKey,computedBgPrimary,computedBgSecondary,computedTextPrimary,computedColorPrimary,hasDarkClass},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,D'})}).catch(()=>{});
-  // #endregion
   
   currentPaletteKey = paletteKey;
   
@@ -74,7 +105,8 @@ export function switchTo(paletteKey, save = true) {
   const event = new CustomEvent('colorPaletteChanged', {
     detail: {
       paletteKey,
-      palette
+      palette,
+      variant: isDark ? 'dark' : 'light'
     }
   });
   window.dispatchEvent(event);
@@ -94,6 +126,14 @@ export function getCurrentPalette() {
  */
 export function getCurrentPaletteData() {
   return colorPalettes[currentPaletteKey] || colorPalettes[DEFAULT_PALETTE];
+}
+
+/**
+ * Get the current variant (light or dark)
+ * @returns {string} 'light' or 'dark'
+ */
+export function getCurrentVariant() {
+  return isDarkMode() ? 'dark' : 'light';
 }
 
 /**
@@ -117,8 +157,10 @@ const colorPaletteSwitcher = {
   switchTo,
   getCurrentPalette,
   getCurrentPaletteData,
+  getCurrentVariant,
   resetToDefault,
-  getAllPalettes
+  getAllPalettes,
+  isDarkMode
 };
 
 export default colorPaletteSwitcher;

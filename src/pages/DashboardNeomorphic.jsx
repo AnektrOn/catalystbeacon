@@ -9,14 +9,15 @@ import useSubscription from '../hooks/useSubscription'
 import UpgradeModal from '../components/UpgradeModal'
 import { Clock, BookOpen, Award, Target, TrendingUp, Calendar } from 'lucide-react'
 
-// Import Neomorphic Components
+// Import Dashboard Components
 import {
-  XPCircleWidget,
   StreakCard,
   ActiveCourseCard,
   QuickActionsGrid,
   StatCard
 } from '../components/dashboard'
+import StatCardV2 from '../components/dashboard/StatCardV2'
+import XPCircleWidgetV2 from '../components/dashboard/XPCircleWidgetV2'
 
 import './DashboardNeomorphic.css'
 
@@ -280,11 +281,12 @@ const DashboardNeomorphic = () => {
       <div className="dashboard-grid">
         {/* Hero - XP Circle */}
         <div className="grid-hero">
-          <XPCircleWidget
+          <XPCircleWidgetV2
             currentXP={levelData.currentXP}
             levelXP={levelData.nextLevelXP}
             level={levelData.level}
             nextLevel={levelData.level + 1}
+            isActive={true}
           />
         </div>
 
@@ -294,20 +296,19 @@ const DashboardNeomorphic = () => {
             streak={stats.streak} 
             record={stats.streakRecord} 
           />
-          <StatCard
+          <StatCardV2
             icon={Clock}
             value={stats.timeThisWeek}
             label="This Week"
-            subtitle="Keep it up!"
-            trend={15}
+            subtitle="Learning time"
           />
-          <StatCard
+          <StatCardV2
             icon={BookOpen}
             value={stats.lessonsCompleted}
             label="Lessons"
             subtitle="Completed"
           />
-          <StatCard
+          <StatCardV2
             icon={Award}
             value={stats.achievementsUnlocked}
             label="Achievements"
@@ -339,16 +340,15 @@ const DashboardNeomorphic = () => {
         {(!isFreeUser || isAdmin) && (
           <>
             <div className="grid-stat-extra">
-              <StatCard
+              <StatCardV2
                 icon={Target}
                 value={`${Math.round((stats.lessonsCompleted / (stats.lessonsCompleted + 10)) * 100)}%`}
                 label="Weekly Goal"
                 subtitle="On track"
-                trend={8}
               />
             </div>
             <div className="grid-stat-extra">
-              <StatCard
+              <StatCardV2
                 icon={TrendingUp}
                 value={stats.coursesActive}
                 label="Active Courses"
@@ -356,7 +356,7 @@ const DashboardNeomorphic = () => {
               />
             </div>
             <div className="grid-stat-extra">
-              <StatCard
+              <StatCardV2
                 icon={Calendar}
                 value="5"
                 label="This Month"

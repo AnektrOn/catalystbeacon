@@ -1,0 +1,108 @@
+/* XP Circle Widget V2 */
+.xp-circle-widget-v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Header */
+.xp-widget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.xp-widget-title {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: hsl(var(--card-foreground));
+  margin: 0;
+}
+
+.xp-widget-subtitle {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Circle container */
+.xp-circle-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.xp-circle-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Status dot */
+.xp-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.xp-status-dot-active {
+  background: hsl(var(--success));
+  box-shadow: 0 0 8px hsl(var(--success) / 0.6);
+}
+
+.xp-status-dot-inactive {
+  background: hsl(var(--muted));
+}
+
+/* Status badge */
+.xp-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.3s ease;
+}
+
+.xp-status-active {
+  background: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+}
+
+.xp-status-inactive {
+  background: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+}
+
+/* Footer */
+.xp-widget-footer {
+  margin-top: 8px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .xp-circle-widget-v2 {
+    gap: 20px;
+  }
+
+  .xp-widget-title {
+    font-size: 20px;
+  }
+
+  .xp-circle-container {
+    transform: scale(0.85);
+  }
+}
+

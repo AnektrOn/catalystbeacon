@@ -3,7 +3,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-old-lace);
+  background: #2a2a2e;
   position: relative;
   overflow: visible;
 }
@@ -56,15 +56,15 @@
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--color-coyote);
+  color: #808085;
 }
 
 .xp-level-number {
   font-size: 48px;
   font-weight: 700;
-  color: var(--color-dark-goldenrod);
+  color: var(--color-primary);
   line-height: 1;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+  text-shadow: 0 0 20px var(--color-primary), 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .xp-progress-text {
@@ -73,27 +73,27 @@
   gap: 4px;
   font-size: 18px;
   font-weight: 600;
-  color: var(--color-kobicha);
+  color: #e8e8e8;
 }
 
 .xp-current {
-  color: var(--color-dark-goldenrod);
+  color: var(--color-primary);
 }
 
 .xp-separator {
-  color: var(--color-coyote);
+  color: #808085;
   opacity: 0.5;
 }
 
 .xp-total {
   font-size: 14px;
-  color: var(--color-coyote);
+  color: #a0a0a5;
 }
 
 .xp-subtitle {
   font-size: 12px;
   font-weight: 500;
-  color: var(--color-coyote);
+  color: #a0a0a5;
   margin-top: 4px;
 }
 
@@ -112,9 +112,9 @@
   left: 50%;
   width: 6px;
   height: 6px;
-  background: var(--color-dark-goldenrod);
+  background: var(--color-primary);
   border-radius: 50%;
-  box-shadow: 0 0 8px var(--color-dark-goldenrod);
+  box-shadow: 0 0 8px var(--color-primary);
   transform-origin: 0 0;
   animation: orbitPulse 2s ease-in-out infinite;
   opacity: 0.6;

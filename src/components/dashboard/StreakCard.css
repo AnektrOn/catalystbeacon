@@ -20,8 +20,8 @@
 }
 
 .streak-icon {
-  color: var(--color-dark-goldenrod);
-  filter: drop-shadow(0 2px 4px rgba(180, 131, 61, 0.3));
+  color: hsl(var(--primary));
+  filter: drop-shadow(0 0 8px hsl(var(--primary) / 0.5));
   animation: flameFlicker 2s ease-in-out infinite;
 }
 
@@ -29,7 +29,7 @@
   position: absolute;
   width: 40px;
   height: 40px;
-  background: radial-gradient(circle, rgba(180, 131, 61, 0.3) 0%, transparent 70%);
+  background: radial-gradient(circle, hsl(var(--primary) / 0.2) 0%, hsl(var(--card) / 0) 70%);
   border-radius: 50%;
   animation: glowPulse 2s ease-in-out infinite;
 }
@@ -70,9 +70,9 @@
 .streak-number {
   font-size: 36px;
   font-weight: 700;
-  color: var(--color-dark-goldenrod);
+  color: hsl(var(--primary));
   line-height: 1;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+  text-shadow: 0 0 16px hsl(var(--primary) / 0.5);
 }
 
 .streak-label {
@@ -80,7 +80,7 @@
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--color-coyote);
+  color: hsl(var(--muted-foreground));
 }
 
 /* Record badge */
@@ -89,8 +89,8 @@
   align-items: center;
   gap: 6px;
   padding: 4px 8px;
-  background: rgba(180, 131, 61, 0.1);
-  border-radius: 12px;
+  background: hsl(var(--muted) / 0.3);
+  border-radius: 8px;
   margin-top: auto;
 }
 
@@ -99,13 +99,13 @@
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--color-coyote);
+  color: hsl(var(--muted-foreground) / 0.7);
 }
 
 .streak-record-number {
   font-size: 12px;
   font-weight: 700;
-  color: var(--color-dark-goldenrod);
+  color: hsl(var(--primary));
 }
 
 /* Responsive */
@@ -124,28 +124,5 @@
   }
 }
 
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
-  .streak-icon {
-    color: var(--color-dark-goldenrod);
-    filter: drop-shadow(0 0 8px rgba(180, 131, 61, 0.6));
-  }
-
-  .streak-number {
-    color: var(--color-dark-goldenrod);
-    text-shadow: 0 0 12px rgba(180, 131, 61, 0.5);
-  }
-
-  .streak-label {
-    color: var(--color-bone);
-  }
-
-  .streak-record {
-    background: rgba(180, 131, 61, 0.2);
-  }
-
-  .streak-record-label {
-    color: var(--color-bone);
-  }
-}
+/* Colors are now handled by color palette system */
 

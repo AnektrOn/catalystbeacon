@@ -1,7 +1,8 @@
 /* Neomorphic Dashboard Styles */
 .dashboard-neomorphic {
   min-height: 100vh;
-  background: var(--color-old-lace);
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
   padding: 24px;
   transition: background-color 0.3s ease;
 }
@@ -14,14 +15,14 @@
 .dashboard-title {
   font-size: 32px;
   font-weight: 700;
-  color: var(--color-kobicha);
+  color: hsl(var(--foreground));
   margin: 0 0 8px 0;
 }
 
 .dashboard-subtitle {
   font-size: 16px;
   font-weight: 400;
-  color: var(--color-coyote);
+  color: hsl(var(--muted-foreground));
   margin: 0;
 }
 
@@ -29,9 +30,15 @@
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
-  gap: 24px;
+  gap: 16px;
   max-width: 1600px;
   margin: 0 auto;
+}
+
+@media (min-width: 1024px) {
+  .dashboard-grid {
+    gap: 24px;
+  }
 }
 
 /* Grid Areas */
@@ -67,14 +74,14 @@
   align-items: center;
   justify-content: center;
   gap: 16px;
-  background: var(--color-old-lace);
+  background: hsl(var(--background));
 }
 
 .loading-spinner {
   width: 48px;
   height: 48px;
-  border: 4px solid var(--color-bone);
-  border-top-color: var(--color-dark-goldenrod);
+  border: 4px solid hsl(var(--muted));
+  border-top-color: hsl(var(--primary));
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -87,7 +94,7 @@
 
 .dashboard-loading p {
   font-size: 16px;
-  color: var(--color-coyote);
+  color: hsl(var(--muted-foreground));
   font-weight: 500;
 }
 
@@ -95,31 +102,33 @@
 .upgrade-prompt {
   margin-top: 32px;
   padding: 24px;
-  background: var(--color-bone);
-  border-radius: 24px;
+  background: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  border-radius: 20px;
   text-align: center;
   box-shadow: 
-    8px 8px 16px rgba(0, 0, 0, 0.08),
-    -8px -8px 16px rgba(255, 255, 255, 0.6);
+    0 2px 8px rgba(0, 0, 0, 0.15),
+    0 1px 2px rgba(0, 0, 0, 0.1);
+  border: 1px solid hsl(var(--border) / 0.1);
 }
 
 .upgrade-prompt h3 {
   font-size: 24px;
   font-weight: 700;
-  color: var(--color-kobicha);
+  color: hsl(var(--card-foreground));
   margin: 0 0 12px 0;
 }
 
 .upgrade-prompt p {
   font-size: 16px;
-  color: var(--color-coyote);
+  color: hsl(var(--muted-foreground));
   margin: 0 0 20px 0;
 }
 
 .upgrade-button {
   padding: 14px 32px;
-  background: var(--gradient-primary);
-  color: white;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
   border: none;
   border-radius: 12px;
   font-size: 16px;
@@ -127,21 +136,22 @@
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 
-    0 4px 12px rgba(180, 131, 61, 0.3),
+    0 4px 12px hsl(var(--primary) / 0.3),
     inset 0 -2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .upgrade-button:hover {
   transform: translateY(-2px);
+  background: hsl(var(--primary) / 0.9);
   box-shadow: 
-    0 6px 16px rgba(180, 131, 61, 0.4),
+    0 6px 16px hsl(var(--primary) / 0.4),
     inset 0 -2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .upgrade-button:active {
   transform: translateY(0);
   box-shadow: 
-    0 2px 6px rgba(180, 131, 61, 0.3),
+    0 2px 6px hsl(var(--primary) / 0.3),
     inset 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
@@ -153,7 +163,7 @@
 
   .dashboard-grid {
     grid-template-columns: repeat(6, 1fr);
-    gap: 20px;
+    gap: 16px;
   }
 
   .grid-hero {
@@ -164,7 +174,7 @@
   .grid-stats {
     grid-column: span 6;
     grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
+    gap: 12px;
   }
 
   .grid-course {
@@ -195,20 +205,22 @@
   }
 
   .dashboard-header {
-    margin-bottom: 24px;
+    margin-bottom: 20px;
   }
 
   .dashboard-title {
     font-size: 24px;
+    line-height: 1.2;
   }
 
   .dashboard-subtitle {
     font-size: 13px;
+    margin-top: 4px;
   }
 
   .dashboard-grid {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 12px;
   }
 
   .grid-hero,
@@ -219,7 +231,9 @@
     grid-column: span 1;
   }
 
+  /* Stats grid - 2 columns on mobile */
   .grid-stats {
+    display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
   }
@@ -238,46 +252,5 @@
   }
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .dashboard-neomorphic {
-    background: var(--color-earth-green);
-  }
-
-  .dashboard-title {
-    color: var(--color-old-lace);
-  }
-
-  .dashboard-subtitle {
-    color: var(--color-bone);
-  }
-
-  .dashboard-loading {
-    background: var(--color-earth-green);
-  }
-
-  .loading-spinner {
-    border-color: rgba(180, 131, 61, 0.2);
-    border-top-color: var(--color-dark-goldenrod);
-  }
-
-  .dashboard-loading p {
-    color: var(--color-bone);
-  }
-
-  .upgrade-prompt {
-    background: rgba(180, 131, 61, 0.1);
-    box-shadow: 
-      8px 8px 16px rgba(0, 0, 0, 0.3),
-      -8px -8px 16px rgba(255, 255, 255, 0.05);
-  }
-
-  .upgrade-prompt h3 {
-    color: var(--color-old-lace);
-  }
-
-  .upgrade-prompt p {
-    color: var(--color-bone);
-  }
-}
+/* Dark mode is handled by colorPaletteSwitcher */
 
