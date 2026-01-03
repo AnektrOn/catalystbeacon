@@ -165,7 +165,7 @@ const PricingPage = () => {
         }
       }
       
-      // Fall back to API server if Supabase failed or not available
+      // Fall back to API server if Supabase Edge Function failed
       // Determine API URL: use env var, or same origin in production, or localhost in dev
       let apiBaseUrl = API_URL
       if (!apiBaseUrl) {
@@ -177,7 +177,7 @@ const PricingPage = () => {
         }
       }
       
-      console.log('Using API server:', `${apiBaseUrl}/api/create-checkout-session`)
+      console.log('Supabase Edge Function failed, falling back to API server:', `${apiBaseUrl}/api/create-checkout-session`)
         const response = await fetch(`${apiBaseUrl}/api/create-checkout-session`, {
           method: 'POST',
           headers: {
