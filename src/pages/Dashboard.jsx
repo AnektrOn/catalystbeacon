@@ -285,14 +285,16 @@ const Dashboard = () => {
     
     try {
       // Get user's most recent course progress
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:288',message:'Loading current lesson - querying thumbnail_url',data:{userId:user.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       const { data: courseProgressData, error: progressError } = await supabase
         .from('user_course_progress')
         .select(`
           *,
           course_metadata (
             id,
-            course_title,
-            thumbnail_url
+            course_title
           )
         `)
         .eq('user_id', user.id)
@@ -390,7 +392,7 @@ const Dashboard = () => {
               courseTitle: currentLesson.courseTitle,
               progressPercentage: courseProgress.progress_percentage || 0,
               timeRemaining: 0, // Calculate based on lesson duration if available
-              thumbnailUrl: courseProgress.course_metadata?.thumbnail_url || null
+              thumbnailUrl: null // thumbnail_url column doesn't exist in course_metadata
             }
           }))
         }
@@ -455,7 +457,15 @@ const Dashboard = () => {
       const nodes = await Promise.all(
         courses.slice(0, 5).map(async (course, index) => {
           try {
-            const { data: progress, error: progressError } = await courseService.getUserCourseProgress(user.id, course.id)
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:458',message:'Constellation course progress - course object',data:{courseId:course.id,courseIdType:typeof course.id,courseCourseId:course.course_id,courseCourseIdType:typeof course.course_id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+            // #endregion
+            // Use course.course_id (integer) not course.id (UUID) for getUserCourseProgress
+            if (!course.course_id) {
+              console.warn('Course missing course_id:', course);
+              return null;
+            }
+            const { data: progress, error: progressError } = await courseService.getUserCourseProgress(user.id, course.course_id)
             if (progressError) {
               console.warn('Error loading course progress:', progressError)
               return null
@@ -641,7 +651,16 @@ const Dashboard = () => {
     const sessionId = searchParams.get('session_id')
 
     if (payment === 'success' && sessionId && user) {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001'
+      // Determine API URL: use env var, or same origin in production, or localhost in dev
+      let API_URL = process.env.REACT_APP_API_URL
+      if (!API_URL) {
+        if (process.env.NODE_ENV === 'development') {
+          API_URL = 'http://localhost:3001'
+        } else {
+          // In production, use the same origin (the server.js serves both API and React app)
+          API_URL = window.location.origin
+        }
+      }
       
       toast.success('🎉 Payment completed! Processing your subscription...')
 
