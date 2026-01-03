@@ -850,6 +850,11 @@ app.use(express.static(buildPath, {
 // IMPORTANT: This must be LAST, after all API routes and static file serving
 // Use app.use() instead of app.get('*') for Express 5 compatibility
 app.use((req, res, next) => {
+  // Only handle GET requests for serving HTML
+  if (req.method !== 'GET') {
+    return next()
+  }
+  
   // Skip API routes
   if (req.path.startsWith('/api/')) {
     return next()
@@ -861,7 +866,7 @@ app.use((req, res, next) => {
     return next()
   }
   
-  // Serve index.html for all other routes (React Router will handle routing)
+  // Serve index.html for all other GET routes (React Router will handle routing)
   res.sendFile(path.join(buildPath, 'index.html'), (err) => {
     if (err) {
       console.error('Error serving index.html:', err)
