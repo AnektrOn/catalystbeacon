@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
 import { Eye, EyeOff, ArrowLeft, ArrowRight } from 'lucide-react'
+import CosmicLoader from '../components/ui/CosmicLoader'
 
 const LoginPage = () => {
   const [email, setEmail] = useState('')
@@ -28,12 +29,21 @@ const LoginPage = () => {
     
     setLoading(true)
 
+    // Force minimum loading time of 500ms for smooth transition
+    const minLoadingTime = new Promise(resolve => setTimeout(resolve, 500))
+
     try {
-      const { error } = await signIn(email, password)
+      // Wait for both the actual sign in AND minimum loading time
+      const [signInResult] = await Promise.all([
+        signIn(email, password),
+        minLoadingTime
+      ])
       
-      if (error) {
-        toast.error(error.message || 'Failed to sign in. Please check your credentials.')
+      if (signInResult?.error) {
+        toast.error(signInResult.error.message || 'Failed to sign in. Please check your credentials.')
+        setLoading(false)
       } else {
+        // Keep loader visible during navigation
         setTimeout(() => {
           navigate('/dashboard')
         }, 100)
@@ -41,9 +51,13 @@ const LoginPage = () => {
     } catch (error) {
       console.error('Login error:', error)
       toast.error('An unexpected error occurred. Please try again.')
-    } finally {
       setLoading(false)
     }
+  }
+
+  // Show cosmic loader while loading
+  if (loading) {
+    return <CosmicLoader message="Signing you in..." />
   }
 
   return (
@@ -69,7 +83,7 @@ const LoginPage = () => {
             <div className="flex items-center space-x-3">
               <img 
                 src="/Logo uni.png" 
-                alt="HC University Logo" 
+                alt="HC University" 
                 className="w-12 h-12 object-contain"
               />
               <span className="text-white text-xl font-semibold tracking-wide">Human Catalyst University</span>
@@ -157,20 +171,8 @@ const LoginPage = () => {
               disabled={loading}
               className="w-full py-3.5 px-4 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-medium rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 group"
             >
-              {loading ? (
-                <>
-                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span>Signing in...</span>
-                </>
-              ) : (
-                <>
-                  <span>Sign In</span>
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </>
-              )}
+              <span>Sign In</span>
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
           </form>
 

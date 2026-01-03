@@ -542,11 +542,21 @@ class CourseService {
    */
   async getUserCourseProgress(userId, courseId) {
     try {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'courseService.js:543',message:'getUserCourseProgress called',data:{userId,courseId,courseIdType:typeof courseId,parsedCourseId:parseInt(courseId),isNaN:isNaN(parseInt(courseId))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
+      const parsedCourseId = parseInt(courseId);
+      if (isNaN(parsedCourseId)) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'courseService.js:549',message:'NaN courseId detected - returning early',data:{courseId,parsedCourseId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
+        return { data: null, error: { message: 'Invalid courseId: must be an integer course_id, not UUID' } };
+      }
       const { data, error } = await supabase
         .from('user_course_progress')
         .select('*')
         .eq('user_id', userId)
-        .eq('course_id', parseInt(courseId))
+        .eq('course_id', parsedCourseId)
         .single();
 
       if (error && error.code !== 'PGRST116') throw error; // PGRST116 = not found, which is OK
@@ -771,6 +781,49 @@ class CourseService {
 
       if (xpAwarded === true) {
         console.log(`✅ Successfully awarded ${xpAmount} XP to user ${userId}`);
+      }
+      
+      // Send lesson completion email via Supabase (non-blocking)
+      try {
+        // Get user profile and lesson details for email
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('email, full_name, current_xp')
+          .eq('id', userId)
+          .single();
+        
+        const { data: courseData } = await supabase
+          .from('course_metadata')
+          .select('title')
+          .eq('course_id', parseInt(courseId))
+          .single();
+        
+        const { data: lessonData } = await supabase
+          .from('course_content')
+          .select('title')
+          .eq('course_id', parseInt(courseId))
+          .eq('chapter_number', chapterNumber)
+          .eq('lesson_number', lessonNumber)
+          .single();
+        
+        if (profileData?.email && lessonData?.title) {
+          const { emailService } = await import('./emailService')
+          
+          await emailService.sendLessonCompletion(
+            profileData.email,
+            profileData.full_name || 'there',
+            lessonData.title,
+            courseData?.title || 'Course',
+            xpAmount,
+            profileData.current_xp || 0
+          ).catch(err => {
+            console.log('Lesson completion email send failed (non-critical):', err)
+            // Don't fail lesson completion if email fails
+          })
+        }
+      } catch (emailError) {
+        console.log('Lesson completion email error (non-critical):', emailError)
+        // Don't fail lesson completion if email fails
       }
       
       return { data: { lessonProgress, xpAwarded: xpAmount }, error: null };

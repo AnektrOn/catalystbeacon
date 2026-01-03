@@ -361,6 +361,36 @@ class RoadmapService {
 
       if (roadmapError) throw roadmapError;
 
+      // Send lesson completion email via Supabase (non-blocking)
+      try {
+        // Get user profile for email
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('email, full_name, current_xp')
+          .eq('id', userId)
+          .single();
+        
+        if (profileData?.email && lessonTitle) {
+          const { emailService } = await import('./emailService')
+          const xpEarned = rewardsData?.xp_earned || 50
+          
+          await emailService.sendLessonCompletion(
+            profileData.email,
+            profileData.full_name || 'there',
+            lessonTitle,
+            masterschool || 'Course',
+            xpEarned,
+            profileData.current_xp || 0
+          ).catch(err => {
+            console.log('Lesson completion email send failed (non-critical):', err)
+            // Don't fail lesson completion if email fails
+          })
+        }
+      } catch (emailError) {
+        console.log('Lesson completion email error (non-critical):', emailError)
+        // Don't fail lesson completion if email fails
+      }
+
       return {
         success: true,
         alreadyCompleted: false,

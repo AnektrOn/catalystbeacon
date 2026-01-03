@@ -373,6 +373,23 @@ export const AuthProvider = ({ children }) => {
       
       console.log('Signup successful:', data)
       
+      // Send sign-up confirmation email (non-blocking)
+      try {
+        const { emailService } = await import('../services/emailService')
+        const userName = userData?.full_name || data.user?.user_metadata?.full_name || null
+        
+        await emailService.sendSignUpConfirmation(
+          email,
+          userName
+        ).catch(err => {
+          console.log('Sign-up email send failed (non-critical):', err)
+          // Don't fail signup if email fails
+        })
+      } catch (emailError) {
+        console.log('Sign-up email error (non-critical):', emailError)
+        // Don't fail signup if email fails
+      }
+
       // Handle successful signup
       if (data.user && data.session) {
         // User is immediately signed in
@@ -404,6 +421,29 @@ export const AuthProvider = ({ children }) => {
       if (error) throw error
       
       toast.success('Welcome back!')
+      
+      // Send sign-in confirmation email via Supabase (non-blocking)
+      try {
+        const { emailService } = await import('../services/emailService')
+        const loginTime = new Date().toLocaleString()
+        const userName = profile?.full_name || data.user?.user_metadata?.full_name || null
+        
+        // Get IP address if available (from headers or client)
+        const ipAddress = null // Can be enhanced to get from request
+        
+        await emailService.sendSignInConfirmation(
+          email,
+          userName,
+          loginTime,
+          ipAddress
+        ).catch(err => {
+          console.log('Sign-in email send failed (non-critical):', err)
+          // Don't fail sign-in if email fails
+        })
+      } catch (emailError) {
+        console.log('Sign-in email error (non-critical):', emailError)
+        // Don't fail sign-in if email fails
+      }
       
       return { data, error: null }
     } catch (error) {

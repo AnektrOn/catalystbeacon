@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
 import { Eye, EyeOff, ArrowLeft, ArrowRight } from 'lucide-react'
+import CosmicLoader from '../components/ui/CosmicLoader'
 
 const SignupPage = () => {
   const [formData, setFormData] = useState({
@@ -88,34 +89,47 @@ const SignupPage = () => {
     setLoading(true)
     setErrors({})
 
+    // Force minimum loading time of 500ms for smooth transition
+    const minLoadingTime = new Promise(resolve => setTimeout(resolve, 500))
+
     try {
       // Security: Password comes from user input (formData.password), never hardcoded
       // All passwords are user-provided and validated before submission
-      const { data, error } = await signUp(formData.email, formData.password, { 
-        full_name: formData.fullName.trim() 
-      })
+      const [signUpResult] = await Promise.all([
+        signUp(formData.email, formData.password, { full_name: formData.fullName.trim() }),
+        minLoadingTime
+      ])
+      
+      const { data, error } = signUpResult || {}
       
       if (error) {
         toast.error(error.message || 'Failed to create account')
-      } else if (!error) {
+        setLoading(false)
+      } else {
         toast.success('Account created successfully!')
         // Check if user was immediately signed in (email confirmation disabled)
         if (data?.user && data?.session) {
-          // User is signed in, redirect to dashboard
+          // User is signed in, redirect to dashboard (keep loader visible)
           setTimeout(() => {
             navigate('/dashboard')
           }, 100)
         } else {
-          // User needs to verify email, redirect to login
-          navigate('/login')
+          // User needs to verify email, redirect to login (keep loader visible)
+          setTimeout(() => {
+            navigate('/login')
+          }, 100)
         }
       }
     } catch (error) {
       console.error('Signup error:', error)
       toast.error('An unexpected error occurred')
-    } finally {
       setLoading(false)
     }
+  }
+
+  // Show cosmic loader while loading
+  if (loading) {
+    return <CosmicLoader message="Creating your account..." />
   }
 
   return (
@@ -140,8 +154,8 @@ const SignupPage = () => {
           <div className="mb-12">
             <div className="flex items-center space-x-3">
               <img 
-                src="/hc-logo.png" 
-                alt="HC University Logo" 
+                src="/Logo uni.png" 
+                alt="HC University" 
                 className="w-12 h-12 object-contain"
               />
               <span className="text-white text-xl font-semibold tracking-wide">Human Catalyst University</span>
@@ -280,20 +294,8 @@ const SignupPage = () => {
               disabled={loading}
               className="w-full py-3.5 px-4 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-medium rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 group mt-6"
             >
-              {loading ? (
-                <>
-                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span>Creating...</span>
-                </>
-              ) : (
-                <>
-                  <span>Start Creating</span>
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </>
-              )}
+              <span>Start Creating</span>
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
           </form>
 

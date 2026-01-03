@@ -19,21 +19,63 @@ serve(async (req) => {
       apiVersion: '2023-10-16',
     })
 
-    // Initialize Supabase client
+    // Initialize Supabase client with service role for admin operations
+    const supabaseServiceClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
+    // Get user from Authorization header
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Missing authorization header' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    // Initialize client with user's token for auth operations
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
         global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
+          headers: { Authorization: authHeader },
         },
       }
     )
 
     // Get the user from the request
-    const {
-      data: { user },
-    } = await supabaseClient.auth.getUser()
+    let user
+    try {
+      const {
+        data: { user: authUser },
+        error: userError
+      } = await supabaseClient.auth.getUser()
+      
+      if (userError || !authUser) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized - Invalid or expired token' }),
+          { 
+            status: 401, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+      
+      user = authUser
+    } catch (authError) {
+      return new Response(
+        JSON.stringify({ error: 'Authentication failed' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
 
     if (!user) {
       return new Response(
@@ -61,8 +103,8 @@ serve(async (req) => {
     // Create or retrieve Stripe customer
     let customerId = null
     
-    // Check if user already has a customer ID in their profile
-    const { data: profile } = await supabaseClient
+    // Check if user already has a customer ID in their profile (use service client for admin access)
+    const { data: profile } = await supabaseServiceClient
       .from('profiles')
       .select('stripe_customer_id')
       .eq('id', user.id)
@@ -80,8 +122,8 @@ serve(async (req) => {
       })
       customerId = customer.id
 
-      // Update profile with customer ID
-      await supabaseClient
+      // Update profile with customer ID (use service client)
+      await supabaseServiceClient
         .from('profiles')
         .update({ stripe_customer_id: customerId })
         .eq('id', user.id)

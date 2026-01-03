@@ -22,8 +22,21 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const { createClient } = require('@supabase/supabase-js')
 const rateLimit = require('express-rate-limit')
 
+// Email service (using your own SMTP server via Nodemailer)
+let emailService
+try {
+  emailService = require('./server/emailService')
+  console.log('✅ Email service loaded (SMTP)')
+} catch (error) {
+  console.warn('⚠️ Email service not available:', error.message)
+  emailService = null
+}
+
 const app = express()
 const PORT = process.env.PORT || 3001
+
+// Trust proxy MUST be set FIRST (before rate limiters) - required when behind reverse proxy/load balancer
+app.set('trust proxy', true)
 
 // Stripe Price IDs from environment variables
 const STRIPE_PRICE_IDS = {
@@ -49,7 +62,34 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
-// Rate limiting middleware
+// Helper function to send email via Supabase Edge Function
+async function sendEmailViaSupabase(emailType, emailData) {
+  try {
+    const response = await fetch(`${process.env.SUPABASE_URL}/functions/v1/send-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({
+        emailType,
+        ...emailData
+      })
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to send email')
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error('Error sending email via Supabase:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+// Rate limiting middleware (trust proxy is already set above)
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
@@ -100,7 +140,7 @@ app.use((req, res, next) => {
   next()
 })
 
-// Apply general rate limiting to all routes
+// Apply general rate limiting to all routes (AFTER trust proxy is set)
 app.use('/api/', generalLimiter)
 
 // Create Stripe customer
@@ -128,11 +168,43 @@ app.post('/api/create-customer', async (req, res) => {
   }
 })
 
+// Send sign-up confirmation email
+app.post('/api/send-signup-email', async (req, res) => {
+  try {
+    const { email, userName } = req.body
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' })
+    }
+
+    if (!emailService) {
+      console.error('❌ Email service not available')
+      return res.status(503).json({ error: 'Email service not configured' })
+    }
+
+    console.log('📧 Sending sign-up confirmation email to:', email)
+
+    const result = await emailService.sendSignUpConfirmation(email, userName)
+
+    if (result.success) {
+      console.log('✅ Sign-up email sent successfully')
+      return res.json({ success: true, message: 'Email sent successfully' })
+    } else {
+      console.error('❌ Failed to send sign-up email:', result.error)
+      return res.status(500).json({ error: result.error || 'Failed to send email' })
+    }
+  } catch (error) {
+    console.error('❌ Error sending sign-up email:', error)
+    return res.status(500).json({ error: error.message || 'Internal server error' })
+  }
+})
+
 // Create checkout session
 app.post('/api/create-checkout-session', paymentLimiter, async (req, res) => {
   console.log('=== CREATE CHECKOUT SESSION REQUEST ===')
   console.log('Body:', req.body)
   console.log('Origin:', req.headers.origin)
+  console.log('Headers:', req.headers)
   
   try {
     const { priceId, userId, userEmail } = req.body
@@ -140,6 +212,12 @@ app.post('/api/create-checkout-session', paymentLimiter, async (req, res) => {
     if (!priceId || !userId || !userEmail) {
       console.error('Missing required fields:', { priceId: !!priceId, userId: !!userId, userEmail: !!userEmail })
       return res.status(400).json({ error: 'Missing required fields: priceId, userId, and userEmail are required' })
+    }
+
+    // Validate Stripe key
+    if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes('your_stripe_secret_key')) {
+      console.error('ERROR: STRIPE_SECRET_KEY is not configured')
+      return res.status(503).json({ error: 'Payment service is not configured. Please contact support.' })
     }
 
     // Get or create Stripe customer
@@ -165,6 +243,8 @@ app.post('/api/create-checkout-session', paymentLimiter, async (req, res) => {
         .eq('id', userId)
     }
 
+    console.log('Creating Stripe checkout session with customer:', customerId)
+    
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ['card'],
@@ -182,10 +262,24 @@ app.post('/api/create-checkout-session', paymentLimiter, async (req, res) => {
       }
     })
 
+    console.log('Checkout session created successfully:', { id: session.id, url: session.url ? 'YES' : 'NO' })
+    
     res.json({ id: session.id, url: session.url })
   } catch (error) {
     console.error('Error creating checkout session:', error)
-    res.status(500).json({ error: error.message })
+    console.error('Error details:', {
+      message: error.message,
+      type: error.type,
+      code: error.code,
+      statusCode: error.statusCode
+    })
+    
+    // Return appropriate status code
+    const statusCode = error.statusCode || 500
+    res.status(statusCode).json({ 
+      error: error.message || 'Failed to create checkout session',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    })
   }
 })
 
@@ -241,6 +335,34 @@ app.get('/api/payment-success', paymentLimiter, async (req, res) => {
     }
 
     console.log('Profile updated successfully:', data)
+    
+    // Send payment confirmation email via Supabase
+    try {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('email, full_name')
+        .eq('id', session.metadata.userId)
+        .single()
+      
+      if (profileData?.email) {
+        const planName = role === 'Teacher' ? 'Teacher Plan' : 'Student Plan'
+        const amount = subscription.items.data[0]?.price.unit_amount / 100 || 0
+        const currency = subscription.items.data[0]?.price.currency?.toUpperCase() || 'USD'
+        
+        await sendEmailViaSupabase('payment', {
+          email: profileData.email,
+          userName: profileData.full_name || 'there',
+          planName,
+          amount,
+          currency,
+          subscriptionId: subscription.id
+        })
+      }
+    } catch (emailError) {
+      console.error('Error sending payment confirmation email:', emailError)
+      // Don't fail the request if email fails
+    }
+    
     console.log('=== PAYMENT SUCCESS COMPLETE ===')
 
     res.json({ success: true, role })
@@ -315,6 +437,10 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
         const failedInvoice = event.data.object
         await handleInvoicePaymentFailed(failedInvoice)
         break
+      case 'invoice.upcoming':
+        const upcomingInvoice = event.data.object
+        await handleInvoiceUpcoming(upcomingInvoice)
+        break
       default:
         console.log(`Unhandled event type ${event.type}`)
     }
@@ -371,6 +497,33 @@ async function handleCheckoutSessionCompleted(session) {
       console.error('Error updating profile:', error)
     } else {
       console.log('Profile updated successfully:', data)
+      
+      // Send payment confirmation email via Supabase
+      try {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('email, full_name')
+          .eq('id', userId)
+          .single()
+        
+        if (profileData?.email) {
+          const planName = role === 'Teacher' ? 'Teacher Plan' : 'Student Plan'
+          const amount = subscription.items.data[0]?.price.unit_amount / 100 || 0
+          const currency = subscription.items.data[0]?.price.currency?.toUpperCase() || 'USD'
+          
+          await sendEmailViaSupabase('payment', {
+            email: profileData.email,
+            userName: profileData.full_name || 'there',
+            planName,
+            amount,
+            currency,
+            subscriptionId: subscription.id
+          })
+        }
+      } catch (emailError) {
+        console.error('Error sending payment confirmation email:', emailError)
+        // Don't fail the webhook if email fails
+      }
     }
 
     // Create or update subscription record
@@ -423,25 +576,41 @@ async function handleSubscriptionUpdate(subscription) {
   const customerId = subscription.customer
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id')
+    .select('id, role, email, full_name')
     .eq('stripe_customer_id', customerId)
     .single()
 
   if (profile) {
     // Get the price ID to determine if role should change
     const priceId = subscription.items.data[0]?.price.id
-    const role = getRoleFromPriceId(priceId)
+    const newRole = getRoleFromPriceId(priceId)
+    const oldRole = profile.role
 
-    console.log('Subscription updated, setting role to:', role)
+    console.log('Subscription updated, setting role to:', newRole, 'from:', oldRole)
 
+    // Update role
     await supabase
       .from('profiles')
       .update({
-        role: role,
+        role: newRole,
         subscription_status: subscription.status,
         updated_at: new Date().toISOString()
       })
       .eq('id', profile.id)
+
+    // Send email if role changed
+    if (oldRole !== newRole && profile.email) {
+      try {
+        await sendEmailViaSupabase('role-change', {
+          email: profile.email,
+          userName: profile.full_name || 'there',
+          oldRole: oldRole,
+          newRole: newRole
+        })
+      } catch (emailError) {
+        console.error('Error sending role change email:', emailError)
+      }
+    }
   }
 }
 
@@ -451,12 +620,15 @@ async function handleSubscriptionDeleted(subscription) {
   const customerId = subscription.customer
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id')
+    .select('id, email, full_name, role')
     .eq('stripe_customer_id', customerId)
     .single()
 
   if (profile) {
     console.log('Subscription cancelled, downgrading to Free')
+    
+    const oldRole = profile.role
+    const planName = oldRole === 'Teacher' ? 'Teacher Plan' : 'Student Plan'
     
     await supabase
       .from('profiles')
@@ -467,6 +639,24 @@ async function handleSubscriptionDeleted(subscription) {
         updated_at: new Date().toISOString()
       })
       .eq('id', profile.id)
+
+    // Send cancellation email
+    if (profile.email) {
+      try {
+        await sendEmailViaSupabase('subscription-cancelled', {
+          email: profile.email,
+          userName: profile.full_name || 'there',
+          planName: planName,
+          cancellationDate: new Date().toLocaleDateString('fr-FR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          })
+        })
+      } catch (emailError) {
+        console.error('Error sending cancellation email:', emailError)
+      }
+    }
   }
 }
 
@@ -513,6 +703,63 @@ async function handleInvoicePaymentFailed(invoice) {
         updated_at: new Date().toISOString()
       })
       .eq('id', profile.id)
+  }
+}
+
+async function handleInvoiceUpcoming(invoice) {
+  console.log('Handling invoice.upcoming for invoice:', invoice.id)
+  
+  const customerId = invoice.customer
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id, email, full_name, role, subscription_id')
+    .eq('stripe_customer_id', customerId)
+    .single()
+
+  if (profile && profile.email && profile.subscription_id) {
+    // Check if invoice is due in 3 days (approximately)
+    const periodEnd = invoice.period_end * 1000 // Convert to milliseconds
+    const now = Date.now()
+    const daysUntilDue = Math.floor((periodEnd - now) / (1000 * 60 * 60 * 24))
+    
+    // Send reminder if due in 2-4 days (to account for timing variations)
+    if (daysUntilDue >= 2 && daysUntilDue <= 4) {
+      console.log(`Sending renewal reminder - ${daysUntilDue} days until renewal`)
+      
+      try {
+        // Get subscription details
+        const subscription = await stripe.subscriptions.retrieve(profile.subscription_id)
+        const priceId = subscription.items.data[0]?.price.id
+        const role = getRoleFromPriceId(priceId)
+        const planName = role === 'Teacher' ? 'Teacher Plan' : 'Student Plan'
+        const amount = invoice.amount_due / 100
+        const currency = invoice.currency?.toUpperCase() || 'USD'
+        
+        // Create customer portal session URL for cancellation
+        const portalSession = await stripe.billingPortal.sessions.create({
+          customer: customerId,
+          return_url: `${process.env.SITE_URL || 'https://humancatalystbeacon.com'}/dashboard`,
+        })
+        
+        const renewalDate = new Date(periodEnd).toLocaleDateString('fr-FR', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        })
+        
+        await sendEmailViaSupabase('renewal-reminder', {
+          email: profile.email,
+          userName: profile.full_name || 'there',
+          planName: planName,
+          amount: amount,
+          currency: currency,
+          renewalDate: renewalDate,
+          cancelUrl: portalSession.url
+        })
+      } catch (emailError) {
+        console.error('Error sending renewal reminder email:', emailError)
+      }
+    }
   }
 }
 
@@ -854,6 +1101,121 @@ app.post('/api/webhook/systeme', verifySystemeWebhook, async (req, res) => {
 })
 
 // ============================================================================
+// EMAIL API ENDPOINTS (Proxy to Supabase Edge Functions)
+// ============================================================================
+
+// Send sign-in confirmation email
+app.post('/api/email/sign-in-confirmation', generalLimiter, async (req, res) => {
+  try {
+    const { email, userName, loginTime, ipAddress } = req.body
+    
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' })
+    }
+    
+    const result = await sendEmailViaSupabase('sign-in', {
+      email,
+      userName: userName || 'there',
+      loginTime: loginTime || new Date().toLocaleString(),
+      ipAddress
+    })
+    
+    if (result.success) {
+      res.json({ success: true, message: 'Sign-in confirmation email sent' })
+    } else {
+      res.status(500).json({ error: result.error || 'Failed to send email' })
+    }
+  } catch (error) {
+    console.error('Error in sign-in confirmation endpoint:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Send lesson completion email
+app.post('/api/email/lesson-completion', generalLimiter, async (req, res) => {
+  try {
+    const { email, userName, lessonTitle, courseName, xpEarned, totalXP } = req.body
+    
+    if (!email || !lessonTitle) {
+      return res.status(400).json({ error: 'Email and lessonTitle are required' })
+    }
+    
+    const result = await sendEmailViaSupabase('lesson-completion', {
+      email,
+      userName: userName || 'there',
+      lessonTitle,
+      courseName: courseName || 'Course',
+      xpEarned: xpEarned || 0,
+      totalXP: totalXP || 0
+    })
+    
+    if (result.success) {
+      res.json({ success: true, message: 'Lesson completion email sent' })
+    } else {
+      res.status(500).json({ error: result.error || 'Failed to send email' })
+    }
+  } catch (error) {
+    console.error('Error in lesson completion endpoint:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Send new lessons available email
+app.post('/api/email/new-lessons', generalLimiter, async (req, res) => {
+  try {
+    const { email, userName, newLessons } = req.body
+    
+    if (!email || !newLessons || !Array.isArray(newLessons)) {
+      return res.status(400).json({ error: 'Email and newLessons array are required' })
+    }
+    
+    const result = await sendEmailViaSupabase('new-lessons', {
+      email,
+      userName: userName || 'there',
+      newLessons
+    })
+    
+    if (result.success) {
+      res.json({ success: true, message: 'New lessons email sent' })
+    } else {
+      res.status(500).json({ error: result.error || 'Failed to send email' })
+    }
+  } catch (error) {
+    console.error('Error in new lessons endpoint:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Send app update/announcement email
+app.post('/api/email/app-update', generalLimiter, async (req, res) => {
+  try {
+    const { email, userName, title, message, ctaText, ctaUrl } = req.body
+    
+    if (!email || !title || !message) {
+      return res.status(400).json({ error: 'Email, title, and message are required' })
+    }
+    
+    const result = await sendEmailViaSupabase('app-update', {
+      email,
+      userName: userName || 'there',
+      title,
+      message,
+      ctaText,
+      ctaUrl
+    })
+    
+    if (result.success) {
+      res.json({ success: true, message: 'App update email sent' })
+    } else {
+      res.status(500).json({ error: result.error || 'Failed to send email' })
+    }
+  } catch (error) {
+    console.error('Error in app update endpoint:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// ============================================================================
 // STATIC FILE SERVING FOR REACT APP
 // ============================================================================
 
@@ -885,25 +1247,18 @@ app.use(express.static(buildPath, {
 // Catch-all handler: send back React's index.html file for any non-API routes
 // This is necessary for React Router to work properly in production
 // IMPORTANT: This must be LAST, after all API routes and static file serving
-// Use app.use() instead of app.get('*') for Express 5 compatibility
 app.use((req, res, next) => {
-  // Only handle GET requests for serving HTML
-  if (req.method !== 'GET') {
-    return next()
-  }
-  
   // Skip API routes
   if (req.path.startsWith('/api/')) {
     return next()
   }
   
-  // Skip requests for static files (they should have been handled by express.static)
-  if (req.path.startsWith('/static/') || 
-      req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
+  // Skip static file requests (already handled by express.static)
+  if (req.path.startsWith('/static/') || req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|json|map|webp)$/)) {
     return next()
   }
   
-  // Serve index.html for all other GET routes (React Router will handle routing)
+  // Serve index.html for all other routes (React Router will handle routing)
   res.sendFile(path.join(buildPath, 'index.html'), (err) => {
     if (err) {
       console.error('Error serving index.html:', err)

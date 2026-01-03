@@ -2,11 +2,13 @@ import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { DataCacheProvider } from './contexts/DataCacheContext'
+import { PageTransitionProvider } from './contexts/PageTransitionContext'
 import { Toaster } from 'react-hot-toast'
 import ErrorBoundary from './components/ErrorBoundary'
 import AppShell from './components/AppShell'
 import ProtectedSubscriptionRoute from './components/ProtectedSubscriptionRoute'
 import EnvTest from './components/EnvTest'
+import CosmicLoader from './components/ui/CosmicLoader'
 import './styles/glassmorphism.css'
 import './styles/mobile-responsive.css'
 
@@ -14,6 +16,7 @@ import './styles/mobile-responsive.css'
 const LoginPage = React.lazy(() => import('./pages/LoginPage'))
 const SignupPage = React.lazy(() => import('./pages/SignupPage'))
 const Dashboard = React.lazy(() => import('./pages/Dashboard'))
+const DashboardNeomorphic = React.lazy(() => import('./pages/DashboardNeomorphic'))
 const PricingPage = React.lazy(() => import('./pages/PricingPage'))
 const ProfilePage = React.lazy(() => import('./pages/ProfilePage'))
 const Mastery = React.lazy(() => import('./pages/Mastery'))
@@ -33,17 +36,9 @@ const EnhancedLandingPage = React.lazy(() => import('./pages/EnhancedLandingPage
 const AwakeningLandingPage = React.lazy(() => import('./pages/AwakeningLandingPage'))
 const RoadmapIgnition = React.lazy(() => import('./pages/RoadmapIgnition'))
 
-// Loading component
+// Loading component - Now using Cosmic Loader
 const LoadingScreen = () => {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-        <p className="text-muted-foreground">Loading...</p>
-        <p className="text-sm text-muted-foreground/60 mt-2">If this takes too long, check the console for errors</p>
-      </div>
-    </div>
-  )
+  return <CosmicLoader message="Loading your experience..." />
 }
 
 // Protected Route component
@@ -141,6 +136,13 @@ const AppRoutes = () => {
         </ProtectedRoute>
       }>
         <Route path="/dashboard" element={
+          <ErrorBoundary>
+            <React.Suspense fallback={<LoadingScreen />}>
+              <DashboardNeomorphic />
+            </React.Suspense>
+          </ErrorBoundary>
+        } />
+        <Route path="/dashboard/classic" element={
           <ErrorBoundary>
             <React.Suspense fallback={<LoadingScreen />}>
               <Dashboard />
@@ -331,27 +333,29 @@ function App() {
     <DataCacheProvider>
       <AuthProvider>
         <Router>
-          <div 
-            className="App font-sans antialiased min-h-screen"
-            style={{
-              color: 'var(--text-primary)',
-              backgroundColor: 'transparent'
-            }}
-          >
-            <AppRoutes />
-            <Toaster
-              position={isMobile ? 'top-center' : 'top-right'}
-              toastOptions={{
-                style: isMobile ? { marginTop: '64px', zIndex: 10000 } : { zIndex: 10000 },
+          <PageTransitionProvider>
+            <div 
+              className="App font-sans antialiased min-h-screen"
+              style={{
+                color: 'var(--text-primary)',
+                backgroundColor: 'transparent'
               }}
-              containerStyle={{
-                zIndex: 10000,
-                position: 'fixed',
-              }}
-            />
-            {/* Temporary: Environment variable test - remove after fixing */}
-            {process.env.NODE_ENV === 'development' && <EnvTest />}
-          </div>
+            >
+              <AppRoutes />
+              <Toaster
+                position={isMobile ? 'top-center' : 'top-right'}
+                toastOptions={{
+                  style: isMobile ? { marginTop: '64px', zIndex: 10000 } : { zIndex: 10000 },
+                }}
+                containerStyle={{
+                  zIndex: 10000,
+                  position: 'fixed',
+                }}
+              />
+              {/* Temporary: Environment variable test - remove after fixing */}
+              {process.env.NODE_ENV === 'development' && <EnvTest />}
+            </div>
+          </PageTransitionProvider>
         </Router>
       </AuthProvider>
     </DataCacheProvider>
