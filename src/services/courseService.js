@@ -238,8 +238,6 @@ class CourseService {
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
-      
-      const queryDuration = Date.now() - queryStart
 
       if (error && error.code !== 'PGRST116') {
         // If there are multiple rows, try to get the first one

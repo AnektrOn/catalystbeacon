@@ -946,8 +946,6 @@ const CalendarTab = () => {
                               ? 'bg-emerald-600/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-600/30' 
                               : 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-500/60'
                           }`}
-                          aria-label={event.completed ? `Mark ${event.title} as incomplete` : `Complete ${event.title}`}
-                          aria-pressed={event.completed}
                           aria-label={event.completed ? `Mark ${event.title} as incomplete` : `Mark ${event.title} as complete`}
                           aria-pressed={event.completed}
                         >

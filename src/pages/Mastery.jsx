@@ -101,8 +101,7 @@ const Mastery = () => {
                 <div className="w-full max-w-md bg-gray-200 dark:bg-gray-700 h-3 rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full"
-                    style={{ backgroundColor: 'var(--color-primary)' }}
-                    style={{ width: `${Math.min(((profile?.current_xp || 0) / ((profile?.level || 1) * 1000)) * 100, 100)}%` }}
+                    style={{ backgroundColor: 'var(--color-primary)', width: `${Math.min(((profile?.current_xp || 0) / ((profile?.level || 1) * 1000)) * 100, 100)}%` }}
                   ></div>
                 </div>
                 <p className="text-xs text-gray-500 mt-2 text-right max-w-md">

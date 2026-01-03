@@ -23,7 +23,6 @@ const StellarMap2D = ({
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [colorPalette, setColorPalette] = useState(() => getCurrentPaletteData());
-  const [highlightedPath, setHighlightedPath] = useState(null);
 
   // Listen for color palette changes
   useEffect(() => {
@@ -43,11 +42,11 @@ const StellarMap2D = ({
   };
 
   // Get colors for different node types
-  const coreColor = useMemo(() => getPaletteColor('--color-primary', '#B4833D'), [colorPalette]);
-  const constellationColor = useMemo(() => getPaletteColor('--color-secondary', '#81754B'), [colorPalette]);
-  const infoColor = useMemo(() => getPaletteColor('--color-info', '#3B82F6'), [colorPalette]);
-  const successColor = useMemo(() => getPaletteColor('--color-success', '#10B981'), [colorPalette]);
-  const warningColor = useMemo(() => getPaletteColor('--color-warning', '#F59E0B'), [colorPalette]);
+  const coreColor = useMemo(() => getPaletteColor('--color-primary', '#B4833D'), []);
+  const constellationColor = useMemo(() => getPaletteColor('--color-secondary', '#81754B'), []);
+  const infoColor = useMemo(() => getPaletteColor('--color-info', '#3B82F6'), []);
+  const successColor = useMemo(() => getPaletteColor('--color-success', '#10B981'), []);
+  const warningColor = useMemo(() => getPaletteColor('--color-warning', '#F59E0B'), []);
   const backgroundColor = useMemo(() => {
     // Use dark background that complements the palette
     const bg = getPaletteColor('--bg-primary', '#0a0a1e');
@@ -56,7 +55,7 @@ const StellarMap2D = ({
       return '#0a0a1e';
     }
     return bg;
-  }, [colorPalette]);
+  }, []);
 
   // Generate subnode colors based on difficulty using palette colors
   const getSubnodeColor = (difficulty) => {
@@ -163,7 +162,6 @@ const StellarMap2D = ({
     const maxNodeRadius = 1000; // Maximum distance for nodes (outer orbit - difficulty 10) - LARGE spacing for clear visual separation
     const minNodeSpacing = 80; // Minimum distance between node centers
     const nodeVisualRadius = 15; // Visual radius of a node (smaller for better density)
-    const constellationRadius = 30; // Visual radius of a constellation (for collision detection)
 
     // Step 2: Pre-calculate all constellation weights for dynamic scaling
     const allConstellationWeights = [];
@@ -281,7 +279,6 @@ const StellarMap2D = ({
           // Use effective spacing that accounts for node visual size
           const effectiveSpacing = minNodeSpacing + (nodeVisualRadius * 2);
           const minAnglePerNode = effectiveSpacing / orbitDistance;
-          const totalAngleNeeded = nodesAtDifficulty.length * minAnglePerNode;
           
           // Distribute nodes evenly around the full circle (2π)
           // This ensures maximum spacing between nodes
@@ -608,6 +605,7 @@ const StellarMap2D = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewBox.width, onNodeHover]);
 
   if (!layout.families.length) {

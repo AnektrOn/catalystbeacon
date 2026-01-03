@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import SpaceSlideshow3D from '../components/landing/SpaceSlideshow3D';
 import Interactive3DSection from '../components/landing/Interactive3DSection';

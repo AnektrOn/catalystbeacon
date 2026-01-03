@@ -132,6 +132,7 @@ const YouTubePlayerModal = ({
         }
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, youtubeAPIReady.current, videoId, user?.id, nodeData?.id]);
 
   // Handle video completion

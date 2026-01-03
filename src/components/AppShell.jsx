@@ -9,7 +9,7 @@ import ColorPaletteDropdown from './common/ColorPaletteDropdown';
 import AppShellMobile from './AppShellMobile';
 import useSubscription from '../hooks/useSubscription';
 import UpgradeModal from './UpgradeModal';
-import { getCurrentPalette, switchTo } from '../utils/colorPaletteSwitcher';
+import { getCurrentPalette } from '../utils/colorPaletteSwitcher';
 import {
   Grid3X3,
   User,
@@ -25,7 +25,6 @@ import {
   Sparkles,
   Zap,
   Award,
-  Lock,
   Map
 } from 'lucide-react';
 
@@ -227,7 +226,6 @@ const AppShell = () => {
   // Debug: Log background image state
   useEffect(() => {
     if (profile && !isMobile) {
-      const root = document.documentElement;
       const bgElement = document.querySelector('[class*="fixed inset-0"][style*="backgroundImage"]');
       const computedBg = bgElement ? getComputedStyle(bgElement).backgroundImage : 'not found';
       fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AppShell.jsx:228',message:'Background image debug',data:{hasProfile:!!profile,hasBackgroundImage:!!profile?.background_image,backgroundImageUrl:profile?.background_image,profileId:profile?.id,computedBg,isMobile},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'background-image'})}).catch(()=>{});
@@ -539,7 +537,6 @@ const AppShell = () => {
           {/* Navigation items */}
           <nav className="flex-1 flex flex-col space-y-2">
             {sidebarItems.map((item, index) => {
-              const Icon = item.icon;
               const isActive = location.pathname === item.path ||
                 (item.path === '/mastery' && location.pathname.startsWith('/mastery')) ||
                 (item.path === '/courses' && location.pathname.startsWith('/courses')) ||

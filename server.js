@@ -1,15 +1,18 @@
 // Load environment variables from server.env file FIRST
 const path = require('path')
+const fs = require('fs')
 require('dotenv').config({ path: path.join(__dirname, 'server.env') })
 
 // Debug: Check what Stripe vars are loaded
 console.log('STRIPE_SECRET_KEY loaded:', process.env.STRIPE_SECRET_KEY ? 'YES (' + process.env.STRIPE_SECRET_KEY.substring(0, 10) + '...)' : 'NO')
 console.log('All STRIPE vars:', Object.keys(process.env).filter(k => k.includes('STRIPE')))
 
-// Verify Stripe key is loaded
-if (!process.env.STRIPE_SECRET_KEY) {
-  console.error('ERROR: STRIPE_SECRET_KEY is not set in server.env!')
-  console.error('Please check server.env file')
+// Verify Stripe key is loaded and not a placeholder
+if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes('your_stripe_secret_key')) {
+  console.error('ERROR: STRIPE_SECRET_KEY is not set correctly in server.env!')
+  console.error('Please check server.env file and add your actual Stripe secret key')
+  console.error('Get your key from: https://dashboard.stripe.com/test/apikeys')
+  console.error('Current value:', process.env.STRIPE_SECRET_KEY ? process.env.STRIPE_SECRET_KEY.substring(0, 20) + '...' : 'NOT SET')
   process.exit(1)
 }
 
@@ -813,6 +816,60 @@ app.post('/api/webhook/systeme', verifySystemeWebhook, async (req, res) => {
   }
 })
 
+// ============================================================================
+// STATIC FILE SERVING FOR REACT APP
+// ============================================================================
+
+// Serve static files from the React app build directory
+const buildPath = path.join(__dirname, 'build')
+
+// Check if build directory exists
+if (!fs.existsSync(buildPath)) {
+  console.error(`⚠️  WARNING: Build directory not found at ${buildPath}`)
+  console.error('   Please run "npm run build" to create the production build')
+} else {
+  console.log(`✅ Serving React app from: ${buildPath}`)
+  
+  // Check if index.html exists
+  const indexPath = path.join(buildPath, 'index.html')
+  if (fs.existsSync(indexPath)) {
+    console.log(`✅ Found index.html at: ${indexPath}`)
+  } else {
+    console.error(`⚠️  WARNING: index.html not found at ${indexPath}`)
+  }
+}
+
+// Serve static files (CSS, JS, images, etc.) - this must come before catch-all
+app.use(express.static(buildPath, {
+  // Don't serve index.html for static file requests
+  index: false
+}))
+
+// Catch-all handler: send back React's index.html file for any non-API routes
+// This is necessary for React Router to work properly in production
+// IMPORTANT: This must be LAST, after all API routes and static file serving
+app.get('*', (req, res, next) => {
+  // Skip API routes
+  if (req.path.startsWith('/api/')) {
+    return next()
+  }
+  
+  // Skip requests for static files (they should have been handled by express.static)
+  if (req.path.startsWith('/static/') || 
+      req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
+    return next()
+  }
+  
+  // Serve index.html for all other routes (React Router will handle routing)
+  res.sendFile(path.join(buildPath, 'index.html'), (err) => {
+    if (err) {
+      console.error('Error serving index.html:', err)
+      res.status(500).send('Error loading application')
+    }
+  })
+})
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
+  console.log(`Serving React app from: ${buildPath}`)
 })

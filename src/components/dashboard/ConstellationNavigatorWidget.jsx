@@ -1,4 +1,4 @@
-import React, { useState, memo, useMemo, useCallback } from 'react';
+import React, { useState, memo, useMemo } from 'react';
 import { Sparkles, ChevronRight } from 'lucide-react';
 
 const ConstellationNavigatorWidget = memo(({

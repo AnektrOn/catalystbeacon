@@ -6,6 +6,7 @@ import { Toaster } from 'react-hot-toast'
 import ErrorBoundary from './components/ErrorBoundary'
 import AppShell from './components/AppShell'
 import ProtectedSubscriptionRoute from './components/ProtectedSubscriptionRoute'
+import EnvTest from './components/EnvTest'
 import './styles/glassmorphism.css'
 import './styles/mobile-responsive.css'
 
@@ -29,7 +30,6 @@ const TermsPage = React.lazy(() => import('./pages/TermsPage'))
 const PrivacyPage = React.lazy(() => import('./pages/PrivacyPage'))
 const LandingPage = React.lazy(() => import('./pages/LandingPage'))
 const EnhancedLandingPage = React.lazy(() => import('./pages/EnhancedLandingPage'))
-const ProfessionalLandingPage = React.lazy(() => import('./pages/ProfessionalLandingPage'))
 const AwakeningLandingPage = React.lazy(() => import('./pages/AwakeningLandingPage'))
 const RoadmapIgnition = React.lazy(() => import('./pages/RoadmapIgnition'))
 
@@ -59,21 +59,6 @@ const ProtectedRoute = ({ children }) => {
   }
 
   return children
-}
-
-// Auth redirect component
-const AuthRedirect = () => {
-  const { user, loading } = useAuth()
-
-  if (loading) {
-    return <LoadingScreen />
-  }
-
-  if (user) {
-    return <Navigate to="/dashboard" replace />
-  } else {
-    return <Navigate to="/login" replace />
-  }
 }
 
 // Main App Routes
@@ -364,6 +349,8 @@ function App() {
                 position: 'fixed',
               }}
             />
+            {/* Temporary: Environment variable test - remove after fixing */}
+            {process.env.NODE_ENV === 'development' && <EnvTest />}
           </div>
         </Router>
       </AuthProvider>

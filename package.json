@@ -44,6 +44,8 @@
   "scripts": {
     "start": "react-app-rewired start",
     "build": "NODE_OPTIONS='--max-old-space-size=4096' react-app-rewired build",
+    "build:no-minify": "GENERATE_SOURCEMAP=false BUILD_NO_MINIFY=true NODE_OPTIONS='--max-old-space-size=4096' react-app-rewired build",
+    "build:light": "GENERATE_SOURCEMAP=false NODE_OPTIONS='--max-old-space-size=2048' react-app-rewired build",
     "build:analyze": "npm run build && npx source-map-explorer 'build/static/js/*.js'",
     "test": "react-app-rewired test",
     "test:coverage": "react-app-rewired test --coverage --watchAll=false",

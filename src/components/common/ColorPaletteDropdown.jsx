@@ -41,8 +41,6 @@ const ColorPaletteDropdown = () => {
     setIsOpen(false);
   };
 
-  const currentPaletteData = palettes[currentPalette] || palettes.earth;
-
   return (
     <div className="color-palette-dropdown-container" ref={dropdownRef} data-color-palette-dropdown>
       <button

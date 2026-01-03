@@ -28,12 +28,10 @@ const StellarMap2DPage = () => {
   const [searchVisible, setSearchVisible] = useState(false);
   const [highlightedNodeIds, setHighlightedNodeIds] = useState(new Set());
   const [analyticsVisible, setAnalyticsVisible] = useState(false);
-  const [viewBox, setViewBox] = useState({ x: 0, y: 0, width: 1000, height: 1000 });
   const [selectedFamily, setSelectedFamily] = useState(null);
   const [selectedConstellation, setSelectedConstellation] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
   const [bookmarkedNodes, setBookmarkedNodes] = useState(new Set());
-  const [nodeHistory, setNodeHistory] = useState([]);
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [viewSettings, setViewSettings] = useState({
     showNodeLabels: true,
@@ -43,9 +41,8 @@ const StellarMap2DPage = () => {
   });
   const focusConstellationRef = useRef(null);
   const focusSubnodeRef = useRef(null);
-  const stellarMap2DRef = useRef(null);
 
-  const { profile, user, fetchProfile } = useAuth();
+  const { user, fetchProfile } = useAuth();
   const visibilityData = useXPVisibility();
 
   // Load bookmarks and history from localStorage

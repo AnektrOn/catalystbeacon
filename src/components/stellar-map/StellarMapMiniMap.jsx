@@ -12,14 +12,6 @@ const StellarMapMiniMap = ({
 }) => {
   const [isExpanded, setIsExpanded] = React.useState(false);
 
-  const miniMapScale = useMemo(() => {
-    if (!layout.bounds || !viewBox) return 1;
-    const mapWidth = Math.abs(layout.bounds.maxX - layout.bounds.minX) || 1000;
-    const mapHeight = Math.abs(layout.bounds.maxY - layout.bounds.minY) || 1000;
-    const miniMapSize = isExpanded ? 300 : 150;
-    return Math.min(miniMapSize / mapWidth, miniMapSize / mapHeight, 0.3);
-  }, [layout.bounds, isExpanded]);
-
   const viewportRect = useMemo(() => {
     if (!viewBox || !layout.bounds) return null;
     const mapWidth = Math.abs(layout.bounds.maxX - layout.bounds.minX) || 1000;

@@ -307,8 +307,7 @@ const CourseDetailPage = () => {
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-1000 ease-out relative"
-                style={{ background: 'var(--gradient-primary)' }}
-                style={{ width: `${progressPercentage}%` }}
+                style={{ background: 'var(--gradient-primary)', width: `${progressPercentage}%` }}
               >
                 <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
               </div>

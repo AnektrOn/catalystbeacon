@@ -9,10 +9,15 @@ const supabaseUrl = process.env.REACT_APP_SUPABASE_URL
 const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    'Missing Supabase environment variables. ' +
-    'Please set REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY in your .env file.'
-  )
+  const errorMsg = 'Missing Supabase environment variables. ' +
+    'Please set REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY in your .env file. ' +
+    'Make sure to restart your development server after adding environment variables.'
+  console.error('Supabase Config Error:', {
+    hasReactAppUrl: !!process.env.REACT_APP_SUPABASE_URL,
+    hasReactAppKey: !!process.env.REACT_APP_SUPABASE_ANON_KEY,
+    allEnvKeys: Object.keys(process.env).filter(k => k.includes('SUPABASE'))
+  })
+  throw new Error(errorMsg)
 }
 
 // Create client only if it doesn't exist (singleton pattern)

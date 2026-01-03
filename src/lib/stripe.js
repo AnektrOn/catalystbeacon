@@ -11,9 +11,6 @@ if (!STRIPE_PUBLISHABLE_KEY) {
   )
 }
 
-// Initialize Stripe with error handling (only if key exists)
-const stripePromise = STRIPE_PUBLISHABLE_KEY ? loadStripe(STRIPE_PUBLISHABLE_KEY) : null
-
 // Price IDs for the subscription plans (from environment variables)
 // Create React App uses REACT_APP_ prefix
 // Fallback to test IDs if not set in env

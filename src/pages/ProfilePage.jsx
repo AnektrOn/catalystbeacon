@@ -2,20 +2,18 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabaseClient'
-import { User, Star, Flame, Target, BookOpen, Brain, Upload, X, Image as ImageIcon, Lock } from 'lucide-react'
+import { User, Star, Flame, Target, BookOpen, Brain, Upload, X, Image as ImageIcon } from 'lucide-react'
 import toast from 'react-hot-toast'
 import RadarChart from '../components/profile/RadarChart'
 import ProgressBar from '../components/profile/ProgressBar'
 import skillsService from '../services/skillsService'
 import levelsService from '../services/levelsService'
 import useSubscription from '../hooks/useSubscription'
-import UpgradeModal from '../components/UpgradeModal'
 
 const ProfilePage = () => {
   const { user, profile, updateProfile, loading: authLoading } = useAuth()
   const { isFreeUser, isAdmin } = useSubscription()
   const navigate = useNavigate()
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [loading, setLoading] = useState(false)
   const [skills, setSkills] = useState([]) // eslint-disable-line no-unused-vars
   const [masterStats, setMasterStats] = useState([])
@@ -219,10 +217,9 @@ const ProfilePage = () => {
       const filePath = `avatars/${fileName}`
 
       // Try avatars bucket first, fallback to public bucket
-      let uploadError = null
       let publicUrl = null
 
-      const { data: uploadData, error: uploadErr } = await supabase.storage
+      const { error: uploadErr } = await supabase.storage
         .from('avatars')
         .upload(filePath, file, {
           cacheControl: '3600',
@@ -305,7 +302,7 @@ const ProfilePage = () => {
       let uploadError = null
       let publicUrl = null
 
-      const { data: uploadData, error: uploadErr } = await supabase.storage
+      const { error: uploadErr } = await supabase.storage
         .from('backgrounds')
         .upload(filePath, file, {
           cacheControl: '3600',
@@ -315,7 +312,7 @@ const ProfilePage = () => {
       if (uploadErr) {
         console.warn('Backgrounds bucket upload failed, trying avatars bucket:', uploadErr);
         // Fallback to avatars bucket - use same path structure
-        const { data: avatarUploadData, error: avatarUploadErr } = await supabase.storage
+        const { error: avatarUploadErr } = await supabase.storage
           .from('avatars')
           .upload(filePath, file, {
             cacheControl: '3600',

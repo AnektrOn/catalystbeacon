@@ -141,8 +141,6 @@ const CourseCatalogPage = () => {
     return { color: 'var(--color-kobicha)' };
   };
 
-  const userXp = profile?.current_xp || 0;
-
   // Use schools from state, fallback to course keys if schools not loaded yet
   const displaySchools = schools.length > 0 ? schools : Object.keys(coursesBySchool).map(name => ({ name, isUnlocked: true, requiredXp: 0 }));
 

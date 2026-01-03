@@ -14,8 +14,7 @@ import {
   ChevronRight,
   Check,
   X,
-  Users,
-  Shield
+  Users
 } from 'lucide-react';
 
 const AwakeningLandingPage = () => {

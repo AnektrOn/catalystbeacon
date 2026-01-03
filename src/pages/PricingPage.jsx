@@ -92,8 +92,17 @@ const PricingPage = () => {
     setLoading(true)
 
     try {
+      // Get environment variables - log for debugging
       const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL
       const API_URL = process.env.REACT_APP_API_URL
+      
+      // Debug: Log what we're getting
+      console.log('🔍 Payment Debug - Environment Check:', {
+        SUPABASE_URL: SUPABASE_URL || 'UNDEFINED',
+        API_URL: API_URL || 'UNDEFINED',
+        allProcessEnvKeys: Object.keys(process.env).filter(k => k.includes('REACT_APP') || k.includes('SUPABASE')),
+        nodeEnv: process.env.NODE_ENV
+      })
       
       // Determine plan type from price ID (always student now)
       const planType = 'student'
@@ -151,14 +160,18 @@ const PricingPage = () => {
           return
         } catch (supabaseError) {
           console.error('Supabase Edge Function error:', supabaseError)
-          // Fall through to try API server if available
+          // If Supabase Edge Function doesn't exist, try API server fallback
+          // Don't throw here - let it fall through to API server check
         }
       }
       
       // Fall back to API server if Supabase failed or not available
-      if (API_URL && !API_URL.includes('localhost')) {
-        console.log('Using API server:', `${API_URL}/api/create-checkout-session`)
-        const response = await fetch(`${API_URL}/api/create-checkout-session`, {
+      // Allow localhost in development mode
+      const useLocalhostApi = process.env.NODE_ENV === 'development'
+      if (API_URL || useLocalhostApi) {
+        const apiBaseUrl = API_URL || 'http://localhost:3001'
+        console.log('Using API server:', `${apiBaseUrl}/api/create-checkout-session`)
+        const response = await fetch(`${apiBaseUrl}/api/create-checkout-session`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -190,7 +203,24 @@ const PricingPage = () => {
         window.location.href = session.url
       } else {
         // No payment endpoint available
-        throw new Error('No payment endpoint configured. Please set REACT_APP_SUPABASE_URL in your environment variables.')
+        // This should only happen if:
+        // 1. SUPABASE_URL is not set (but we know it is from the debug panel)
+        // 2. Supabase Edge Function failed AND no API_URL is set
+        const allEnvKeys = Object.keys(process.env).filter(k => k.includes('REACT_APP') || k.includes('SUPABASE') || k.includes('API'))
+        console.error('Payment endpoint configuration error:', {
+          REACT_APP_SUPABASE_URL: process.env.REACT_APP_SUPABASE_URL ? `Set (${process.env.REACT_APP_SUPABASE_URL.substring(0, 30)}...)` : 'Missing',
+          REACT_APP_API_URL: process.env.REACT_APP_API_URL ? 'Set' : 'Missing',
+          allRelevantEnvKeys: allEnvKeys,
+          nodeEnv: process.env.NODE_ENV,
+          note: 'Supabase Edge Function may not be deployed. Check if the function exists in Supabase Dashboard.'
+        })
+        
+        // Provide more helpful error message
+        if (SUPABASE_URL) {
+          throw new Error('Payment endpoint error: Supabase Edge Function may not be deployed. Please check if the "create-checkout-session" function exists in your Supabase project, or set up a local API server at http://localhost:3001')
+        } else {
+          throw new Error('No payment endpoint configured. Please set REACT_APP_SUPABASE_URL in your .env file and RESTART your development server (stop with Ctrl+C and run npm start again).')
+        }
       }
     } catch (error) {
       console.error('Error creating checkout session:', error)
@@ -210,7 +240,11 @@ const PricingPage = () => {
         error,
         API_URL: process.env.REACT_APP_API_URL || 'http://localhost:3001',
         SUPABASE_URL: process.env.REACT_APP_SUPABASE_URL,
-        priceId
+        priceId,
+        envCheck: {
+          hasReactAppSupabaseUrl: !!process.env.REACT_APP_SUPABASE_URL,
+          hasReactAppApiUrl: !!process.env.REACT_APP_API_URL
+        }
       })
     } finally {
       setLoading(false)
@@ -253,17 +287,28 @@ const PricingPage = () => {
     }
     
     // Debug environment variables (without exposing secrets)
+    const supabaseUrlValue = process.env.REACT_APP_SUPABASE_URL
     console.log('🔧 Pricing Page - Environment Config:', {
-      hasSupabaseUrl: !!process.env.REACT_APP_SUPABASE_URL,
-      supabaseUrl: process.env.REACT_APP_SUPABASE_URL ? 'Set' : 'Missing',
+      hasSupabaseUrl: !!supabaseUrlValue,
+      supabaseUrl: supabaseUrlValue ? `Set (${supabaseUrlValue.substring(0, 40)}...)` : 'Missing - RESTART SERVER!',
       hasApiUrl: !!process.env.REACT_APP_API_URL,
       apiUrl: process.env.REACT_APP_API_URL || 'Not set (will use Supabase)',
       hasStripeKey: !!process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY,
       hasPriceIds: {
         student: !!process.env.REACT_APP_STRIPE_STUDENT_MONTHLY_PRICE_ID,
         teacher: !!process.env.REACT_APP_STRIPE_TEACHER_MONTHLY_PRICE_ID
-      }
+      },
+      nodeEnv: process.env.NODE_ENV,
+      allReactAppKeys: Object.keys(process.env).filter(k => k.startsWith('REACT_APP_'))
     })
+    
+    // Warn if Supabase URL is missing
+    if (!supabaseUrlValue) {
+      console.warn('⚠️ REACT_APP_SUPABASE_URL is not set!', {
+        message: 'Make sure your .env file exists in the project root and contains REACT_APP_SUPABASE_URL',
+        instruction: 'After creating/updating .env file, you MUST restart the development server (Ctrl+C then npm start)'
+      })
+    }
   }, [user, profile, currentPlan, hasActiveSubscription])
 
   return (

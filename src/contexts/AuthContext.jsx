@@ -4,18 +4,6 @@ import toast from 'react-hot-toast'
 
 // Safe cache access - returns null if DataCacheProvider is not available
 let dataCacheContext = null
-const getDataCache = () => {
-  try {
-    if (!dataCacheContext) {
-      const { DataCacheContext: CacheContext } = require('./DataCacheContext')
-      // We can't use useContext here, so we'll access it via a ref pattern
-      return null
-    }
-    return dataCacheContext
-  } catch (e) {
-    return null
-  }
-}
 
 const AuthContext = createContext({})
 
@@ -101,7 +89,6 @@ export const AuthProvider = ({ children }) => {
       // Try to get cache context dynamically (if available)
       let dataCache = null
       try {
-        const { useDataCache } = require('./DataCacheContext')
         // Can't call hook here, so we'll check sessionStorage directly for cache
         const cacheKey = `profile_${userId}`
         const stored = sessionStorage.getItem('app_data_cache')
@@ -363,6 +350,7 @@ export const AuthProvider = ({ children }) => {
         }
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchProfile])
 
   const signUp = async (email, password, userData = {}) => {

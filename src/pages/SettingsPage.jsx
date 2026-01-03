@@ -72,7 +72,7 @@ const AppearanceSection = ({ profile, updateProfile }) => {
             let publicUrl = null;
 
             // Try backgrounds bucket first
-            const { data: uploadData, error: uploadErr } = await supabase.storage
+            const { error: uploadErr } = await supabase.storage
                 .from('backgrounds')
                 .upload(filePath, file, {
                     cacheControl: '3600',
@@ -83,7 +83,7 @@ const AppearanceSection = ({ profile, updateProfile }) => {
                 console.warn('Backgrounds bucket upload failed, trying avatars bucket:', uploadErr);
                 // If backgrounds bucket doesn't exist, try avatars bucket
                 // For avatars bucket, use the same path structure
-                const { data: avatarUploadData, error: avatarUploadErr } = await supabase.storage
+                const { error: avatarUploadErr } = await supabase.storage
                     .from('avatars')
                     .upload(filePath, file, {
                         cacheControl: '3600',

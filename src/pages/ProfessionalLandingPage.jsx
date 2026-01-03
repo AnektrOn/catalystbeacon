@@ -10,7 +10,6 @@ import {
   Award,
   TrendingUp,
   Sparkles,
-  Globe,
   Shield,
   Zap,
   Target,
@@ -518,9 +517,9 @@ const ProfessionalLandingPage = () => {
             <div>
               <h4 className="font-semibold mb-4">Company</h4>
               <ul className="space-y-2 text-sm">
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">About</a></li>
+                <li><button className="text-gray-400 hover:text-white transition-colors cursor-pointer">About</button></li>
                 <li><Link to="/community" className="text-gray-400 hover:text-white transition-colors">Community</Link></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Blog</a></li>
+                <li><button className="text-gray-400 hover:text-white transition-colors cursor-pointer">Blog</button></li>
               </ul>
             </div>
 

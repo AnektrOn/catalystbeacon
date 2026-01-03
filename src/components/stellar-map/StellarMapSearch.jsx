@@ -124,7 +124,6 @@ const StellarMapSearch = ({
           onChange={(e) => {
             setSearchQuery(e.target.value);
             if (onFilterChange) {
-              const newFilters = { ...filters };
               handleFilterChange('search', e.target.value);
             }
           }}

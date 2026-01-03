@@ -42,7 +42,6 @@ const Dashboard = () => {
   // Show upgrade modal if redirected from restricted route (not for admins)
   useEffect(() => {
     const upgradePrompt = searchParams.get('upgradePrompt')
-    const restrictedFeature = searchParams.get('restrictedFeature')
     if (upgradePrompt === 'true' && !isAdmin) {
       setShowUpgradeModal(true)
       // Clean up URL
@@ -672,8 +671,6 @@ const Dashboard = () => {
     if (level >= 10) return 'insight'
     return 'ignition'
   }, [])
-
-  const currentPhase = useMemo(() => getPhase(levelData.level), [getPhase, levelData.level])
 
   return (
     <div className="w-full max-w-7xl mx-auto">
