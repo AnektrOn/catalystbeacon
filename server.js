@@ -108,8 +108,17 @@ app.post('/api/create-customer', async (req, res) => {
 
 // Create checkout session
 app.post('/api/create-checkout-session', paymentLimiter, async (req, res) => {
+  console.log('=== CREATE CHECKOUT SESSION REQUEST ===')
+  console.log('Body:', req.body)
+  console.log('Origin:', req.headers.origin)
+  
   try {
     const { priceId, userId, userEmail } = req.body
+    
+    if (!priceId || !userId || !userEmail) {
+      console.error('Missing required fields:', { priceId: !!priceId, userId: !!userId, userEmail: !!userEmail })
+      return res.status(400).json({ error: 'Missing required fields: priceId, userId, and userEmail are required' })
+    }
 
     // Get or create Stripe customer
     let customerId
@@ -144,8 +153,8 @@ app.post('/api/create-checkout-session', paymentLimiter, async (req, res) => {
         },
       ],
       mode: 'subscription',
-      success_url: `http://localhost:3000/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `http://localhost:3000/pricing?payment=cancelled`,
+      success_url: `${req.headers.origin || 'http://localhost:3000'}/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${req.headers.origin || 'http://localhost:3000'}/pricing?payment=cancelled`,
       metadata: {
         userId: userId
       }
