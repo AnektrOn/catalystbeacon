@@ -75,8 +75,30 @@ const paymentLimiter = rateLimit({
 })
 
 // Middleware
-app.use(cors())
+app.use(cors({
+  origin: true, // Allow all origins in production
+  credentials: true
+}))
 app.use(express.json())
+
+// Add CSP header that allows Stripe scripts (only for HTML pages, not API)
+app.use((req, res, next) => {
+  // Only add CSP for HTML pages, not API routes or static assets
+  if (!req.path.startsWith('/api/') && !req.path.startsWith('/static/') && req.path !== '/favicon.ico') {
+    res.setHeader(
+      'Content-Security-Policy',
+      "default-src 'self'; " +
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://*.stripe.com; " +
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+      "font-src 'self' https://fonts.gstatic.com; " +
+      "img-src 'self' data: https: blob:; " +
+      "connect-src 'self' https://*.stripe.com https://*.supabase.co https://api.stripe.com; " +
+      "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com; " +
+      "frame-ancestors 'self';"
+    )
+  }
+  next()
+})
 
 // Apply general rate limiting to all routes
 app.use('/api/', generalLimiter)
