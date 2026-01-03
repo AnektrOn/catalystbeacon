@@ -23,6 +23,7 @@ const StellarMap2D = ({
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [colorPalette, setColorPalette] = useState(() => getCurrentPaletteData());
+  const [highlightedPath, setHighlightedPath] = useState(null);
 
   // Listen for color palette changes
   useEffect(() => {

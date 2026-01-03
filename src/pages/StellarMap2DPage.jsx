@@ -32,6 +32,7 @@ const StellarMap2DPage = () => {
   const [selectedConstellation, setSelectedConstellation] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
   const [bookmarkedNodes, setBookmarkedNodes] = useState(new Set());
+  const [nodeHistory, setNodeHistory] = useState([]);
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [viewSettings, setViewSettings] = useState({
     showNodeLabels: true,
