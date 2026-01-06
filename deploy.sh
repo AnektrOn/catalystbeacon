@@ -2,8 +2,7 @@
 # Complete deployment script - avoids EAGAIN errors
 # Usage: bash deploy.sh
 
-# Don't exit on error immediately - we want to see what failed
-set +e
+set -e
 
 cd ~/domains/humancatalystbeacon.com/public_html/app
 
