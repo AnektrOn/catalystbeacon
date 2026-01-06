@@ -80,13 +80,19 @@ echo ""
 
 # Run build and capture both stdout and stderr
 NODE_ENV=production npm run build:no-minify 2>&1 | tee /tmp/build-output.log
-BUILD_EXIT=$?
+BUILD_EXIT=${PIPESTATUS[0]}
 
 echo ""
 echo "   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-if [ $BUILD_EXIT -ne 0 ]; then
+# Also check if build directory was created
+BUILD_EXISTS=false
+if [ -d "build" ] && [ -f "build/index.html" ]; then
+    BUILD_EXISTS=true
+fi
+
+if [ $BUILD_EXIT -ne 0 ] || [ "$BUILD_EXISTS" = false ]; then
     echo "   ❌ Build failed with exit code: $BUILD_EXIT"
     echo ""
     echo "   📋 Error summary (last 30 lines):"

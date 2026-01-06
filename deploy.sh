@@ -21,7 +21,33 @@ echo "📦 Step 2: Installing dependencies..."
 rm -rf node_modules package-lock.json .cache node_modules/.cache
 npm cache clean --force
 npm install --legacy-peer-deps --force
-echo "   ✅ Dependencies installed"
+
+# Verify critical dependencies are installed
+echo "   🔍 Verifying critical dependencies..."
+MISSING_DEPS=0
+
+if [ ! -d "node_modules/ajv" ]; then
+    echo "   ⚠️  ajv missing, installing..."
+    npm install ajv@^8.12.0 --legacy-peer-deps --save-dev
+fi
+
+if [ ! -f "node_modules/ajv/dist/compile/codegen.js" ]; then
+    echo "   ⚠️  ajv codegen missing, reinstalling ajv..."
+    rm -rf node_modules/ajv node_modules/ajv-keywords
+    npm install ajv@^8.12.0 ajv-keywords@^5.1.0 --legacy-peer-deps --save-dev
+fi
+
+if [ ! -d "node_modules/react-app-rewired" ]; then
+    echo "   ❌ react-app-rewired missing!"
+    MISSING_DEPS=1
+fi
+
+if [ $MISSING_DEPS -eq 1 ]; then
+    echo "   ❌ Critical dependencies missing! Reinstalling..."
+    npm install --legacy-peer-deps --force
+fi
+
+echo "   ✅ Dependencies installed and verified"
 echo ""
 
 # Step 3: Ensure environment variables are available for build
