@@ -2,7 +2,8 @@
 # Complete deployment script - avoids EAGAIN errors
 # Usage: bash deploy.sh
 
-set -e
+# Don't exit on error immediately - we want to see what failed
+set +e
 
 cd ~/domains/humancatalystbeacon.com/public_html/app
 
@@ -56,13 +57,46 @@ echo ""
 # Step 3: Build without minification (avoids EAGAIN error)
 echo "🔨 Step 3b: Building (without minification)..."
 rm -rf build
-NODE_ENV=production npm run build:no-minify
+echo "   Building with NODE_ENV=production..."
+echo "   (This may take 3-5 minutes, please wait...)"
+echo ""
+
+# Run build and capture output
+BUILD_OUTPUT=$(NODE_ENV=production npm run build:no-minify 2>&1)
+BUILD_EXIT_CODE=$?
+
+# Display build output
+echo "$BUILD_OUTPUT"
+
+# Check if build failed
+if [ $BUILD_EXIT_CODE -ne 0 ]; then
+    echo ""
+    echo "   ❌ Build failed with exit code: $BUILD_EXIT_CODE"
+    echo "   📋 Last 20 lines of build output:"
+    echo "$BUILD_OUTPUT" | tail -20
+    echo ""
+    echo "   💡 Common fixes:"
+    echo "      - Check for syntax errors in the code"
+    echo "      - Verify all dependencies are installed"
+    echo "      - Try: rm -rf node_modules/.cache && npm run build:no-minify"
+    exit 1
+fi
+
+echo ""
+echo "   ✅ Build command completed"
 echo ""
 
 # Step 4: Verify build
 echo "📋 Step 4: Verifying build..."
 if [ ! -f "build/index.html" ]; then
     echo "   ❌ Build failed - index.html missing!"
+    echo ""
+    echo "   🔍 Troubleshooting steps:"
+    echo "      1. Check if build directory exists: ls -la build/"
+    echo "      2. Check build errors above"
+    echo "      3. Try running: bash diagnose-build.sh"
+    echo "      4. Check for syntax errors in recent code changes"
+    echo ""
     exit 1
 fi
 
