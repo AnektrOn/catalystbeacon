@@ -14,6 +14,7 @@ const ModernCard = ({
 }) => {
   const classes = [
     'modern-card',
+    'glass-effect',
     elevated && 'modern-card-elevated',
     interactive && 'modern-card-interactive',
     className

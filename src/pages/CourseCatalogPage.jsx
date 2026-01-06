@@ -8,7 +8,7 @@ import schoolService from '../services/schoolService';
 import { BookOpen, Lock, Play, Clock, Search, Grid, List, ChevronLeft, ChevronRight, X, Layers, ChevronDown } from 'lucide-react';
 
 const CourseCatalogPage = () => {
-  const { user, profile } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [coursesBySchool, setCoursesBySchool] = useState({});
   const [schools, setSchools] = useState([]);
@@ -27,32 +27,70 @@ const CourseCatalogPage = () => {
   const [touchEnd, setTouchEnd] = useState(null);
 
   useEffect(() => {
-    loadData();
+    // Wait for auth to finish loading before loading data
+    if (!authLoading) {
+      loadData();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, authLoading]);
+
+  const withTimeout = async (promise, ms, label) => {
+    let timeoutId;
+    try {
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+      });
+      return await Promise.race([promise, timeoutPromise]);
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
+    }
+  };
 
   const loadData = async () => {
+    // Add timeout to prevent infinite loading
+    let timeoutId = null;
+    
     try {
-      setLoading(true);
+      // Avoid re-blocking the entire page if we already have data (mobile UX: keep content visible).
+      const hasExistingData = coursesBySchool && Object.keys(coursesBySchool).length > 0;
+      if (!hasExistingData) setLoading(true);
       setError(null);
+
+      timeoutId = setTimeout(() => {
+        console.warn('⏰ CourseCatalogPage: loadData timeout reached');
+        setError('Loading is taking longer than expected. Please refresh the page.');
+        setLoading(false);
+      }, 30000); // 30 second timeout
 
       // Load schools with unlock status
       let schoolsData = [];
       let unlockMap = {};
       
       if (user?.id) {
-        const { data: schoolsFromDb, error: schoolsError } = await schoolService.getSchoolsWithUnlockStatus(user.id);
-        if (schoolsError) throw schoolsError;
-        schoolsData = schoolsFromDb || [];
+        // Fail-safe: do not let schools/profile queries block course rendering.
+        // If this times out or errors, we continue with empty schools and treat as unlocked.
+        const schoolsRes = await withTimeout(
+          schoolService.getSchoolsWithUnlockStatus(user.id),
+          8000,
+          'getSchoolsWithUnlockStatus'
+        ).catch((err) => {
+          console.warn('Schools unlock fetch failed; continuing without unlock status:', err);
+          return { data: null, error: err };
+        });
+
+        schoolsData = schoolsRes?.data || [];
 
         // Create a map of school unlock status
-        schoolsData.forEach(school => {
-          unlockMap[school.name] = school.isUnlocked;
+        schoolsData.forEach((school) => {
+          unlockMap[school.name] = !!school.isUnlocked;
         });
       } else {
         // If no user, just get all schools
-        const { data: schoolsFromDb } = await schoolService.getAllSchools();
-        schoolsData = schoolsFromDb || [];
+        const schoolsRes = await withTimeout(schoolService.getAllSchools(), 8000, 'getAllSchools').catch((err) => {
+          console.warn('Schools fetch failed; continuing without schools list:', err);
+          return { data: null, error: err };
+        });
+        schoolsData = schoolsRes?.data || [];
         
         // All schools unlocked for non-logged-in users
         schoolsData.forEach(school => {
@@ -62,9 +100,32 @@ const CourseCatalogPage = () => {
 
       // Load courses (filtered by unlocked schools if user is logged in)
       const filters = user?.id ? { userId: user.id } : {};
-      const { data, error: fetchError } = await courseService.getCoursesBySchool(filters);
+      const coursesRes = await withTimeout(
+        courseService.getCoursesBySchool(filters),
+        12000,
+        'getCoursesBySchool'
+      ).catch((err) => {
+        console.error('Courses fetch failed:', err);
+        return { data: null, error: err };
+      });
 
-      if (fetchError) throw fetchError;
+      const { data, error: fetchError } = coursesRes || {};
+      
+      // If courses failed to load, show error but don't block the page
+      if (fetchError) {
+        console.error('Failed to load courses:', fetchError);
+        setError('Failed to load courses. Please refresh the page.');
+        setCoursesBySchool({});
+        setLoading(false);
+        return;
+      }
+      
+      // If no data, set empty state
+      if (!data || Object.keys(data).length === 0) {
+        setCoursesBySchool({});
+        setLoading(false);
+        return;
+      }
 
       // Merge schools from courses with schools from database
       // This ensures all masterschool values from courses appear as filters
@@ -110,11 +171,21 @@ const CourseCatalogPage = () => {
         // Batch load all progress in a single query
         if (allCourseIds.length > 0) {
           try {
-            const { data: allProgress, error: progressError } = await supabase
+            const progressQuery = supabase
               .from('user_course_progress')
               .select('course_id, status, progress_percentage, last_accessed_at')
               .eq('user_id', user.id)
               .in('course_id', allCourseIds);
+            
+            const progressRes = await withTimeout(
+              progressQuery,
+              8000,
+              'user_course_progress'
+            ).catch((err) => {
+              console.warn('Progress fetch failed; continuing without progress:', err);
+              return { data: null, error: err };
+            });
+            const { data: allProgress, error: progressError } = progressRes || {};
 
             if (!progressError && allProgress) {
               // Create a map for quick lookup
@@ -184,6 +255,9 @@ const CourseCatalogPage = () => {
       console.error('Error loading data:', err);
       setError('Failed to load courses. Please try again.');
     } finally {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
       setLoading(false);
     }
   };
@@ -198,7 +272,7 @@ const CourseCatalogPage = () => {
       'Ignition': { backgroundColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', color: 'var(--color-primary)', borderColor: 'color-mix(in srgb, var(--color-primary) 30%, transparent)' },
       'Insight': { backgroundColor: 'color-mix(in srgb, var(--color-kobicha) 20%, transparent)', color: 'var(--color-kobicha)', borderColor: 'color-mix(in srgb, var(--color-kobicha) 30%, transparent)' },
       'Transformation': { backgroundColor: 'color-mix(in srgb, var(--color-secondary) 20%, transparent)', color: 'var(--color-secondary)', borderColor: 'color-mix(in srgb, var(--color-secondary) 30%, transparent)' },
-      'God Mode': { backgroundColor: 'color-mix(in srgb, var(--color-earth-green) 20%, transparent)', color: 'var(--color-earth-green)', borderColor: 'color-mix(in srgb, var(--color-earth-green) 30%, transparent)' }
+      'God Mode': { backgroundColor: 'color-mix(in srgb, var(--color-earth-green) 30%, transparent)', color: 'var(--color-earth-green)', borderColor: 'color-mix(in srgb, var(--color-earth-green) 50%, transparent)', fontWeight: '600' }
     };
     return colors[school] || { backgroundColor: 'rgba(107, 114, 128, 0.2)', color: '#9CA3AF', borderColor: 'rgba(107, 114, 128, 0.3)' };
   };
@@ -402,12 +476,13 @@ const CourseCatalogPage = () => {
     }
   };
 
-  if (loading) {
+  // Show loading if auth is still loading or if data is loading
+  if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: 'var(--color-primary)' }}></div>
-          <p className="text-gray-400">Loading courses...</p>
+          <p className="text-gray-400">{authLoading ? 'Loading...' : 'Loading courses...'}</p>
         </div>
       </div>
     );
@@ -425,12 +500,6 @@ const CourseCatalogPage = () => {
               backgroundColor: 'var(--color-primary)',
               background: 'var(--gradient-primary)'
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--color-primary) 90%, transparent)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--color-primary)';
-            }}
           >
             Retry
           </button>
@@ -447,82 +516,84 @@ const CourseCatalogPage = () => {
       />
       <div className="mb-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-3xl lg:text-4xl font-bold text-gray-800 dark:text-white mb-2">Course Catalog</h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              {filteredCourses.length} {filteredCourses.length === 1 ? 'course' : 'courses'} found
-            </p>
-          </div>
-          
-          {/* View Mode Toggle */}
-          <div className="flex items-center gap-2">
+          <div className="flex-1">
+            <div className="flex items-center justify-between gap-4 mb-2">
+              <h1 className="text-3xl lg:text-4xl font-bold text-gray-800 dark:text-white">Course Catalog</h1>
+              {/* View Mode Toggle - Same row as title */}
+              <div className="flex items-center gap-2">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`p-2 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center ${
                 viewMode === 'grid' 
                   ? 'bg-white/20 dark:bg-black/20' 
                   : 'bg-white/10 dark:bg-black/10 hover:bg-white/15'
               }`}
               title="Grid View"
             >
-              <Grid size={20} />
+              <Grid size={18} className="sm:w-5 sm:h-5" />
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`p-2 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center ${
                 viewMode === 'list' 
                   ? 'bg-white/20 dark:bg-black/20' 
                   : 'bg-white/10 dark:bg-black/10 hover:bg-white/15'
               }`}
               title="List View"
             >
-              <List size={20} />
+              <List size={18} className="sm:w-5 sm:h-5" />
             </button>
             <button
               onClick={() => setViewMode('grouped')}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`p-2 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center ${
                 viewMode === 'grouped' 
                   ? 'bg-white/20 dark:bg-black/20' 
                   : 'bg-white/10 dark:bg-black/10 hover:bg-white/15'
               }`}
               title="Grouped by School View"
             >
-              <Layers size={20} />
+              <Layers size={18} className="sm:w-5 sm:h-5" />
             </button>
+              </div>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400">
+              {filteredCourses.length} {filteredCourses.length === 1 ? 'course' : 'courses'} found
+            </p>
           </div>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative mb-6">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+        {/* Search Bar - Mobile Optimized */}
+        <div className="relative mb-4 sm:mb-6">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2" size={18} style={{ color: 'var(--text-secondary)' }} />
           <input
             type="text"
-            placeholder="Search courses by title, topic, or school..."
+            placeholder="Search courses..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-10 py-3 rounded-lg glass-effect border border-white/10 focus:outline-none focus:ring-2 focus:ring-primary/50 text-gray-900 dark:text-white placeholder-gray-400"
+            className="w-full pl-9 pr-9 sm:pl-10 sm:pr-10 py-2.5 sm:py-3 rounded-lg glass-effect border border-white/10 focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder-gray-400 text-sm sm:text-base"
+            style={{ color: 'var(--text-primary)' }}
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 min-w-[44px] min-h-[44px] flex items-center justify-center"
             >
-              <X size={18} />
+              <X size={16} />
             </button>
           )}
         </div>
       </div>
 
-      {/* Masterschool Filter Tabs */}
+      {/* Masterschool Filter Tabs - Mobile Optimized */}
       {displaySchools.length > 0 && (
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <div className="mb-3 sm:mb-4">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
             Filter by Masterschool:
           </label>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2 overflow-x-auto pb-2 scrollbar-hide">
           <button
             onClick={() => setSelectedSchool(null)}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedSchool === null
+            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium transition-colors whitespace-nowrap min-h-[44px] flex items-center justify-center ${selectedSchool === null
               ? 'text-white'
               : 'bg-white/50 dark:bg-black/20 text-gray-600 dark:text-gray-300'
               }`}
@@ -530,12 +601,6 @@ const CourseCatalogPage = () => {
               backgroundColor: 'var(--color-primary)',
               background: 'var(--gradient-primary)'
             } : {}}
-            onMouseEnter={selectedSchool !== null ? (e) => {
-              e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--color-primary) 10%, transparent)';
-            } : undefined}
-            onMouseLeave={selectedSchool !== null ? (e) => {
-              e.currentTarget.style.backgroundColor = '';
-            } : undefined}
           >
               All Masterschools
           </button>
@@ -549,7 +614,7 @@ const CourseCatalogPage = () => {
                 key={schoolName}
                 onClick={() => isUnlocked && setSelectedSchool(schoolName)}
                 disabled={!isUnlocked}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors relative ${selectedSchool === schoolName
+                className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors relative whitespace-nowrap min-h-[44px] flex items-center justify-center ${selectedSchool === schoolName
                   ? 'text-white'
                   : isUnlocked
                     ? 'bg-white/50 dark:bg-black/20 text-gray-600 dark:text-gray-300'
@@ -559,16 +624,10 @@ const CourseCatalogPage = () => {
                   backgroundColor: 'var(--color-primary)',
                   background: 'var(--gradient-primary)'
                 } : isUnlocked ? {} : {}}
-                onMouseEnter={isUnlocked && selectedSchool !== schoolName ? (e) => {
-                  e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--color-primary) 10%, transparent)';
-                } : undefined}
-                onMouseLeave={isUnlocked && selectedSchool !== schoolName ? (e) => {
-                  e.currentTarget.style.backgroundColor = '';
-                } : undefined}
                 title={!isUnlocked ? `Requires ${requiredXp.toLocaleString()} XP to unlock` : ''}
               >
                 {schoolName}
-                {!isUnlocked && <Lock size={14} className="inline-block ml-2" />}
+                {!isUnlocked && <Lock size={12} className="inline-block ml-1.5" />}
               </button>
             );
           })}
@@ -576,10 +635,10 @@ const CourseCatalogPage = () => {
         </div>
       )}
 
-      {/* School Name Filter Tabs */}
+      {/* School Name Filter Tabs - Mobile Optimized */}
       {schoolNames.length > 0 && (
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <div className="mb-4 sm:mb-6">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
             Filter by School Name:
           </label>
           
@@ -588,7 +647,7 @@ const CourseCatalogPage = () => {
             <select
               value={selectedSchoolName || ''}
               onChange={(e) => setSelectedSchoolName(e.target.value || null)}
-              className="w-full px-4 py-3 rounded-lg glass-effect border border-white/10 focus:outline-none focus:ring-2 focus:ring-primary/50 text-gray-900 dark:text-white appearance-none cursor-pointer"
+              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg glass-effect border border-white/10 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm sm:text-base text-gray-900 dark:text-white appearance-none cursor-pointer min-h-[44px]"
               style={selectedSchoolName ? {
                 backgroundColor: 'var(--color-secondary)',
                 background: 'var(--gradient-primary)',
@@ -625,12 +684,6 @@ const CourseCatalogPage = () => {
                 backgroundColor: 'var(--color-secondary)',
                 background: 'var(--gradient-primary)'
               } : {}}
-              onMouseEnter={selectedSchoolName !== null ? (e) => {
-                e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--color-secondary) 10%, transparent)';
-              } : undefined}
-              onMouseLeave={selectedSchoolName !== null ? (e) => {
-                e.currentTarget.style.backgroundColor = '';
-              } : undefined}
             >
               All School Names
             </button>
@@ -646,12 +699,6 @@ const CourseCatalogPage = () => {
                   backgroundColor: 'var(--color-secondary)',
                   background: 'var(--gradient-primary)'
                 } : {}}
-                onMouseEnter={selectedSchoolName !== schoolName ? (e) => {
-                  e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--color-secondary) 10%, transparent)';
-                } : undefined}
-                onMouseLeave={selectedSchoolName !== schoolName ? (e) => {
-                  e.currentTarget.style.backgroundColor = '';
-                } : undefined}
               >
                 {schoolName}
               </button>
@@ -722,16 +769,6 @@ const CourseCatalogPage = () => {
                             minHeight: '280px',
                             borderColor: 'rgba(255, 255, 255, 0.1)',
                             boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)'
-                          }}
-                          onMouseEnter={(e) => {
-                            if (course.isUnlocked) {
-                              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                              e.currentTarget.style.boxShadow = '0 12px 32px rgba(0, 0, 0, 0.3)';
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                            e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.2)';
                           }}
                           onClick={() => course.isUnlocked && handleCourseClick(courseIdentifier)}
                         >
@@ -1116,16 +1153,6 @@ const CourseCatalogPage = () => {
                         borderColor: 'rgba(255, 255, 255, 0.1)',
                         boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)'
                   }}
-                  onMouseEnter={(e) => {
-                    if (course.isUnlocked) {
-                          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                          e.currentTarget.style.boxShadow = '0 12px 32px rgba(0, 0, 0, 0.3)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                        e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.2)';
-                      }}
                       onClick={() => course.isUnlocked && handleCourseClick(courseIdentifier)}
                     >
                       {/* Background Image Layer */}

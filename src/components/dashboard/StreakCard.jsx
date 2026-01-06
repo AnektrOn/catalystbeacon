@@ -11,22 +11,22 @@ const StreakCard = ({ streak = 0, record = 0 }) => {
   return (
     <NeomorphicCard size="small" className="streak-card">
       <div className="streak-content">
-        {/* Fire icon */}
-        <div className="streak-icon-container">
-          <Flame 
-            className="streak-icon" 
-            size={32}
-            strokeWidth={2}
-          />
-          {streak > 0 && (
-            <div className="streak-glow" />
-          )}
-        </div>
-
-        {/* Streak number */}
-        <div className="streak-info">
-          <div className="streak-number">{streak}</div>
-          <div className="streak-label">Day Streak</div>
+        {/* Fire icon and number aligned */}
+        <div className="streak-content-top">
+          <div className="streak-icon-container">
+            <Flame 
+              className="streak-icon" 
+              size={32}
+              strokeWidth={2}
+            />
+            {streak > 0 && (
+              <div className="streak-glow" />
+            )}
+          </div>
+          <div className="streak-info">
+            <div className="streak-number">{streak}</div>
+            <div className="streak-label">Day Streak</div>
+          </div>
         </div>
 
         {/* Record indicator */}

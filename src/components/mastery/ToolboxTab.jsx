@@ -445,7 +445,7 @@ const ToolboxTab = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: 'var(--color-primary)' }}></div>
         <span className="ml-2 text-gray-600">Loading toolbox...</span>
       </div>
     );
@@ -459,7 +459,10 @@ const ToolboxTab = () => {
           <div className="text-sm text-gray-600">{error}</div>
           <button 
             onClick={() => window.location.reload()} 
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            className="mt-4 px-4 py-2 text-white rounded transition-colors"
+            style={{ background: 'var(--gradient-primary)' }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
           >
             Retry
           </button>
@@ -517,7 +520,7 @@ const ToolboxTab = () => {
                       {tool.description}
                     </p>
                     <div className="flex items-center space-x-4">
-                      <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                      <span className="text-xs font-medium" style={{ color: 'var(--color-primary)' }}>
                         +{tool.xp_reward} XP
                       </span>
                       <span className="text-xs text-purple-600 dark:text-purple-400">
@@ -584,7 +587,7 @@ const ToolboxTab = () => {
               const progressGrid = generateProgressGrid(completedDates, tool.color || '#3B82F6');
               
               return (
-                <div key={tool.id} className="w-80 bg-blue-900 rounded-lg p-4 text-white">
+                <div key={tool.id} className="w-80 rounded-lg p-4 text-white glass-effect" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 80%, transparent)' }}>
                   {/* Header with icon and title */}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-2">
@@ -615,9 +618,10 @@ const ToolboxTab = () => {
                       }}
                       className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                         isUsedToday
-                          ? 'bg-blue-600 text-white'
-                          : 'border border-white text-white hover:bg-white hover:text-blue-900'
+                          ? 'text-white'
+                          : 'border border-white text-white hover:bg-white hover:text-gray-900'
                       }`}
+                      style={isUsedToday ? { background: 'var(--gradient-primary)' } : {}}
                     >
                       <CheckCircle size={16} strokeWidth={1.5}  aria-hidden="true"/>
                       <span>{isUsedToday ? 'Used Today' : 'Use Tool'}</span>
@@ -649,7 +653,10 @@ const ToolboxTab = () => {
                             setShowConvertModal(true);
                           }
                         }}
-                        className="text-xs text-blue-300 hover:text-blue-200 underline"
+                        className="text-xs underline transition-colors"
+                        style={{ color: 'var(--color-primary)' }}
+                        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                        onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                       >
                         Convert to Habit
                       </button>
@@ -685,17 +692,20 @@ const ToolboxTab = () => {
 
           {userToolbox.length === 0 && (
             <div className="glass-card p-8 text-center">
-              <Wrench size={48} className="mx-auto text-gray-400 mb-4"  aria-hidden="true"/>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              <Wrench size={48} className="mx-auto mb-4" style={{ color: 'var(--text-secondary)' }} aria-hidden="true"/>
+              <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
                 Your toolbox is empty
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Start building your learning toolkit by exploring the library.
+              <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>
+                Start building your learning toolkit by exploring the library. Discover powerful tools to enhance your learning journey!
               </p>
               <button
                 onClick={() => setActiveTab('library')}
                 className="glass-primary-btn"
-               role="tab" aria-selected={activeTab === 'library'} aria-label="Toolbox Library" aria-label="Browse toolbox library">
+                role="tab" 
+                aria-selected={activeTab === 'library'} 
+                aria-label="Browse toolbox library"
+              >
                 Browse Library
               </button>
             </div>

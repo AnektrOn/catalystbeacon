@@ -7,7 +7,7 @@ import { getCurrentPaletteData } from '../../utils/colorPaletteSwitcher';
  * Uses the app's color palette system
  * Core, Constellation, and Subnode nodes have different colors
  */
-const StellarMap2D = ({
+const StellarMap2D = React.forwardRef(({
   hierarchyData,
   onNodeHover,
   onNodeClick,
@@ -16,8 +16,9 @@ const StellarMap2D = ({
   completionMap = new Map(),
   highlightedNodeIds = new Set(),
   bookmarkedNodeIds = new Set(),
-  showAnimations = true
-}) => {
+  showAnimations = true,
+  showZoomControls = true
+}, ref) => {
   const svgRef = useRef(null);
   const [viewBox, setViewBox] = useState({ x: 0, y: 0, width: 1000, height: 1000 });
   const [isPanning, setIsPanning] = useState(false);
@@ -391,6 +392,17 @@ const StellarMap2D = ({
     }));
   };
 
+  // Expose imperative controls via ref (used by parent page buttons)
+  React.useImperativeHandle(ref, () => ({
+    zoomOut: () => {
+      // Kept for backwards compatibility; "zoom out" button should reset to full view.
+      handleReset();
+    },
+    resetView: () => {
+      handleReset();
+    }
+  }));
+
   const handleZoomOut = () => {
     setViewBox(prev => ({
       ...prev,
@@ -642,33 +654,35 @@ const StellarMap2D = ({
           animation: fadeIn 0.5s ease-out;
         }
       `}</style>
-      {/* Controls */}
-      <div className="absolute top-4 right-4 z-10 flex gap-2">
-        <button
-          onClick={handleZoomIn}
-          className="p-2 rounded-md bg-black/80 backdrop-blur-sm text-white hover:bg-white/20 transition-all border border-white/30"
-          title="Zoom In (+ or =)"
-          aria-label="Zoom in"
-        >
-          <ZoomIn size={18} />
-        </button>
-        <button
-          onClick={handleZoomOut}
-          className="p-2 rounded-md bg-black/80 backdrop-blur-sm text-white hover:bg-white/20 transition-all border border-white/30"
-          title="Zoom Out (-)"
-          aria-label="Zoom out"
-        >
-          <ZoomOut size={18} />
-        </button>
-        <button
-          onClick={handleReset}
-          className="p-2 rounded-md bg-black/80 backdrop-blur-sm text-white hover:bg-white/20 transition-all border border-white/30"
-          title="Reset View (Shift+0)"
-          aria-label="Reset view"
-        >
-          <RotateCcw size={18} />
-        </button>
-      </div>
+      {/* Zoom Controls (optional) */}
+      {showZoomControls && (
+        <div className="absolute top-4 right-4 z-10 flex gap-2">
+          <button
+            onClick={handleZoomIn}
+            className="p-2 rounded-md bg-black/80 backdrop-blur-sm text-white hover:bg-white/20 transition-all border border-white/30"
+            title="Zoom In (+ or =)"
+            aria-label="Zoom in"
+          >
+            <ZoomIn size={18} />
+          </button>
+          <button
+            onClick={handleZoomOut}
+            className="p-2 rounded-md bg-black/80 backdrop-blur-sm text-white hover:bg-white/20 transition-all border border-white/30"
+            title="Zoom Out (-)"
+            aria-label="Zoom out"
+          >
+            <ZoomOut size={18} />
+          </button>
+          <button
+            onClick={handleReset}
+            className="p-2 rounded-md bg-black/80 backdrop-blur-sm text-white hover:bg-white/20 transition-all border border-white/30"
+            title="Reset View (Shift+0)"
+            aria-label="Reset view"
+          >
+            <RotateCcw size={18} />
+          </button>
+        </div>
+      )}
 
       {/* SVG Canvas */}
       <svg
@@ -1258,6 +1272,8 @@ const StellarMap2D = ({
       </svg>
     </div>
   );
-};
+});
+
+StellarMap2D.displayName = 'StellarMap2D';
 
 export default StellarMap2D;

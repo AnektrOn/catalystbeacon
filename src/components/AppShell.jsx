@@ -91,7 +91,7 @@ const AppShell = () => {
       if (saved !== null) {
         return saved === 'true';
       }
-      // Check system preference
+      // Auto-detect system preference if no user preference saved
       return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     }
     return false;
@@ -485,10 +485,11 @@ const AppShell = () => {
                 />
               ) : (
                 <div
-                  className="glass-user-avatar bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center"
+                  className="glass-user-avatar flex items-center justify-center text-white font-semibold text-sm"
+                  style={{ background: 'var(--gradient-primary)' }}
                   onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
                 >
-                  <User size={20} className="text-white" />
+                  {profile?.full_name ? profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : <User size={20} />}
                 </div>
               )}
               <UserProfileDropdown

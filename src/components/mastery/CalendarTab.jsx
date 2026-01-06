@@ -544,9 +544,10 @@ const CalendarTab = () => {
             onClick={() => setView('month')}
             className={`flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all min-h-[44px] ${
               view === 'month' 
-                ? 'bg-indigo-600 text-white shadow-lg' 
+                ? 'text-white shadow-lg' 
                 : 'text-slate-300 hover:text-white'
             }`}
+            style={view === 'month' ? { background: 'var(--gradient-primary)' } : {}}
             aria-label="Switch to month view"
             aria-pressed={view === 'month'}
           >
@@ -557,9 +558,10 @@ const CalendarTab = () => {
             onClick={() => setView('week')}
             className={`flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all min-h-[44px] ${
               view === 'week' 
-                ? 'bg-indigo-600 text-white shadow-lg' 
+                ? 'text-white shadow-lg' 
                 : 'text-slate-300 hover:text-white'
             }`}
+            style={view === 'week' ? { background: 'var(--gradient-primary)' } : {}}
             aria-label="Switch to week view"
             aria-pressed={view === 'week'}
           >
@@ -570,9 +572,10 @@ const CalendarTab = () => {
             onClick={() => setView('day')}
             className={`flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all min-h-[44px] ${
               view === 'day' 
-                ? 'bg-indigo-600 text-white shadow-lg' 
+                ? 'text-white shadow-lg' 
                 : 'text-slate-300 hover:text-white'
             }`}
+            style={view === 'day' ? { background: 'var(--gradient-primary)' } : {}}
             aria-label="Switch to day view"
             aria-pressed={view === 'day'}
           >
@@ -599,7 +602,7 @@ const CalendarTab = () => {
       {/* Loading State */}
       {loading && (
         <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: 'var(--color-primary)' }}></div>
           <span className="ml-2 text-gray-600 dark:text-gray-400">Loading...</span>
         </div>
       )}
@@ -631,8 +634,9 @@ const CalendarTab = () => {
                 <div
                   key={index}
                   className={`min-h-[80px] sm:min-h-[120px] p-1 sm:p-2 border-r border-b border-slate-700/50 last:border-r-0 cursor-pointer ${
-                    !isCurrentMonth ? 'bg-slate-900/30 text-slate-600' : ''
-                  } ${isToday ? 'bg-indigo-600/20 ring-1 ring-indigo-500' : ''} hover:bg-slate-700/30 transition-colors`}
+                    !isCurrentMonth ? 'bg-slate-900/40 text-slate-500' : ''
+                  } hover:bg-slate-700/30 transition-colors`}
+                  style={isToday ? { backgroundColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', borderColor: 'var(--color-primary)' } : {}}
                   onClick={() => day && handleDayClick(day)}
                 >
                   {day && (
@@ -681,11 +685,14 @@ const CalendarTab = () => {
                 <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                   {dayNames[index]}
                 </div>
-                <div className={`text-lg font-semibold ${
-                  day.toDateString() === new Date().toDateString() 
-                    ? 'text-blue-600 dark:text-blue-400' 
-                    : 'text-gray-900 dark:text-white'
-                }`}>
+                <div 
+                  className={`text-lg font-semibold ${
+                    day.toDateString() === new Date().toDateString() 
+                      ? ''
+                      : 'text-gray-900 dark:text-white'
+                  }`}
+                  style={day.toDateString() === new Date().toDateString() ? { color: 'var(--color-primary)' } : {}}
+                >
                   {day.getDate()}
                 </div>
               </div>
@@ -700,9 +707,8 @@ const CalendarTab = () => {
               return (
                 <div
                   key={index}
-                  className={`p-2 border-r border-gray-200 dark:border-gray-700 last:border-r-0 ${
-                    isToday ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                  }`}
+                  className="p-2 border-r border-gray-200 dark:border-gray-700 last:border-r-0"
+                  style={isToday ? { backgroundColor: 'color-mix(in srgb, var(--color-primary) 10%, transparent)' } : {}}
                 >
                   <div className="space-y-1">
                     {dayEvents.map(event => (
@@ -870,7 +876,7 @@ const CalendarTab = () => {
               selectedDayEvents.map(event => {
                 const getEventIcon = (event) => {
                   if (event.source === 'habit') {
-                    return <Target size={20} className="text-blue-500" />;
+                    return <Target size={20} style={{ color: 'var(--color-primary)' }} />;
                   }
                   // Add more icon logic based on event type
                   return <CalendarIcon size={20} className="text-gray-500" />;
@@ -878,8 +884,15 @@ const CalendarTab = () => {
 
                 const getEventColor = (event) => {
                   if (event.completed) return 'bg-gray-100 dark:bg-gray-800';
-                  if (event.source === 'habit') return 'bg-blue-50 dark:bg-blue-900/20';
+                  if (event.source === 'habit') return '';
                   return 'bg-purple-50 dark:bg-purple-900/20';
+                };
+                
+                const getEventStyle = (event) => {
+                  if (event.source === 'habit' && !event.completed) {
+                    return { backgroundColor: 'color-mix(in srgb, var(--color-primary) 10%, transparent)' };
+                  }
+                  return {};
                 };
 
                 const getLastUpdated = (event) => {
@@ -1028,13 +1041,14 @@ const CalendarTab = () => {
                       !day 
                         ? 'text-gray-300 dark:text-gray-600' 
                         : isSelected
-                        ? 'bg-blue-600 text-white'
+                        ? 'text-white'
                         : isToday
-                        ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                        ? ''
                         : hasEvents
                         ? 'text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
                         : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
                     }`}
+                    style={isSelected ? { background: 'var(--gradient-primary)' } : isToday ? { backgroundColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', color: 'var(--color-primary)' } : {}}
                     aria-label={day ? `Select ${day.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}${hasEvents ? ' (has events)' : ''}` : ''}
                     aria-pressed={isSelected}
                   >
@@ -1154,7 +1168,10 @@ const CalendarTab = () => {
               )}
               <button
                 onClick={() => setCompletionPopup(null)}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                className="w-full text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                style={{ background: 'var(--gradient-primary)' }}
+                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
               >
                 {completionPopup.action === 'completed' ? 'Awesome!' : 'Got it!'}
               </button>

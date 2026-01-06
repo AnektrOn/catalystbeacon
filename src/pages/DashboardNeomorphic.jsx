@@ -18,6 +18,8 @@ import {
 } from '../components/dashboard'
 import StatCardV2 from '../components/dashboard/StatCardV2'
 import XPCircleWidgetV2 from '../components/dashboard/XPCircleWidgetV2'
+import XPProgressChart from '../components/dashboard/XPProgressChart'
+import MoodTracker from '../components/dashboard/MoodTracker'
 
 import './DashboardNeomorphic.css'
 
@@ -67,22 +69,46 @@ const DashboardNeomorphic = () => {
     if (!profile) return
 
     try {
-      const data = await levelsService.getCurrentLevel(profile.id)
-      if (data) {
-        setLevelData({
-          level: data.level,
-          levelTitle: data.level_title,
-          currentXP: data.current_xp,
-          nextLevelXP: data.next_level_xp,
-          xpToNext: data.xp_to_next_level
-        })
+      const currentXP = profile.current_xp || 0
+
+      // Prefer DB-provided rank/level when available
+      let level = profile.level || 0
+      let levelTitle = profile.rank || ''
+      let nextLevelXP = (level + 1) * 1000
+      let xpToNext = Math.max(0, nextLevelXP - currentXP)
+
+      // If we have xp_to_next_level from DB triggers, use it for accuracy
+      if (profile.xp_to_next_level !== undefined && profile.xp_to_next_level !== null) {
+        xpToNext = Math.max(0, profile.xp_to_next_level)
+        nextLevelXP = currentXP + xpToNext
       }
+
+      // Fetch canonical level titles/thresholds from levels table when possible
+      const { data: levelInfo, error } = await levelsService.getCurrentAndNextLevel(currentXP)
+      if (!error && levelInfo?.currentLevel) {
+        level = levelInfo.currentLevel.level_number ?? level
+        levelTitle = levelInfo.currentLevel.title || levelTitle
+        if (levelInfo.nextLevel?.xp_threshold !== undefined && levelInfo.nextLevel?.xp_threshold !== null) {
+          nextLevelXP = levelInfo.nextLevel.xp_threshold
+          xpToNext = Math.max(0, nextLevelXP - currentXP)
+        } else {
+          xpToNext = 0
+        }
+      }
+
+      setLevelData({
+        level: level || 0,
+        levelTitle: levelTitle || `Level ${level || 0}`,
+        currentXP,
+        nextLevelXP,
+        xpToNext
+      })
     } catch (error) {
       console.error('Error loading level data:', error)
     }
   }, [profile])
 
-  // Load streak data
+  // Load streak data - Get max streak from all habits
   const loadStreakData = useCallback(async () => {
     if (!profile) return
 
@@ -91,13 +117,20 @@ const DashboardNeomorphic = () => {
         .from('user_habits')
         .select('streak, streak_record')
         .eq('user_id', profile.id)
-        .single()
 
-      if (!error && data) {
+      if (!error && data && data.length > 0) {
+        const maxStreak = Math.max(...data.map(h => h.streak || 0))
+        const maxStreakRecord = Math.max(...data.map(h => h.streak_record || 0))
         setStats(prev => ({
           ...prev,
-          streak: data.streak || 0,
-          streakRecord: data.streak_record || 0
+          streak: maxStreak,
+          streakRecord: maxStreakRecord
+        }))
+      } else {
+        setStats(prev => ({
+          ...prev,
+          streak: 0,
+          streakRecord: 0
         }))
       }
     } catch (error) {
@@ -129,7 +162,7 @@ const DashboardNeomorphic = () => {
         .from('user_lesson_progress')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', profile.id)
-        .eq('completed', true)
+        .eq('is_completed', true)
 
       // Get achievements
       const { count: achievementsCount } = await supabase
@@ -142,7 +175,7 @@ const DashboardNeomorphic = () => {
         .from('user_lesson_progress')
         .select('course_id', { count: 'exact', head: true })
         .eq('user_id', profile.id)
-        .eq('completed', false)
+        .eq('is_completed', false)
 
       setStats(prev => ({
         ...prev,
@@ -173,7 +206,7 @@ const DashboardNeomorphic = () => {
           )
         `)
         .eq('user_id', profile.id)
-        .eq('completed', false)
+        .eq('is_completed', false)
         .order('updated_at', { ascending: false })
         .limit(1)
         .single()
@@ -191,7 +224,7 @@ const DashboardNeomorphic = () => {
           .select('*', { count: 'exact', head: true })
           .eq('user_id', profile.id)
           .eq('course_id', data.courses.id)
-          .eq('completed', true)
+          .eq('is_completed', true)
 
         const progress = count > 0 ? Math.round((completedCount / count) * 100) : 0
         
@@ -272,7 +305,14 @@ const DashboardNeomorphic = () => {
       {/* Header */}
       <header className="dashboard-header">
         <div>
-          <h1 className="dashboard-title">Welcome back, {profile?.full_name || 'Student'}!</h1>
+          <h1 className="dashboard-title">
+            {(() => {
+              const hour = new Date().getHours();
+              const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+              const name = profile?.full_name ? profile.full_name.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ') : 'Student';
+              return `${greeting}, ${name}!`;
+            })()}
+          </h1>
           <p className="dashboard-subtitle">Continue your transformation journey</p>
         </div>
       </header>
@@ -286,6 +326,7 @@ const DashboardNeomorphic = () => {
             levelXP={levelData.nextLevelXP}
             level={levelData.level}
             nextLevel={levelData.level + 1}
+            levelTitle={levelData.levelTitle}
             isActive={true}
           />
         </div>
@@ -316,6 +357,16 @@ const DashboardNeomorphic = () => {
           />
         </div>
 
+        {/* Mood Tracker */}
+        <div className="grid-mood-tracker">
+          <MoodTracker userId={profile?.id} />
+        </div>
+
+        {/* XP Progress Chart */}
+        <div className="grid-chart">
+          <XPProgressChart userId={profile?.id} />
+        </div>
+
         {/* Active Course */}
         {activeCourse && (
           <div className="grid-course">
@@ -331,14 +382,11 @@ const DashboardNeomorphic = () => {
           </div>
         )}
 
-        {/* Quick Actions */}
-        <div className="grid-actions">
-          <QuickActionsGrid onActionClick={handleActionClick} />
-        </div>
+        {/* Quick Actions - Removed on mobile (menu already provides navigation) */}
 
         {/* Additional Stats - Only for paid users */}
         {(!isFreeUser || isAdmin) && (
-          <>
+          <div className="grid-stats-extra">
             <div className="grid-stat-extra">
               <StatCardV2
                 icon={Target}
@@ -363,7 +411,7 @@ const DashboardNeomorphic = () => {
                 subtitle="Sessions planned"
               />
             </div>
-          </>
+          </div>
         )}
       </div>
 

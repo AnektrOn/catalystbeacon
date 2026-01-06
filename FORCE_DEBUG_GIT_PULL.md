@@ -216,3 +216,5 @@ The key insight: **The build was failing during minification**, not during compi
 - `npm run build` = tries to minify = EAGAIN error on limited servers
 - `npm run build:no-minify` = skips minification = works every time ✅
 
+
+

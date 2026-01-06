@@ -16,13 +16,25 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+
+    // Prefer reading from the form DOM for robustness (autofill + programmatic input),
+    // then fall back to React state.
+    const form = e.currentTarget
+    const domEmail = (form?.elements?.email?.value ?? '').toString()
+    const domPassword = (form?.elements?.password?.value ?? '').toString()
+    const emailValue = (email || domEmail).trim()
+    const passwordValue = (password || domPassword).trim()
+
+    // Keep state in sync if the DOM had values (e.g. autofill)
+    if (domEmail && domEmail !== email) setEmail(domEmail)
+    if (domPassword && domPassword !== password) setPassword(domPassword)
     
-    if (!email.trim()) {
+    if (!emailValue) {
       toast.error('Please enter your email')
       return
     }
     
-    if (!password.trim()) {
+    if (!passwordValue) {
       toast.error('Please enter your password')
       return
     }
@@ -35,7 +47,7 @@ const LoginPage = () => {
     try {
       // Wait for both the actual sign in AND minimum loading time
       const [signInResult] = await Promise.all([
-        signIn(email, password),
+        signIn(emailValue, passwordValue),
         minLoadingTime
       ])
       
@@ -67,7 +79,7 @@ const LoginPage = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-transparent to-orange-900/20 z-10"></div>
         <img
           src="https://images.unsplash.com/photo-1623705267866-71d69d886f75?q=80&w=1335&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-          alt="Picture of Tom Bullock"
+          alt="Tom Bullock"
           className="w-full h-full object-cover"
         />
         <div className="absolute bottom-8 left-8 text-white z-20">

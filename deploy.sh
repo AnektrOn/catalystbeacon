@@ -24,10 +24,39 @@ npm install --legacy-peer-deps --force
 echo "   ✅ Dependencies installed"
 echo ""
 
+# Step 3: Ensure environment variables are available for build
+echo "🔧 Step 3a: Checking environment variables..."
+if [ ! -f ".env" ] && [ ! -f ".env.production" ]; then
+    echo "   ❌ ERROR: No .env or .env.production file found!"
+    echo "   Please create .env file with REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY"
+    exit 1
+fi
+
+# Create React App automatically loads .env files, but we'll verify they exist
+if [ -f ".env" ]; then
+    echo "   ✅ Found .env file"
+    # Verify critical variables exist in .env (without exposing values)
+    if grep -q "REACT_APP_SUPABASE_URL" .env && grep -q "REACT_APP_SUPABASE_ANON_KEY" .env; then
+        echo "   ✅ .env contains required Supabase variables"
+    else
+        echo "   ❌ ERROR: .env file missing REACT_APP_SUPABASE_URL or REACT_APP_SUPABASE_ANON_KEY"
+        exit 1
+    fi
+elif [ -f ".env.production" ]; then
+    echo "   ✅ Found .env.production file"
+    if grep -q "REACT_APP_SUPABASE_URL" .env.production && grep -q "REACT_APP_SUPABASE_ANON_KEY" .env.production; then
+        echo "   ✅ .env.production contains required Supabase variables"
+    else
+        echo "   ❌ ERROR: .env.production missing REACT_APP_SUPABASE_URL or REACT_APP_SUPABASE_ANON_KEY"
+        exit 1
+    fi
+fi
+echo ""
+
 # Step 3: Build without minification (avoids EAGAIN error)
-echo "🔨 Step 3: Building (without minification)..."
+echo "🔨 Step 3b: Building (without minification)..."
 rm -rf build
-npm run build:no-minify
+NODE_ENV=production npm run build:no-minify
 echo ""
 
 # Step 4: Verify build

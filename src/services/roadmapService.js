@@ -256,6 +256,31 @@ class RoadmapService {
    */
   async updateLessonTracking(userId, courseId, chapterNumber, lessonNumber, timeSpent, scrollPercentage) {
     try {
+      // Validate inputs
+      if (!userId || !courseId || !chapterNumber || !lessonNumber) {
+        console.warn('Missing required parameters for lesson tracking:', { userId, courseId, chapterNumber, lessonNumber });
+        return { canComplete: false };
+      }
+
+      // Ensure courseId is an integer
+      const courseIdInt = parseInt(courseId);
+      if (isNaN(courseIdInt)) {
+        console.error('Invalid course_id (not a number):', courseId);
+        return { canComplete: false };
+      }
+
+      // Verify course exists in course_metadata before attempting insert
+      const { data: courseExists, error: courseCheckError } = await supabase
+        .from('course_metadata')
+        .select('course_id')
+        .eq('course_id', courseIdInt)
+        .single();
+
+      if (courseCheckError || !courseExists) {
+        console.error('Course not found in course_metadata:', { courseId: courseIdInt, error: courseCheckError });
+        return { canComplete: false };
+      }
+
       // Check if minimum requirements are met (3 minutes = 180 seconds, 100% scroll)
       const minimumTimeMet = timeSpent >= 180;
       const canComplete = minimumTimeMet && scrollPercentage >= 100;
@@ -265,7 +290,7 @@ class RoadmapService {
         .from('user_lesson_progress')
         .upsert({
           user_id: userId,
-          course_id: courseId,
+          course_id: courseIdInt,
           chapter_number: chapterNumber,
           lesson_number: lessonNumber,
           time_spent_seconds: timeSpent,
@@ -279,7 +304,14 @@ class RoadmapService {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // If it's a foreign key constraint error, log it but don't crash
+        if (error.code === '23503' || error.message.includes('foreign key constraint')) {
+          console.error('Foreign key constraint violation - course_id not found:', { courseId: courseIdInt, error: error.message });
+          return { canComplete: false };
+        }
+        throw error;
+      }
 
       return {
         ...data,
@@ -287,7 +319,8 @@ class RoadmapService {
       };
     } catch (error) {
       console.error('Error updating lesson tracking:', error);
-      throw new Error(`Failed to update lesson tracking: ${error.message}`);
+      // Return a safe default instead of throwing to prevent UI crashes
+      return { canComplete: false };
     }
   }
 

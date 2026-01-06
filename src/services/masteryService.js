@@ -133,18 +133,18 @@ class MasteryService {
   }
 
   /**
-   * Delete a user habit
+   * Delete a user habit and all related data (completions will be deleted via CASCADE)
    */
   async deleteUserHabit(habitId) {
     try {
-      const { data, error } = await supabase
+      // Delete the habit - CASCADE will automatically delete related completions
+      const { error } = await supabase
         .from('user_habits')
-        .update({ is_active: false })
-        .eq('id', habitId)
-        .select();
+        .delete()
+        .eq('id', habitId);
 
       if (error) throw error;
-      return { data, error: null };
+      return { data: { deleted: true }, error: null };
     } catch (error) {
       console.error('Error deleting user habit:', error);
       return { data: null, error };
@@ -710,7 +710,8 @@ class MasteryService {
         .insert({
           user_id: userId,
           toolbox_id: toolboxId,
-          is_active: true
+          is_active: true,
+          show_on_calendar: true // Default to showing on calendar
         })
         .select()
         .single();
@@ -748,17 +749,18 @@ class MasteryService {
   }
 
   /**
-   * Remove a toolbox item from user's toolbox
+   * Remove a toolbox item from user's toolbox (usage data will be deleted via CASCADE)
    */
   async removeUserToolboxItem(itemId) {
     try {
+      // Delete the toolbox item - CASCADE will automatically delete related usage data
       const { error } = await supabase
         .from('user_toolbox_items')
         .delete()
         .eq('id', itemId);
 
       if (error) throw error;
-      return { data: null, error: null };
+      return { data: { deleted: true }, error: null };
     } catch (error) {
       console.error('Error removing user toolbox item:', error);
       return { data: null, error };

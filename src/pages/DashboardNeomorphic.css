@@ -33,6 +33,15 @@
   gap: 16px;
   max-width: 1600px;
   margin: 0 auto;
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    width: 100%;
+    max-width: 100%;
+  }
 }
 
 @media (min-width: 1024px) {
@@ -54,6 +63,14 @@
   gap: 16px;
 }
 
+.grid-mood-tracker {
+  grid-column: span 6;
+}
+
+.grid-chart {
+  grid-column: span 6;
+}
+
 .grid-course {
   grid-column: span 6;
 }
@@ -62,8 +79,15 @@
   grid-column: span 6;
 }
 
+.grid-stats-extra {
+  grid-column: span 12;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
 .grid-stat-extra {
-  grid-column: span 4;
+  grid-column: span 1;
 }
 
 /* Loading State */
@@ -177,6 +201,14 @@
     gap: 12px;
   }
 
+  .grid-mood-tracker {
+    grid-column: span 6;
+  }
+
+  .grid-chart {
+    grid-column: span 6;
+  }
+
   .grid-course {
     grid-column: span 6;
   }
@@ -185,8 +217,14 @@
     grid-column: span 6;
   }
 
+  .grid-stats-extra {
+    grid-column: span 6;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
   .grid-stat-extra {
-    grid-column: span 2;
+    grid-column: span 1;
   }
 
   .dashboard-title {
@@ -194,7 +232,7 @@
   }
 
   .dashboard-subtitle {
-    font-size: 14px;
+    font-size: 15px;
   }
 }
 
@@ -202,6 +240,7 @@
 @media (max-width: 640px) {
   .dashboard-neomorphic {
     padding: 16px;
+    width: 100%;
   }
 
   .dashboard-header {
@@ -214,28 +253,60 @@
   }
 
   .dashboard-subtitle {
-    font-size: 13px;
+    font-size: 14px;
     margin-top: 4px;
   }
 
   .dashboard-grid {
     grid-template-columns: 1fr;
     gap: 12px;
+    width: 100%;
+    max-width: 100%;
   }
 
   .grid-hero,
   .grid-stats,
+  .grid-mood-tracker,
+  .grid-chart,
   .grid-course,
   .grid-actions,
   .grid-stat-extra {
     grid-column: span 1;
   }
 
-  /* Stats grid - 2 columns on mobile */
+  /* Stats grid - 4 columns on mobile for compact layout */
   .grid-stats {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    width: 100%;
+  }
+
+  /* Extra stats - 3 columns on mobile */
+  .grid-stats-extra {
+    grid-column: span 1;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    width: 100%;
+  }
+
+  .grid-stat-extra {
+    width: 100%;
+  }
+
+  /* Ensure all stat cards are compact on mobile */
+  .grid-stats .stat-card-v2,
+  .grid-stat-extra .stat-card-v2,
+  .grid-stats .streak-card {
+    width: 100%;
+    max-width: 100%;
+    min-height: 70px;
+    padding: 6px;
+  }
+
+  /* Hide Quick Actions on mobile */
+  .grid-actions {
+    display: none;
   }
 
   .upgrade-prompt {

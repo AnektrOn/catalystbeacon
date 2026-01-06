@@ -19,6 +19,9 @@ const YouTubePlayerModal = ({
   const [error, setError] = useState(null);
   const playerContainerRef = useRef(null);
   const youtubeAPIReady = useRef(false);
+  const watchTimeRef = useRef(0); // Track watch time in seconds
+  const watchTimeIntervalRef = useRef(null);
+  const lastPlayTimeRef = useRef(0);
 
   // Get XP reward from node data
   const xpReward = nodeData?.metadata?.xp_reward || nodeData?.xp_reward || 50;
@@ -92,7 +95,7 @@ const YouTubePlayerModal = ({
 
     checkCompletion();
 
-    // Create player
+    // Create player with fullscreen support
     const newPlayer = new window.YT.Player(playerContainerRef.current, {
       videoId: videoId,
       playerVars: {
@@ -100,16 +103,55 @@ const YouTubePlayerModal = ({
         controls: 1,
         rel: 0,
         modestbranding: 1,
-        playsinline: 1
+        playsinline: 1,
+        fs: 1, // Enable fullscreen button
+        enablejsapi: 1 // Enable JavaScript API for tracking
       },
       events: {
         onReady: (event) => {
           setIsLoading(false);
           setError(null);
+          
+          // Start tracking watch time
+          watchTimeIntervalRef.current = setInterval(() => {
+            try {
+              const currentTime = newPlayer.getCurrentTime();
+              const playerState = newPlayer.getPlayerState();
+              
+              // Only track if video is playing (state 1 = playing)
+              if (playerState === 1) {
+                const timeDiff = currentTime - lastPlayTimeRef.current;
+                if (timeDiff > 0 && timeDiff < 5) { // Prevent jumps (seeking)
+                  watchTimeRef.current += timeDiff;
+                }
+                lastPlayTimeRef.current = currentTime;
+              } else if (playerState === 2) { // Paused
+                // Don't update lastPlayTimeRef when paused
+              } else if (playerState === 0) { // Ended
+                watchTimeRef.current = newPlayer.getDuration(); // Full watch time
+                clearInterval(watchTimeIntervalRef.current);
+              }
+            } catch (err) {
+              console.warn('Error tracking watch time:', err);
+            }
+          }, 1000); // Update every second
         },
         onStateChange: (event) => {
-          // YT.PlayerState.ENDED = 0
-          if (event.data === window.YT.PlayerState.ENDED) {
+          // YT.PlayerState constants:
+          // -1 = unstarted, 0 = ended, 1 = playing, 2 = paused, 3 = buffering, 5 = cued
+          if (event.data === window.YT.PlayerState.PLAYING) {
+            // Video started playing - track time
+            try {
+              lastPlayTimeRef.current = newPlayer.getCurrentTime();
+            } catch (err) {
+              console.warn('Error getting current time:', err);
+            }
+          } else if (event.data === window.YT.PlayerState.ENDED) {
+            // Video ended - complete tracking
+            watchTimeRef.current = newPlayer.getDuration();
+            if (watchTimeIntervalRef.current) {
+              clearInterval(watchTimeIntervalRef.current);
+            }
             handleVideoComplete();
           }
         },
@@ -117,6 +159,9 @@ const YouTubePlayerModal = ({
           console.error('YouTube player error:', event.data);
           setError('Failed to load video. Please try again.');
           setIsLoading(false);
+          if (watchTimeIntervalRef.current) {
+            clearInterval(watchTimeIntervalRef.current);
+          }
         }
       }
     });
@@ -124,6 +169,14 @@ const YouTubePlayerModal = ({
     setPlayer(newPlayer);
 
     return () => {
+      // Clean up watch time tracking
+      if (watchTimeIntervalRef.current) {
+        clearInterval(watchTimeIntervalRef.current);
+        watchTimeIntervalRef.current = null;
+      }
+      watchTimeRef.current = 0;
+      lastPlayTimeRef.current = 0;
+      
       if (newPlayer && newPlayer.destroy) {
         try {
           newPlayer.destroy();
@@ -144,6 +197,23 @@ const YouTubePlayerModal = ({
     setIsCompleting(true);
 
     try {
+      // Stop watch time tracking
+      if (watchTimeIntervalRef.current) {
+        clearInterval(watchTimeIntervalRef.current);
+        watchTimeIntervalRef.current = null;
+      }
+
+      // Get final watch time
+      const finalWatchTime = watchTimeRef.current;
+      const videoDuration = player?.getDuration() || 0;
+      const watchPercentage = videoDuration > 0 ? (finalWatchTime / videoDuration) * 100 : 0;
+
+      console.log('📊 Video completion tracking:', {
+        watchTime: finalWatchTime,
+        videoDuration: videoDuration,
+        watchPercentage: watchPercentage.toFixed(1) + '%'
+      });
+
       // Check if already completed (double-check)
       const { data: existing } = await stellarMapService.checkNodeCompletion(user.id, nodeData.id);
       
@@ -152,6 +222,15 @@ const YouTubePlayerModal = ({
         toast.success('You\'ve already earned XP for this video!', {
           duration: 3000,
           icon: '✓',
+        });
+        setIsCompleting(false);
+        return;
+      }
+
+      // Only award XP if watched at least 80% of the video
+      if (watchPercentage < 80) {
+        toast.error(`Please watch at least 80% of the video to earn XP. You watched ${watchPercentage.toFixed(1)}%.`, {
+          duration: 5000,
         });
         setIsCompleting(false);
         return;
@@ -218,6 +297,14 @@ const YouTubePlayerModal = ({
 
   // Handle manual close
   const handleClose = () => {
+    // Clean up watch time tracking
+    if (watchTimeIntervalRef.current) {
+      clearInterval(watchTimeIntervalRef.current);
+      watchTimeIntervalRef.current = null;
+    }
+    watchTimeRef.current = 0;
+    lastPlayTimeRef.current = 0;
+    
     if (player && player.destroy) {
       try {
         player.destroy();
@@ -235,8 +322,8 @@ const YouTubePlayerModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="relative w-full max-w-4xl bg-gradient-to-br from-slate-900/95 to-slate-800/95 rounded-2xl shadow-2xl border border-white/10 overflow-hidden">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+      <div className="relative w-full max-w-4xl bg-gradient-to-br from-slate-900/95 to-slate-800/95 rounded-2xl shadow-2xl border border-white/10 overflow-hidden my-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/10">
           <div className="flex items-center gap-3">
@@ -252,17 +339,27 @@ const YouTubePlayerModal = ({
           </div>
           <button
             onClick={handleClose}
-            className="p-2 rounded-lg hover:bg-white/10 transition-colors text-gray-400 hover:text-white"
+            className="p-2 rounded-lg hover:bg-white/10 transition-colors text-gray-400 hover:text-white min-w-[44px] min-h-[44px] flex items-center justify-center"
             aria-label="Close modal"
           >
             <X size={20} />
           </button>
         </div>
 
-        {/* Player Container */}
-        <div className="relative w-full" style={{ paddingBottom: '56.25%' }}> {/* 16:9 aspect ratio */}
+        {/* Tracking Warning Message */}
+        <div className="px-4 py-3 bg-yellow-500/10 border-b border-yellow-500/20">
+          <div className="flex items-start gap-2">
+            <AlertCircle size={18} className="text-yellow-400 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-yellow-200">
+              <strong>Important:</strong> We track your watching time to reward XP. If you open this video on YouTube directly, we cannot track it and you won't receive XP rewards. Please watch the video here to earn your XP.
+            </p>
+          </div>
+        </div>
+
+        {/* Player Container - Fixed to prevent clipping */}
+        <div className="relative w-full bg-black" style={{ paddingBottom: '56.25%', minHeight: '400px', maxHeight: '90vh' }}> {/* 16:9 aspect ratio */}
           {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
                 <p className="text-gray-400">Loading video...</p>
@@ -271,13 +368,13 @@ const YouTubePlayerModal = ({
           )}
 
           {error && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/50 p-4">
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50 p-4 z-10">
               <div className="text-center max-w-md">
                 <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
                 <p className="text-red-400 mb-4">{error}</p>
                 <button
                   onClick={handleClose}
-                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors min-h-[44px]"
                 >
                   Close
                 </button>
@@ -289,7 +386,15 @@ const YouTubePlayerModal = ({
             <div
               ref={playerContainerRef}
               className="absolute inset-0 w-full h-full"
-              style={{ minHeight: '400px' }}
+              style={{ 
+                minHeight: '400px',
+                width: '100%',
+                height: '100%',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                zIndex: 1
+              }}
             />
           )}
         </div>

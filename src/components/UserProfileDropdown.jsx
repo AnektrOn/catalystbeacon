@@ -57,8 +57,8 @@ const UserProfileDropdown = ({ isOpen, onClose }) => {
                             className="w-10 h-10 rounded-full"
                         />
                     ) : (
-                        <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'var(--gradient-primary)' }}>
-                            <User size={20} className="text-white" />
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm" style={{ background: 'var(--gradient-primary)' }}>
+                            {profile?.full_name ? profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : <User size={20} />}
                         </div>
                     )}
                     <div>

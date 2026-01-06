@@ -11,10 +11,12 @@ const StellarMapControls = ({
   subnodes = [],
   onConstellationSelect,
   onSubnodeSelect,
+  onOpenNode,
   showWhiteLines,
   onToggleWhiteLines
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [selectedSubnodeId, setSelectedSubnodeId] = useState('');
   const panelRef = useRef(null);
   const burgerRef = useRef(null);
 
@@ -165,15 +167,16 @@ const StellarMapControls = ({
           </label>
           <select
             id="subnode-picker"
+            value={selectedSubnodeId}
             onChange={(e) => {
               const value = e.target.value;
+              setSelectedSubnodeId(value);
               if (value) {
                 onSubnodeSelect(value);
               }
             }}
             aria-label="Select sub-node to focus on"
             className="w-full px-2 py-1.5 text-sm bg-white/10 border border-white/30 rounded text-white appearance-none bg-gradient-to-br from-white/10 to-white/5 pr-8 focus:border-white/60 focus:outline-none"
-            defaultValue=""
           >
             <option value="">– Select sub-node –</option>
             {subnodes
@@ -181,8 +184,9 @@ const StellarMapControls = ({
               .map((node, index) => {
                 // Ensure unique key - use node.id if available, otherwise use index
                 const key = node.id ? `subnode-${node.id}` : `subnode-${index}`;
-                const value = node.id || node.value || `subnode-${index}`;
                 const title = node.title || node.label || `Subnode ${index + 1}`;
+                // Use the human title as the value so selection works reliably on mobile (and for test automation).
+                const value = title;
                 
                 return (
                   <option key={key} value={value} className="bg-black text-white">
@@ -191,6 +195,27 @@ const StellarMapControls = ({
                 );
               })}
           </select>
+
+          {/* Open Selected Node */}
+          {typeof onOpenNode === 'function' && (
+            <button
+              onClick={() => {
+                if (!selectedSubnodeId) return;
+                onOpenNode(selectedSubnodeId);
+                setIsOpen(false);
+              }}
+              disabled={!selectedSubnodeId}
+              className={`w-full px-4 py-2 text-sm rounded border transition-all mt-2 ${
+                selectedSubnodeId
+                  ? 'bg-white/20 border-white/50 text-white hover:bg-white/25'
+                  : 'bg-white/5 border-white/20 text-white/50 cursor-not-allowed'
+              }`}
+              aria-label="Open selected sub-node"
+              title="Open the selected node content"
+            >
+              Open
+            </button>
+          )}
         </div>
       </div>
 

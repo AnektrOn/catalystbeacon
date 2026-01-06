@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Search, BarChart3 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useXPVisibility } from '../components/stellar-map/hooks/useXPVisibility';
 import stellarMapService from '../services/stellarMapService';
@@ -8,13 +7,7 @@ import NodeTooltip from '../components/stellar-map/NodeTooltip';
 import StellarMap2D from '../components/stellar-map/StellarMap2D';
 import YouTubePlayerModal from '../components/stellar-map/YouTubePlayerModal';
 import StellarMapErrorBoundary from '../components/stellar-map/StellarMapErrorBoundary';
-import StellarMapSearch from '../components/stellar-map/StellarMapSearch';
-import StellarMapLegend from '../components/stellar-map/StellarMapLegend';
-import StellarMapMiniMap from '../components/stellar-map/StellarMapMiniMap';
-import StellarMapAnalytics from '../components/stellar-map/StellarMapAnalytics';
-import StellarMapBreadcrumb from '../components/stellar-map/StellarMapBreadcrumb';
-import StellarMapSettings from '../components/stellar-map/StellarMapSettings';
-import { Download, Share2, Settings } from 'lucide-react';
+import { ZoomOut } from 'lucide-react';
 
 const StellarMap2DPage = () => {
   const [currentCore, setCurrentCore] = useState('Ignition');
@@ -25,26 +18,89 @@ const StellarMap2DPage = () => {
   const [tooltipData, setTooltipData] = useState({ visible: false, node: null, position: { x: 0, y: 0 } });
   const [hoveredNodeId, setHoveredNodeId] = useState(null);
   const [youtubeModal, setYoutubeModal] = useState({ isOpen: false, nodeData: null, videoId: null });
-  const [searchVisible, setSearchVisible] = useState(false);
   const [highlightedNodeIds, setHighlightedNodeIds] = useState(new Set());
-  const [analyticsVisible, setAnalyticsVisible] = useState(false);
-  const [selectedFamily, setSelectedFamily] = useState(null);
-  const [selectedConstellation, setSelectedConstellation] = useState(null);
-  const [selectedNode, setSelectedNode] = useState(null);
   const [bookmarkedNodes, setBookmarkedNodes] = useState(new Set());
   const [nodeHistory, setNodeHistory] = useState([]);
-  const [settingsVisible, setSettingsVisible] = useState(false);
-  const [viewSettings, setViewSettings] = useState({
-    showNodeLabels: true,
-    showConnectionLines: true,
-    connectionLineOpacity: 0.4,
-    showDecorativeElements: true
-  });
-  const focusConstellationRef = useRef(null);
-  const focusSubnodeRef = useRef(null);
+  const stellarMap2DRef = useRef(null);
 
   const { user, fetchProfile } = useAuth();
   const visibilityData = useXPVisibility();
+
+  // Minimal UI: per product requirement, keep only the Zoom Out button (no extra right-side panels/buttons).
+  const minimalUI = true;
+  const handleCoreChange = (core) => {
+    setCurrentCore(core);
+  };
+
+  const subnodeOptions = useMemo(() => {
+    const options = [];
+    const seenTitles = new Set();
+    Object.values(hierarchyData).forEach((family) => {
+      Object.values(family).forEach((nodes) => {
+        nodes.forEach((node) => {
+          const title = (node?.title || node?.name || '').toString().trim();
+          if (!title || seenTitles.has(title)) return;
+          seenTitles.add(title);
+          options.push({ title });
+        });
+      });
+    });
+    return options;
+  }, [hierarchyData]);
+
+  const constellationOptions = useMemo(() => {
+    const options = [];
+    const seen = new Set();
+    Object.entries(hierarchyData).forEach(([familyName, constellations]) => {
+      Object.keys(constellations).forEach((constellationName) => {
+        const key = `${familyName}|${constellationName}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        options.push({
+          familyAlias: familyName,
+          constellationAlias: constellationName,
+          displayName: `${familyName} / ${constellationName}`,
+        });
+      });
+    });
+    return options;
+  }, [hierarchyData]);
+
+  const findNodeByTitle = (title) => {
+    const normalized = (title || '').toString().trim();
+    if (!normalized) return null;
+    for (const family of Object.values(hierarchyData)) {
+      for (const nodes of Object.values(family)) {
+        const found = nodes.find((n) => ((n?.title || n?.name || '').toString().trim() === normalized));
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  const handleSubnodeSelect = (title) => {
+    const node = findNodeByTitle(title);
+    if (!node?.id) return;
+    setHighlightedNodeIds(new Set([node.id]));
+  };
+
+  const handleConstellationSelect = () => {
+    // Minimal UI: focusing constellations is optional. Kept as no-op for now.
+  };
+
+  const handleOpenNode = (title) => {
+    const node = findNodeByTitle(title);
+    if (!node) {
+      console.warn('Could not find node in hierarchyData:', title);
+      return;
+    }
+    console.log('[StellarMap2DPage] Open node', {
+      title,
+      id: node.id,
+      link: node.link,
+    });
+    handleNodeClick(node);
+  };
 
   // Load bookmarks and history from localStorage
   useEffect(() => {
@@ -194,15 +250,6 @@ const StellarMap2DPage = () => {
     // Add to history
     addToHistory(nodeData);
 
-    // Update breadcrumb
-    setSelectedNode(nodeData);
-    if (nodeData.constellationAlias) {
-      setSelectedConstellation(nodeData.constellationAlias);
-    }
-    if (nodeData.familyAlias) {
-      setSelectedFamily(nodeData.familyAlias);
-    }
-
     if (isYouTubeUrl(nodeData.link)) {
       const videoId = extractYouTubeVideoId(nodeData.link);
       if (videoId) {
@@ -220,62 +267,7 @@ const StellarMap2DPage = () => {
     }
   };
 
-  // Handle core change
-  const handleCoreChange = (core) => {
-    setCurrentCore(core);
-  };
-
-  // Get constellation and subnode options for controls
-  const constellationOptions = useMemo(() => {
-    const options = [];
-    const seenKeys = new Set();
-    
-    Object.entries(hierarchyData).forEach(([familyName, constellations]) => {
-      Object.keys(constellations).forEach((constellationName) => {
-        // Create unique key based on both family and constellation
-        const uniqueKey = `${familyName}|${constellationName}`;
-        
-        // Only add if we haven't seen this combination before
-        if (!seenKeys.has(uniqueKey)) {
-          seenKeys.add(uniqueKey);
-          options.push({ 
-            familyAlias: familyName,
-            constellationAlias: constellationName,
-            value: uniqueKey, // Use unique key as value for consistency
-            label: constellationName,
-            displayName: `${familyName} / ${constellationName}`
-          });
-        }
-      });
-    });
-    return options;
-  }, [hierarchyData]);
-
-  const subnodeOptions = useMemo(() => {
-    const options = [];
-    Object.values(hierarchyData).forEach((family) => {
-      Object.values(family).forEach((nodes) => {
-        nodes.forEach((node) => {
-          if (!options.find(opt => opt.value === node.id)) {
-            options.push({ value: node.id, label: node.title });
-          }
-        });
-      });
-    });
-    return options;
-  }, [hierarchyData]);
-
-  const handleConstellationSelect = (constellationName) => {
-    if (focusConstellationRef.current) {
-      focusConstellationRef.current(constellationName);
-    }
-  };
-
-  const handleSubnodeSelect = (nodeId) => {
-    if (focusSubnodeRef.current) {
-      focusSubnodeRef.current(nodeId);
-    }
-  };
+  // Note: core/constellation/subnode selectors are intentionally removed in minimal UI mode.
 
   const handleYoutubeModalClose = () => {
     setYoutubeModal({ isOpen: false, nodeData: null, videoId: null });
@@ -371,6 +363,7 @@ const StellarMap2DPage = () => {
         {/* 2D View */}
         <div className="absolute inset-0">
           <StellarMap2D
+            ref={stellarMap2DRef}
             hierarchyData={hierarchyData}
             onNodeHover={handleNodeHover}
             onNodeClick={handleNodeClick}
@@ -379,6 +372,7 @@ const StellarMap2DPage = () => {
             completionMap={completionMap}
             highlightedNodeIds={highlightedNodeIds}
             bookmarkedNodeIds={bookmarkedNodes}
+            showZoomControls={false}
           />
         </div>
 
@@ -475,44 +469,21 @@ const StellarMap2DPage = () => {
           </div>
         )}
 
-        {/* Search and Filter */}
-        <StellarMapSearch
-          hierarchyData={hierarchyData}
-          completionMap={completionMap}
-          onNodeSelect={(node) => {
-            // Center view on selected node and highlight it
-            setHoveredNodeId(node.id);
-            setHighlightedNodeIds(new Set([node.id]));
-            // Could add zoom/pan to node here
-          }}
-          onFilterChange={(filters, filteredNodes) => {
-            // Highlight filtered nodes
-            setHighlightedNodeIds(new Set(filteredNodes.map(n => n.id)));
-          }}
-          visible={searchVisible}
-        />
-
-        {/* Search Toggle Button */}
-        <button
-          onClick={() => setSearchVisible(!searchVisible)}
-          className="absolute top-4 left-4 z-40 p-2 rounded-md bg-black/80 backdrop-blur-sm text-white hover:bg-white/20 transition-all border border-white/30"
-          title="Search and Filter"
-          style={{ display: searchVisible ? 'none' : 'block' }}
-        >
-          <Search size={18} />
-        </button>
-
-        {/* Controls */}
-        <StellarMapControls
-          currentCore={currentCore}
-          onCoreChange={handleCoreChange}
-          constellations={constellationOptions}
-          subnodes={subnodeOptions}
-          onConstellationSelect={handleConstellationSelect}
-          onSubnodeSelect={handleSubnodeSelect}
-          showWhiteLines={false}
-          onToggleWhiteLines={() => {}}
-        />
+        {/* Minimal UI: keep map + node interactions only */}
+        {/* Left/bottom menu for picking nodes (not on the right side) */}
+        {minimalUI && (
+          <StellarMapControls
+            currentCore={currentCore}
+            onCoreChange={handleCoreChange}
+            constellations={constellationOptions}
+            subnodes={subnodeOptions}
+            onConstellationSelect={handleConstellationSelect}
+            onSubnodeSelect={handleSubnodeSelect}
+            onOpenNode={handleOpenNode}
+            showWhiteLines={false}
+            onToggleWhiteLines={() => {}}
+          />
+        )}
 
         {/* Tooltip */}
         <NodeTooltip
@@ -533,86 +504,30 @@ const StellarMap2DPage = () => {
           onComplete={handleVideoComplete}
         />
 
-        {/* Legend */}
-        <StellarMapLegend />
+        {/* (Legend / Analytics / Settings / Search / Breadcrumb intentionally removed in minimal UI mode) */}
 
-        {/* Breadcrumb Navigation */}
-        <StellarMapBreadcrumb
-          currentCore={currentCore}
-          selectedFamily={selectedFamily}
-          selectedConstellation={selectedConstellation}
-          selectedNode={selectedNode}
-          onNavigate={(type, data) => {
-            if (type === 'core') {
-              setSelectedFamily(null);
-              setSelectedConstellation(null);
-              setSelectedNode(null);
-            } else if (type === 'family') {
-              setSelectedFamily(data);
-              setSelectedConstellation(null);
-              setSelectedNode(null);
-            } else if (type === 'constellation') {
-              setSelectedConstellation(data);
-              setSelectedNode(null);
-            } else if (type === 'node') {
-              setSelectedNode(data);
-            }
-          }}
-        />
-
-        {/* Analytics Panel */}
-        <StellarMapAnalytics
-          hierarchyData={hierarchyData}
-          completionMap={completionMap}
-          currentCore={currentCore}
-          userXP={visibilityData.userXP}
-          visible={analyticsVisible}
-          onClose={() => setAnalyticsVisible(false)}
-        />
-
-        {/* Analytics Toggle Button */}
-        <button
-          onClick={() => setAnalyticsVisible(!analyticsVisible)}
-          className="fixed top-20 right-4 z-40 p-2 rounded-md bg-black/80 backdrop-blur-sm text-white hover:bg-white/20 transition-all border border-white/30"
-          title="Show Analytics"
-        >
-          <BarChart3 size={18} />
-        </button>
-
-        {/* Settings Toggle Button */}
-        <button
-          onClick={() => setSettingsVisible(!settingsVisible)}
-          className="fixed top-32 right-4 z-40 p-2 rounded-md bg-black/80 backdrop-blur-sm text-white hover:bg-white/20 transition-all border border-white/30"
-          title="View Settings"
-        >
-          <Settings size={18} />
-        </button>
-
-        {/* Settings Panel */}
-        <StellarMapSettings
-          visible={settingsVisible}
-          onClose={() => setSettingsVisible(false)}
-          settings={viewSettings}
-          onSettingsChange={setViewSettings}
-        />
-
-        {/* Export/Share Buttons */}
-        <div className="fixed bottom-20 right-4 z-40 flex flex-col gap-2">
+        {/* Zoom Out Button Only */}
+        <div className="fixed bottom-20 right-4 z-40">
           <button
-            onClick={handleExportImage}
-            className="p-2 rounded-md bg-black/80 backdrop-blur-sm text-white hover:bg-white/20 transition-all border border-white/30"
-            title="Export as Image"
-            aria-label="Export map as image"
+            onClick={() => {
+              // Reset view to full-map bounds
+              if (stellarMap2DRef.current && typeof stellarMap2DRef.current.resetView === 'function') {
+                stellarMap2DRef.current.resetView();
+              } else if (stellarMap2DRef.current && typeof stellarMap2DRef.current.zoomOut === 'function') {
+                stellarMap2DRef.current.zoomOut();
+              } else {
+                // Fallback: Reset view to default zoom via SVG
+                const svgElement = document.querySelector('svg');
+                if (svgElement) {
+                  svgElement.setAttribute('viewBox', '0 0 1000 1000');
+                }
+              }
+            }}
+            className="p-2 rounded-md bg-black/80 backdrop-blur-sm text-white hover:bg-white/20 transition-all border border-white/30 min-w-[44px] min-h-[44px] flex items-center justify-center"
+            title="Zoom Out"
+            aria-label="Zoom out to full view"
           >
-            <Download size={18} />
-          </button>
-          <button
-            onClick={handleShare}
-            className="p-2 rounded-md bg-black/80 backdrop-blur-sm text-white hover:bg-white/20 transition-all border border-white/30"
-            title="Share Map"
-            aria-label="Share map link"
-          >
-            <Share2 size={18} />
+            <ZoomOut size={18} />
           </button>
         </div>
       </div>

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useMemo, useState, useEffect } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabaseClient';
 import roadmapService from '../services/roadmapService';
@@ -17,6 +17,7 @@ import './RoadmapIgnition.css';
 const RoadmapIgnition = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { statLink } = useParams(); // URL param (keeping name for compatibility)
 
   const [lessons, setLessons] = useState([]);
@@ -30,6 +31,13 @@ const RoadmapIgnition = () => {
   const [completedSet, setCompletedSet] = useState(new Set());
 
   const masterschool = 'Ignition';
+
+  // Debug overlay is noisy on mobile; only allow when explicitly enabled.
+  const debugEnabled = useMemo(() => {
+    if (process.env.NODE_ENV !== 'development') return false;
+    const params = new URLSearchParams(location.search);
+    return params.get('debug') === 'true';
+  }, [location.search]);
 
   // Load completed lessons
   useEffect(() => {
@@ -205,7 +213,7 @@ const RoadmapIgnition = () => {
   return (
     <div className="roadmap-ignition">
       {/* Debug Info (remove later) */}
-      {process.env.NODE_ENV === 'development' && (
+      {debugEnabled && (
         <div style={{ 
           position: 'fixed', 
           top: '80px', 

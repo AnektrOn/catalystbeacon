@@ -194,7 +194,9 @@
     margin: 0 !important;
     border-radius: 0 !important;
     padding: 1rem !important;
-    padding-bottom: calc(1rem + env(safe-area-inset-bottom)) !important;
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom)) !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   /* Mobile bottom navigation */
@@ -204,11 +206,11 @@
     left: 0;
     right: 0;
     z-index: 50;
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 -4px 16px 0 rgba(31, 38, 135, 0.2);
+    background: var(--glass-bg-strong);
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    border-top: 1px solid var(--glass-border-strong);
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.12);
     padding: 0.5rem 0;
     padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
     display: flex;
@@ -230,7 +232,7 @@
   }
 
   .mobile-nav-item.active {
-    color: rgba(251, 146, 60, 1);
+    color: var(--color-primary);
   }
 
   .mobile-nav-item span {
@@ -530,13 +532,13 @@
 
 @media (max-width: 767px) {
   .glass-effect {
-    background: rgba(255, 255, 255, 0.2) !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
+    background: var(--glass-bg) !important;
+    backdrop-filter: blur(18px) saturate(var(--glass-sat)) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(var(--glass-sat)) !important;
   }
 
   .dark .glass-effect {
-    background: rgba(0, 0, 0, 0.3) !important;
+    background: var(--glass-bg) !important;
   }
 
   .glass-card {

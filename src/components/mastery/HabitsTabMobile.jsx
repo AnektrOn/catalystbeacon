@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Target, Flame } from 'lucide-react';
+import { Plus, Target, Flame, Trash2, Calendar, CalendarOff } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
@@ -17,6 +17,7 @@ const HabitsTabMobile = () => {
   const [personalHabits, setPersonalHabits] = useState([]);
   const [habitsLibrary, setHabitsLibrary] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [calendarVisibilitySupported, setCalendarVisibilitySupported] = useState(true);
   // Removed unused error state (errors are logged directly)
 
   useEffect(() => {
@@ -32,11 +33,12 @@ const HabitsTabMobile = () => {
         const { data: library } = await supabase.from('habits_library').select('*');
         setHabitsLibrary(library || []);
 
-        // Load user habits
+        // Load user habits (only active ones)
         const { data: userHabits } = await supabase
           .from('user_habits')
           .select('*')
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .eq('is_active', true);
 
         // Transform with completion data
         const transformed = await Promise.all(
@@ -172,7 +174,8 @@ const HabitsTabMobile = () => {
           description: libraryHabit.description,
           frequency_type: libraryHabit.frequency_type || 'daily',
           xp_reward: libraryHabit.xp_reward || 10,
-          is_active: true
+          is_active: true,
+          show_on_calendar: true // Default to showing on calendar
         })
         .select()
         .single();
@@ -190,8 +193,129 @@ const HabitsTabMobile = () => {
       ]);
 
       setActiveTab('my-habits');
+      toast.success('Habit added to My Habits!', {
+        duration: 2000,
+        style: {
+          background: 'color-mix(in srgb, var(--color-success, #10b981) 95%, transparent)',
+          color: '#fff',
+          zIndex: 9999,
+        },
+      });
     } catch (err) {
       console.error('Error adding habit:', err);
+      toast.error('Failed to add habit. Please try again.', {
+        duration: 3000,
+        style: {
+          background: 'color-mix(in srgb, var(--color-error, #ef4444) 95%, transparent)',
+          color: '#fff',
+          zIndex: 9999,
+        },
+      });
+    }
+  };
+
+  const deleteHabit = async (habitId) => {
+    if (!user) return;
+
+    if (!window.confirm('Are you sure you want to delete this habit? All completion data will be removed.')) {
+      return;
+    }
+
+    try {
+      const { error } = await masteryService.deleteUserHabit(habitId);
+      if (error) throw error;
+
+      setPersonalHabits(prev => prev.filter(h => h.id !== habitId));
+      triggerRefresh();
+      
+      toast.success('Habit deleted successfully', {
+        duration: 2000,
+        style: {
+          background: 'color-mix(in srgb, var(--color-success, #10b981) 95%, transparent)',
+          color: '#fff',
+          zIndex: 9999,
+        },
+      });
+    } catch (err) {
+      console.error('Error deleting habit:', err);
+      toast.error('Failed to delete habit. Please try again.', {
+        duration: 3000,
+        style: {
+          background: 'color-mix(in srgb, var(--color-error, #ef4444) 95%, transparent)',
+          color: '#fff',
+          zIndex: 9999,
+        },
+      });
+    }
+  };
+
+  const toggleCalendarVisibility = async (habitId, currentValue) => {
+    if (!user) return;
+    if (!calendarVisibilitySupported) {
+      toast.error('Calendar visibility is not configured yet. Run ADD_CALENDAR_VISIBILITY_COLUMN.sql in Supabase.', {
+        duration: 2500,
+        style: {
+          background: 'color-mix(in srgb, var(--color-error, #ef4444) 95%, transparent)',
+          color: '#fff',
+          zIndex: 9999,
+        },
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('user_habits')
+        .update({ show_on_calendar: !currentValue })
+        .eq('id', habitId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setPersonalHabits(prev =>
+        prev.map(h => {
+          if (h.id === habitId) {
+            return { ...h, show_on_calendar: !currentValue };
+          }
+          return h;
+        })
+      );
+
+      toast.success(!currentValue ? 'Shown on calendar' : 'Hidden from calendar', {
+        duration: 1500,
+        style: {
+          background: 'color-mix(in srgb, var(--bg-secondary, #1e293b) 95%, transparent)',
+          color: '#fff',
+          zIndex: 9999,
+        },
+      });
+
+      triggerRefresh();
+    } catch (err) {
+      const errObj = err?.error ?? err;
+      const msgParts = [errObj?.message, errObj?.details, errObj?.hint].filter(Boolean);
+      const msg = (msgParts.join(' • ') || 'Failed to update calendar visibility.').toString();
+      const msgLower = msg.toLowerCase();
+      const needsColumn = msgLower.includes('show_on_calendar') && (msgLower.includes('column') || msgLower.includes('schema cache'));
+
+      console.error('Error toggling calendar visibility:', msg, errObj);
+
+      if (needsColumn) {
+        setCalendarVisibilitySupported(false);
+      }
+
+      toast.error(
+        needsColumn
+          ? 'DB missing column show_on_calendar. Run ADD_CALENDAR_VISIBILITY_COLUMN.sql in Supabase.'
+          : msg,
+        {
+        duration: 2000,
+        style: {
+          background: 'color-mix(in srgb, var(--color-error, #ef4444) 95%, transparent)',
+          color: '#fff',
+          zIndex: 9999,
+        },
+      });
     }
   };
 
@@ -230,6 +354,12 @@ const HabitsTabMobile = () => {
       {/* Content */}
       {activeTab === 'my-habits' ? (
         <div className="space-y-4">
+          {!calendarVisibilitySupported && (
+            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-4 text-sm text-yellow-100">
+              <strong>Calendar visibility toggle is disabled:</strong> your database is missing
+              <code> show_on_calendar</code>. Run <code>ADD_CALENDAR_VISIBILITY_COLUMN.sql</code> in Supabase, then refresh.
+            </div>
+          )}
           {personalHabits.length === 0 ? (
             <div className="text-center py-12">
               <Target size={48} className="mx-auto mb-4 text-slate-600"  aria-hidden="true"/>
@@ -254,12 +384,33 @@ const HabitsTabMobile = () => {
                       <p className="text-sm text-slate-400">{habit.description}</p>
                     )}
                   </div>
-                  {habit.streak > 0 && (
-                    <div className="flex items-center space-x-1 bg-orange-600/20 px-3 py-1 rounded-full border border-orange-500/30">
-                      <Flame size={14} className="text-orange-400" />
-                      <span className="text-sm font-semibold text-orange-300">{habit.streak}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {habit.streak > 0 && (
+                      <div className="flex items-center space-x-1 bg-orange-600/20 px-3 py-1 rounded-full border border-orange-500/30">
+                        <Flame size={14} className="text-orange-400" />
+                        <span className="text-sm font-semibold text-orange-300">{habit.streak}</span>
+                      </div>
+                    )}
+                    <button
+                      onClick={() => toggleCalendarVisibility(habit.id, habit.show_on_calendar !== false)}
+                      disabled={!calendarVisibilitySupported}
+                      className={`p-2 rounded-lg transition-all min-w-[44px] min-h-[44px] flex items-center justify-center ${
+                        habit.show_on_calendar !== false
+                          ? 'bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30'
+                          : 'bg-slate-700/50 text-slate-400 hover:bg-slate-700/70'
+                      } ${!calendarVisibilitySupported ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      title={habit.show_on_calendar !== false ? 'Hide from calendar' : 'Show on calendar'}
+                    >
+                      {habit.show_on_calendar !== false ? <Calendar size={18} /> : <CalendarOff size={18} />}
+                    </button>
+                    <button
+                      onClick={() => deleteHabit(habit.id)}
+                      className="p-2 rounded-lg bg-red-600/20 text-red-400 hover:bg-red-600/30 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
+                      title="Delete habit"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between">

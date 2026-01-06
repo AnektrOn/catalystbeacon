@@ -1,5 +1,37 @@
 /* Glassmorphism Design System - Accurate to Image */
 
+/* ==================== ETHEREAL GLASS TOKENS (Apple-like) ==================== */
+:root {
+  /* Touch + rhythm */
+  --tap-size: 44px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+
+  /* Glass rendering */
+  --glass-blur: 22px;
+  --glass-sat: 170%;
+  --glass-bg: color-mix(in srgb, var(--bg-primary, rgba(255, 255, 255, 0.95)) 16%, transparent);
+  --glass-bg-strong: color-mix(in srgb, var(--bg-primary, rgba(255, 255, 255, 0.95)) 26%, transparent);
+  --glass-border: rgba(255, 255, 255, 0.28);
+  --glass-border-strong: rgba(255, 255, 255, 0.38);
+  --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  --glass-shadow-soft: 0 6px 18px rgba(0, 0, 0, 0.10);
+  --glass-sheen: linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0));
+}
+
+.dark {
+  --glass-blur: 22px;
+  --glass-sat: 165%;
+  --glass-bg: color-mix(in srgb, var(--bg-secondary, rgba(0, 0, 0, 0.7)) 55%, transparent);
+  --glass-bg-strong: color-mix(in srgb, var(--bg-secondary, rgba(0, 0, 0, 0.75)) 70%, transparent);
+  --glass-border: rgba(255, 255, 255, 0.14);
+  --glass-border-strong: rgba(255, 255, 255, 0.20);
+  --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+  --glass-shadow-soft: 0 6px 18px rgba(0, 0, 0, 0.45);
+  --glass-sheen: linear-gradient(135deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0));
+}
+
 /* Background - Indoor living space */
 .bg-indoor-background {
   background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><defs><filter id="blur"><feGaussianBlur stdDeviation="8"/></filter></defs><rect width="1200" height="800" fill="%23f5f3f0"/><rect x="0" y="0" width="400" height="800" fill="%23e8e4d8"/><rect x="400" y="200" width="200" height="400" fill="%23d4c4a8"/><rect x="600" y="100" width="300" height="600" fill="%23c9b99a"/><rect x="900" y="0" width="300" height="800" fill="%23b8a082"/></svg>');
@@ -9,22 +41,19 @@
 
 /* Base glass effect - Enhanced blur and saturation */
 .glass-effect {
-  background: color-mix(in srgb, var(--bg-primary, rgba(255, 255, 255, 0.95)) 8%, transparent);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid color-mix(in srgb, var(--color-primary, #B4833D) 20%, rgba(255, 255, 255, 0.2));
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 color-mix(in srgb, var(--color-primary, #B4833D) 10%, rgba(255, 255, 255, 0.2));
+  position: relative;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
 }
 
 /* Dark mode glass effect - Darkens the current palette */
 .dark .glass-effect {
-  background: color-mix(in srgb, var(--bg-primary) 40%, rgba(0, 0, 0, 0.6));
-  border: 1px solid color-mix(in srgb, var(--color-primary) 30%, rgba(255, 255, 255, 0.2));
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 color-mix(in srgb, var(--color-primary) 15%, rgba(255, 255, 255, 0.15));
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
   color: var(--text-primary, #F9FAFB);
 }
 
@@ -38,8 +67,9 @@
   width: 95%;
   /* Mobile width */
   margin: 16px auto;
-  backdrop-filter: blur(20px);
-  background: color-mix(in srgb, var(--bg-primary, rgba(255, 255, 255, 0.95)) 85%, transparent) !important;
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  background: color-mix(in srgb, var(--bg-primary, rgba(255, 255, 255, 0.95)) 95%, transparent) !important;
   border: 1px solid color-mix(in srgb, var(--color-primary, #B4833D) 30%, rgba(255, 255, 255, 0.3)) !important;
   box-shadow: 0 10px 30px color-mix(in srgb, var(--color-primary, #B4833D) 20%, rgba(0, 0, 0, 0.1));
 }
@@ -52,12 +82,16 @@
 }
 
 .glass-icon-btn {
-  @apply p-2 rounded-lg;
+  @apply p-2;
+  border-radius: var(--radius-sm);
   color: var(--text-secondary, #666);
   @apply hover:bg-white/20 dark:hover:bg-white/10;
   @apply transition-all duration-200;
   @apply backdrop-blur-sm;
-  @apply w-8 h-8;
+  width: var(--tap-size);
+  height: var(--tap-size);
+  min-width: var(--tap-size);
+  min-height: var(--tap-size);
   @apply flex items-center justify-center;
 }
 
@@ -81,7 +115,7 @@
   width: var(--sidebar-width-collapsed);
   margin: 16px;
   transition: width var(--sidebar-transition);
-  background: color-mix(in srgb, var(--bg-primary, rgba(255, 255, 255, 0.95)) 85%, transparent) !important;
+  background: color-mix(in srgb, var(--bg-primary, rgba(255, 255, 255, 0.95)) 95%, transparent) !important;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--color-primary, #B4833D) 30%, rgba(255, 255, 255, 0.3)) !important;
 }
@@ -107,7 +141,7 @@
   width: var(--sidebar-width-collapsed);
   margin: 16px;
   transition: width var(--sidebar-transition);
-  background: color-mix(in srgb, var(--bg-primary, rgba(255, 255, 255, 0.95)) 85%, transparent) !important;
+  background: color-mix(in srgb, var(--bg-primary, rgba(255, 255, 255, 0.95)) 95%, transparent) !important;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--color-primary, #B4833D) 30%, rgba(255, 255, 255, 0.3)) !important;
 }
@@ -339,13 +373,11 @@
   color: var(--text-primary, #333);
   @apply overflow-auto;
   margin: 16px;
-  backdrop-filter: blur(3px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  background: color-mix(in srgb, var(--bg-primary) 60%, transparent) !important;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 20%, rgba(255, 255, 255, 0.2)) !important;
-  box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 color-mix(in srgb, var(--color-primary) 10%, rgba(255, 255, 255, 0.2));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  background: var(--glass-bg-strong) !important;
+  border: 1px solid var(--glass-border-strong) !important;
+  box-shadow: var(--glass-shadow);
 }
 
 /* Dark mode main panel */
@@ -414,13 +446,13 @@
 
   /* Make glassmorphism more subtle on mobile for better readability */
   .glass-effect {
-    background: color-mix(in srgb, var(--bg-primary) 25%, transparent);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: var(--glass-bg);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
   }
 
   .dark .glass-effect {
-    background: color-mix(in srgb, var(--bg-secondary) 35%, transparent);
+    background: var(--glass-bg);
   }
 }
 
@@ -451,7 +483,8 @@
 }
 
 .glass-effect {
-  animation: glassFloat 8s ease-in-out infinite;
+  /* Apple-like: keep glass calm. If we want motion later, apply it only to specific premium widgets. */
+  animation: none;
 }
 
 /* Focus states for accessibility */
@@ -472,10 +505,7 @@
   right: 0;
   bottom: 0;
   border-radius: inherit;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.1));
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-  -webkit-mask-composite: xor;
+  background: var(--glass-sheen);
   pointer-events: none;
 }
 
@@ -511,12 +541,22 @@
 }
 
 /* Cards */
+/* Standard padding: 16px for standard cards, 20px for premium cards */
 .glass-card,
 .glass-panel {
   @apply glass-effect;
   @apply rounded-xl;
-  @apply p-6;
+  padding: 16px; /* Standard card padding */
+  @apply border;
+  border-color: rgba(255, 255, 255, 0.2);
   color: var(--text-primary, #333);
+  background: color-mix(in srgb, var(--bg-primary, rgba(255, 255, 255, 0.95)) 12%, transparent);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.glass-card:active,
+.glass-panel:active {
+  transform: scale(0.98);
 }
 
 /* Calendar Components */
@@ -565,24 +605,43 @@
 .glass-habit-card {
   @apply glass-effect;
   @apply rounded-xl;
-  @apply p-6;
-  @apply border border-white/20;
+  padding: 20px; /* Premium card padding */
+  @apply border;
+  border-color: rgba(255, 255, 255, 0.2);
   @apply hover:bg-white/10;
   @apply transition-all duration-200;
+  background: color-mix(in srgb, var(--bg-primary, rgba(255, 255, 255, 0.95)) 12%, transparent);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+}
+
+.glass-habit-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 /* Toolbox Cards */
 .glass-toolbox-card {
   @apply glass-effect;
   @apply rounded-xl;
-  @apply p-6;
-  @apply border border-white/20;
+  padding: 20px; /* Premium card padding */
+  @apply border;
+  border-color: rgba(255, 255, 255, 0.2);
   @apply hover:bg-white/10;
   @apply transition-all duration-200;
+  background: color-mix(in srgb, var(--bg-primary, rgba(255, 255, 255, 0.95)) 12%, transparent);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+}
+
+.glass-toolbox-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .glass-difficulty-badge {
-  @apply px-2 py-1 rounded-full;
+  @apply px-2 py-1;
+  border-radius: 8px; /* Standard for chips/badges */
   @apply text-xs font-medium;
   background-color: color-mix(in srgb, var(--color-primary) 20%, transparent);
   color: var(--color-primary);
@@ -590,8 +649,10 @@
 }
 
 /* Buttons */
+/* Standard border-radius: 12px for action buttons, 8px for chips */
 .glass-primary-btn {
-  @apply px-4 py-2 rounded-lg;
+  @apply px-4 py-2;
+  border-radius: 12px;
   background: var(--gradient-primary);
   @apply text-white font-medium;
   /* Hover state handled by component */
@@ -602,7 +663,8 @@
 }
 
 .glass-secondary-btn {
-  @apply px-4 py-2 rounded-lg;
+  @apply px-4 py-2;
+  border-radius: 12px;
   @apply bg-white/20 dark:bg-white/10;
   @apply text-gray-700 dark:text-gray-300;
   @apply hover:bg-white/30 dark:hover:bg-white/20;
@@ -611,15 +673,7 @@
   @apply flex items-center;
 }
 
-.glass-icon-btn {
-  @apply p-2 rounded-lg;
-  color: var(--text-secondary, #666);
-  @apply hover:bg-white/20 dark:hover:bg-white/10;
-  @apply transition-all duration-200;
-  @apply backdrop-blur-sm;
-  @apply w-8 h-8;
-  @apply flex items-center justify-center;
-}
+/* NOTE: .glass-icon-btn is defined above with 44px tap target; keep single source of truth. */
 
 /* Inputs */
 .glass-input {

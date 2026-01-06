@@ -5,6 +5,7 @@ import courseService from '../services/courseService';
 import { supabase } from '../lib/supabaseClient';
 import QuizComponent from '../components/QuizComponent';
 import LessonTracker from '../components/Roadmap/LessonTracker';
+import { useRoadmapLessonTracking } from '../hooks/useRoadmapLessonTracking';
 import {
   ArrowLeft,
   CheckCircle,
@@ -13,7 +14,9 @@ import {
   Maximize2,
   Minimize2,
   Menu,
-  BrainCircuit
+  BrainCircuit,
+  X,
+  List
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -32,7 +35,8 @@ const CoursePlayerPage = () => {
   const [error, setError] = useState(null);
   const [isCompleting, setIsCompleting] = useState(false);
   const [cinemaMode, setCinemaMode] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(true);
+  const [showSidebar, setShowSidebar] = useState(false); // Start closed on mobile
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [quizData, setQuizData] = useState(null);
   const [showQuiz, setShowQuiz] = useState(false);
   const [completedLessons, setCompletedLessons] = useState(new Set()); // Store completed lessons as Set for O(1) lookup
@@ -301,6 +305,15 @@ const CoursePlayerPage = () => {
   const nextLesson = getNextLesson();
   const previousLesson = getPreviousLesson();
 
+  // Track lesson progress to enable "Mark as Complete" button
+  const { canComplete: trackingCanComplete } = useRoadmapLessonTracking(
+    user?.id,
+    course?.course_id ? parseInt(course.course_id) : null,
+    chapterNum,
+    lessonNum,
+    !!course?.masterschool && !!user // Only enable if course has masterschool and user is logged in
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -334,10 +347,71 @@ const CoursePlayerPage = () => {
   return (
     <div className={`flex h-[calc(100vh-80px)] overflow-hidden transition-all duration-500 ${cinemaMode ? 'fixed inset-0 z-50' : ''}`} style={cinemaMode ? { backgroundColor: 'var(--bg-secondary, #0f0f0f)' } : {}}>
 
-      {/* Sidebar - Course Structure */}
+      {/* Mobile Menu Overlay */}
+      {showMobileMenu && (
+        <div 
+          className="fixed inset-0 z-40 lg:hidden"
+          onClick={() => setShowMobileMenu(false)}
+        >
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div 
+            className="absolute top-0 left-0 bottom-0 w-80 max-w-[85vw] bg-slate-900/95 backdrop-blur-xl shadow-2xl flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-4 border-b border-slate-700/50 flex items-center justify-between">
+              <h3 className="font-bold text-white text-sm truncate pr-2">{course?.course_title}</h3>
+              <button 
+                onClick={() => setShowMobileMenu(false)}
+                className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white min-w-[44px] min-h-[44px] flex items-center justify-center"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-2 space-y-2">
+              {courseStructure?.chapters?.map((chapter) => (
+                <div key={chapter.id} className="space-y-1">
+                  <div className="px-3 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    Chapter {chapter.chapter_number}
+                  </div>
+                  {chapter.lessons?.map((lesson) => {
+                    const isActive = lesson.chapter_number === chapterNum && lesson.lesson_number === lessonNum;
+                    const lessonKey = `${lesson.chapter_number}_${lesson.lesson_number}`;
+                    const isLessonCompleted = completedLessons.has(lessonKey);
+
+                    return (
+                      <button
+                        key={`${lesson.chapter_number}_${lesson.lesson_number}`}
+                        onClick={() => {
+                          handleNavigateLesson(lesson.chapter_number, lesson.lesson_number);
+                          setShowMobileMenu(false);
+                        }}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all min-h-[44px] ${
+                          isActive
+                            ? 'font-medium'
+                            : 'text-slate-300 hover:bg-slate-800'
+                        }`}
+                        style={isActive ? { backgroundColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', color: 'var(--color-primary)' } : {}}
+                      >
+                        {isLessonCompleted ? (
+                          <CheckCircle size={16} className="text-green-500 flex-shrink-0" />
+                        ) : (
+                          <div className={`w-4 h-4 rounded-full border flex-shrink-0 ${isActive ? '' : 'border-slate-500'}`} style={isActive ? { borderColor: 'var(--color-primary)' } : {}}></div>
+                        )}
+                        <span className="truncate text-left">{lesson.lesson_title}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sidebar - Course Structure (Desktop) */}
       <div
-        className={`glass-effect border-r border-white/10 transition-all duration-300 flex flex-col
-          ${cinemaMode ? (showSidebar ? 'w-80' : 'w-0 opacity-0 overflow-hidden') : 'hidden lg:flex lg:w-80'}
+        className={`glass-effect border-r border-white/10 transition-all duration-300 flex-col
+          ${cinemaMode ? (showSidebar ? 'w-80 flex' : 'w-0 opacity-0 overflow-hidden hidden') : 'hidden lg:flex lg:w-80'}
           ${!cinemaMode && 'm-4 rounded-2xl'}
         `}
       >
@@ -388,38 +462,62 @@ const CoursePlayerPage = () => {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
 
-        {/* Top Bar */}
-        <div className={`flex items-center justify-between px-6 py-4 ${cinemaMode ? 'backdrop-blur-md' : ''}`} style={cinemaMode ? { backgroundColor: 'color-mix(in srgb, var(--bg-secondary, #0f0f0f) 80%, transparent)' } : {}}>
-          <div className="flex items-center gap-4">
+        {/* Top Bar - Mobile Optimized */}
+        <div className={`flex items-center justify-between px-3 sm:px-6 py-3 ${cinemaMode ? 'backdrop-blur-md' : ''}`} style={cinemaMode ? { backgroundColor: 'color-mix(in srgb, var(--bg-secondary, #0f0f0f) 80%, transparent)' } : {}}>
+          <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setShowMobileMenu(true)}
+              className="lg:hidden p-2 hover:bg-white/10 rounded-lg text-gray-500 dark:text-gray-400 dark:hover:text-white transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+              title="Course Menu"
+            >
+              <List size={20} />
+            </button>
+            
+            {/* Cinema Mode Sidebar Toggle */}
             {cinemaMode && !showSidebar && (
               <button
                 onClick={() => setShowSidebar(true)}
-                className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
+                className="hidden lg:flex p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
                 title="Show Sidebar"
               >
                 <Menu size={20} />
               </button>
             )}
+            
+            {/* Back Button */}
             {!cinemaMode && (
               <button
                 onClick={() => navigate(`/courses/${courseId}`)}
-                className="flex items-center gap-2 text-gray-500 dark:text-gray-400 dark:hover:text-white transition-colors"
+                className="flex items-center gap-1.5 sm:gap-2 text-gray-500 dark:text-gray-400 dark:hover:text-white transition-colors min-h-[44px]"
                 onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
                 onMouseLeave={(e) => e.currentTarget.style.color = ''}
               >
-                <ArrowLeft size={20}  aria-hidden="true"/>
-                <span className="hidden sm:inline">Back to Course</span>
+                <ArrowLeft size={18} className="sm:w-5 sm:h-5" aria-hidden="true"/>
+                <span className="hidden sm:inline text-sm sm:text-base">Back</span>
               </button>
+            )}
+            
+            {/* Current Lesson Title (Mobile) */}
+            {currentLesson && (
+              <div className="lg:hidden flex-1 min-w-0 ml-2">
+                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                  {currentLesson.lesson_title}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Ch {chapterNum} • L {lessonNum}
+                </p>
+              </div>
             )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setCinemaMode(!cinemaMode)}
-              className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
+              className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               title={cinemaMode ? "Exit Cinema Mode" : "Enter Cinema Mode"}
             >
-              {cinemaMode ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+              {cinemaMode ? <Minimize2 size={18} className="sm:w-5 sm:h-5" /> : <Maximize2 size={18} className="sm:w-5 sm:h-5" />}
             </button>
           </div>
         </div>
@@ -448,8 +546,8 @@ const CoursePlayerPage = () => {
               <Play size={64} className="text-white/20" />
             </div> */}
 
-            {/* Quiz Section (if active) */}
-            {showQuiz && quizData ? (
+            {/* Quiz Section (removed - quiz functionality disabled) */}
+            {false && showQuiz && quizData ? (
               <div className="mb-12 animate-fade-in">
                 <div className="flex items-center gap-3 mb-6">
                   <button
@@ -617,32 +715,52 @@ const CoursePlayerPage = () => {
             {!showQuiz && (
               <div className="mt-12 flex flex-col items-center justify-center space-y-6">
                 {isCompleted ? (
-                  <div className="flex flex-col items-center gap-3 text-green-500 animate-fade-in">
-                    <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center">
-                      <CheckCircle size={32} />
+                  <div className="flex flex-col items-center gap-6 animate-fade-in">
+                    <div className="flex flex-col items-center gap-3 text-green-500">
+                      <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center">
+                        <CheckCircle size={32} />
+                      </div>
+                      <span className="text-xl font-bold">Lesson Completed</span>
                     </div>
-                    <span className="text-xl font-bold">Lesson Completed</span>
+                    
+                    {/* Next Lesson Button - Show after completion */}
+                    {nextLesson && (
+                      <button
+                        onClick={() => handleNavigateLesson(nextLesson.lesson.chapter_number, nextLesson.lesson.lesson_number)}
+                        className="group relative px-8 py-4 text-white rounded-full font-bold text-lg shadow-lg transition-all transform hover:scale-105 active:scale-95 overflow-hidden"
+                        style={{ 
+                          background: 'var(--gradient-primary)',
+                          backgroundColor: 'var(--color-primary)'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--color-primary) 90%, transparent)';
+                          e.currentTarget.style.boxShadow = '0 10px 30px color-mix(in srgb, var(--color-primary) 30%, transparent)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--color-primary)';
+                          e.currentTarget.style.boxShadow = '';
+                        }}
+                      >
+                        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                        <div className="relative flex items-center gap-3">
+                          <ChevronRight size={24} />
+                          <span>Next Lesson</span>
+                        </div>
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-4">
-                    {quizData && (
-                      <button
-                        onClick={() => setShowQuiz(true)}
-                        className="group relative px-8 py-4 bg-white/10 hover:bg-white/20 text-gray-900 dark:text-white rounded-full font-bold text-lg shadow-lg border border-white/20 transition-all transform hover:scale-105 active:scale-95 flex items-center gap-3"
-                      >
-                        <BrainCircuit size={24} style={{ color: 'var(--color-primary)' }} />
-                        <span>Take Quiz</span>
-                      </button>
-                    )}
-
                     <button
                       onClick={() => handleCompleteLesson()}
-                      disabled={isCompleting}
+                      disabled={isCompleting || (course?.masterschool && !trackingCanComplete)}
                       className="group relative px-8 py-4 text-white rounded-full font-bold text-lg shadow-lg transition-all transform hover:scale-105 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden"
                       style={{ backgroundColor: 'var(--color-primary)' }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--color-primary) 90%, transparent)';
-                        e.currentTarget.style.boxShadow = '0 10px 30px color-mix(in srgb, var(--color-primary) 30%, transparent)';
+                        if (!e.currentTarget.disabled) {
+                          e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--color-primary) 90%, transparent)';
+                          e.currentTarget.style.boxShadow = '0 10px 30px color-mix(in srgb, var(--color-primary) 30%, transparent)';
+                        }
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = 'var(--color-primary)';
@@ -659,7 +777,11 @@ const CoursePlayerPage = () => {
                         ) : (
                           <>
                             <CheckCircle size={24} />
-                            <span>Mark as Complete (+50 XP)</span>
+                            <span>
+                              {course?.masterschool && !trackingCanComplete 
+                                ? 'Complete Requirements First' 
+                                : 'Mark as Complete (+50 XP)'}
+                            </span>
                           </>
                         )}
                       </div>
@@ -683,7 +805,8 @@ const CoursePlayerPage = () => {
                     <div></div>
                   )}
 
-                  {nextLesson && (
+                  {/* Next Lesson button - Only show if lesson is completed */}
+                  {isCompleted && nextLesson && (
                     <button
                       onClick={() => handleNavigateLesson(nextLesson.lesson.chapter_number, nextLesson.lesson.lesson_number)}
                       className="flex items-center gap-2 px-6 py-3 text-gray-500 dark:text-gray-400 dark:hover:text-white transition-colors"

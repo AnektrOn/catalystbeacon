@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Wrench, Plus } from 'lucide-react';
+import { Wrench, Plus, Trash2, Calendar, CalendarOff } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { useMasteryRefresh } from '../../pages/Mastery';
@@ -16,6 +17,7 @@ const ToolboxTabMobile = () => {
   const [toolboxLibrary, setToolboxLibrary] = useState([]);
   const [userToolbox, setUserToolbox] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [calendarVisibilitySupported, setCalendarVisibilitySupported] = useState(true);
   // Removed unused error state (errors are logged directly)
 
   useEffect(() => {
@@ -87,8 +89,129 @@ const ToolboxTabMobile = () => {
       ]);
 
       setActiveTab('my-tools');
+      toast.success('Tool added to My Tools!', {
+        duration: 2000,
+        style: {
+          background: 'color-mix(in srgb, var(--color-success, #10b981) 95%, transparent)',
+          color: '#fff',
+          zIndex: 9999,
+        },
+      });
     } catch (err) {
       console.error('Error adding tool:', err);
+      toast.error('Failed to add tool. Please try again.', {
+        duration: 3000,
+        style: {
+          background: 'color-mix(in srgb, var(--color-error, #ef4444) 95%, transparent)',
+          color: '#fff',
+          zIndex: 9999,
+        },
+      });
+    }
+  };
+
+  const deleteTool = async (toolId) => {
+    if (!user) return;
+
+    if (!window.confirm('Are you sure you want to delete this tool? All usage data will be removed.')) {
+      return;
+    }
+
+    try {
+      const { error } = await masteryService.removeUserToolboxItem(toolId);
+      if (error) throw error;
+
+      setUserToolbox(prev => prev.filter(t => t.id !== toolId));
+      triggerRefresh();
+      
+      toast.success('Tool deleted successfully', {
+        duration: 2000,
+        style: {
+          background: 'color-mix(in srgb, var(--color-success, #10b981) 95%, transparent)',
+          color: '#fff',
+          zIndex: 9999,
+        },
+      });
+    } catch (err) {
+      console.error('Error deleting tool:', err);
+      toast.error('Failed to delete tool. Please try again.', {
+        duration: 3000,
+        style: {
+          background: 'color-mix(in srgb, var(--color-error, #ef4444) 95%, transparent)',
+          color: '#fff',
+          zIndex: 9999,
+        },
+      });
+    }
+  };
+
+  const toggleCalendarVisibility = async (toolId, currentValue) => {
+    if (!user) return;
+    if (!calendarVisibilitySupported) {
+      toast.error('Calendar visibility is not configured yet. Run ADD_CALENDAR_VISIBILITY_COLUMN.sql in Supabase.', {
+        duration: 2500,
+        style: {
+          background: 'color-mix(in srgb, var(--color-error, #ef4444) 95%, transparent)',
+          color: '#fff',
+          zIndex: 9999,
+        },
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('user_toolbox_items')
+        .update({ show_on_calendar: !currentValue })
+        .eq('id', toolId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setUserToolbox(prev =>
+        prev.map(t => {
+          if (t.id === toolId) {
+            return { ...t, show_on_calendar: !currentValue };
+          }
+          return t;
+        })
+      );
+
+      toast.success(!currentValue ? 'Shown on calendar' : 'Hidden from calendar', {
+        duration: 1500,
+        style: {
+          background: 'color-mix(in srgb, var(--bg-secondary, #1e293b) 95%, transparent)',
+          color: '#fff',
+          zIndex: 9999,
+        },
+      });
+
+      triggerRefresh();
+    } catch (err) {
+      const errObj = err?.error ?? err;
+      const msgParts = [errObj?.message, errObj?.details, errObj?.hint].filter(Boolean);
+      const msg = (msgParts.join(' • ') || 'Failed to update calendar visibility.').toString();
+      const msgLower = msg.toLowerCase();
+      const needsColumn = msgLower.includes('show_on_calendar') && (msgLower.includes('column') || msgLower.includes('schema cache'));
+
+      console.error('Error toggling calendar visibility:', msg, errObj);
+
+      if (needsColumn) {
+        setCalendarVisibilitySupported(false);
+      }
+
+      toast.error(
+        needsColumn
+          ? 'DB missing column show_on_calendar. Run ADD_CALENDAR_VISIBILITY_COLUMN.sql in Supabase.'
+          : msg,
+        {
+        duration: 2000,
+        style: {
+          background: 'color-mix(in srgb, var(--color-error, #ef4444) 95%, transparent)',
+          color: '#fff',
+          zIndex: 9999,
+        },
+      });
     }
   };
 
@@ -127,6 +250,12 @@ const ToolboxTabMobile = () => {
       {/* Content */}
       {activeTab === 'my-tools' ? (
         <div className="space-y-4">
+          {!calendarVisibilitySupported && (
+            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-4 text-sm text-yellow-100">
+              <strong>Calendar visibility toggle is disabled:</strong> your database is missing
+              <code> show_on_calendar</code>. Run <code>ADD_CALENDAR_VISIBILITY_COLUMN.sql</code> in Supabase, then refresh.
+            </div>
+          )}
           {userToolbox.length === 0 ? (
             <div className="text-center py-12">
               <Wrench size={48} className="mx-auto mb-4 text-slate-600"  aria-hidden="true"/>
@@ -146,10 +275,35 @@ const ToolboxTabMobile = () => {
                   key={tool.id}
                   className="bg-slate-800/50 backdrop-blur-md rounded-2xl p-5 border border-slate-700/30 shadow-xl"
                 >
-                  <h3 className="text-lg font-bold text-white mb-2">{toolData.title}</h3>
-                  {toolData.description && (
-                    <p className="text-sm text-slate-400 mb-4">{toolData.description}</p>
-                  )}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-white mb-2">{toolData.title}</h3>
+                      {toolData.description && (
+                        <p className="text-sm text-slate-400">{toolData.description}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => toggleCalendarVisibility(tool.id, tool.show_on_calendar !== false)}
+                        disabled={!calendarVisibilitySupported}
+                        className={`p-2 rounded-lg transition-all min-w-[44px] min-h-[44px] flex items-center justify-center ${
+                          tool.show_on_calendar !== false
+                            ? 'bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30'
+                            : 'bg-slate-700/50 text-slate-400 hover:bg-slate-700/70'
+                        } ${!calendarVisibilitySupported ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        title={tool.show_on_calendar !== false ? 'Hide from calendar' : 'Show on calendar'}
+                      >
+                        {tool.show_on_calendar !== false ? <Calendar size={18} /> : <CalendarOff size={18} />}
+                      </button>
+                      <button
+                        onClick={() => deleteTool(tool.id)}
+                        className="p-2 rounded-lg bg-red-600/20 text-red-400 hover:bg-red-600/30 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
+                        title="Delete tool"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </div>
 
                   <div className="flex items-center justify-between">
                     <div className="text-sm text-slate-400">
@@ -163,7 +317,7 @@ const ToolboxTabMobile = () => {
                     </div>
 
                     <button
-                    onClick={() => handleUseToolItem(tool.id)}
+                      onClick={() => handleUseToolItem(tool.id)}
                       className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-indigo-500 transition-all min-h-[44px]"
                     >
                       Use Tool

@@ -1,0 +1,476 @@
+/* Mood Tracker - Bullet Journal Style */
+.mood-tracker-card {
+  position: relative;
+  overflow: visible;
+  min-height: 280px;
+}
+
+.mood-tracker-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+  color: hsl(var(--muted-foreground));
+  font-size: 14px;
+}
+
+.mood-tracker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.mood-tracker-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  margin: 0;
+}
+
+.mood-tracker-add-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+  border: 1px solid hsl(var(--primary) / 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mood-tracker-add-btn:hover {
+  background: hsl(var(--primary) / 0.2);
+  transform: scale(1.05);
+}
+
+/* Legend */
+.mood-tracker-legend {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.mood-tracker-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: hsl(var(--muted-foreground));
+}
+
+.mood-tracker-legend-line {
+  width: 24px;
+  height: 2px;
+  border-radius: 1px;
+}
+
+.mood-tracker-legend-line.mood-tracker-line-mood {
+  border-top: 2px dotted hsl(var(--primary));
+}
+
+.mood-tracker-legend-line.mood-tracker-line-sleep {
+  background: hsl(var(--primary));
+}
+
+.mood-tracker-legend-line.mood-tracker-line-stress {
+  border-top: 2px dashed hsl(var(--primary));
+}
+
+.mood-tracker-legend-item svg {
+  width: 14px;
+  height: 14px;
+  color: hsl(var(--primary));
+}
+
+/* Chart Container */
+.mood-tracker-chart-container {
+  width: 100%;
+  height: 120px;
+  margin-bottom: 8px;
+  position: relative;
+  background: hsl(var(--muted) / 0.1);
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.mood-tracker-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.mood-tracker-grid-line {
+  stroke: hsl(var(--muted) / 0.2);
+  stroke-width: 0.5;
+}
+
+/* Chart Lines */
+.mood-tracker-line {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  animation: moodTrackerDraw 1s ease-out;
+}
+
+.mood-tracker-line-mood {
+  stroke: hsl(var(--primary));
+  stroke-dasharray: 2, 2;
+}
+
+.mood-tracker-line-sleep {
+  stroke: hsl(var(--primary));
+}
+
+.mood-tracker-line-stress {
+  stroke: hsl(var(--primary));
+  stroke-dasharray: 4, 2;
+}
+
+@keyframes moodTrackerDraw {
+  from {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+  }
+  to {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Data Points */
+.mood-tracker-dot {
+  fill: hsl(var(--primary));
+  animation: moodTrackerDotAppear 0.3s ease-out;
+}
+
+.mood-tracker-dot-mood {
+  fill: hsl(var(--primary));
+}
+
+.mood-tracker-dot-sleep {
+  fill: hsl(var(--primary));
+}
+
+.mood-tracker-dot-stress {
+  fill: hsl(var(--primary));
+}
+
+@keyframes moodTrackerDotAppear {
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Day Labels */
+.mood-tracker-days {
+  display: flex;
+  justify-content: space-between;
+  gap: 2px;
+  margin-bottom: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.mood-tracker-day {
+  flex: 1;
+  min-width: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 2px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.mood-tracker-day:hover {
+  background: hsl(var(--muted) / 0.1);
+}
+
+.mood-tracker-day-today {
+  background: hsl(var(--primary) / 0.1);
+  border: 1px solid hsl(var(--primary) / 0.3);
+}
+
+.mood-tracker-day-has-entry {
+  font-weight: 600;
+}
+
+.mood-tracker-day-number {
+  font-size: 10px;
+  color: hsl(var(--muted-foreground));
+  line-height: 1;
+}
+
+.mood-tracker-day-today .mood-tracker-day-number {
+  color: hsl(var(--primary));
+  font-weight: 700;
+}
+
+.mood-tracker-day-has-entry .mood-tracker-day-number {
+  color: hsl(var(--foreground));
+}
+
+.mood-tracker-day-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: hsl(var(--primary));
+  opacity: 0.6;
+}
+
+/* Scale Labels */
+.mood-tracker-scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: hsl(var(--muted-foreground));
+  padding: 0 4px;
+}
+
+/* Modal */
+.mood-tracker-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.mood-tracker-modal {
+  background: hsl(var(--card));
+  border-radius: 16px;
+  width: 100%;
+  max-width: 400px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border: 1px solid hsl(var(--border));
+}
+
+.mood-tracker-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.mood-tracker-modal-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  margin: 0;
+}
+
+.mood-tracker-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.mood-tracker-modal-close:hover {
+  background: hsl(var(--muted) / 0.2);
+  color: hsl(var(--foreground));
+}
+
+.mood-tracker-modal-content {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.mood-tracker-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mood-tracker-input-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+.mood-tracker-input-label svg {
+  color: hsl(var(--primary));
+}
+
+.mood-tracker-slider-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mood-tracker-slider {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: hsl(var(--muted));
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.mood-tracker-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: hsl(var(--primary));
+  cursor: pointer;
+  box-shadow: 0 2px 8px hsl(var(--primary) / 0.3);
+  transition: all 0.2s ease;
+}
+
+.mood-tracker-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px hsl(var(--primary) / 0.4);
+}
+
+.mood-tracker-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: hsl(var(--primary));
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 8px hsl(var(--primary) / 0.3);
+  transition: all 0.2s ease;
+}
+
+.mood-tracker-slider::-moz-range-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px hsl(var(--primary) / 0.4);
+}
+
+.mood-tracker-value {
+  min-width: 32px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: hsl(var(--primary));
+  font-variant-numeric: tabular-nums;
+}
+
+.mood-tracker-modal-actions {
+  padding: 20px;
+  border-top: 1px solid hsl(var(--border));
+}
+
+.mood-tracker-save-btn {
+  width: 100%;
+  padding: 12px 24px;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mood-tracker-save-btn:hover {
+  background: hsl(var(--primary) / 0.9);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px hsl(var(--primary) / 0.3);
+}
+
+.mood-tracker-save-btn:active {
+  transform: translateY(0);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .mood-tracker-card {
+    min-height: 240px;
+  }
+
+  .mood-tracker-title {
+    font-size: 14px;
+  }
+
+  .mood-tracker-add-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .mood-tracker-add-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .mood-tracker-legend {
+    gap: 12px;
+    font-size: 11px;
+  }
+
+  .mood-tracker-chart-container {
+    height: 100px;
+    padding: 6px;
+  }
+
+  .mood-tracker-day-number {
+    font-size: 9px;
+  }
+
+  .mood-tracker-day-dot {
+    width: 3px;
+    height: 3px;
+  }
+
+  .mood-tracker-modal {
+    max-width: 100%;
+    margin: 16px;
+  }
+
+  .mood-tracker-modal-header {
+    padding: 16px;
+  }
+
+  .mood-tracker-modal-header h3 {
+    font-size: 16px;
+  }
+
+  .mood-tracker-modal-content {
+    padding: 16px;
+    gap: 20px;
+  }
+
+  .mood-tracker-modal-actions {
+    padding: 16px;
+  }
+}
+

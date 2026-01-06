@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabaseClient';
 import NotificationBadge from './NotificationBadge';
 import ColorPaletteDropdown from './common/ColorPaletteDropdown';
 import useSubscription from '../hooks/useSubscription';
+import levelsService from '../services/levelsService';
 import {
   Grid3X3,
   User,
@@ -25,16 +26,44 @@ import {
   Sparkles,
   CreditCard,
   Award,
-  Zap
+  Zap,
+  MoreVertical,
+  Map
 } from 'lucide-react';
 
 const AppShellMobile = () => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  // Initialize dark mode from localStorage or system preference
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('darkMode');
+      if (saved !== null) {
+        return saved === 'true';
+      }
+      // Auto-detect system preference if no user preference saved
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
+  const actionsBtnRef = useRef(null);
+  const [actionsMenuPos, setActionsMenuPos] = useState({ top: 0, left: 0, width: 224 });
   const navigate = useNavigate();
   const location = useLocation();
   const { profile, signOut, user } = useAuth();
   const { isFreeUser, isAdmin } = useSubscription();
+
+  const getMobilePageTitle = useCallback(() => {
+    const path = location.pathname || '/';
+    if (path === '/' || path.startsWith('/dashboard')) return 'Dashboard';
+    if (path.startsWith('/mastery')) return 'Mastery';
+    if (path.startsWith('/courses')) return 'Courses';
+    if (path.startsWith('/roadmap')) return 'Roadmap';
+    if (path.startsWith('/stellar')) return 'Stellar Map';
+    if (path.startsWith('/profile')) return 'Profile';
+    if (path.startsWith('/settings')) return 'Settings';
+    return 'HC University';
+  }, [location.pathname]);
 
   // Load notification count from Supabase
   const [notificationCount, setNotificationCount] = useState(0);
@@ -42,6 +71,43 @@ const AppShellMobile = () => {
   // XP and achievement state
   const [totalXP, setTotalXP] = useState(0);
   const [lastAchievement, setLastAchievement] = useState(null);
+  const [levelTitle, setLevelTitle] = useState(null);
+
+  const computeActionsMenuPos = useCallback(() => {
+    const el = actionsBtnRef.current;
+    if (!el) return;
+
+    const rect = el.getBoundingClientRect();
+    const padding = 8;
+    const maxWidth = Math.max(200, Math.min(280, window.innerWidth - padding * 2));
+    const width = maxWidth;
+    const left = Math.min(
+      Math.max(rect.right - width, padding),
+      window.innerWidth - width - padding
+    );
+    const top = rect.bottom + 8;
+
+    setActionsMenuPos({ top, left, width });
+  }, []);
+
+  // Ensure the actions dropdown is never clipped/off-screen on mobile
+  useEffect(() => {
+    if (!isActionsMenuOpen) return;
+
+    // Compute immediately and after layout settles
+    computeActionsMenuPos();
+    const raf = requestAnimationFrame(() => computeActionsMenuPos());
+
+    const onResize = () => computeActionsMenuPos();
+    window.addEventListener('resize', onResize);
+    window.addEventListener('scroll', onResize, true);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('scroll', onResize, true);
+    };
+  }, [isActionsMenuOpen, computeActionsMenuPos]);
   
   useEffect(() => {
     const loadNotifications = async () => {
@@ -88,6 +154,43 @@ const AppShellMobile = () => {
       };
     }
   }, [user]);
+
+  // Load level title based on XP
+  useEffect(() => {
+    const loadLevelTitle = async () => {
+      if (!user || !profile) {
+        setLevelTitle(null);
+        return;
+      }
+
+      try {
+        // First, try to use profile.rank if available (set by database trigger)
+        if (profile.rank) {
+          setLevelTitle(profile.rank);
+          return;
+        }
+
+        // Otherwise, fetch from levels table based on current XP
+        const currentXP = profile.current_xp || 0;
+        const { data: levelInfo, error } = await levelsService.getCurrentAndNextLevel(currentXP);
+        
+        if (!error && levelInfo?.currentLevel) {
+          setLevelTitle(levelInfo.currentLevel.title);
+        } else if (profile.level) {
+          // Fallback: get level by number
+          const { data: levelData } = await levelsService.getLevelByNumber(profile.level);
+          if (levelData?.title) {
+            setLevelTitle(levelData.title);
+          }
+        }
+      } catch (err) {
+        console.warn('Error loading level title:', err);
+        setLevelTitle(null);
+      }
+    };
+
+    loadLevelTitle();
+  }, [user, profile]);
 
   // Load XP and last achievement
   useEffect(() => {
@@ -186,6 +289,18 @@ const AppShellMobile = () => {
     }
   }, [profile?.background_image]);
 
+  // Apply dark class to document.documentElement on mount and when isDarkMode changes
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isDarkMode) {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    // Save to localStorage
+    localStorage.setItem('darkMode', isDarkMode.toString());
+  }, [isDarkMode]);
+
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
   };
@@ -195,9 +310,10 @@ const AppShellMobile = () => {
     { icon: Target, label: 'Mastery', path: '/mastery', restricted: false },
     { icon: BookOpen, label: 'Courses', path: '/courses', restricted: true },
     { icon: Sparkles, label: 'Stellar Map', path: '/stellar-map-2d', restricted: true },
-    { icon: User, label: 'Profile', path: '/profile', restricted: true },
+    { icon: Map, label: 'Roadmap', path: '/roadmap/ignition', restricted: false },
     { icon: Users, label: 'Community', path: '/community', restricted: true },
     { icon: CreditCard, label: 'Pricing', path: '/pricing', restricted: false },
+    { icon: User, label: 'Profile', path: '/profile', restricted: true },
     { icon: Settings, label: 'Settings', path: '/settings', restricted: false }
   ];
 
@@ -290,8 +406,8 @@ const AppShellMobile = () => {
           style={{
             backgroundColor: profile?.background_image 
               ? (isDarkMode 
-                  ? 'color-mix(in srgb, var(--bg-secondary) 20%, transparent)'
-                  : 'color-mix(in srgb, var(--bg-primary) 10%, transparent)')
+                  ? 'color-mix(in srgb, var(--bg-secondary) 30%, transparent)'
+                  : 'color-mix(in srgb, var(--bg-primary) 25%, transparent)')
               : 'transparent'
           }}
         ></div>
@@ -302,7 +418,7 @@ const AppShellMobile = () => {
         <div className="glass-header-browser flex items-center justify-between">
           {/* Left side - Menu button */}
           <button
-            className="glass-icon-btn lg:hidden"
+            className="glass-icon-btn lg:hidden min-w-[44px] min-h-[44px]"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
             aria-expanded={isMobileMenuOpen}
@@ -326,68 +442,113 @@ const AppShellMobile = () => {
             </button>
           </div>
 
-          {/* Center - XP and Last Achievement (compact for mobile) */}
-          {user ? (
-            <div className="flex items-center gap-2 flex-1 justify-center px-2">
-              {/* Total XP */}
-              <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg glass-effect border border-white/10">
-                <Zap size={14} style={{ color: 'var(--color-primary)' }} />
-                <span className="text-xs font-bold text-gray-900 dark:text-white">
-                  {totalXP.toLocaleString()}
-                </span>
-              </div>
+          {/* Center - Calm page title (Apple-like: reduce header cognitive load) */}
+          <div className="flex-1 px-3 flex items-center justify-center">
+            <h1
+              className="text-sm font-semibold tracking-tight truncate"
+              style={{ color: 'var(--text-primary)' }}
+              title={getMobilePageTitle()}
+            >
+              {getMobilePageTitle()}
+            </h1>
+          </div>
 
-              {/* Last Achievement (compact) */}
-              {lastAchievement && (
-                <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg glass-effect border border-white/10 max-w-[140px]">
-                  {lastAchievement.iconUrl ? (
-                    <img 
-                      src={lastAchievement.iconUrl} 
-                      alt={lastAchievement.title}
-                      className="w-4 h-4 rounded-full"
-                    />
-                  ) : (
-                    <Award size={14} style={{ color: 'var(--color-primary)' }} />
-                  )}
-                  <span className="text-xs font-medium text-gray-900 dark:text-white truncate">
-                    {lastAchievement.type === 'lesson' ? 'Lesson' : lastAchievement.title}
-                  </span>
-                </div>
+          {/* Right side actions - Grouped dropdown on mobile */}
+          <div className="flex items-center">
+            {/* Mobile: Actions dropdown menu */}
+            <div className="lg:hidden relative">
+              <button
+                onClick={() => setIsActionsMenuOpen(!isActionsMenuOpen)}
+                ref={actionsBtnRef}
+                className="glass-icon-btn min-w-[44px] min-h-[44px]"
+                aria-label="More actions"
+                aria-expanded={isActionsMenuOpen}
+              >
+                <MoreVertical size={20} aria-hidden="true" />
+              </button>
+              
+              {isActionsMenuOpen && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-[90]"
+                    onClick={() => setIsActionsMenuOpen(false)}
+                  />
+                  <div
+                    className="fixed glass-effect rounded-xl shadow-2xl border border-white/20 z-[100] overflow-hidden"
+                    style={{
+                      top: actionsMenuPos.top,
+                      left: actionsMenuPos.left,
+                      width: actionsMenuPos.width
+                    }}
+                  >
+                    <div className="py-2">
+                      {/* Color Palette */}
+                      <div className="px-3 py-2">
+                        <ColorPaletteDropdown />
+                      </div>
+                      
+                      {/* Notification */}
+                      <button
+                        onClick={() => {
+                          setIsActionsMenuOpen(false);
+                          // TODO: Navigate to notifications
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-900 dark:text-white hover:bg-white/10 transition-colors min-h-[44px]"
+                        aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ''}`}
+                      >
+                        <div className="relative">
+                          <Bell size={18} aria-hidden="true" />
+                          {notificationCount > 0 && (
+                            <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+                          )}
+                        </div>
+                        <span>Notifications</span>
+                        {notificationCount > 0 && (
+                          <span className="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{notificationCount}</span>
+                        )}
+                      </button>
+                      
+                      {/* Theme Toggle */}
+                      <button
+                        onClick={() => {
+                          toggleTheme();
+                          setIsActionsMenuOpen(false);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-900 dark:text-white hover:bg-white/10 transition-colors min-h-[44px]"
+                        aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+                      >
+                        {isDarkMode ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
+                        <span>{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>
+                      </button>
+                    </div>
+                  </div>
+                </>
               )}
             </div>
-          ) : (
-            <div className="flex items-center">
-              <h1 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                HC University
-              </h1>
-            </div>
-          )}
-
-          {/* Right side actions */}
-          <div className="flex items-center space-x-2">
-            {/* Color Palette Dropdown */}
-            <ColorPaletteDropdown />
             
-            {/* Notification Bell */}
-            <div className="relative">
-              <button 
-                className="glass-icon-btn"
-                aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ''}`}
-              >
-                <Bell size={18} aria-hidden="true" />
-              </button>
-              <NotificationBadge count={notificationCount} />
-            </div>
+            {/* Desktop: Show individual buttons */}
+            <div className="hidden lg:flex items-center space-x-3">
+              <ColorPaletteDropdown />
+              
+              <div className="relative">
+                <button 
+                  className="glass-icon-btn min-w-[44px] min-h-[44px]"
+                  aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ''}`}
+                >
+                  <Bell size={18} aria-hidden="true" />
+                </button>
+                <NotificationBadge count={notificationCount} />
+              </div>
 
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              className="glass-icon-btn"
-              aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-              title={isDarkMode ? 'Light mode' : 'Dark mode'}
-            >
-              {isDarkMode ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
-            </button>
+              <button
+                onClick={toggleTheme}
+                className="glass-icon-btn min-w-[44px] min-h-[44px]"
+                aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+                title={isDarkMode ? 'Light mode' : 'Dark mode'}
+              >
+                {isDarkMode ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -471,84 +632,118 @@ const AppShellMobile = () => {
         >
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <div
-            className="absolute top-0 left-0 bottom-0 w-80 max-w-[80vw] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-2xl"
+            className="absolute top-0 left-0 bottom-0 w-80 max-w-[80vw] glass-effect border border-white/20 shadow-2xl flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Menu Header */}
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="p-6 border-b border-white/15">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Menu</h2>
+                <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Menu</h2>
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className="glass-icon-btn min-w-[44px] min-h-[44px]"
                   aria-label="Close menu"
                 >
-                  <X size={20} aria-hidden="true" />
+                  <X size={24} aria-hidden="true" />
                 </button>
               </div>
 
               {/* User info */}
               {profile && (
-                <div className="flex items-center space-x-3 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                  {profile.avatar_url ? (
-                    <img
-                      src={profile.avatar_url}
-                      alt={profile.full_name}
-                      className="w-10 h-10 rounded-full"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'var(--gradient-primary)' }}>
-                      <User size={20} className="text-white" />
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 p-3 glass-effect rounded-xl border border-white/15">
+                    {profile.avatar_url ? (
+                      <img
+                        src={profile.avatar_url}
+                        alt={profile.full_name}
+                        className="w-10 h-10 rounded-full"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm" style={{ background: 'var(--gradient-primary)' }}>
+                        {profile?.full_name ? profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : <User size={20} />}
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
+                        {profile.full_name || 'User'}
+                      </p>
+                      <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                        {levelTitle || profile.rank || `Level ${profile.level || 1}`}
+                      </p>
                     </div>
-                  )}
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white text-sm">
-                      {profile.full_name || 'User'}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Level {profile.level || 1}
-                    </p>
+                  </div>
+                  {/* XP Display */}
+                  <div className="flex items-center gap-2 px-3 py-2 glass-effect rounded-xl border border-white/15">
+                    <Zap size={16} style={{ color: 'var(--color-primary)' }} />
+                    <div className="flex-1">
+                      <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Experience Points</p>
+                      <p className="text-sm font-bold" style={{ color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                        {totalXP.toLocaleString()} XP
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
             </div>
 
             {/* Menu Items */}
-            <nav className="p-4 space-y-2">
-              {sidebarItems.map((item) => {
+            <nav className="p-4 space-y-2 flex-1 overflow-y-auto">
+              {sidebarItems.filter(item => item.path !== '/profile' && item.path !== '/settings').map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.path ||
                   (item.path === '/mastery' && location.pathname.startsWith('/mastery')) ||
-                  (item.path === '/courses' && location.pathname.startsWith('/courses'));
+                  (item.path === '/courses' && location.pathname.startsWith('/courses')) ||
+                  (item.path === '/roadmap/ignition' && location.pathname.startsWith('/roadmap'));
 
                 return (
                   <button
                     key={item.path}
                     onClick={() => handleNavigation(item.path)}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 min-h-[44px] ${isActive
                       ? 'text-white shadow-lg'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                      : 'hover:bg-white/10'
                       }`}
                     style={isActive ? { background: 'var(--gradient-primary)' } : {}}
                     aria-label={`Navigate to ${item.label}`}
                     aria-current={isActive ? 'page' : undefined}
                   >
-                    <Icon size={20} aria-hidden="true" />
-                    <span>{item.label}</span>
+                    <Icon size={20} aria-hidden="true" className="flex-shrink-0" />
+                    <span className="flex-1 text-left" style={!isActive ? { color: 'var(--text-primary)' } : {}}>{item.label}</span>
                   </button>
                 );
               })}
             </nav>
 
-            {/* Menu Footer */}
-            <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-slate-900/95">
+            {/* Menu Footer - Profile, Settings, Sign Out */}
+            <div className="p-4 border-t border-white/15 space-y-2">
+              {sidebarItems.filter(item => item.path === '/profile' || item.path === '/settings').map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.path;
+
+                return (
+                  <button
+                    key={item.path}
+                    onClick={() => handleNavigation(item.path)}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 min-h-[44px] ${isActive
+                      ? 'text-white shadow-lg'
+                      : 'hover:bg-white/10'
+                      }`}
+                    style={isActive ? { background: 'var(--gradient-primary)' } : {}}
+                    aria-label={`Navigate to ${item.label}`}
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    <Icon size={20} aria-hidden="true" className="flex-shrink-0" />
+                    <span className="flex-1 text-left" style={!isActive ? { color: 'var(--text-primary)' } : {}}>{item.label}</span>
+                  </button>
+                );
+              })}
               <button
                 onClick={handleSignOut}
-                className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-all duration-200 min-h-[44px]"
                 aria-label="Sign out of your account"
               >
-                <LogOut size={20} aria-hidden="true" />
-                <span>Sign Out</span>
+                <LogOut size={20} aria-hidden="true" className="flex-shrink-0" />
+                <span className="flex-1 text-left">Sign Out</span>
               </button>
             </div>
           </div>
@@ -557,7 +752,7 @@ const AppShellMobile = () => {
 
       {/* Main Content Area */}
       <main className="fixed lg:left-32 left-0 top-[52px] lg:top-20 right-0 bottom-[70px] lg:bottom-4 z-30 lg:right-4"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
         <div className="glass-main-panel h-full overflow-auto">
           <Outlet />
         </div>
@@ -565,7 +760,7 @@ const AppShellMobile = () => {
 
       {/* Mobile Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden safe-area-bottom mobile-bottom-nav">
-        <div className="glass-effect mx-4 mb-4 rounded-2xl border border-white/20 shadow-xl backdrop-blur-xl">
+        <div className="glass-effect mx-4 mb-4 rounded-2xl border border-white/20 shadow-2xl backdrop-blur-xl">
           <div className="flex items-center justify-around px-2 py-3">
             {bottomNavItems.map((item) => {
               const Icon = item.icon;
@@ -577,7 +772,7 @@ const AppShellMobile = () => {
                 <button
                   key={item.path}
                   onClick={() => handleNavigation(item.path)}
-                  className={`mobile-nav-item flex flex-col items-center justify-center px-3 py-2 rounded-xl min-w-[60px] transition-all duration-200 ${isActive
+                  className={`mobile-nav-item flex flex-col items-center justify-center px-3 py-2 rounded-xl min-w-[60px] min-h-[60px] transition-all duration-200 ${isActive
                     ? 'scale-110'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                     }`}
@@ -586,7 +781,7 @@ const AppShellMobile = () => {
                   aria-current={isActive ? 'page' : undefined}
                   >
                   <Icon size={22} strokeWidth={isActive ? 2.5 : 2} aria-hidden="true" />
-                  {isActive && <div className="w-1 h-1 rounded-full mt-1" style={{ backgroundColor: 'var(--color-primary)' }} aria-hidden="true"></div>}
+                  {isActive && <div className="w-2 h-2 rounded-full mt-1.5 shadow-lg" style={{ backgroundColor: 'var(--color-primary)', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }} aria-hidden="true"></div>}
                 </button>
               );
             })}

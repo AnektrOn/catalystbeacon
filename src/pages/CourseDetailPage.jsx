@@ -189,18 +189,18 @@ const CourseDetailPage = () => {
   const totalLessons = courseStructure?.chapters?.reduce((sum, ch) => sum + (ch.lessons?.length || 0), 0) || 0;
 
   return (
-    <div className="p-4 lg:p-8 max-w-6xl mx-auto space-y-8 pb-24">
-      {/* Back Button */}
+    <div className="p-3 sm:p-4 lg:p-8 max-w-6xl mx-auto space-y-6 sm:space-y-8 pb-24">
+      {/* Back Button - Mobile Optimized */}
       <button
         onClick={() => navigate('/courses')}
-        className="flex items-center gap-2 text-gray-500 dark:text-gray-400 dark:hover:text-white transition-colors group"
+        className="flex items-center gap-2 text-gray-500 dark:text-gray-400 dark:hover:text-white transition-colors group min-h-[44px]"
         onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
         onMouseLeave={(e) => e.currentTarget.style.color = ''}
       >
-        <div className="p-2 rounded-full bg-white/5 dark:bg-black/20 transition-colors" onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--color-primary) 10%, transparent)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = ''}>
-          <ArrowLeft size={20} />
+        <div className="p-2 rounded-lg bg-white/5 dark:bg-black/20 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center" onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--color-primary) 10%, transparent)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = ''}>
+          <ArrowLeft size={18} />
         </div>
-        <span className="font-medium">Back to Catalog</span>
+        <span className="font-medium text-sm sm:text-base">Back</span>
       </button>
 
       {/* Course Header Card */}
@@ -221,7 +221,7 @@ const CourseDetailPage = () => {
               )}
             </div>
 
-            <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white font-heading leading-tight">
+            <h1 className="text-2xl sm:text-3xl lg:text-5xl font-bold text-gray-900 dark:text-white font-heading leading-tight">
               {course.course_title}
             </h1>
 
@@ -273,26 +273,26 @@ const CourseDetailPage = () => {
           )}
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-          <div className="glass-effect rounded-xl p-4 border border-white/10 bg-white/5 flex flex-col items-center justify-center text-center hover:bg-white/10 transition-colors">
-            <BookOpen size={24} className="mb-2" style={{ color: 'var(--color-primary)' }} />
-            <span className="text-2xl font-bold text-gray-900 dark:text-white">{courseStructure?.chapters?.length || 0}</span>
+        {/* Stats Row - All in one line, smaller */}
+        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 md:gap-6 mt-8 pt-6 border-t border-white/10">
+          <div className="flex items-center gap-2 text-sm">
+            <BookOpen size={16} style={{ color: 'var(--color-primary)' }} />
+            <span className="font-semibold text-gray-900 dark:text-white">{courseStructure?.chapters?.length || 0}</span>
             <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Chapters</span>
           </div>
-          <div className="glass-effect rounded-xl p-4 border border-white/10 bg-white/5 flex flex-col items-center justify-center text-center hover:bg-white/10 transition-colors">
-            <Play size={24} className="mb-2" style={{ color: 'var(--color-primary)' }} />
-            <span className="text-2xl font-bold text-gray-900 dark:text-white">{totalLessons}</span>
+          <div className="flex items-center gap-2 text-sm">
+            <Play size={16} style={{ color: 'var(--color-primary)' }} />
+            <span className="font-semibold text-gray-900 dark:text-white">{totalLessons}</span>
             <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Lessons</span>
           </div>
-          <div className="glass-effect rounded-xl p-4 border border-white/10 bg-white/5 flex flex-col items-center justify-center text-center hover:bg-white/10 transition-colors">
-            <Clock size={24} className="mb-2" style={{ color: 'var(--color-primary)' }} />
-            <span className="text-2xl font-bold text-gray-900 dark:text-white">{course.duration_hours || 0}h</span>
+          <div className="flex items-center gap-2 text-sm">
+            <Clock size={16} style={{ color: 'var(--color-primary)' }} />
+            <span className="font-semibold text-gray-900 dark:text-white">{course.duration_hours || 0}h</span>
             <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Duration</span>
           </div>
-          <div className="glass-effect rounded-xl p-4 border border-white/10 bg-white/5 flex flex-col items-center justify-center text-center hover:bg-white/10 transition-colors">
-            <TrendingUp size={24} className="mb-2" style={{ color: 'var(--color-primary)' }} />
-            <span className="text-2xl font-bold text-gray-900 dark:text-white">{course.xp_threshold || 100}</span>
+          <div className="flex items-center gap-2 text-sm">
+            <TrendingUp size={16} style={{ color: 'var(--color-primary)' }} />
+            <span className="font-semibold text-gray-900 dark:text-white">{course.xp_threshold || 100}</span>
             <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total XP</span>
           </div>
         </div>
@@ -315,12 +315,12 @@ const CourseDetailPage = () => {
           </div>
         )}
 
-        {/* Action Button */}
-        <div className="mt-8">
+        {/* Action Button - Mobile Optimized */}
+        <div className="mt-6 sm:mt-8">
           <button
             onClick={handleStartCourse}
             disabled={!isUnlocked}
-            className={`w-full lg:w-auto px-10 py-4 rounded-xl font-bold text-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3 shadow-xl ${isUnlocked
+            className={`w-full lg:w-auto px-6 sm:px-10 py-3 sm:py-4 rounded-xl font-bold text-base sm:text-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 sm:gap-3 shadow-xl min-h-[48px] ${isUnlocked
               ? 'text-white'
               : 'bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
               }`}

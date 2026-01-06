@@ -11,6 +11,12 @@
   height: 100%;
 }
 
+.streak-content-top {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
 /* Fire icon */
 .streak-icon-container {
   position: relative;
@@ -110,17 +116,60 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+  .streak-card {
+    width: 100%;
+    max-width: 100%;
+    min-height: 70px;
+    padding: 6px;
+  }
+
+  .streak-content {
+    gap: 4px;
+  }
+
+  .streak-content-top {
+    gap: 3px;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .streak-icon-container {
+    margin-bottom: 1px;
+  }
+
   .streak-icon {
-    width: 28px;
-    height: 28px;
+    width: 14px;
+    height: 14px;
+  }
+
+  .streak-glow {
+    width: 18px;
+    height: 18px;
   }
 
   .streak-number {
-    font-size: 32px;
+    font-size: 14px;
+    text-align: center;
   }
 
   .streak-label {
-    font-size: 11px;
+    font-size: 7px;
+    text-align: center;
+    letter-spacing: 0.02em;
+  }
+
+  .streak-record {
+    padding: 2px 3px;
+    font-size: 6px;
+    margin-top: auto;
+  }
+
+  .streak-record-label {
+    font-size: 5px;
+  }
+
+  .streak-record-number {
+    font-size: 6px;
   }
 }
 

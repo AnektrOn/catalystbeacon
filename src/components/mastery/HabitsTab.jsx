@@ -399,7 +399,7 @@ const HabitsTab = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: 'var(--color-primary)' }}></div>
         <span className="ml-2 text-gray-600">Loading habits...</span>
       </div>
     );
@@ -413,7 +413,10 @@ const HabitsTab = () => {
           <div className="text-sm text-gray-600">{error}</div>
           <button 
             onClick={() => window.location.reload()} 
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            className="mt-4 px-4 py-2 text-white rounded transition-colors"
+            style={{ background: 'var(--gradient-primary)' }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
           >
             Retry
           </button>
@@ -554,7 +557,7 @@ const HabitsTab = () => {
             {personalHabits.map(habit => {
               const IconComponent = habit.icon;
               return (
-                <div key={habit.id} className="bg-blue-900 rounded-lg p-4 shadow-sm w-80">
+                <div key={habit.id} className="rounded-lg p-4 shadow-sm w-80 glass-effect" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 80%, transparent)' }}>
                   <div className="flex items-center justify-between">
                     {/* Left Section - Icon, Title, and Completion Button */}
                     <div className="flex items-center space-x-3">
@@ -566,9 +569,12 @@ const HabitsTab = () => {
                         onClick={() => completeHabit(habit.id)}
                         className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
                           habit.completed_today
-                            ? 'bg-blue-600 text-white'
-                            : 'border-2 border-white text-white hover:bg-white hover:text-blue-900'
+                            ? 'text-white'
+                            : 'border-2 border-white text-white hover:bg-white'
                         }`}
+                        style={habit.completed_today ? { background: 'var(--gradient-primary)' } : {}}
+                        onMouseEnter={!habit.completed_today ? (e) => e.currentTarget.style.color = 'var(--color-primary)' : undefined}
+                        onMouseLeave={!habit.completed_today ? (e) => e.currentTarget.style.color = 'white' : undefined}
                         aria-label={habit.completed_today ? `Mark ${habit.title} as incomplete` : `Complete ${habit.title}`}
                         aria-pressed={habit.completed_today}
                       >
@@ -621,18 +627,20 @@ const HabitsTab = () => {
 
           {personalHabits.length === 0 && (
             <div className="glass-card p-8 text-center">
-              <Target size={48} className="mx-auto text-gray-400 mb-4"  aria-hidden="true"/>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              <Target size={48} className="mx-auto mb-4" style={{ color: 'var(--text-secondary)' }} aria-hidden="true"/>
+              <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
                 No habits yet
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Start building your habits by adding from the library or creating custom ones.
+              <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>
+                Start building your habits by adding from the library or creating custom ones. Every journey begins with a single step!
               </p>
               <button
                 onClick={() => setActiveTab('library')}
                 className="glass-primary-btn"
                 aria-label="Browse habits library"
-               role="tab" aria-selected={activeTab === 'library'} aria-label="Habits Library" aria-label="Browse habits library">
+                role="tab" 
+                aria-selected={activeTab === 'library'}
+              >
                 Browse Library
               </button>
             </div>
@@ -659,7 +667,7 @@ const HabitsTab = () => {
                       {habit.description}
                     </p>
                     <div className="flex items-center space-x-4 mt-2">
-                      <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                      <span className="text-xs font-medium" style={{ color: 'var(--color-primary)' }}>
                         +{habit.xp_reward} XP
                       </span>
                       <span className="text-xs text-gray-500 dark:text-gray-400">

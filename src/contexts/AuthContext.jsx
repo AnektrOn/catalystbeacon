@@ -261,16 +261,22 @@ export const AuthProvider = ({ children }) => {
         setUser(session?.user ?? null)
         if (session?.user) {
           console.log('📥 AuthContext: Fetching profile for user:', session.user.id)
-          // Fetch profile with its own timeout, but ensure loading is cleared
+          // Fetch profile with its own timeout, but ensure loading is cleared ONLY after profile is loaded
           fetchProfile(session.user.id)
             .then(() => {
-              console.log('✅ AuthContext: Profile fetch completed')
+              console.log('✅ AuthContext: Profile fetch completed - user data fully loaded')
               isInitializedRef.current = true
-              clearLoadingSafely()
+              // Wait a bit to ensure profile state is updated before clearing loading
+              setTimeout(() => {
+                clearLoadingSafely()
+              }, 200)
             })
             .catch((err) => {
               console.error('❌ AuthContext: Profile fetch error:', err)
-              clearLoadingSafely()
+              // Even on error, wait a bit to ensure state is stable
+              setTimeout(() => {
+                clearLoadingSafely()
+              }, 500)
             })
         } else {
           console.log('✅ AuthContext: No user, setting loading to false')
@@ -294,6 +300,18 @@ export const AuthProvider = ({ children }) => {
         async (event, session) => {
         console.log('🔄 AuthContext: Auth state changed:', event, session?.user ? 'User found' : 'No user')
         
+        // Handle INITIAL_SESSION first - this fires immediately when the app loads
+        // If there's no session, we can immediately clear loading without waiting
+        if (event === 'INITIAL_SESSION') {
+          if (!session?.user) {
+            console.log('✅ AuthContext: INITIAL_SESSION with no user - clearing loading immediately')
+            setLoading(false)
+            isInitializedRef.current = true
+            return
+          }
+          // If there is a session, continue with normal flow below
+        }
+        
         // Handle different auth events
         if (event === 'SIGNED_OUT') {
           // Explicit sign out - clear everything
@@ -311,7 +329,7 @@ export const AuthProvider = ({ children }) => {
           return
         }
         
-        // For INITIAL_SESSION, SIGNED_IN, or TOKEN_REFRESHED with session
+        // For INITIAL_SESSION with session, SIGNED_IN, or TOKEN_REFRESHED with session
         setUser(session?.user ?? null)
         
         if (session?.user) {
@@ -322,11 +340,6 @@ export const AuthProvider = ({ children }) => {
             await fetchProfile(session.user.id)
           }
           isInitializedRef.current = true
-        } else if (event === 'INITIAL_SESSION') {
-          // INITIAL_SESSION with no session - don't clear profile, just set loading to false
-          // This happens during navigation and we want to preserve state
-          setLoading(false)
-          return
         }
         
         console.log('✅ AuthContext: Auth state change completed, setting loading to false')
