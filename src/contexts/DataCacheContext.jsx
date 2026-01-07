@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
+import { logDebug, logWarn, logError } from '../utils/logger'
 
 const DataCacheContext = createContext(null)
 
@@ -28,14 +29,14 @@ export const DataCacheProvider = ({ children }) => {
         const cacheAge = parsed.timestamp ? Date.now() - parsed.timestamp : Infinity
         if (cacheAge < 3600000) { // 1 hour
           setCache(parsed.data || {})
-          console.log('📦 DataCache: Restored cache from sessionStorage', Object.keys(parsed.data || {}).length, 'keys')
+          logDebug('📦 DataCache: Restored cache from sessionStorage', Object.keys(parsed.data || {}).length, 'keys')
         } else {
-          console.log('📦 DataCache: Cache expired, clearing')
+          logDebug('📦 DataCache: Cache expired, clearing')
           sessionStorage.removeItem('app_data_cache')
         }
       }
     } catch (error) {
-      console.warn('📦 DataCache: Error loading from sessionStorage:', error)
+      logWarn('📦 DataCache: Error loading from sessionStorage:', error)
     }
   }, [])
 
@@ -48,7 +49,7 @@ export const DataCacheProvider = ({ children }) => {
       }
       sessionStorage.setItem('app_data_cache', JSON.stringify(toStore))
     } catch (error) {
-      console.warn('📦 DataCache: Error saving to sessionStorage:', error)
+      logWarn('📦 DataCache: Error saving to sessionStorage:', error)
       // If storage is full, clear old cache
       try {
         sessionStorage.removeItem('app_data_cache')
@@ -58,7 +59,7 @@ export const DataCacheProvider = ({ children }) => {
         }
         sessionStorage.setItem('app_data_cache', JSON.stringify(toStore))
       } catch (e) {
-        console.warn('📦 DataCache: Could not save cache, storage may be full')
+        logWarn('📦 DataCache: Could not save cache, storage may be full')
       }
     }
   }, [cache])
@@ -105,10 +106,10 @@ export const DataCacheProvider = ({ children }) => {
       if (cached) {
         const age = Date.now() - cached.timestamp
         if (age < cached.ttl) {
-          console.log(`✅ DataCache: Using cached data for ${key} (age: ${Math.round(age / 1000)}s)`)
+          logDebug(`✅ DataCache: Using cached data for ${key} (age: ${Math.round(age / 1000)}s)`)
           return { data: cached.data, fromCache: true }
         } else {
-          console.log(`⏰ DataCache: Cache expired for ${key}, fetching fresh data`)
+          logDebug(`⏰ DataCache: Cache expired for ${key}, fetching fresh data`)
         }
       }
     }
@@ -128,11 +129,11 @@ export const DataCacheProvider = ({ children }) => {
         console.log(`✅ DataCache: Fetched and cached ${key}`)
         return { data, fromCache: false }
       } catch (error) {
-        console.error(`❌ DataCache: Error fetching ${key}:`, error)
+        logError(error, `DataCache - Error fetching ${key}`)
         // Return cached data if available (even if expired) as fallback
         const cached = cache[key]
         if (cached?.data) {
-          console.log(`📦 DataCache: Using stale cache for ${key} due to error`)
+          logDebug(`📦 DataCache: Using stale cache for ${key} due to error`)
           return { data: cached.data, fromCache: true, error }
         }
         throw error

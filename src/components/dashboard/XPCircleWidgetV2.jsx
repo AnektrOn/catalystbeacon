@@ -1,6 +1,6 @@
 import React from 'react'
 import ModernCard from './ModernCard'
-import { Award, TrendingUp } from 'lucide-react'
+import { Award } from 'lucide-react'
 import './XPCircleWidgetV2.css'
 
 /**
@@ -49,7 +49,7 @@ const XPCircleWidgetV2 = ({
       {/* Central Circle Visualization */}
       <div className="xp-circle-container">
         <div className="xp-circle-wrapper">
-          <svg className="w-full h-full transform -rotate-90">
+          <svg className="w-full h-full transform -rotate-90" viewBox="0 0 256 256">
             <defs>
               {/* Gradient for progress arc */}
               <linearGradient id="xpProgressGradient" x1="0%" y1="0%" x2="100%" y2="100%">

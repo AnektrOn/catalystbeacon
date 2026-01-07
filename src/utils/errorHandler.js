@@ -1,6 +1,7 @@
 /**
  * Standardized error handling utility for the mastery system
  */
+import { logError } from './logger';
 
 /**
  * Handle errors consistently across all components
@@ -11,7 +12,7 @@
  * @returns {string} User-friendly error message
  */
 export const handleError = (error, context, setError, setLoading = null) => {
-  console.error(`Error in ${context}:`, error);
+  logError(error, context);
   
   // Set loading to false if provided
   if (setLoading) {

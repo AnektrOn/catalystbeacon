@@ -14,15 +14,92 @@ serve(async (req) => {
   }
 
   try {
+    // Validate required environment variables
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
+    const siteUrl = Deno.env.get('SITE_URL')
+
+    if (!stripeSecretKey || stripeSecretKey === '') {
+      console.error('❌ STRIPE_SECRET_KEY is missing or empty')
+      return new Response(
+        JSON.stringify({ 
+          error: 'Server configuration error: STRIPE_SECRET_KEY is not set',
+          details: 'Please configure STRIPE_SECRET_KEY in Supabase Edge Function secrets'
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    if (!supabaseUrl || supabaseUrl === '') {
+      console.error('❌ SUPABASE_URL is missing or empty')
+      return new Response(
+        JSON.stringify({ 
+          error: 'Server configuration error: SUPABASE_URL is not set',
+          details: 'Please configure SUPABASE_URL in Supabase Edge Function secrets'
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    if (!supabaseServiceRoleKey || supabaseServiceRoleKey === '') {
+      console.error('❌ SUPABASE_SERVICE_ROLE_KEY is missing or empty')
+      return new Response(
+        JSON.stringify({ 
+          error: 'Server configuration error: SUPABASE_SERVICE_ROLE_KEY is not set',
+          details: 'Please configure SUPABASE_SERVICE_ROLE_KEY in Supabase Edge Function secrets'
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    if (!supabaseAnonKey || supabaseAnonKey === '') {
+      console.error('❌ SUPABASE_ANON_KEY is missing or empty')
+      return new Response(
+        JSON.stringify({ 
+          error: 'Server configuration error: SUPABASE_ANON_KEY is not set',
+          details: 'Please configure SUPABASE_ANON_KEY in Supabase Edge Function secrets'
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    if (!siteUrl || siteUrl === '') {
+      console.error('❌ SITE_URL is missing or empty')
+      return new Response(
+        JSON.stringify({ 
+          error: 'Server configuration error: SITE_URL is not set',
+          details: 'Please configure SITE_URL in Supabase Edge Function secrets'
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
     // Initialize Stripe
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
+    const stripe = new Stripe(stripeSecretKey, {
       apiVersion: '2023-10-16',
     })
 
     // Initialize Supabase client with service role for admin operations
     const supabaseServiceClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      supabaseUrl,
+      supabaseServiceRoleKey
     )
 
     // Get user from Authorization header
@@ -39,8 +116,8 @@ serve(async (req) => {
 
     // Initialize client with user's token for auth operations
     const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      supabaseUrl,
+      supabaseAnonKey,
       {
         global: {
           headers: { Authorization: authHeader },
@@ -140,16 +217,26 @@ serve(async (req) => {
         },
       ],
       mode: 'subscription',
-      success_url: `${Deno.env.get('SITE_URL')}/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${Deno.env.get('SITE_URL')}/pricing?payment=cancelled`,
+      success_url: `${siteUrl}/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${siteUrl}/pricing?payment=cancelled`,
       metadata: {
         userId: user.id,
         planType: planType,
       },
     })
 
+    console.log('✅ Checkout session created successfully:', { 
+      sessionId: session.id, 
+      hasUrl: !!session.url 
+    })
+
+    // Return response in format expected by PricingPage (both id and sessionId for compatibility)
     return new Response(
-      JSON.stringify({ sessionId: session.id, url: session.url }),
+      JSON.stringify({ 
+        id: session.id,
+        sessionId: session.id, 
+        url: session.url 
+      }),
       { 
         status: 200, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -157,9 +244,23 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Error creating checkout session:', error)
+    console.error('❌ Error creating checkout session:', error)
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    })
+    
+    // Return detailed error for debugging (but don't expose sensitive info)
+    const errorMessage = error.message || 'Unknown error occurred'
+    const isStripeError = error.type && error.type.startsWith('Stripe')
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: isStripeError ? `Stripe error: ${errorMessage}` : errorMessage,
+        type: error.type || 'UnknownError',
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

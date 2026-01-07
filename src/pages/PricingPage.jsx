@@ -155,14 +155,25 @@ const PricingPage = () => {
           console.log('Checkout session created:', sessionData)
           
           if (sessionData.error) {
-            throw new Error(sessionData.error)
+            // Show detailed error message to user
+            const errorMsg = sessionData.details 
+              ? `${sessionData.error}: ${sessionData.details}`
+              : sessionData.error
+            console.error('Edge function returned error:', sessionData)
+            toast.error(errorMsg || 'Failed to create checkout session')
+            throw new Error(errorMsg || 'FALLBACK_TO_API_SERVER')
           }
-          if (!sessionData.url) {
+          
+          // Handle both response formats: {id, url} or {sessionId, url}
+          const checkoutUrl = sessionData.url || sessionData.checkoutUrl
+          if (!checkoutUrl) {
+            console.error('No checkout URL in response:', sessionData)
             throw new Error('No checkout URL received from server')
           }
           
           // Redirect to Stripe Checkout
-          window.location.href = sessionData.url
+          console.log('Redirecting to Stripe Checkout:', checkoutUrl)
+          window.location.href = checkoutUrl
           return
         } catch (supabaseError) {
           console.error('Supabase Edge Function error:', supabaseError)
@@ -235,16 +246,25 @@ const PricingPage = () => {
         console.log('Checkout session received:', { id: session.id, hasUrl: !!session.url })
 
         if (session.error) {
-          throw new Error(session.error)
+          const errorMsg = session.details 
+            ? `${session.error}: ${session.details}`
+            : session.error
+          console.error('API server returned error:', session)
+          toast.error(errorMsg || 'Failed to create checkout session')
+          throw new Error(errorMsg)
         }
 
-        if (!session.url) {
+        // Handle both response formats: {id, url} or {sessionId, url}
+        const checkoutUrl = session.url || session.checkoutUrl
+        if (!checkoutUrl) {
+          console.error('No checkout URL in response:', session)
+          toast.error('No checkout URL received from server')
           throw new Error('No checkout URL received from server')
         }
 
         // Redirect to Stripe Checkout using the session URL
-        console.log('Redirecting to Stripe Checkout...')
-        window.location.href = session.url
+        console.log('Redirecting to Stripe Checkout:', checkoutUrl)
+        window.location.href = checkoutUrl
       } catch (apiError) {
         console.error('API server error:', apiError)
         throw apiError // Re-throw to be caught by outer catch

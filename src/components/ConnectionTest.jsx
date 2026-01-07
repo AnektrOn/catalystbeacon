@@ -14,7 +14,7 @@ const ConnectionTest = () => {
 
     // Test 1: Basic Supabase connection
     try {
-      const { data, error } = await supabase.auth.getSession()
+      const { error } = await supabase.auth.getSession()
       results.auth = { success: !error, error: error?.message }
     } catch (error) {
       results.auth = { success: false, error: error.message }
@@ -22,7 +22,7 @@ const ConnectionTest = () => {
 
     // Test 2: Database connection (profiles table)
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('profiles')
         .select('count')
         .limit(1)

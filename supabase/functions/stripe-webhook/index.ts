@@ -71,19 +71,39 @@ serve(async (req) => {
           }
 
           // Determine role based on plan type
-          let role = 'Student' // default
+          let newRole = 'Student' // default
           if (planType === 'teacher') {
-            role = 'Teacher'
+            newRole = 'Teacher'
           }
 
-          // Update profile
+          // Get current user profile to check if they're an Admin
+          const { data: currentProfile } = await supabaseClient
+            .from('profiles')
+            .select('role')
+            .eq('id', userId)
+            .single()
+
+          const currentRole = currentProfile?.role || 'Free'
+          console.log('Current user role:', currentRole, 'New role would be:', newRole)
+
+          // Prepare update object - only update role if user is NOT an Admin
+          const updateData: any = {
+            subscription_status: 'active',
+            subscription_id: subscription.id,
+          }
+
+          // Only update role if user is not an Admin (preserve Admin role)
+          if (currentRole !== 'Admin') {
+            updateData.role = newRole
+            console.log('Updating role from', currentRole, 'to', newRole)
+          } else {
+            console.log('⚠️ User is Admin - preserving Admin role, only updating subscription info')
+          }
+
+          // Update profile with subscription info (and role only if not Admin)
           await supabaseClient
             .from('profiles')
-            .update({
-              role: role,
-              subscription_status: 'active',
-              subscription_id: subscription.id,
-            })
+            .update(updateData)
             .eq('id', userId)
 
           // Create subscription record
@@ -153,14 +173,33 @@ serve(async (req) => {
             })
             .eq('stripe_subscription_id', subscription.id)
 
-          // Downgrade user to Free
+          // Get current role to check if user is Admin
+          const { data: currentProfile } = await supabaseClient
+            .from('profiles')
+            .select('role')
+            .eq('id', profile.id)
+            .single()
+
+          const currentRole = currentProfile?.role || 'Free'
+          
+          // Prepare update - only downgrade role if user is NOT an Admin
+          const updateData: any = {
+            subscription_status: 'cancelled',
+            subscription_id: null,
+          }
+
+          // Only downgrade to Free if user is not an Admin
+          if (currentRole !== 'Admin') {
+            updateData.role = 'Free'
+            console.log('Downgrading role from', currentRole, 'to Free')
+          } else {
+            console.log('⚠️ User is Admin - preserving Admin role, only updating subscription status')
+          }
+
+          // Update profile
           await supabaseClient
             .from('profiles')
-            .update({
-              role: 'Free',
-              subscription_status: 'cancelled',
-              subscription_id: null,
-            })
+            .update(updateData)
             .eq('id', profile.id)
         }
         break

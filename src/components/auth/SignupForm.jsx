@@ -23,6 +23,7 @@ const SignupForm = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [resending, setResending] = useState(false)
   
   const { signUp } = useAuth()
   const navigate = useNavigate()

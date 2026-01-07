@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useDataCache } from '../contexts/DataCacheContext'
+import { logError } from '../utils/logger'
 
 /**
  * Hook for fetching and caching data
@@ -53,7 +54,7 @@ export const useCachedData = (cacheKey, fetchFn, dependencies = [], options = {}
       setData(result.data)
       setFromCache(result.fromCache || false)
     } catch (err) {
-      console.error(`❌ useCachedData: Error fetching ${cacheKey}:`, err)
+      logError(err, `useCachedData - Error fetching ${cacheKey}`)
       setError(err)
       // Try to use stale cache as fallback
       const cached = getCached(cacheKey)
@@ -64,7 +65,7 @@ export const useCachedData = (cacheKey, fetchFn, dependencies = [], options = {}
     } finally {
       setLoading(false)
     }
-  }, [cacheKey, fetchFn, fetchWithCache, getCached, ttl, enabled, force])
+  }, [cacheKey, fetchFn, fetchWithCache, getCached, ttl, enabled])
 
   useEffect(() => {
     fetchData(force)

@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabaseClient';
+import { logDebug, logError } from '../utils/logger';
 
 class StellarMapService {
   /**
@@ -19,7 +20,7 @@ class StellarMapService {
         .order('display_order', { ascending: true });
 
       if (error) {
-        console.error(`[StellarMapService] Error fetching families for level "${level}":`, error);
+        logError(`[StellarMapService] Error fetching families for level "${level}":`, error);
         throw error;
       }
 
@@ -29,7 +30,7 @@ class StellarMapService {
 
       return { data: data || [], error: null };
     } catch (error) {
-      console.error('[StellarMapService] getFamiliesByLevel error:', error);
+      logError(error, 'StellarMapService - getFamiliesByLevel error');
       return { data: null, error: error instanceof Error ? error : new Error(String(error)) };
     }
   }
@@ -93,7 +94,7 @@ class StellarMapService {
           }
         });
 
-        console.log(`[StellarMapService] getFamiliesWithConstellations for level "${level}" (normalized to "${finalLevel}"):`, {
+        logDebug(`[StellarMapService] getFamiliesWithConstellations for level "${level}" (normalized to "${finalLevel}"):`, {
           familiesFound: data?.length || 0,
           totalConstellationsBeforeFilter: totalConstellationsBefore,
           constellationsByLevel: constellationsByLevel,
@@ -105,7 +106,7 @@ class StellarMapService {
 
       return { data, error: null };
     } catch (error) {
-      console.error('Error fetching families with constellations:', error);
+      logError(error, 'StellarMapService - Error fetching families with constellations');
       return { data: null, error };
     }
   }
@@ -126,7 +127,7 @@ class StellarMapService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error fetching constellations by family:', error);
+      logError(error, 'StellarMapService - Error fetching constellations by family');
       return { data: null, error };
     }
   }
@@ -147,7 +148,7 @@ class StellarMapService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error fetching nodes by constellation:', error);
+      logError(error, 'StellarMapService - Error fetching nodes by constellation');
       return { data: null, error };
     }
   }
@@ -201,7 +202,7 @@ class StellarMapService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error fetching user visible nodes:', error);
+      logError(error, 'StellarMapService - Error fetching user visible nodes');
       return { data: null, error };
     }
   }
@@ -232,7 +233,7 @@ class StellarMapService {
       // First get families with constellations (pass normalized level)
       const { data: families, error: familiesError } = await this.getFamiliesWithConstellations(finalLevel);
       if (familiesError) {
-        console.error('[StellarMapService] Failed to fetch families:', familiesError);
+        logError(familiesError, 'StellarMapService - Failed to fetch families');
         throw familiesError;
       }
 
@@ -312,7 +313,7 @@ class StellarMapService {
         .order('difficulty', { ascending: true });
 
       if (nodesError) {
-        console.error('[StellarMapService] Failed to fetch nodes:', nodesError);
+        logError(nodesError, 'StellarMapService - Failed to fetch nodes');
         throw nodesError;
       }
 
@@ -330,7 +331,7 @@ class StellarMapService {
           `, { count: 'exact', head: true })
           .eq('constellations.level', level);
         
-        console.log(`[StellarMapService] Query results for level "${level}":`, {
+        logDebug(`[StellarMapService] Query results for level "${level}":`, {
           totalNodesInLevel: totalNodeCount || 0,
           nodesAfterXPFilter: nodes?.length || 0,
           userXP: xp,
@@ -464,7 +465,7 @@ class StellarMapService {
       }, 0);
 
       if (isDevelopment) {
-        console.log(
+        logDebug(
           `[StellarMapService] Data fetch summary for level "${level}":`,
           {
             familiesFound: families.length,
@@ -512,14 +513,14 @@ class StellarMapService {
         }
       }
 
-      console.log(
+      logDebug(
         `[StellarMapService] Loaded ${totalNodes} validated nodes for ${level} (XP: ${xp})` +
         (misgroupedNodes.length > 0 ? `, ${misgroupedNodes.length} misgrouped nodes excluded` : '')
       );
 
       return { data: grouped, error: null };
     } catch (error) {
-      console.error('[StellarMapService] getNodesGroupedByHierarchy error:', error);
+      logError(error, 'StellarMapService - getNodesGroupedByHierarchy error');
       return { 
         data: null, 
         error: error instanceof Error ? error : new Error(String(error))
@@ -558,7 +559,7 @@ class StellarMapService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error fetching node by ID:', error);
+      logError(error, 'StellarMapService - Error fetching node by ID');
       return { data: null, error };
     }
   }
@@ -588,7 +589,7 @@ class StellarMapService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error fetching constellation metadata:', error);
+      logError(error, 'StellarMapService - Error fetching constellation metadata');
       return { data: null, error };
     }
   }
@@ -615,7 +616,7 @@ class StellarMapService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error checking node completion:', error);
+      logError(error, 'StellarMapService - Error checking node completion');
       return { data: null, error };
     }
   }
@@ -662,7 +663,7 @@ class StellarMapService {
       );
 
       if (xpError) {
-        console.error('Error awarding XP:', xpError);
+        logError(xpError, 'StellarMapService - Error awarding XP');
         // Continue with completion tracking even if XP award fails
       }
 
@@ -678,7 +679,7 @@ class StellarMapService {
         .single();
 
       if (completionError) {
-        console.error('Error recording completion:', completionError);
+        logError(completionError, 'StellarMapService - Error recording completion');
         return { data: null, error: completionError };
       }
 
@@ -691,7 +692,7 @@ class StellarMapService {
         error: null 
       };
     } catch (error) {
-      console.error('Error completing stellar node:', error);
+      logError(error, 'StellarMapService - Error completing stellar node');
       return { data: null, error: error instanceof Error ? error : new Error(String(error)) };
     }
   }
@@ -730,7 +731,7 @@ class StellarMapService {
         error: null
       };
     } catch (error) {
-      console.error('Error getting node with completion status:', error);
+      logError(error, 'StellarMapService - Error getting node with completion status');
       return { data: null, error: error instanceof Error ? error : new Error(String(error)) };
     }
   }
@@ -780,7 +781,7 @@ class StellarMapService {
 
       return { data: completionMap, error: null };
     } catch (error) {
-      console.error('Error fetching bulk completion status:', error);
+      logError(error, 'StellarMapService - Error fetching bulk completion status');
       return { data: new Map(), error: error instanceof Error ? error : new Error(String(error)) };
     }
   }

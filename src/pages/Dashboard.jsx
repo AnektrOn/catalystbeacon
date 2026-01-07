@@ -663,17 +663,43 @@ const Dashboard = () => {
       }
       
       toast.success('🎉 Payment completed! Processing your subscription...')
+      console.log('🔄 Processing payment success for session:', sessionId)
+      console.log('📍 API URL:', API_URL)
 
       fetch(`${API_URL}/api/payment-success?session_id=${sessionId}`)
-        .then(response => response.json())
+        .then(async response => {
+          console.log('📡 Payment success response status:', response.status)
+          
+          if (!response.ok) {
+            const errorText = await response.text()
+            console.error('❌ Payment success endpoint error:', response.status, errorText)
+            throw new Error(`Server error: ${response.status} - ${errorText}`)
+          }
+          
+          return response.json()
+        })
         .then(data => {
-          toast.success(`✅ Subscription activated! Your role is now: ${data.role}`)
+          console.log('✅ Payment success data received:', data)
+          
+          if (data.error) {
+            console.error('❌ Error in payment success response:', data.error)
+            toast.error(`⚠️ ${data.error}`)
+          } else {
+            toast.success(`✅ Subscription activated! Your role is now: ${data.role || 'Student'}`)
+          }
+          
+          // Refresh profile to get updated data
           fetchProfile(user.id)
           navigate('/dashboard', { replace: true })
         })
         .catch(error => {
-          console.error('Error processing payment success:', error)
-          toast.error('⚠️ Payment completed but there was an error updating your subscription.')
+          console.error('❌ Error processing payment success:', error)
+          console.error('Error details:', {
+            message: error.message,
+            stack: error.stack
+          })
+          toast.error('⚠️ Payment completed but there was an error updating your subscription. Please contact support if the issue persists.')
+          // Still refresh profile in case webhook updated it
           fetchProfile(user.id)
           navigate('/dashboard', { replace: true })
         })

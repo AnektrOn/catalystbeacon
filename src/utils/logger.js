@@ -1,40 +1,93 @@
 /**
- * Production-safe logger utility
- * Only logs in development mode, prevents console.log in production
+ * Centralized logging utility
+ * Replaces console statements with a configurable logging system
+ * In production, logs can be sent to an external service (e.g., Sentry, LogRocket)
  */
 
-const isDevelopment = process.env.NODE_ENV === 'development'
+const LOG_LEVELS = {
+  DEBUG: 0,
+  INFO: 1,
+  WARN: 2,
+  ERROR: 3,
+  NONE: 4
+};
 
-export const logger = {
-  log: (...args) => {
-    if (isDevelopment) {
-      console.log(...args)
-    }
-  },
+// Get log level from environment or default to INFO in production, DEBUG in development
+const getLogLevel = () => {
+  if (process.env.NODE_ENV === 'production') {
+    return process.env.REACT_APP_LOG_LEVEL 
+      ? LOG_LEVELS[process.env.REACT_APP_LOG_LEVEL.toUpperCase()] 
+      : LOG_LEVELS.WARN; // Only warnings and errors in production
+  }
+  return LOG_LEVELS.DEBUG; // All logs in development
+};
+
+const currentLogLevel = getLogLevel();
+
+/**
+ * Log debug messages (only in development)
+ */
+export const logDebug = (...args) => {
+  if (currentLogLevel <= LOG_LEVELS.DEBUG) {
+    console.debug('[DEBUG]', ...args);
+  }
+};
+
+/**
+ * Log info messages
+ */
+export const logInfo = (...args) => {
+  if (currentLogLevel <= LOG_LEVELS.INFO) {
+    console.info('[INFO]', ...args);
+  }
+};
+
+/**
+ * Log warning messages
+ */
+export const logWarn = (...args) => {
+  if (currentLogLevel <= LOG_LEVELS.WARN) {
+    console.warn('[WARN]', ...args);
+  }
   
-  warn: (...args) => {
-    if (isDevelopment) {
-      console.warn(...args)
-    }
-  },
+  // In production, send warnings to error tracking service
+  if (process.env.NODE_ENV === 'production' && window.Sentry) {
+    window.Sentry.captureMessage(args.join(' '), 'warning');
+  }
+};
+
+/**
+ * Log error messages
+ */
+export const logError = (error, context = '') => {
+  if (currentLogLevel <= LOG_LEVELS.ERROR) {
+    const message = context ? `[ERROR] ${context}:` : '[ERROR]';
+    console.error(message, error);
+  }
   
-  error: (...args) => {
-    // Always log errors, even in production
-    console.error(...args)
-  },
-  
-  debug: (...args) => {
-    if (isDevelopment) {
-      console.debug(...args)
-    }
-  },
-  
-  info: (...args) => {
-    if (isDevelopment) {
-      console.info(...args)
+  // In production, send errors to error tracking service
+  if (process.env.NODE_ENV === 'production') {
+    if (window.Sentry) {
+      window.Sentry.captureException(error, {
+        tags: { context }
+      });
     }
   }
-}
+};
 
-export default logger
+/**
+ * Log with automatic level detection
+ * Replaces console.log, console.warn, console.error
+ */
+export const log = {
+  debug: logDebug,
+  info: logInfo,
+  warn: logWarn,
+  error: logError,
+  
+  // Convenience method that matches console API
+  log: logInfo
+};
 
+// Default export for easy migration
+export default log;

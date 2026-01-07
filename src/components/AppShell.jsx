@@ -225,19 +225,7 @@ const AppShell = () => {
 
   // Debug: Log background image state
   useEffect(() => {
-    if (profile && !isMobile) {
-      const bgElement = document.querySelector('[class*="fixed inset-0"][style*="backgroundImage"]');
-      const computedBg = bgElement ? getComputedStyle(bgElement).backgroundImage : 'not found';
-      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AppShell.jsx:228',message:'Background image debug',data:{hasProfile:!!profile,hasBackgroundImage:!!profile?.background_image,backgroundImageUrl:profile?.background_image,profileId:profile?.id,computedBg,isMobile},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'background-image'})}).catch(()=>{});
-      console.log('🖼️ AppShell Desktop: Background image state:', {
-        hasProfile: !!profile,
-        hasBackgroundImage: !!profile?.background_image,
-        backgroundImageUrl: profile?.background_image,
-        profileId: profile?.id,
-        computedBg,
-        fullProfile: profile
-      });
-    }
+    // Background image is handled via inline styles in the render
   }, [profile, isMobile]);
 
   // #region agent log
@@ -249,7 +237,6 @@ const AppShell = () => {
     const computedColorPrimary = getComputedStyle(root).getPropertyValue('--color-primary').trim();
     const glassCard = document.querySelector('.glass-card-premium, .glass-effect');
     const glassCardBg = glassCard ? getComputedStyle(glassCard).backgroundColor : 'not found';
-    fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AppShell.jsx:214',message:'Render - CSS variables and glass card',data:{isDarkMode,computedBgPrimary,computedBgSecondary,computedTextPrimary,computedColorPrimary,glassCardBg,hasDarkClass:root.classList.contains('dark')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B,C'})}).catch(()=>{});
   }, [isDarkMode]);
   // #endregion
 
@@ -345,27 +332,7 @@ const AppShell = () => {
             bottom: 0,
             pointerEvents: 'none'
           }}
-          ref={(el) => {
-            if (el) {
-              const computed = getComputedStyle(el);
-              fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AppShell.jsx:332',message:'Background div rendered',data:{bgUrl:profile.background_image,computedZIndex:computed.zIndex,computedBg:computed.backgroundImage,computedDisplay:computed.display,computedPosition:computed.position,offsetWidth:el.offsetWidth,offsetHeight:el.offsetHeight},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'background-image'})}).catch(()=>{});
-            }
-          }}
         >
-          {/* #region agent log */}
-          {(() => {
-            const bgUrl = profile.background_image;
-            const img = new Image();
-            img.onload = () => {
-              fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AppShell.jsx:331',message:'Background image loaded',data:{bgUrl,loaded:true,width:img.width,height:img.height},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'background-image'})}).catch(()=>{});
-            };
-            img.onerror = () => {
-              fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AppShell.jsx:331',message:'Background image failed to load',data:{bgUrl,loaded:false,error:'Image load error'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'background-image'})}).catch(()=>{});
-            };
-            img.src = bgUrl;
-            return null;
-          })()}
-          {/* #endregion */}
           <div 
             className="absolute inset-0 backdrop-blur-[1px]"
             style={{
@@ -569,11 +536,15 @@ const AppShell = () => {
         style={{
           left: isSidebarExpanded
             ? 'calc(var(--sidebar-width-expanded) + 32px)'
-            : 'calc(var(--sidebar-width-collapsed) + 32px)'
+            : 'calc(var(--sidebar-width-collapsed) + 32px)',
+          width: isSidebarExpanded
+            ? 'calc(100vw - var(--sidebar-width-expanded) - 32px - 16px)'
+            : 'calc(100vw - var(--sidebar-width-collapsed) - 32px - 16px)',
+          boxSizing: 'border-box'
         }}
       >
         <div className="glass-main-panel">
-          <div className="p-4">
+          <div className="p-4" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
             <Outlet />
           </div>
         </div>

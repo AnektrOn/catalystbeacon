@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabaseClient';
 import skillsService from './skillsService';
+import { logDebug, logError, logWarn } from '../utils/logger';
 
 class MasteryService {
   // ===== HABITS LIBRARY =====
@@ -18,7 +19,7 @@ class MasteryService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error fetching habits library:', error);
+      logError(error, 'masteryService - Error fetching habits library');
       return { data: null, error };
     }
   }
@@ -60,7 +61,7 @@ class MasteryService {
         }
       };
     } catch (error) {
-      console.error('Error fetching user habits:', error);
+      logError(error, 'masteryService - Error fetching user habits');
       return { data: null, error };
     }
   }
@@ -99,7 +100,7 @@ class MasteryService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error adding habit from library:', error);
+      logError(error, 'masteryService - Error adding habit from library');
       return { data: null, error };
     }
   }
@@ -127,7 +128,7 @@ class MasteryService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error creating custom habit:', error);
+      logError(error, 'masteryService - Error creating custom habit');
       return { data: null, error };
     }
   }
@@ -146,7 +147,7 @@ class MasteryService {
       if (error) throw error;
       return { data: { deleted: true }, error: null };
     } catch (error) {
-      console.error('Error deleting user habit:', error);
+      logError(error, 'masteryService - Error deleting user habit');
       return { data: null, error };
     }
   }
@@ -214,22 +215,22 @@ class MasteryService {
       // Award skill points (0.1 per skill)
       const skillTags = habit.habits_library?.skill_tags || [];
       if (skillTags.length > 0) {
-        console.log(`🎯 Awarding 0.1 skill points to ${skillTags.length} skills`);
+        logDebug(`🎯 Awarding 0.1 skill points to ${skillTags.length} skills`);
         await skillsService.awardSkillPoints(userId, skillTags, 0.1);
       }
 
       // Update profile completion statistics
       const statsResult = await this.updateProfileCompletionStats(userId, completionDate);
       if (statsResult.error) {
-        console.error('⚠️ Failed to update profile completion stats:', statsResult.error);
+        logError(statsResult.error, 'masteryService - Failed to update profile completion stats');
         // Don't fail the whole operation, but log the error
       } else {
-        console.log('✅ Profile completion stats updated:', statsResult.data);
+        logDebug('✅ Profile completion stats updated:', statsResult.data);
       }
 
       return { data, error: null };
     } catch (error) {
-      console.error('Error completing habit:', error);
+      logError(error, 'masteryService - Error completing habit');
       return { data: null, error };
     }
   }
@@ -262,7 +263,7 @@ class MasteryService {
 
       return { data, error: null };
     } catch (error) {
-      console.error('Error removing habit completion:', error);
+      logError(error, 'masteryService - Error removing habit completion');
       return { data: null, error };
     }
   }
@@ -284,7 +285,7 @@ class MasteryService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error fetching habit completions:', error);
+      logError(error, 'masteryService - Error fetching habit completions');
       return { data: null, error };
     }
   }
@@ -338,7 +339,7 @@ class MasteryService {
 
       return { data: streak, error: null };
     } catch (error) {
-      console.error('Error calculating habit streak:', error);
+      logError(error, 'masteryService - Error calculating habit streak');
       return { data: 0, error };
     }
   }
@@ -370,7 +371,7 @@ class MasteryService {
       if (updateError) throw updateError;
       return { data: { completionCount, lastCompleted }, error: null };
     } catch (error) {
-      console.error('Error updating habit completion count:', error);
+      logError(error, 'masteryService - Error updating habit completion count');
       return { data: null, error };
     }
   }
@@ -414,7 +415,7 @@ class MasteryService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error awarding XP:', error);
+      logError(error, 'masteryService - Error awarding XP');
       return { data: null, error };
     }
   }
@@ -470,7 +471,7 @@ class MasteryService {
         })
       )].sort().reverse(); // Sort descending (most recent first)
 
-      console.log(`📊 All completion dates (${completionDates.length} unique days):`, completionDates.slice(0, 10));
+      logDebug(`📊 All completion dates (${completionDates.length} unique days):`, completionDates.slice(0, 10));
 
       let streak = 0;
       const now = new Date();
@@ -483,12 +484,12 @@ class MasteryService {
       yesterdayDate.setDate(yesterdayDate.getDate() - 1);
       const yesterdayStrFormatted = yesterdayDate.toISOString().split('T')[0];
       
-      console.log(`📊 Checking streak from today (${todayStr}) or yesterday (${yesterdayStrFormatted})`);
+      logDebug(`📊 Checking streak from today (${todayStr}) or yesterday (${yesterdayStrFormatted})`);
       
       // If not completed today, start from yesterday
       if (!completionDates.includes(todayStr)) {
         checkDate = new Date(yesterdayDate);
-        console.log(`📊 Not completed today, starting from yesterday`);
+        logDebug(`📊 Not completed today, starting from yesterday`);
       }
 
       // Count consecutive days with completions (going backwards)
@@ -497,16 +498,16 @@ class MasteryService {
         const checkDateStr = checkDate.toISOString().split('T')[0];
         if (completionDates.includes(checkDateStr)) {
           streak++;
-          console.log(`📊 Day ${streak}: ${checkDateStr} ✓`);
+          logDebug(`📊 Day ${streak}: ${checkDateStr} ✓`);
           checkDate.setDate(checkDate.getDate() - 1);
         } else {
-          console.log(`📊 Streak broken at: ${checkDateStr} (no completion)`);
+          logDebug(`📊 Streak broken at: ${checkDateStr} (no completion)`);
           break;
         }
         daysChecked++;
       }
 
-      console.log(`📊 Final streak calculation: ${streak} days`);
+      logDebug(`📊 Final streak calculation: ${streak} days`);
 
       // Get current profile to preserve longest_streak
       const { data: currentProfile } = await supabase
@@ -521,7 +522,7 @@ class MasteryService {
       );
 
       // Update profile with all statistics
-      console.log(`📊 Updating profile stats for user ${userId}:`, {
+      logDebug(`📊 Updating profile stats for user ${userId}:`, {
         streak,
         longestStreak,
         todayCompletions,
@@ -544,7 +545,7 @@ class MasteryService {
         updateData.habits_completed_month = monthCompletions;
         updateData.habits_completed_total = totalCompletions;
       } catch (e) {
-        console.warn('⚠️ Some completion stat columns may not exist:', e);
+        logWarn('⚠️ Some completion stat columns may not exist:', e);
       }
 
       const { error: updateError } = await supabase
@@ -553,31 +554,31 @@ class MasteryService {
         .eq('id', userId);
 
       if (updateError) {
-        console.error('❌ Error updating profile completion stats:', updateError);
-        console.error('❌ Update error details:', updateError.message, updateError.code, updateError.details);
+        logError(updateError, 'masteryService - Error updating profile completion stats');
+        logDebug('Update error details:', updateError.message, updateError.code, updateError.details);
         
         // If columns don't exist, provide helpful error message
         if (updateError.message && (updateError.message.includes('does not exist') || updateError.code === 'PGRST204')) {
-          console.error('❌ ============================================');
-          console.error('❌ MISSING DATABASE COLUMNS!');
-          console.error('❌ The profiles table is missing required columns.');
-          console.error('❌');
-          console.error('❌ SOLUTION: Run this SQL in Supabase SQL Editor:');
-          console.error('❌ File: ADD_PROFILE_COMPLETION_STATS.sql');
-          console.error('❌');
-          console.error('❌ This will add: completion_streak, longest_streak,');
-          console.error('❌ habits_completed_today/week/month/total, last_activity_date');
-          console.error('❌ ============================================');
+          logWarn('============================================');
+          logWarn('MISSING DATABASE COLUMNS!');
+          logWarn('The profiles table is missing required columns.');
+          logWarn('');
+          logWarn('SOLUTION: Run this SQL in Supabase SQL Editor:');
+          logWarn('File: ADD_PROFILE_COMPLETION_STATS.sql');
+          logWarn('');
+          logWarn('This will add: completion_streak, longest_streak,');
+          logWarn('habits_completed_today/week/month/total, last_activity_date');
+          logWarn('============================================');
         }
         
         // Don't throw - this is a non-critical update
         return { data: null, error: updateError };
       }
 
-      console.log('✅ Profile completion stats updated successfully');
+      logDebug('✅ Profile completion stats updated successfully');
       return { data: { streak, totalCompletions }, error: null };
     } catch (error) {
-      console.error('Error updating profile completion stats:', error);
+      logError(error, 'masteryService - Error updating profile completion stats');
       // Don't throw - this is a non-critical update
       return { data: null, error };
     }
@@ -611,7 +612,7 @@ class MasteryService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error fetching calendar events:', error);
+      logError(error, 'masteryService - Error fetching calendar events');
       return { data: null, error };
     }
   }
@@ -633,7 +634,7 @@ class MasteryService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error fetching toolbox library:', error);
+      logError(error, 'masteryService - Error fetching toolbox library');
       return { data: null, error };
     }
   }
@@ -676,7 +677,7 @@ class MasteryService {
         }
       };
     } catch (error) {
-      console.error('Error fetching user toolbox items:', error);
+      logError(error, 'masteryService - Error fetching user toolbox items');
       return { data: null, error };
     }
   }
@@ -719,7 +720,7 @@ class MasteryService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error adding toolbox item:', error);
+      logError(error, 'masteryService - Error adding toolbox item');
       return { data: null, error };
     }
   }
@@ -743,7 +744,7 @@ class MasteryService {
 
       return { data: data[0], error: null };
     } catch (error) {
-      console.error('Error updating user toolbox item:', error);
+      logError(error, 'masteryService - Error updating user toolbox item');
       return { data: null, error };
     }
   }
@@ -762,7 +763,7 @@ class MasteryService {
       if (error) throw error;
       return { data: { deleted: true }, error: null };
     } catch (error) {
-      console.error('Error removing user toolbox item:', error);
+      logError(error, 'masteryService - Error removing user toolbox item');
       return { data: null, error };
     }
   }
@@ -784,7 +785,7 @@ class MasteryService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error fetching toolbox usage:', error);
+      logError(error, 'masteryService - Error fetching toolbox usage');
       return { data: null, error };
     }
   }
@@ -830,13 +831,13 @@ class MasteryService {
       // Award skill points (0.15 per skill)
       const skillTags = toolboxItem.toolbox_library?.skill_tags || [];
       if (skillTags.length > 0) {
-        console.log(`🎯 Awarding 0.15 skill points to ${skillTags.length} skills`);
+        logDebug(`🎯 Awarding 0.15 skill points to ${skillTags.length} skills`);
         await skillsService.awardSkillPoints(userId, skillTags, 0.15);
       }
 
       return { data, error: null };
     } catch (error) {
-      console.error('Error using toolbox item:', error);
+      logError(error, 'masteryService - Error using toolbox item');
       return { data: null, error };
     }
   }
@@ -848,39 +849,39 @@ class MasteryService {
    */
   async testConnection() {
     try {
-      console.log('🧪 Testing MasteryService connection...');
+      logDebug('🧪 Testing MasteryService connection...');
 
       // Test 1: Get habits library
-      console.log('📚 Testing habits library fetch...');
+      logDebug('📚 Testing habits library fetch...');
       const { data: habitsLibrary, error: habitsError } = await this.getHabitsLibrary();
       if (habitsError) throw habitsError;
-      console.log(`✅ Found ${habitsLibrary.length} habits in library`);
+      logDebug(`✅ Found ${habitsLibrary.length} habits in library`);
 
       // Test 2: Get toolbox library
-      console.log('🔧 Testing toolbox library fetch...');
+      logDebug('🔧 Testing toolbox library fetch...');
       const { data: toolboxLibrary, error: toolboxError } = await this.getToolboxLibrary();
       if (toolboxError) throw toolboxError;
-      console.log(`✅ Found ${toolboxLibrary.length} toolbox items in library`);
+      logDebug(`✅ Found ${toolboxLibrary.length} toolbox items in library`);
 
       // Test 3: Get current user (if authenticated)
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        console.log(`👤 Testing with user: ${user.email}`);
+        logDebug(`👤 Testing with user: ${user.email}`);
 
         // Test 4: Get user habits
-        console.log('🎯 Testing user habits fetch...');
+        logDebug('🎯 Testing user habits fetch...');
         const { data: userHabits, error: userHabitsError } = await this.getUserHabits(user.id);
         if (userHabitsError) throw userHabitsError;
-        console.log(`✅ Found ${userHabits.length} user habits`);
+        logDebug(`✅ Found ${userHabits.length} user habits`);
 
         // Test 5: Get user toolbox items
-        console.log('🛠️ Testing user toolbox items fetch...');
+        logDebug('🛠️ Testing user toolbox items fetch...');
         const { data: userToolbox, error: userToolboxError } = await this.getUserToolboxItems(user.id);
         if (userToolboxError) throw userToolboxError;
-        console.log(`✅ Found ${userToolbox.length} user toolbox items`);
+        logDebug(`✅ Found ${userToolbox.length} user toolbox items`);
 
         // Test 6: Get calendar events for current month
-        console.log('📅 Testing calendar events fetch...');
+        logDebug('📅 Testing calendar events fetch...');
         const startOfMonth = new Date();
         startOfMonth.setDate(1);
         const endOfMonth = new Date();
@@ -892,12 +893,12 @@ class MasteryService {
           endOfMonth.toISOString().split('T')[0]
         );
         if (calendarError) throw calendarError;
-        console.log(`✅ Found ${calendarEvents.length} calendar events for current month`);
+        logDebug(`✅ Found ${calendarEvents.length} calendar events for current month`);
       } else {
-        console.log('⚠️ No authenticated user found - skipping user-specific tests');
+        logDebug('⚠️ No authenticated user found - skipping user-specific tests');
       }
     } catch (error) {
-      console.error('❌ Connection test failed:', error);
+      logError(error, 'masteryService - Connection test failed');
     }
   }
 }

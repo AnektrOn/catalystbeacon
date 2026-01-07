@@ -22,13 +22,16 @@ const XPProgressChart = ({ userId }) => {
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
         
         const { data, error } = await supabase
-          .from('xp_logs')
-          .select('xp_earned, created_at')
+          .from('xp_transactions')
+          .select('amount, created_at')
           .eq('user_id', userId)
           .gte('created_at', sevenDaysAgo.toISOString())
           .order('created_at', { ascending: true })
 
-        if (error) throw error
+        if (error) {
+          console.error('Error loading XP chart data:', error)
+          throw error
+        }
 
         // Group by day
         const dailyData = {}
@@ -42,11 +45,11 @@ const XPProgressChart = ({ userId }) => {
           dailyData[dateKey] = 0
         }
 
-        // Sum XP by day
+        // Sum XP by day (amount is the XP value in xp_transactions)
         data?.forEach(log => {
           const dateKey = new Date(log.created_at).toISOString().split('T')[0]
           if (dailyData[dateKey] !== undefined) {
-            dailyData[dateKey] += log.xp_earned || 0
+            dailyData[dateKey] += log.amount || 0
           }
         })
 
@@ -60,6 +63,7 @@ const XPProgressChart = ({ userId }) => {
         setChartData(chartDataArray)
       } catch (error) {
         console.error('Error loading XP chart data:', error)
+        setChartData([])
       } finally {
         setLoading(false)
       }
@@ -72,6 +76,24 @@ const XPProgressChart = ({ userId }) => {
     return (
       <ModernCard className="xp-chart-card">
         <div className="xp-chart-loading">Loading chart...</div>
+      </ModernCard>
+    )
+  }
+
+  // Handle empty data
+  if (!chartData || chartData.length === 0) {
+    return (
+      <ModernCard className="xp-chart-card">
+        <div className="xp-chart-header">
+          <div className="xp-chart-title">
+            <TrendingUp size={18} />
+            <span>XP Progress</span>
+          </div>
+          <div className="xp-chart-total">0 XP</div>
+        </div>
+        <div className="xp-chart-empty" style={{ padding: '20px', textAlign: 'center' }}>
+          <p>No XP data available for the last 7 days.</p>
+        </div>
       </ModernCard>
     )
   }

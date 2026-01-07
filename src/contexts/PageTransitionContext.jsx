@@ -15,7 +15,6 @@ export const usePageTransition = () => {
 export const PageTransitionProvider = ({ children }) => {
   const [isTransitioning, setIsTransitioning] = useState(false)
   const location = useLocation()
-  const [displayLocation, setDisplayLocation] = useState(location)
 
   useEffect(() => {
     // Show loader when route changes
@@ -23,12 +22,11 @@ export const PageTransitionProvider = ({ children }) => {
     
     // Minimum display time of 500ms
     const minTime = setTimeout(() => {
-      setDisplayLocation(location)
       setIsTransitioning(false)
     }, 500)
 
     return () => clearTimeout(minTime)
-  }, [location.pathname])
+  }, [location])
 
   const startTransition = () => setIsTransitioning(true)
   const endTransition = () => setIsTransitioning(false)

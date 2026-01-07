@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
-import toast from 'react-hot-toast'
 import SEOHead from '../components/SEOHead'
 import levelsService from '../services/levelsService'
 import useSubscription from '../hooks/useSubscription'
@@ -10,16 +9,16 @@ import UpgradeModal from '../components/UpgradeModal'
 import { Clock, BookOpen, Award, Target, TrendingUp, Calendar } from 'lucide-react'
 
 // Import Dashboard Components
-import {
-  StreakCard,
-  ActiveCourseCard,
-  QuickActionsGrid,
-  StatCard
-} from '../components/dashboard'
+import StreakCard from '../components/dashboard/StreakCard'
+import ActiveCourseCard from '../components/dashboard/ActiveCourseCard'
+import QuickActionsGrid from '../components/dashboard/QuickActionsGrid'
+import StatCard from '../components/dashboard/StatCard'
 import StatCardV2 from '../components/dashboard/StatCardV2'
 import XPCircleWidgetV2 from '../components/dashboard/XPCircleWidgetV2'
 import XPProgressChart from '../components/dashboard/XPProgressChart'
 import MoodTracker from '../components/dashboard/MoodTracker'
+import SchoolProgressAreaChartMobile from '../components/dashboard/SchoolProgressAreaChartMobile'
+import SchoolProgressAreaChartDesktop from '../components/dashboard/SchoolProgressAreaChartDesktop'
 
 import './DashboardNeomorphic.css'
 
@@ -365,6 +364,18 @@ const DashboardNeomorphic = () => {
         {/* XP Progress Chart */}
         <div className="grid-chart">
           <XPProgressChart userId={profile?.id} />
+        </div>
+
+        {/* School Progress Area Chart */}
+        <div className="grid-chart">
+          {/* Mobile: 3 days and Week view */}
+          <div className="lg:hidden">
+            <SchoolProgressAreaChartMobile userId={profile?.id} />
+          </div>
+          {/* Desktop: Day, Week, Month view */}
+          <div className="hidden lg:block">
+            <SchoolProgressAreaChartDesktop userId={profile?.id} />
+          </div>
         </div>
 
         {/* Active Course */}

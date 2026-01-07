@@ -1,7 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Stars, Float } from '@react-three/drei';
-import * as THREE from 'three';
 
 // Scroll-reactive rotating cube
 function ScrollCube({ scrollProgress }) {
@@ -123,7 +122,6 @@ function ScrollParticles({ scrollProgress, count = 1000 }) {
       // Update particle positions based on scroll
       for (let i = 0; i < count; i++) {
         const i3 = i * 3;
-        const x = (i / count) * 20 - 10;
         const waveOffset = scrollProgress * Math.PI * 4;
         positions.current[i3 + 1] = Math.sin(i / 10 + waveOffset) * 3;
         positions.current[i3 + 2] = Math.cos(i / 10 + waveOffset) * 3;

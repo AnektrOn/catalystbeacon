@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import {
   positionSubnodeMetatron,
-  PLANET_RADII,
   calculateFamilyRadius,
   calculateConstellationRadius,
   calculateSafeConstellationDistance,

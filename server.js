@@ -115,10 +115,15 @@ const paymentLimiter = rateLimit({
 })
 
 // Middleware
-app.use(cors({
-  origin: true, // Allow all origins in production
-  credentials: true
-}))
+// CORS configuration - restrict origins in production
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? (process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['https://humancatalystbeacon.com'])
+    : true, // Allow all origins in development
+  credentials: true,
+  optionsSuccessStatus: 200
+}
+app.use(cors(corsOptions))
 app.use(express.json())
 
 // Add CSP header that allows Stripe scripts (only for HTML pages, not API)
@@ -287,8 +292,16 @@ app.post('/api/create-checkout-session', paymentLimiter, async (req, res) => {
 app.get('/api/payment-success', paymentLimiter, async (req, res) => {
   try {
     const { session_id } = req.query
+    
+    if (!session_id) {
+      console.error('❌ Missing session_id in payment success request')
+      return res.status(400).json({ error: 'Missing session_id parameter' })
+    }
+    
     console.log('=== PAYMENT SUCCESS ENDPOINT CALLED ===')
     console.log('Session ID:', session_id)
+    console.log('Request origin:', req.headers.origin)
+    console.log('Request IP:', req.ip)
 
     const session = await stripe.checkout.sessions.retrieve(session_id)
     console.log('Stripe session retrieved:', {
@@ -307,26 +320,44 @@ app.get('/api/payment-success', paymentLimiter, async (req, res) => {
 
     // Determine role based on price
     const priceId = subscription.items.data[0].price.id
-    const role = getRoleFromPriceId(priceId)
+    const newRole = getRoleFromPriceId(priceId)
 
-    console.log('Determined role:', role, 'for price ID:', priceId)
-    console.log('Current user role before update:', session.metadata?.currentRole || 'Unknown')
+    console.log('Determined role:', newRole, 'for price ID:', priceId)
     
-    // Ensure we're updating from Free to Student/Teacher
     if (!session.metadata?.userId) {
       throw new Error('Missing userId in session metadata')
+    }
+
+    // Get current user profile to check if they're an Admin
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', session.metadata.userId)
+      .single()
+
+    const currentRole = currentProfile?.role || 'Free'
+    console.log('Current user role before update:', currentRole)
+
+    // Prepare update object - only update role if user is NOT an Admin
+    const updateData = {
+      subscription_status: 'active',
+      subscription_id: subscription.id,
+      stripe_customer_id: session.customer,
+      updated_at: new Date().toISOString()
+    }
+
+    // Only update role if user is not an Admin (preserve Admin role)
+    if (currentRole !== 'Admin') {
+      updateData.role = newRole
+      console.log('Updating role from', currentRole, 'to', newRole)
+    } else {
+      console.log('⚠️ User is Admin - preserving Admin role, only updating subscription info')
     }
 
     // Update user profile
     const { data, error } = await supabase
       .from('profiles')
-      .update({
-        role: role,
-        subscription_status: 'active',
-        subscription_id: subscription.id,
-        stripe_customer_id: session.customer,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', session.metadata.userId)
 
     if (error) {
@@ -336,19 +367,50 @@ app.get('/api/payment-success', paymentLimiter, async (req, res) => {
 
     console.log('Profile updated successfully:', data)
     
+    // Create or update subscription record in subscriptions table
+    try {
+      const { error: subscriptionError } = await supabase
+        .from('subscriptions')
+        .upsert({
+          user_id: session.metadata.userId,
+          stripe_customer_id: session.customer,
+          stripe_subscription_id: subscription.id,
+          plan_type: subscription.items.data[0]?.price.recurring?.interval || 'monthly',
+          status: subscription.status,
+          current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,stripe_subscription_id'
+        })
+
+      if (subscriptionError) {
+        console.error('Error creating subscription record:', subscriptionError)
+        // Don't fail the request, but log the error
+      } else {
+        console.log('✅ Subscription record created/updated successfully')
+      }
+    } catch (subscriptionRecordError) {
+      console.error('Error creating subscription record:', subscriptionRecordError)
+      // Don't fail the request if subscription record creation fails
+    }
+    
     // Send payment confirmation email via Supabase
     try {
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('email, full_name')
+        .select('email, full_name, role')
         .eq('id', session.metadata.userId)
         .single()
       
       if (profileData?.email) {
-        const planName = role === 'Teacher' ? 'Teacher Plan' : 'Student Plan'
+        // Use the role that was actually set (or preserved for Admin)
+        const actualRole = profileData.role || newRole
+        const planName = actualRole === 'Teacher' ? 'Teacher Plan' : 'Student Plan'
         const amount = subscription.items.data[0]?.price.unit_amount / 100 || 0
         const currency = subscription.items.data[0]?.price.currency?.toUpperCase() || 'USD'
         
+        console.log('📧 Sending payment confirmation email to:', profileData.email)
         await sendEmailViaSupabase('payment', {
           email: profileData.email,
           userName: profileData.full_name || 'there',
@@ -357,6 +419,7 @@ app.get('/api/payment-success', paymentLimiter, async (req, res) => {
           currency,
           subscriptionId: subscription.id
         })
+        console.log('✅ Payment confirmation email sent successfully')
       }
     } catch (emailError) {
       console.error('Error sending payment confirmation email:', emailError)
@@ -365,7 +428,9 @@ app.get('/api/payment-success', paymentLimiter, async (req, res) => {
     
     console.log('=== PAYMENT SUCCESS COMPLETE ===')
 
-    res.json({ success: true, role })
+    // Return the role that was actually set (or preserved)
+    const finalRole = currentRole === 'Admin' ? 'Admin' : newRole
+    res.json({ success: true, role: finalRole, subscriptionId: subscription.id })
   } catch (error) {
     console.error('Error handling payment success:', error)
     res.status(500).json({ error: error.message })
@@ -474,23 +539,41 @@ async function handleCheckoutSessionCompleted(session) {
     }
 
     // Determine role based on plan type from metadata
-    let role = 'Student' // default
+    let newRole = 'Student' // default
     if (planType === 'teacher' || planType === 'Teacher') {
-      role = 'Teacher'
+      newRole = 'Teacher'
     }
 
-    console.log('Updating profile with role:', role)
+    // Get current user profile to check if they're an Admin
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single()
 
-    // Update profile with role and subscription info
+    const currentRole = currentProfile?.role || 'Free'
+    console.log('Current user role:', currentRole, 'New role would be:', newRole)
+
+    // Prepare update object - only update role if user is NOT an Admin
+    const updateData = {
+      subscription_status: subscription.status,
+      subscription_id: subscription.id,
+      stripe_customer_id: customerId,
+      updated_at: new Date().toISOString()
+    }
+
+    // Only update role if user is not an Admin (preserve Admin role)
+    if (currentRole !== 'Admin') {
+      updateData.role = newRole
+      console.log('Updating role from', currentRole, 'to', newRole)
+    } else {
+      console.log('⚠️ User is Admin - preserving Admin role, only updating subscription info')
+    }
+
+    // Update profile with subscription info (and role only if not Admin)
     const { data, error } = await supabase
       .from('profiles')
-      .update({
-        role: role,
-        subscription_status: subscription.status,
-        subscription_id: subscription.id,
-        stripe_customer_id: customerId,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', userId)
 
     if (error) {
@@ -502,12 +585,14 @@ async function handleCheckoutSessionCompleted(session) {
       try {
         const { data: profileData } = await supabase
           .from('profiles')
-          .select('email, full_name')
+          .select('email, full_name, role')
           .eq('id', userId)
           .single()
         
         if (profileData?.email) {
-          const planName = role === 'Teacher' ? 'Teacher Plan' : 'Student Plan'
+          // Use the role that was actually set (or preserved for Admin)
+          const actualRole = profileData.role || newRole
+          const planName = actualRole === 'Teacher' ? 'Teacher Plan' : 'Student Plan'
           const amount = subscription.items.data[0]?.price.unit_amount / 100 || 0
           const currency = subscription.items.data[0]?.price.currency?.toUpperCase() || 'USD'
           
@@ -554,18 +639,36 @@ async function handleSubscriptionCreated(subscription) {
   if (profile) {
     // Get the price ID to determine the plan type
     const priceId = subscription.items.data[0]?.price.id
-    const role = getRoleFromPriceId(priceId)
+    const newRole = getRoleFromPriceId(priceId)
 
-    console.log('Subscription created, updating role to:', role)
+    // Get current role to check if user is Admin
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', profile.id)
+      .single()
+
+    const currentRole = currentProfile?.role || 'Free'
+    console.log('Current user role:', currentRole, 'New role would be:', newRole)
+
+    // Prepare update - only update role if user is NOT an Admin
+    const updateData = {
+      subscription_status: subscription.status,
+      subscription_id: subscription.id,
+      updated_at: new Date().toISOString()
+    }
+
+    // Only update role if user is not an Admin
+    if (currentRole !== 'Admin') {
+      updateData.role = newRole
+      console.log('Updating role from', currentRole, 'to', newRole)
+    } else {
+      console.log('⚠️ User is Admin - preserving Admin role, only updating subscription info')
+    }
 
     await supabase
       .from('profiles')
-      .update({
-        role: role,
-        subscription_status: subscription.status,
-        subscription_id: subscription.id,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', profile.id)
   }
 }
@@ -586,16 +689,26 @@ async function handleSubscriptionUpdate(subscription) {
     const newRole = getRoleFromPriceId(priceId)
     const oldRole = profile.role
 
-    console.log('Subscription updated, setting role to:', newRole, 'from:', oldRole)
+    console.log('Subscription updated, would set role to:', newRole, 'from:', oldRole)
 
-    // Update role
+    // Prepare update - only update role if user is NOT an Admin
+    const updateData = {
+      subscription_status: subscription.status,
+      updated_at: new Date().toISOString()
+    }
+
+    // Only update role if user is not an Admin
+    if (oldRole !== 'Admin') {
+      updateData.role = newRole
+      console.log('Updating role from', oldRole, 'to', newRole)
+    } else {
+      console.log('⚠️ User is Admin - preserving Admin role, only updating subscription status')
+    }
+
+    // Update profile
     await supabase
       .from('profiles')
-      .update({
-        role: newRole,
-        subscription_status: subscription.status,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', profile.id)
 
     // Send email if role changed

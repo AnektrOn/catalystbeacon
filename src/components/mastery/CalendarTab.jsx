@@ -887,13 +887,6 @@ const CalendarTab = () => {
                   if (event.source === 'habit') return '';
                   return 'bg-purple-50 dark:bg-purple-900/20';
                 };
-                
-                const getEventStyle = (event) => {
-                  if (event.source === 'habit' && !event.completed) {
-                    return { backgroundColor: 'color-mix(in srgb, var(--color-primary) 10%, transparent)' };
-                  }
-                  return {};
-                };
 
                 const getLastUpdated = (event) => {
                   if (event.completed) {

@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabaseClient';
+import { logDebug, logError, logWarn } from '../utils/logger';
 
 class CourseService {
   // ===== UUID GENERATION HELPERS =====
@@ -69,7 +70,7 @@ class CourseService {
         .select('course_id');
 
       if (structureError) {
-        console.error('Error fetching course structures:', structureError);
+        logError(structureError, 'courseService - Error fetching course structures');
         // Return the error so the caller knows something went wrong
         return { data: null, error: structureError };
       }
@@ -83,7 +84,7 @@ class CourseService {
 
       // If no courses have structures, return empty array (this is expected behavior)
       if (courseIdsWithStructure.length === 0) {
-        console.log('No courses with course_structure found');
+        logDebug('No courses with course_structure found');
         return { data: [], error: null };
       }
 
@@ -134,15 +135,15 @@ class CourseService {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error fetching courses with filters:', error);
-        console.error('Course IDs with structure:', courseIdsWithStructure.length);
+        logError(error, 'courseService - Error fetching courses with filters');
+        logDebug('Course IDs with structure:', courseIdsWithStructure.length);
         throw error;
       }
       
-      console.log(`Successfully fetched ${data?.length || 0} courses with course_structure`);
+      logDebug(`Successfully fetched ${data?.length || 0} courses with course_structure`);
       return { data, error: null };
     } catch (error) {
-      console.error('Error fetching courses:', error);
+      logError(error, 'courseService - Error fetching courses');
       return { data: null, error };
     }
   }
@@ -182,7 +183,7 @@ class CourseService {
 
       return { data: grouped, error: null };
     } catch (error) {
-      console.error('Error grouping courses by school:', error);
+      logError('Error grouping courses by school:', error);
       return { data: null, error };
     }
   }
@@ -215,7 +216,7 @@ class CourseService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error fetching course:', error);
+      logError('Error fetching course:', error);
       return { data: null, error };
     }
   }
@@ -254,7 +255,7 @@ class CourseService {
 
       return { data: data || null, error: null };
     } catch (error) {
-      console.error('Error fetching course structure:', error);
+      logError('Error fetching course structure:', error);
       return { data: null, error };
     }
   }
@@ -266,7 +267,7 @@ class CourseService {
    */
   parseCourseStructure(structure) {
     if (!structure) {
-      console.warn('[CourseService] parseCourseStructure: No structure provided');
+      logWarn('[CourseService] parseCourseStructure: No structure provided');
       return [];
     }
 
@@ -283,7 +284,7 @@ class CourseService {
       }
     }
 
-    console.log('[CourseService] parseCourseStructure:', {
+    logDebug('[CourseService] parseCourseStructure:', {
       chapterCount,
       hasChapter1: !!structure.chapter_title_1,
       hasLesson1_1: !!structure.lesson_1_1,
@@ -296,7 +297,7 @@ class CourseService {
       const chapterId = structure[`chapter_id_${i}`];
 
       if (!chapterTitle) {
-        console.log(`[CourseService] Skipping chapter ${i}: no chapter_title_${i}`);
+        logDebug(`[CourseService] Skipping chapter ${i}: no chapter_title_${i}`);
         continue;
       }
 
@@ -314,7 +315,7 @@ class CourseService {
         }
       }
 
-      console.log(`[CourseService] Chapter ${i} "${chapterTitle}": ${lessons.length} lessons found`);
+      logDebug(`[CourseService] Chapter ${i} "${chapterTitle}": ${lessons.length} lessons found`);
 
       // Include chapter even if no lessons (so it shows in UI)
       chapters.push({
@@ -325,7 +326,7 @@ class CourseService {
       });
     }
 
-    console.log(`[CourseService] parseCourseStructure result: ${chapters.length} chapters, ${chapters.reduce((sum, ch) => sum + ch.lessons.length, 0)} total lessons`);
+    logDebug(`[CourseService] parseCourseStructure result: ${chapters.length} chapters, ${chapters.reduce((sum, ch) => sum + ch.lessons.length, 0)} total lessons`);
     return chapters;
   }
 
@@ -363,7 +364,7 @@ class CourseService {
         error: null
       };
     } catch (error) {
-      console.error('Error fetching full course structure:', error);
+      logError('Error fetching full course structure:', error);
       return { data: null, error };
     }
   }
@@ -388,7 +389,7 @@ class CourseService {
       if (error && error.code !== 'PGRST116') throw error; // PGRST116 = not found
       return { data: data || null, error: null };
     } catch (error) {
-      console.error('Error fetching lesson content:', error);
+      logError('Error fetching lesson content:', error);
       return { data: null, error };
     }
   }
@@ -409,7 +410,7 @@ class CourseService {
       if (error && error.code !== 'PGRST116') throw error;
       return { data: data || null, error: null };
     } catch (error) {
-      console.error('Error fetching lesson content by UUID:', error);
+      logError('Error fetching lesson content by UUID:', error);
       return { data: null, error };
     }
   }
@@ -430,7 +431,7 @@ class CourseService {
       if (error) throw error;
       return { data: data || [], error: null };
     } catch (error) {
-      console.error('Error fetching lessons by chapter UUID:', error);
+      logError('Error fetching lessons by chapter UUID:', error);
       return { data: null, error };
     }
   }
@@ -451,7 +452,7 @@ class CourseService {
       if (error && error.code !== 'PGRST116') throw error;
       return { data: data || null, error: null };
     } catch (error) {
-      console.error('Error fetching course descriptions:', error);
+      logError('Error fetching course descriptions:', error);
       return { data: null, error };
     }
   }
@@ -527,7 +528,7 @@ class CourseService {
         error: null
       };
     } catch (error) {
-      console.error('Error fetching lesson description:', error);
+      logError('Error fetching lesson description:', error);
       return { data: null, error };
     }
   }
@@ -542,14 +543,8 @@ class CourseService {
    */
   async getUserCourseProgress(userId, courseId) {
     try {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'courseService.js:543',message:'getUserCourseProgress called',data:{userId,courseId,courseIdType:typeof courseId,parsedCourseId:parseInt(courseId),isNaN:isNaN(parseInt(courseId))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-      // #endregion
       const parsedCourseId = parseInt(courseId);
       if (isNaN(parsedCourseId)) {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'courseService.js:549',message:'NaN courseId detected - returning early',data:{courseId,parsedCourseId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
         return { data: null, error: { message: 'Invalid courseId: must be an integer course_id, not UUID' } };
       }
       const { data, error } = await supabase
@@ -562,7 +557,7 @@ class CourseService {
       if (error && error.code !== 'PGRST116') throw error; // PGRST116 = not found, which is OK
       return { data: data || null, error: null };
     } catch (error) {
-      console.error('Error fetching user course progress:', error);
+      logError('Error fetching user course progress:', error);
       return { data: null, error };
     }
   }
@@ -593,7 +588,7 @@ class CourseService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error fetching user courses:', error);
+      logError('Error fetching user courses:', error);
       return { data: null, error };
     }
   }
@@ -643,7 +638,7 @@ class CourseService {
 
       return { data: result, error: null };
     } catch (error) {
-      console.error('Error updating course progress:', error);
+      logError('Error updating course progress:', error);
       return { data: null, error };
     }
   }
@@ -670,7 +665,7 @@ class CourseService {
       if (error && error.code !== 'PGRST116') throw error;
       return { data: data || null, error: null };
     } catch (error) {
-      console.error('Error fetching user lesson progress:', error);
+      logError('Error fetching user lesson progress:', error);
       return { data: null, error };
     }
   }
@@ -737,7 +732,7 @@ class CourseService {
       });
 
       if (xpError) {
-        console.error('Error awarding XP:', xpError);
+        logError('Error awarding XP:', xpError);
         // Throw error so it can be handled properly
         throw new Error(`Failed to award XP: ${xpError.message}`);
       }
@@ -747,7 +742,7 @@ class CourseService {
       
       // Check if function returned false (indicating failure)
       if (xpAwarded === false) {
-        console.warn('⚠️ XP award function returned false - attempting direct profile update as fallback');
+        logWarn('⚠️ XP award function returned false - attempting direct profile update as fallback');
         
         // Fallback: Try to update XP directly if the function fails
         // This handles cases where the function doesn't exist or has errors
@@ -776,11 +771,11 @@ class CourseService {
         if (updateError) {
           throw new Error(`Failed to award XP: Database function returned false and fallback update failed: ${updateError.message}`);
         }
-        console.log(`✅ XP awarded via fallback: ${xpAmount} XP added (${currentXP} → ${currentXP + xpAmount})`);
+        logDebug(`✅ XP awarded via fallback: ${xpAmount} XP added (${currentXP} → ${currentXP + xpAmount})`);
       }
 
       if (xpAwarded === true) {
-        console.log(`✅ Successfully awarded ${xpAmount} XP to user ${userId}`);
+        logDebug(`✅ Successfully awarded ${xpAmount} XP to user ${userId}`);
       }
       
       // Send lesson completion email via Supabase (non-blocking)
@@ -817,18 +812,18 @@ class CourseService {
             xpAmount,
             profileData.current_xp || 0
           ).catch(err => {
-            console.log('Lesson completion email send failed (non-critical):', err)
+            logDebug('Lesson completion email send failed (non-critical):', err)
             // Don't fail lesson completion if email fails
           })
         }
       } catch (emailError) {
-        console.log('Lesson completion email error (non-critical):', emailError)
+        logDebug('Lesson completion email error (non-critical):', emailError)
         // Don't fail lesson completion if email fails
       }
       
       return { data: { lessonProgress, xpAwarded: xpAmount }, error: null };
     } catch (error) {
-      console.error('Error completing lesson:', error);
+      logError('Error completing lesson:', error);
       return { data: null, error };
     }
   }
@@ -890,7 +885,7 @@ class CourseService {
         error: null
       };
     } catch (error) {
-      console.error('Error calculating course progress:', error);
+      logError('Error calculating course progress:', error);
       return { data: null, error };
     }
   }
@@ -944,7 +939,7 @@ class CourseService {
 
       return { data: null, error: null }; // All lessons completed
     } catch (error) {
-      console.error('Error getting next lesson:', error);
+      logError('Error getting next lesson:', error);
       return { data: null, error };
     }
   }
@@ -995,7 +990,7 @@ class CourseService {
         error: null
       };
     } catch (error) {
-      console.error('Error checking course unlock:', error);
+      logError('Error checking course unlock:', error);
       return { data: null, error };
     }
   }

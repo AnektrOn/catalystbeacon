@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabaseClient';
+import { logDebug, logWarn } from '../utils/logger';
 import NotificationBadge from './NotificationBadge';
 import ColorPaletteDropdown from './common/ColorPaletteDropdown';
 import useSubscription from '../hooks/useSubscription';
@@ -25,7 +26,6 @@ import {
   Type,
   Sparkles,
   CreditCard,
-  Award,
   Zap,
   MoreVertical,
   Map
@@ -47,7 +47,7 @@ const AppShellMobile = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
   const actionsBtnRef = useRef(null);
-  const [actionsMenuPos, setActionsMenuPos] = useState({ top: 0, left: 0, width: 224 });
+  const [actionsMenuPos, setActionsMenuPos] = useState({ top: 64, left: 0, width: 224 });
   const navigate = useNavigate();
   const location = useLocation();
   const { profile, signOut, user } = useAuth();
@@ -70,32 +70,49 @@ const AppShellMobile = () => {
   
   // XP and achievement state
   const [totalXP, setTotalXP] = useState(0);
-  const [lastAchievement, setLastAchievement] = useState(null);
   const [levelTitle, setLevelTitle] = useState(null);
 
   const computeActionsMenuPos = useCallback(() => {
     const el = actionsBtnRef.current;
-    if (!el) return;
+    if (!el) {
+      // Fallback if button ref not ready
+      const headerHeight = 52;
+      const padding = 12;
+      const maxWidth = Math.max(200, Math.min(280, window.innerWidth - padding * 2));
+      setActionsMenuPos({ 
+        top: headerHeight + padding, 
+        left: window.innerWidth - maxWidth - padding, 
+        width: maxWidth 
+      });
+      return;
+    }
 
     const rect = el.getBoundingClientRect();
-    const padding = 8;
+    const padding = 12;
     const maxWidth = Math.max(200, Math.min(280, window.innerWidth - padding * 2));
     const width = maxWidth;
-    const left = Math.min(
-      Math.max(rect.right - width, padding),
-      window.innerWidth - width - padding
-    );
-    const top = rect.bottom + 8;
+    
+    // Position from right edge
+    const left = Math.max(padding, window.innerWidth - width - padding);
+    
+    // Position directly below the button
+    const top = rect.bottom + padding;
+    
+    // Ensure it's never above 60px (below header)
+    const finalTop = Math.max(60, top);
 
-    setActionsMenuPos({ top, left, width });
+    setActionsMenuPos({ top: finalTop, left, width });
   }, []);
 
   // Ensure the actions dropdown is never clipped/off-screen on mobile
   useEffect(() => {
     if (!isActionsMenuOpen) return;
 
-    // Compute immediately and after layout settles
-    computeActionsMenuPos();
+    // Compute immediately - use setTimeout to ensure DOM is ready
+    const timer = setTimeout(() => {
+      computeActionsMenuPos();
+    }, 0);
+    
     const raf = requestAnimationFrame(() => computeActionsMenuPos());
 
     const onResize = () => computeActionsMenuPos();
@@ -103,6 +120,7 @@ const AppShellMobile = () => {
     window.addEventListener('scroll', onResize, true);
 
     return () => {
+      clearTimeout(timer);
       cancelAnimationFrame(raf);
       window.removeEventListener('resize', onResize);
       window.removeEventListener('scroll', onResize, true);
@@ -126,13 +144,13 @@ const AppShellMobile = () => {
         
         if (error && error.code !== 'PGRST116') {
           // Table doesn't exist or other error - default to 0
-          console.warn('Notifications table not available:', error.message);
+          logWarn('Notifications table not available:', error.message);
           setNotificationCount(0);
         } else {
           setNotificationCount(data?.length || 0);
         }
       } catch (err) {
-        console.warn('Error loading notifications:', err);
+        logWarn('Error loading notifications:', err);
         setNotificationCount(0);
       }
     };
@@ -184,7 +202,7 @@ const AppShellMobile = () => {
           }
         }
       } catch (err) {
-        console.warn('Error loading level title:', err);
+        logWarn('Error loading level title:', err);
         setLevelTitle(null);
       }
     };
@@ -197,7 +215,6 @@ const AppShellMobile = () => {
     const loadXPAndAchievement = async () => {
       if (!user) {
         setTotalXP(0);
-        setLastAchievement(null);
         return;
       }
 
@@ -267,15 +284,10 @@ const AppShellMobile = () => {
           });
         }
 
-        // Get the most recent achievement
-        if (achievements.length > 0) {
-          achievements.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-          setLastAchievement(achievements[0]);
-        } else {
-          setLastAchievement(null);
-        }
+        // Achievement data is fetched but not currently displayed in mobile shell
+        // This can be used in the future for displaying recent achievements
       } catch (err) {
-        console.warn('Error loading XP and achievements:', err);
+        logWarn('Error loading XP and achievements:', err);
       }
     };
 
@@ -285,7 +297,7 @@ const AppShellMobile = () => {
   // Debug: Log profile background image changes
   useEffect(() => {
     if (profile?.background_image) {
-      console.log('🎨 AppShellMobile: Background image updated:', profile.background_image);
+      logDebug('🎨 AppShellMobile: Background image updated:', profile.background_image);
     }
   }, [profile?.background_image]);
 
@@ -458,7 +470,14 @@ const AppShellMobile = () => {
             {/* Mobile: Actions dropdown menu */}
             <div className="lg:hidden relative">
               <button
-                onClick={() => setIsActionsMenuOpen(!isActionsMenuOpen)}
+                onClick={() => {
+                  const willOpen = !isActionsMenuOpen;
+                  setIsActionsMenuOpen(willOpen);
+                  if (willOpen) {
+                    // Calculate position immediately when opening
+                    setTimeout(() => computeActionsMenuPos(), 0);
+                  }
+                }}
                 ref={actionsBtnRef}
                 className="glass-icon-btn min-w-[44px] min-h-[44px]"
                 aria-label="More actions"
@@ -474,16 +493,17 @@ const AppShellMobile = () => {
                     onClick={() => setIsActionsMenuOpen(false)}
                   />
                   <div
-                    className="fixed glass-effect rounded-xl shadow-2xl border border-white/20 z-[100] overflow-hidden"
+                    className="fixed glass-effect rounded-xl shadow-2xl border border-white/20 z-[100] overflow-visible"
                     style={{
-                      top: actionsMenuPos.top,
-                      left: actionsMenuPos.left,
-                      width: actionsMenuPos.width
+                      top: `${actionsMenuPos.top}px`,
+                      left: `${actionsMenuPos.left}px`,
+                      width: `${actionsMenuPos.width}px`,
+                      position: 'fixed'
                     }}
                   >
                     <div className="py-2">
                       {/* Color Palette */}
-                      <div className="px-3 py-2">
+                      <div className="px-3 py-2 overflow-visible">
                         <ColorPaletteDropdown />
                       </div>
                       

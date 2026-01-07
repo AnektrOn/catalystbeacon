@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import toast from 'react-hot-toast'
 
@@ -8,11 +8,7 @@ export default function Account({ session }) {
   const [website, setWebsite] = useState(null)
   const [avatar_url, setAvatarUrl] = useState(null)
 
-  useEffect(() => {
-    getProfile()
-  }, [session])
-
-  async function getProfile() {
+  const getProfile = useCallback(async () => {
     try {
       setLoading(true)
       const { data, error, status } = await supabase
@@ -35,7 +31,11 @@ export default function Account({ session }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [session])
+
+  useEffect(() => {
+    getProfile()
+  }, [getProfile])
 
   async function updateProfile({ username, website, avatar_url }) {
     try {

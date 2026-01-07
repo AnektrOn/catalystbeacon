@@ -9,7 +9,7 @@ const Debug = () => {
   useEffect(() => {
     const testConnection = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession()
+        const { error } = await supabase.auth.getSession()
         if (error) {
           setConnectionStatus(`Auth Error: ${error.message}`)
         } else {

@@ -3,6 +3,7 @@ import { Alert, AlertDescription } from './ui/alert'
 import { Button } from './ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
+import { logError } from '../utils/logger'
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -20,9 +21,11 @@ class ErrorBoundary extends React.Component {
       errorInfo: errorInfo
     })
     
-    // Log error to console in development
+    // Log error using centralized logger
+    logError(error, 'ErrorBoundary')
     if (process.env.NODE_ENV === 'development') {
-      console.error('ErrorBoundary caught an error:', error, errorInfo)
+      // Include errorInfo in development
+      console.error('ErrorBoundary error details:', errorInfo)
     }
   }
 

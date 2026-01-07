@@ -4,42 +4,6 @@ import masteryService from '../../services/masteryService';
 import { useAuth } from '../../contexts/AuthContext';
 import { handleError } from '../../utils/errorHandler';
 
-// Helper function to calculate current streak from completion dates
-const calculateCurrentStreak = (completedDates) => {
-  if (!completedDates || completedDates.length === 0) return 0;
-  
-  const today = new Date();
-  const todayString = today.toISOString().split('T')[0];
-  
-  // Sort dates in descending order (most recent first)
-  const sortedDates = [...completedDates].sort().reverse();
-  
-  let streak = 0;
-  let currentDate = new Date(today);
-  
-  // Check if today is completed
-  if (sortedDates.includes(todayString)) {
-    streak = 1;
-    currentDate.setDate(currentDate.getDate() - 1);
-  } else {
-    // If today is not completed, start from yesterday
-    currentDate.setDate(currentDate.getDate() - 1);
-  }
-  
-  // Count consecutive days backwards
-  while (true) {
-    const dateString = currentDate.toISOString().split('T')[0];
-    if (sortedDates.includes(dateString)) {
-      streak++;
-      currentDate.setDate(currentDate.getDate() - 1);
-    } else {
-      break;
-    }
-  }
-  
-  return streak;
-};
-
 // Helper function to generate progress grid for current month with proper calendar layout
 const generateProgressGrid = (completedDates = [], color) => {
   const grid = [];
@@ -245,7 +209,7 @@ const HabitsTab = () => {
     if (!user) return;
     
     try {
-      const { data: customHabit, error } = await masteryService.createCustomHabit(user.id, newHabit);
+      const { error } = await masteryService.createCustomHabit(user.id, newHabit);
       if (error) throw error;
 
       // Reload habits to get the updated list
@@ -350,7 +314,7 @@ const HabitsTab = () => {
     if (!user) return;
     
     try {
-      const { data: completion, error } = await masteryService.completeHabit(user.id, habitId);
+      const { error } = await masteryService.completeHabit(user.id, habitId);
       if (error) throw error;
 
       // Reload habits to get updated data
@@ -464,8 +428,7 @@ const HabitsTab = () => {
             <button
               onClick={() => setShowAddHabit(true)}
               className="glass-primary-btn"
-              aria-label="Add new custom habit"
-             aria-label="Add new custom habit">
+              aria-label="Add new custom habit">
               <Plus size={20} className="mr-2" aria-hidden="true" />
               Add Custom Habit
             </button>
@@ -536,15 +499,13 @@ const HabitsTab = () => {
                     onClick={createCustomHabit}
                     className="glass-primary-btn"
                     disabled={!newHabit.title.trim()}
-                    aria-label="Create new custom habit"
-                   aria-label="Create new custom habit">
+                    aria-label="Create new custom habit">
                     Create Habit
                   </button>
                   <button
                     onClick={() => setShowAddHabit(false)}
                     className="glass-secondary-btn"
-                    aria-label="Cancel creating habit"
-                   aria-label="Cancel creating habit">
+                    aria-label="Cancel creating habit">
                     Cancel
                   </button>
                 </div>
@@ -681,8 +642,7 @@ const HabitsTab = () => {
                   <button
                     onClick={() => addHabitFromLibrary(habit)}
                     className="glass-primary-btn"
-                    aria-label={`Add ${habit.title} to your habits`}
-                   aria-label={`Add ${habit.title} to your habits`}>
+                    aria-label={`Add ${habit.title} to your habits`}>
                     <Plus size={20} className="mr-2"  aria-hidden="true"/>
                     Add to My Habits
                   </button>

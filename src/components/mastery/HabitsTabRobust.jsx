@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Target, CheckCircle, Star, BookOpen, Dumbbell, Flame, Trash2 } from 'lucide-react';
+import { Plus, Target, Star, BookOpen, Dumbbell, Flame, Trash2 } from 'lucide-react';
 import masteryService from '../../services/masteryService';
 import { useAuth } from '../../contexts/AuthContext';
 

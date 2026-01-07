@@ -331,7 +331,12 @@ function App() {
   return (
     <DataCacheProvider>
       <AuthProvider>
-        <Router>
+        <Router
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true
+          }}
+        >
           <PageTransitionProvider>
             <div 
               className="App font-sans antialiased min-h-screen"

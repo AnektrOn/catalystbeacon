@@ -23,7 +23,9 @@ const StellarMap2D = React.forwardRef(({
   const [viewBox, setViewBox] = useState({ x: 0, y: 0, width: 1000, height: 1000 });
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  // eslint-disable-next-line no-unused-vars
   const [colorPalette, setColorPalette] = useState(() => getCurrentPaletteData());
+  // eslint-disable-next-line no-unused-vars
   const [highlightedPath, setHighlightedPath] = useState(null);
 
   // Listen for color palette changes
@@ -280,7 +282,6 @@ const StellarMap2D = React.forwardRef(({
           // Arc length = radius * angle, so angle = arc_length / radius
           // Use effective spacing that accounts for node visual size
           const effectiveSpacing = minNodeSpacing + (nodeVisualRadius * 2);
-          const minAnglePerNode = effectiveSpacing / orbitDistance;
           
           // Distribute nodes evenly around the full circle (2π)
           // This ensures maximum spacing between nodes

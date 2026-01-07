@@ -378,6 +378,25 @@
   background: var(--glass-bg-strong) !important;
   border: 1px solid var(--glass-border-strong) !important;
   box-shadow: var(--glass-shadow);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Override Tailwind padding on mobile - must come after base definition */
+@media (max-width: 767px) {
+  .glass-main-panel {
+    padding: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
 }
 
 /* Dark mode main panel */
@@ -426,11 +445,11 @@
   .glass-main-panel {
     left: 0;
     right: 0;
-    top: 56px;
-    bottom: 70px;
+    top: 0;
+    bottom: 0;
     margin: 0;
     border-radius: 0;
-    padding: 16px;
+    padding: 0;
   }
 }
 
@@ -438,10 +457,6 @@
   .glass-header-browser {
     padding: 8px 12px;
     height: 52px;
-  }
-
-  .glass-main-panel {
-    padding: 12px;
   }
 
   /* Make glassmorphism more subtle on mobile for better readability */
