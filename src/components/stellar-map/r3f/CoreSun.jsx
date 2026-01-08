@@ -201,13 +201,13 @@ export function CoreSun({ coreName }) {
     return { flareGeometry: flareGeo, flareMaterial: flareMat };
   }, [coreName, core]);
 
-  // Animate - Throttled for maximum performance
+  // Animate - Heavily throttled for maximum performance
   let lastUpdate = 0;
   useFrame((state) => {
     if (!core) return;
     
-    // Only update every 3 frames (~20fps animation) for better performance
-    if (state.clock.elapsedTime - lastUpdate < 0.05) return;
+    // Only update every 6 frames (~10fps animation) for maximum performance
+    if (state.clock.elapsedTime - lastUpdate < 0.1) return;
     lastUpdate = state.clock.elapsedTime;
     
     const t = state.clock.elapsedTime;
@@ -222,7 +222,7 @@ export function CoreSun({ coreName }) {
     
     // Slower rotation for flares
     if (flaresRef.current) {
-      flaresRef.current.rotation.y += 0.002;
+      flaresRef.current.rotation.y += 0.001;
     }
   });
 
@@ -231,17 +231,17 @@ export function CoreSun({ coreName }) {
 
   return (
     <group scale={0.6}>
-      {/* Core Sun - Minimized segments for maximum performance */}
+      {/* Core Sun - Optimized segments */}
       <mesh ref={sunRef} material={sunMaterial}>
-        <sphereGeometry args={[1, 12, 12]} />
+        <sphereGeometry args={[1, 10, 10]} />
       </mesh>
 
-      {/* Corona Glow - Minimized segments */}
+      {/* Corona Glow - Optimized segments */}
       <mesh ref={coronaRef} material={coronaMaterial}>
         <sphereGeometry args={[1.25, 8, 8]} />
       </mesh>
 
-      {/* Solar Flares - Reduced count */}
+      {/* Solar Flares - Reduced count for performance */}
       {flareGeometry && flareMaterial && (
         <points ref={flaresRef} geometry={flareGeometry} material={flareMaterial} />
       )}

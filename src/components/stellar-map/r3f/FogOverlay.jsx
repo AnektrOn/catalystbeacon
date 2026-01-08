@@ -1,38 +1,53 @@
 import React, { useRef, useEffect, useMemo } from 'react';
 import { useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import { XP_THRESHOLDS, DEPTH_RANGES, getCurrentGroup } from '../hooks/useXPVisibility';
 
 /**
  * 2D Fog Overlay Component
  * Hides nodes based on difficulty thresholds and user XP
  * 
- * Difficulty thresholds (to be filled in):
- * - Each difficulty level requires a minimum XP to be visible
- * - Format: { difficulty: minXP }
+ * Uses the existing XP visibility system:
+ * - Fog: difficulties 0-2
+ * - Lens: difficulties 3-5  
+ * - Prism: difficulties 6-8
+ * - Beam: difficulties 9-10
  */
-const DIFFICULTY_THRESHOLDS = {
-  // TODO: Fill in XP thresholds for each difficulty level
-  // Example: { 0: 0, 1: 100, 2: 500, 3: 1000, ... }
-};
 
-export function FogOverlay({ userXP = 0, nodePositions = {}, nodeDifficulties = {} }) {
+export function FogOverlay({ 
+  userXP = 0, 
+  coreName = 'Ignition',
+  nodePositions = {}, 
+  nodeDifficulties = {} 
+}) {
   const { size, camera } = useThree();
   const fogCanvasRef = useRef(null);
   const containerRef = useRef(null);
 
-  // Calculate which nodes should be visible
+  // Calculate which nodes should be visible based on XP visibility system
   const visibleNodes = useMemo(() => {
     const visible = new Set();
+    const currentGroup = getCurrentGroup(coreName, userXP);
+    const difficultyRange = DEPTH_RANGES[currentGroup];
+    const thresholds = XP_THRESHOLDS[coreName] || XP_THRESHOLDS.Ignition;
+    
+    // Get the XP threshold for the current visibility group
+    const groupThreshold = thresholds[currentGroup] || 0;
     
     Object.entries(nodeDifficulties).forEach(([nodeId, difficulty]) => {
-      const threshold = DIFFICULTY_THRESHOLDS[difficulty] ?? 0;
-      if (userXP >= threshold) {
+      // Check if difficulty is in the visible range for current group
+      const isInRange = difficulty >= difficultyRange[0] && difficulty <= difficultyRange[1];
+      
+      // Check if user has enough XP for this group
+      const hasEnoughXP = userXP >= groupThreshold;
+      
+      if (isInRange && hasEnoughXP) {
         visible.add(nodeId);
       }
     });
     
     return visible;
-  }, [userXP, nodeDifficulties]);
+  }, [userXP, coreName, nodeDifficulties]);
 
   // Project 3D positions to 2D screen coordinates
   const projectToScreen = (position3D) => {

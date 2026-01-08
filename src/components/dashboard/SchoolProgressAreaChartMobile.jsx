@@ -198,8 +198,8 @@ const SchoolProgressAreaChartMobile = ({ userId }) => {
             <p>Loading chart data...</p>
           </div>
         ) : chartData && chartData.length > 0 && categories && categories.length > 0 ? (
-          <div style={{ width: '100%', height: '250px', position: 'relative' }}>
-            <ResponsiveContainer width="100%" height="100%">
+          <div style={{ width: '100%', height: '250px', position: 'relative', minHeight: '250px' }}>
+            <ResponsiveContainer width="100%" height={250}>
             <RechartsAreaChart
               data={chartData}
               margin={{ top: 10, right: 5, left: 0, bottom: 50 }}
@@ -207,39 +207,40 @@ const SchoolProgressAreaChartMobile = ({ userId }) => {
               <defs>
                 {categories.map((schoolName, index) => {
                   const schoolColor = getSchoolColor(schoolName, index)
-                  // Adjust gradient opacity based on number of schools
-                  const topOpacity = categories.length > 10 ? 0.6 : 0.8
-                  const bottomOpacity = categories.length > 10 ? 0.05 : 0.1
-                  return (
-                    <linearGradient
-                      key={`gradient-${schoolName}-${index}`}
-                      id={`mobile-color${index}`}
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop offset="5%" stopColor={schoolColor} stopOpacity={topOpacity} />
-                      <stop offset="95%" stopColor={schoolColor} stopOpacity={bottomOpacity} />
-                    </linearGradient>
-                  )
+                    // Adjust gradient opacity based on number of schools
+                    const topOpacity = categories.length > 10 ? 0.8 : 1
+                    const bottomOpacity = categories.length > 10 ? 0.2 : 0.3
+                    return (
+                      <linearGradient
+                        key={`gradient-${schoolName}-${index}`}
+                        id={`mobile-color${index}`}
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop offset="5%" stopColor={schoolColor} stopOpacity={topOpacity} />
+                        <stop offset="95%" stopColor={schoolColor} stopOpacity={bottomOpacity} />
+                      </linearGradient>
+                    )
                 })}
               </defs>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.2)" opacity={0.5} />
               <XAxis
                 dataKey="Period"
-                stroke="hsl(var(--muted-foreground))"
+                stroke="rgba(255, 255, 255, 0.6)"
                 style={{ fontSize: '10px' }}
                 angle={-45}
                 textAnchor="end"
                 height={50}
-                tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                tick={{ fill: 'rgba(255, 255, 255, 0.8)', fontSize: 10 }}
               />
               <YAxis
-                stroke="hsl(var(--muted-foreground))"
+                stroke="rgba(255, 255, 255, 0.6)"
                 style={{ fontSize: '10px' }}
                 width={30}
-                tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                tick={{ fill: 'rgba(255, 255, 255, 0.8)', fontSize: 10 }}
+                domain={[0, 'auto']}
               />
               <Tooltip content={<CustomTooltip />} />
               {categories.map((schoolName, index) => {

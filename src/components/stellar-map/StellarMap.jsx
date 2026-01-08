@@ -7,8 +7,6 @@ import NodeTooltip from './NodeTooltip';
 import StellarMapDebugOverlay from './StellarMapDebugOverlay';
 import YouTubePlayerModal from './YouTubePlayerModal';
 import { StarfieldBackground } from './r3f/StarfieldBackground';
-import { Link } from 'react-router-dom';
-import { LayoutGrid } from 'lucide-react';
 
 // Lazy load 3D scene
 const StellarMapScene = lazy(() => import('./r3f/StellarMapScene').then(module => ({ default: module.StellarMapScene })));
@@ -219,17 +217,6 @@ const StellarMap = () => {
       {/* Starfield Background */}
       <StarfieldBackground />
 
-      {/* View Switch Link - Link to 2D view */}
-      <div className="absolute top-4 right-4 z-[60] shadow-lg">
-        <Link
-          to="/stellar-map-2d"
-          className="px-4 py-2 rounded-md transition-all flex items-center gap-2 font-medium whitespace-nowrap bg-black/80 text-white hover:bg-white/20 border border-white/20"
-          title="Switch to 2D View (Lightweight, no Three.js)"
-        >
-          <LayoutGrid size={18} />
-          <span>Switch to 2D</span>
-        </Link>
-      </div>
 
       {/* 3D Scene - Transparent so starfield shows through */}
       <div className="absolute inset-0 w-full h-full z-10">

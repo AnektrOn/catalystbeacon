@@ -25,7 +25,7 @@ const CourseCatalogPage = React.lazy(() => import('./pages/CourseCatalogPage'))
 const CourseDetailPage = React.lazy(() => import('./pages/CourseDetailPage'))
 const CoursePlayerPage = React.lazy(() => import('./pages/CoursePlayerPage'))
 const CourseCreationPage = React.lazy(() => import('./pages/CourseCreationPage'))
-const StellarMap2DPage = React.lazy(() => import('./pages/StellarMap2DPage'))
+const StellarMapPage = React.lazy(() => import('./pages/StellarMapPage'))
 const AchievementsPage = React.lazy(() => import('./pages/Achievements'))
 const ForgotPasswordPage = React.lazy(() => import('./pages/ForgotPasswordPage'))
 const TermsPage = React.lazy(() => import('./pages/TermsPage'))
@@ -285,16 +285,7 @@ const AppRoutes = () => {
           <ErrorBoundary>
             <ProtectedSubscriptionRoute requiredFeature="stellarMap">
               <React.Suspense fallback={<LoadingScreen />}>
-                <StellarMap2DPage />
-              </React.Suspense>
-            </ProtectedSubscriptionRoute>
-          </ErrorBoundary>
-        } />
-        <Route path="/stellar-map-2d" element={
-          <ErrorBoundary>
-            <ProtectedSubscriptionRoute requiredFeature="stellarMap">
-              <React.Suspense fallback={<LoadingScreen />}>
-                <StellarMap2DPage />
+                <StellarMapPage />
               </React.Suspense>
             </ProtectedSubscriptionRoute>
           </ErrorBoundary>

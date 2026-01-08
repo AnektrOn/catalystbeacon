@@ -280,7 +280,7 @@ const AppShell = () => {
     { icon: BookOpen, label: 'Courses', path: '/courses', restricted: true, feature: 'courses' },
     { icon: Target, label: 'Mastery', path: '/mastery', restricted: false },
     { icon: Map, label: 'Roadmap', path: '/roadmap/ignition', restricted: false },
-    { icon: Sparkles, label: 'Stellar Map', path: '/stellar-map-2d', restricted: true, feature: 'stellarMap' },
+    { icon: Sparkles, label: 'Stellar Map', path: '/stellar-map', restricted: true, feature: 'stellarMap' },
     { icon: User, label: 'Profile', path: '/profile', restricted: true, feature: 'profile' },
     { icon: Users, label: 'Community', path: '/community', restricted: true, feature: 'community' },
     { icon: Settings, label: 'Settings', path: '/settings', restricted: false }

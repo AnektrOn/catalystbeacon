@@ -19,6 +19,8 @@ import XPProgressChart from '../components/dashboard/XPProgressChart'
 import MoodTracker from '../components/dashboard/MoodTracker'
 import SchoolProgressAreaChartMobile from '../components/dashboard/SchoolProgressAreaChartMobile'
 import SchoolProgressAreaChartDesktop from '../components/dashboard/SchoolProgressAreaChartDesktop'
+import AllLessonsCard from '../components/dashboard/AllLessonsCard'
+import HabitsCompletedCard from '../components/dashboard/HabitsCompletedCard'
 
 import './DashboardNeomorphic.css'
 
@@ -367,15 +369,24 @@ const DashboardNeomorphic = () => {
         </div>
 
         {/* School Progress Area Chart */}
-        <div className="grid-chart">
-          {/* Mobile: 3 days and Week view */}
+        {/* School Progress Chart - Temporarily hidden until visibility issue is fixed */}
+        {/* <div className="grid-chart">
           <div className="lg:hidden">
             <SchoolProgressAreaChartMobile userId={profile?.id} />
           </div>
-          {/* Desktop: Day, Week, Month view */}
           <div className="hidden lg:block">
             <SchoolProgressAreaChartDesktop userId={profile?.id} />
           </div>
+        </div> */}
+
+        {/* All Lessons Card */}
+        <div className="grid-chart">
+          <AllLessonsCard />
+        </div>
+
+        {/* Habits Completed Card */}
+        <div className="grid-chart">
+          <HabitsCompletedCard />
         </div>
 
         {/* Active Course */}

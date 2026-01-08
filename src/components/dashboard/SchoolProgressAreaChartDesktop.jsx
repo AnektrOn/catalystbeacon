@@ -121,7 +121,15 @@ const SchoolProgressAreaChartDesktop = ({ userId }) => {
     chartDataLength: chartData?.length || 0,
     categoriesLength: categories?.length || 0,
     chartData: chartData,
-    categories: categories
+    categories: categories,
+    firstDataPoint: chartData?.[0],
+    allValues: chartData?.map(d => {
+      const values = {}
+      categories?.forEach(cat => {
+        values[cat] = d[cat]
+      })
+      return { Period: d.Period, ...values }
+    })
   })
 
   return (
@@ -162,8 +170,8 @@ const SchoolProgressAreaChartDesktop = ({ userId }) => {
             <p>Loading chart data...</p>
           </div>
         ) : chartData && chartData.length > 0 && categories && categories.length > 0 ? (
-          <div style={{ width: '100%', height: '320px', position: 'relative' }}>
-            <ResponsiveContainer width="100%" height="100%">
+          <div style={{ width: '100%', height: '320px', position: 'relative', minHeight: '320px' }}>
+            <ResponsiveContainer width="100%" height={320}>
             <RechartsAreaChart
               data={chartData}
               margin={{ top: 10, right: 10, left: 0, bottom: 60 }}
@@ -172,8 +180,8 @@ const SchoolProgressAreaChartDesktop = ({ userId }) => {
                 {categories.map((schoolName, index) => {
                   const schoolColor = getSchoolColor(schoolName, index)
                   // Adjust gradient opacity based on number of schools
-                  const topOpacity = categories.length > 10 ? 0.6 : 0.8
-                  const bottomOpacity = categories.length > 10 ? 0.05 : 0.1
+                  const topOpacity = categories.length > 10 ? 0.8 : 1
+                  const bottomOpacity = categories.length > 10 ? 0.2 : 0.3
                   return (
                     <linearGradient
                       key={schoolName}
@@ -189,26 +197,28 @@ const SchoolProgressAreaChartDesktop = ({ userId }) => {
                   )
                 })}
               </defs>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.2)" opacity={0.5} />
               <XAxis
                 dataKey="Period"
-                stroke="hsl(var(--muted-foreground))"
+                stroke="rgba(255, 255, 255, 0.6)"
                 style={{ fontSize: '12px' }}
                 angle={period === 'day' ? -45 : 0}
                 textAnchor={period === 'day' ? 'end' : 'middle'}
                 height={period === 'day' ? 60 : 30}
+                tick={{ fill: 'rgba(255, 255, 255, 0.8)', fontSize: 12 }}
               />
               <YAxis
-                stroke="hsl(var(--muted-foreground))"
+                stroke="rgba(255, 255, 255, 0.6)"
                 style={{ fontSize: '12px' }}
                 width={40}
+                tick={{ fill: 'rgba(255, 255, 255, 0.8)', fontSize: 12 }}
               />
               <Tooltip content={<CustomTooltip />} />
               {categories.map((schoolName, index) => {
                 const schoolColor = getSchoolColor(schoolName, index)
                 // Adjust opacity and stroke width based on number of schools for better visibility
-                const opacity = categories.length > 10 ? 0.6 : 0.8
-                const strokeWidth = categories.length > 15 ? 1.5 : 2
+                const opacity = categories.length > 10 ? 0.7 : 0.9
+                const strokeWidth = categories.length > 15 ? 2 : 2.5
                 return (
                   <Area
                     key={schoolName}
@@ -218,7 +228,7 @@ const SchoolProgressAreaChartDesktop = ({ userId }) => {
                     stroke={schoolColor}
                     fill={`url(#desktop-color${index})`}
                     strokeWidth={strokeWidth}
-                    strokeOpacity={opacity}
+                    strokeOpacity={1}
                     fillOpacity={opacity}
                   />
                 )

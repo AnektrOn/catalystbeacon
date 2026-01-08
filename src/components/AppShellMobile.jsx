@@ -321,7 +321,7 @@ const AppShellMobile = () => {
     { icon: Grid3X3, label: 'Dashboard', path: '/dashboard', restricted: false },
     { icon: Target, label: 'Mastery', path: '/mastery', restricted: false },
     { icon: BookOpen, label: 'Courses', path: '/courses', restricted: true },
-    { icon: Sparkles, label: 'Stellar Map', path: '/stellar-map-2d', restricted: true },
+    { icon: Sparkles, label: 'Stellar Map', path: '/stellar-map', restricted: true },
     { icon: Map, label: 'Roadmap', path: '/roadmap/ignition', restricted: false },
     { icon: Users, label: 'Community', path: '/community', restricted: true },
     { icon: CreditCard, label: 'Pricing', path: '/pricing', restricted: false },
@@ -333,7 +333,7 @@ const AppShellMobile = () => {
     { icon: Home, label: 'Home', path: '/dashboard', restricted: false },
     { icon: Target, label: 'Mastery', path: '/mastery', restricted: false },
     { icon: BookOpen, label: 'Courses', path: '/courses', restricted: true },
-    { icon: Sparkles, label: 'Stellar', path: '/stellar-map-2d', restricted: true },
+    { icon: Sparkles, label: 'Stellar', path: '/stellar-map', restricted: true },
     { icon: User, label: 'Profile', path: '/profile', restricted: true }
   ];
 

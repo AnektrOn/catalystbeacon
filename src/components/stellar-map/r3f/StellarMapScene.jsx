@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { CoreSun } from './CoreSun';
 import { FogSphere } from './FogSphere';
 import { CanvasNode } from './CanvasNode';
+import { FogOverlay } from './FogOverlay';
 import { GoldLine, WhiteLine } from './ConnectionLines';
 import {
   positionSubnodeMetatron,
@@ -436,6 +437,14 @@ export function StellarMapScene({
         onSubnodeFocus={onSubnodeFocus}
         constellationCenters={constellationCenters}
         nodePositions={nodePositions}
+      />
+
+      {/* 2D Fog Overlay - hides nodes based on difficulty/XP thresholds */}
+      <FogOverlay
+        userXP={userXP}
+        coreName={coreName}
+        nodePositions={nodeData?.positions || {}}
+        nodeDifficulties={nodeData?.difficulties || {}}
       />
 
       {/* Bloom effect disabled for performance - very expensive with many objects */}

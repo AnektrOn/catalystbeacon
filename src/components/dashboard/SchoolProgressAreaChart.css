@@ -77,14 +77,36 @@
   height: 100% !important;
   display: block !important;
   overflow: visible !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.school-chart-container svg path,
+.school-chart-container svg line,
+.school-chart-container svg circle,
+.school-chart-container svg text {
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 /* Ensure ResponsiveContainer is visible */
-.school-chart-container > .recharts-responsive-container {
+.school-chart-container > div > .recharts-responsive-container {
   width: 100% !important;
   height: 100% !important;
   display: block !important;
   position: relative !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.school-chart-container .recharts-surface {
+  overflow: visible !important;
+}
+
+.school-chart-container .recharts-area {
+  pointer-events: auto !important;
 }
 
 .school-chart-loading,
