@@ -6,6 +6,7 @@ import StellarMapControls from './StellarMapControls';
 import NodeTooltip from './NodeTooltip';
 import StellarMapDebugOverlay from './StellarMapDebugOverlay';
 import YouTubePlayerModal from './YouTubePlayerModal';
+import { StarfieldBackground } from './r3f/StarfieldBackground';
 import { Link } from 'react-router-dom';
 import { LayoutGrid } from 'lucide-react';
 
@@ -207,27 +208,16 @@ const StellarMap = () => {
 
   return (
     <div
-      className="relative overflow-hidden bg-gradient-radial from-[#0a0a1e] to-black"
+      className="relative overflow-hidden bg-black w-full h-screen"
       style={{ 
-        width: '70%', 
-        height: '70vh', 
-        margin: '15vh auto 0',
-        padding: 0
+        padding: 0,
+        margin: 0
       }}
       role="main"
       aria-label="Stellar Map - 3D visualization of learning content"
     >
       {/* Starfield Background */}
-      <div
-        className="absolute inset-0 opacity-50 pointer-events-none"
-        style={{
-          backgroundImage: "url('https://humancatalystprogram.com/wp-content/uploads/2025/06/pexels-frank-cone-140140-3607542.jpg')",
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat'
-        }}
-        aria-hidden="true"
-      />
+      <StarfieldBackground />
 
       {/* View Switch Link - Link to 2D view */}
       <div className="absolute top-4 right-4 z-[60] shadow-lg">
@@ -241,29 +231,28 @@ const StellarMap = () => {
         </Link>
       </div>
 
-      {/* 3D Scene */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div style={{ width: '100%', height: '100%' }}>
-          <Suspense fallback={
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Loading 3D view...</p>
-              </div>
+      {/* 3D Scene - Transparent so starfield shows through */}
+      <div className="absolute inset-0 w-full h-full z-10">
+        <Suspense fallback={
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading 3D view...</p>
             </div>
-          }>
-            <StellarMapScene
-              coreName={currentCore}
-              hierarchyData={hierarchyData}
-              showWhiteLines={showWhiteLines}
-              onNodeHover={handleNodeHover}
-              onNodeClick={handleNodeClick}
-              hoveredNodeId={hoveredNodeId}
-              onConstellationFocus={(focusFn) => { focusConstellationRef.current = focusFn; }}
-              onSubnodeFocus={(focusFn) => { focusSubnodeRef.current = focusFn; }}
-            />
-          </Suspense>
-        </div>
+          </div>
+        }>
+          <StellarMapScene
+            coreName={currentCore}
+            hierarchyData={hierarchyData}
+            showWhiteLines={showWhiteLines}
+            onNodeHover={handleNodeHover}
+            onNodeClick={handleNodeClick}
+            hoveredNodeId={hoveredNodeId}
+            onConstellationFocus={(focusFn) => { focusConstellationRef.current = focusFn; }}
+            onSubnodeFocus={(focusFn) => { focusSubnodeRef.current = focusFn; }}
+            userXP={visibilityData.userXP}
+          />
+        </Suspense>
       </div>
 
       {/* Loading Overlay */}

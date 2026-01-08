@@ -1,12 +1,12 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, Environment, Sphere } from '@react-three/drei';
 // Bloom post-processing disabled for performance
 // import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { CoreSun } from './CoreSun';
 import { FogSphere } from './FogSphere';
-import { NodeSphere } from './NodeSphere';
+import { CanvasNode } from './CanvasNode';
 import { GoldLine, WhiteLine } from './ConnectionLines';
 import {
   positionSubnodeMetatron,
@@ -90,6 +90,7 @@ function SceneContent({
   const { camera } = useThree();
   const [constellationCenters, setConstellationCenters] = useState({});
   const nodePositionsRef = useRef({});
+  const nodeDifficultiesRef = useRef({});
   const cameraPositionRef = useRef([0, 0, 25]);
   const maxRenderDistance = 100; // Only render nodes within this distance
 
@@ -199,9 +200,13 @@ function SceneContent({
           );
           const nodePosArray = [nodePos.x, nodePos.y, nodePos.z];
           nodePositions.push(nodePosArray);
+          
+          // Store node position and difficulty for fog overlay
+          nodePositionsRef.current[node.id] = nodePosArray;
+          nodeDifficultiesRef.current[node.id] = node.difficulty || 0;
 
           elements.push(
-            <NodeSphere
+            <CanvasNode
               key={`node-${node.id}`}
               position={nodePosArray}
               difficulty={node.difficulty || 0}
@@ -221,38 +226,36 @@ function SceneContent({
           );
         });
 
-        // Gold line from family center to constellation's easiest node
-        if (nodes.length > 0) {
-          const easiestNode = nodes.reduce((min, node) =>
-            (node.difficulty || 0) < (min.difficulty || 0) ? node : min
-          );
-          const easiestIndex = nodes.findIndex(n => n.id === easiestNode.id);
-          if (easiestIndex >= 0 && nodePositions[easiestIndex]) {
-            elements.push(
-              <GoldLine
-                key={`gold-${constellationName}`}
-                start={[familyCenter.x, familyCenter.y, familyCenter.z]}
-                end={nodePositions[easiestIndex]}
-              />
-            );
-          }
-        }
+        // Gold lines disabled for performance - can re-enable if needed
+        // if (nodes.length > 0) {
+        //   const easiestNode = nodes.reduce((min, node) =>
+        //     (node.difficulty || 0) < (min.difficulty || 0) ? node : min
+        //   );
+        //   const easiestIndex = nodes.findIndex(n => n.id === easiestNode.id);
+        //   if (easiestIndex >= 0 && nodePositions[easiestIndex]) {
+        //     elements.push(
+        //       <GoldLine
+        //         key={`gold-${constellationName}`}
+        //         start={[familyCenter.x, familyCenter.y, familyCenter.z]}
+        //         end={nodePositions[easiestIndex]}
+        //       />
+        //     );
+        //   }
+        // }
 
-        // White lines between nodes - Severely limited for performance
-        if (showWhiteLines && nodePositions.length > 1) {
-          // Only connect nodes in a chain (each to next) to drastically reduce line count
-          for (let i = 0; i < nodePositions.length - 1; i++) {
-            // Only connect to next node (chain connection)
-            elements.push(
-              <WhiteLine
-                key={`white-${constellationName}-${i}-${i + 1}`}
-                start={nodePositions[i]}
-                end={nodePositions[i + 1]}
-                visible={showWhiteLines}
-              />
-            );
-          }
-        }
+        // White lines between nodes - Disabled for performance (can re-enable if needed)
+        // if (showWhiteLines && nodePositions.length > 1) {
+        //   for (let i = 0; i < nodePositions.length - 1; i++) {
+        //     elements.push(
+        //       <WhiteLine
+        //         key={`white-${constellationName}-${i}-${i + 1}`}
+        //         start={nodePositions[i]}
+        //         end={nodePositions[i + 1]}
+        //         visible={showWhiteLines}
+        //       />
+        //     );
+        //   }
+        // }
       });
     });
 
@@ -263,7 +266,10 @@ function SceneContent({
       onConstellationCentersReady(centers);
     }
     if (onNodePositionsReady) {
-      onNodePositionsReady(nodePositionsRef.current);
+      onNodePositionsReady({
+        positions: nodePositionsRef.current,
+        difficulties: nodeDifficultiesRef.current
+      });
     }
     
     return elements;
@@ -271,8 +277,10 @@ function SceneContent({
 
   return (
     <>
-      <ambientLight intensity={0.4} />
-      <pointLight position={[0, 0, 0]} intensity={1.5} distance={50} color={0xff8844} />
+      {/* Simplified lighting for performance - no Environment preset */}
+      <ambientLight intensity={0.6} />
+      <pointLight position={[0, 0, 0]} intensity={0.5} color={0xff8844} distance={100} />
+      
       {sceneElements}
     </>
   );
@@ -361,15 +369,19 @@ export function StellarMapScene({
   onNodeClick,
   hoveredNodeId,
   onConstellationFocus,
-  onSubnodeFocus
+  onSubnodeFocus,
+  userXP = 0
 }) {
   const controlsRef = useRef();
   const [constellationCenters, setConstellationCenters] = useState({});
-  const [nodePositions, setNodePositions] = useState({});
+  const [nodeData, setNodeData] = useState({ positions: {}, difficulties: {} });
+  
+  // Ensure nodeData always has the expected structure
+  const nodePositions = nodeData?.positions || {};
 
   return (
       <Canvas
-      camera={{ position: [0, 0, 25], fov: 50 }}
+      camera={{ position: [0, 0, 25], fov: 60 }}
       gl={{ 
         antialias: false,
         alpha: true,
@@ -379,10 +391,15 @@ export function StellarMapScene({
         logarithmicDepthBuffer: false,
         precision: "lowp"
       }}
-      dpr={[0.5, 0.8]}
-      performance={{ min: 0.5 }}
-      frameloop="always"
-      style={{ background: '#101020' }}
+      dpr={[0.5, 1.0]}
+      performance={{ min: 0.3 }}
+      frameloop="demand"
+      style={{ background: 'transparent' }}
+      onCreated={({ gl }) => {
+        gl.domElement.style.pointerEvents = "auto"
+        // Aggressive optimization
+        gl.setPixelRatio(Math.min(window.devicePixelRatio, 1.0))
+      }}
     >
       <OrbitControls
         ref={controlsRef}
@@ -410,7 +427,7 @@ export function StellarMapScene({
         onNodeClick={onNodeClick}
         hoveredNodeId={hoveredNodeId}
         onConstellationCentersReady={setConstellationCenters}
-        onNodePositionsReady={setNodePositions}
+        onNodePositionsReady={(data) => setNodeData(data)}
       />
 
       <CameraController
