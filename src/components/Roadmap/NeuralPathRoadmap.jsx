@@ -152,7 +152,7 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition' }) => {
       setCurrentLevel(currentIndex);
 
       // Create nodes - use roadmap_progress to determine unlocked status
-      await createNodes(allLessons, completed, currentIndex);
+      createNodes(allLessons, completed, currentIndex);
 
       // Update user XP
       const { data: profile } = await supabase
