@@ -111,7 +111,7 @@ const SignupPage = () => {
         if (data?.user && data?.session) {
           // User is signed in, redirect to dashboard (keep loader visible)
           setTimeout(() => {
-            navigate('/dashboard')
+            navigate('/dashboard?new_user=true')
           }, 100)
         } else {
           // User needs to verify email, redirect to login (keep loader visible)

@@ -9,6 +9,7 @@ import socialService from '../services/socialService'
 import levelsService from '../services/levelsService'
 import useSubscription from '../hooks/useSubscription'
 import UpgradeModal from '../components/UpgradeModal'
+import OnboardingModal from '../components/dashboard/OnboardingModal'
 import { getLocalDateString, getTodayStartISO } from '../utils/dateUtils'
 
 // Import Dashboard Widgets
@@ -26,6 +27,7 @@ const Dashboard = () => {
   const { user, profile, fetchProfile } = useAuth()
   const { isFreeUser, isAdmin } = useSubscription()
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false)
   
   // Track navigation and state
   useEffect(() => {
@@ -44,7 +46,15 @@ const Dashboard = () => {
   // Show upgrade modal if redirected from restricted route (not for admins)
   useEffect(() => {
     const upgradePrompt = searchParams.get('upgradePrompt')
-    if (upgradePrompt === 'true' && !isAdmin) {
+    const isNewUser = searchParams.get('new_user')
+
+    if (isNewUser === 'true') {
+      setShowOnboardingModal(true)
+      // Clean up URL to remove new_user param
+      const newParams = new URLSearchParams(searchParams)
+      newParams.delete('new_user')
+      navigate({ search: newParams.toString() }, { replace: true })
+    } else if (upgradePrompt === 'true' && !isAdmin) {
       setShowUpgradeModal(true)
       // Clean up URL
       navigate('/dashboard', { replace: true })
@@ -905,6 +915,12 @@ const Dashboard = () => {
           restrictedFeature={searchParams.get('restrictedFeature')}
         />
       )}
+      
+      {/* Onboarding Modal - Show for new users */}
+      <OnboardingModal 
+        isOpen={showOnboardingModal} 
+        onClose={() => setShowOnboardingModal(false)} 
+      />
     </div>
   )
 }
