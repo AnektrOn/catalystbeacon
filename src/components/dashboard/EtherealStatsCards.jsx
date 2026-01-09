@@ -173,6 +173,8 @@ const EtherealStatsCards = ({
     .icon-box {
       width: 36px;
       height: 36px;
+      min-width: 36px;
+      flex-shrink: 0;
       border-radius: 10px;
       display: flex;
       align-items: center;
@@ -182,6 +184,15 @@ const EtherealStatsCards = ({
       color: var(--card-color);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       transition: all 0.3s ease;
+      box-sizing: border-box;
+    }
+
+    @media (max-width: 480px) {
+      .icon-box {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+      }
     }
     
     .stat-card:hover .icon-box {
@@ -198,6 +209,8 @@ const EtherealStatsCards = ({
       letter-spacing: 1px;
       text-transform: uppercase;
       color: rgba(255, 255, 255, 0.4);
+      word-wrap: break-word;
+      overflow-wrap: break-word;
     }
 
     .stat-value {
@@ -206,12 +219,40 @@ const EtherealStatsCards = ({
       color: #fff;
       line-height: 1;
       text-shadow: 0 0 20px rgba(0,0,0,0.5);
+      word-wrap: break-word;
+      overflow-wrap: break-word;
     }
 
     .stat-subtext {
       font-size: 11px;
       color: rgba(255, 255, 255, 0.3);
       letter-spacing: 0.5px;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+
+    @media (max-width: 767px) {
+      .stat-value {
+        font-size: 20px;
+      }
+      .stat-label {
+        font-size: 9px;
+      }
+      .stat-subtext {
+        font-size: 10px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .stat-value {
+        font-size: 18px;
+      }
+      .stat-label {
+        font-size: 8px;
+      }
+      .stat-subtext {
+        font-size: 9px;
+      }
     }
 
     /* Floating Particles for cards */
@@ -261,11 +302,11 @@ const EtherealStatsCards = ({
               <div className="icon-box">
                 {card.icon}
               </div>
-              <div>
-                <div className="stat-label">{card.label}</div>
-                <div className="stat-value">{card.value}</div>
-                <div className="stat-subtext">{card.subtext}</div>
-              </div>
+            <div style={{ width: '100%', minWidth: 0, flex: 1 }}>
+              <div className="stat-label">{card.label}</div>
+              <div className="stat-value">{card.value}</div>
+              <div className="stat-subtext">{card.subtext}</div>
+            </div>
 
               {/* Decorative Particles that appear on hover */}
               <div className="card-particle" style={{ left: '20%', bottom: '10%', animationDelay: '0s' }}></div>

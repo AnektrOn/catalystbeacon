@@ -50,10 +50,6 @@ const Dashboard = () => {
 
     if (isNewUser === 'true') {
       setShowOnboardingModal(true)
-      // Clean up URL to remove new_user param
-      const newParams = new URLSearchParams(searchParams)
-      newParams.delete('new_user')
-      navigate({ search: newParams.toString() }, { replace: true })
     } else if (upgradePrompt === 'true' && !isAdmin) {
       setShowUpgradeModal(true)
       // Clean up URL
@@ -799,7 +795,7 @@ const Dashboard = () => {
   }, [])
 
   return (
-    <div className="w-full max-w-7xl mx-auto" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', overflowX: 'hidden', padding: '0 1rem' }}>
+    <div className="w-full max-w-7xl mx-auto" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', overflowX: 'hidden', padding: '0 clamp(0.5rem, 2vw, 1rem)' }}>
       <SEOHead 
         title="Dashboard - The Human Catalyst University"
         description="Track your progress, view your achievements, and continue your learning journey"
@@ -919,7 +915,15 @@ const Dashboard = () => {
       {/* Onboarding Modal - Show for new users */}
       <OnboardingModal 
         isOpen={showOnboardingModal} 
-        onClose={() => setShowOnboardingModal(false)} 
+        onClose={() => {
+          setShowOnboardingModal(false)
+          // Clean up URL when closing
+          const newParams = new URLSearchParams(searchParams)
+          if (newParams.get('new_user')) {
+            newParams.delete('new_user')
+            navigate({ search: newParams.toString() }, { replace: true })
+          }
+        }} 
       />
     </div>
   )

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 // Keep your existing imports or use these lucide icons as replacements
 import { Button } from '../components/ui/button';
 // Logo Import
-import LogoUni from '../assets/Logo uni.png';
+import LogoUni from 'assets/Logo uni.png';
 import { 
   ArrowRight,
   Sparkles,

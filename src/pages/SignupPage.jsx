@@ -81,8 +81,25 @@ const SignupPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    e.stopPropagation()
     
-    if (!validateForm()) {
+    console.log('Form submitted', { formData })
+    
+    // Validate form first
+    const isValid = validateForm()
+    console.log('Form validation result:', isValid, { errors })
+    
+    if (!isValid) {
+      console.log('Form validation failed, showing errors')
+      // Scroll to first error
+      const firstErrorField = Object.keys(errors)[0]
+      if (firstErrorField) {
+        const errorElement = document.getElementById(firstErrorField)
+        if (errorElement) {
+          errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          errorElement.focus()
+        }
+      }
       return
     }
     
@@ -93,6 +110,7 @@ const SignupPage = () => {
     const minLoadingTime = new Promise(resolve => setTimeout(resolve, 500))
 
     try {
+      console.log('Calling signUp function...')
       // Security: Password comes from user input (formData.password), never hardcoded
       // All passwords are user-provided and validated before submission
       const [signUpResult] = await Promise.all([
@@ -100,29 +118,37 @@ const SignupPage = () => {
         minLoadingTime
       ])
       
+      console.log('SignUp result:', signUpResult)
       const { data, error } = signUpResult || {}
       
       if (error) {
+        console.error('SignUp error:', error)
         toast.error(error.message || 'Failed to create account')
         setLoading(false)
       } else {
-        toast.success('Account created successfully!')
+        console.log('SignUp successful, data:', data)
         // Check if user was immediately signed in (email confirmation disabled)
         if (data?.user && data?.session) {
           // User is signed in, redirect to dashboard (keep loader visible)
+          console.log('User signed in immediately, redirecting to dashboard')
           setTimeout(() => {
             navigate('/dashboard?new_user=true')
           }, 100)
-        } else {
+        } else if (data?.user) {
           // User needs to verify email, redirect to login (keep loader visible)
+          console.log('Email confirmation required, redirecting to login')
           setTimeout(() => {
             navigate('/login')
           }, 100)
+        } else {
+          console.error('Unexpected signup response - no user data')
+          toast.error('Account creation completed but unexpected response received')
+          setLoading(false)
         }
       }
     } catch (error) {
-      console.error('Signup error:', error)
-      toast.error('An unexpected error occurred')
+      console.error('Signup error (catch block):', error)
+      toast.error(error?.message || 'An unexpected error occurred')
       setLoading(false)
     }
   }
@@ -154,7 +180,7 @@ const SignupPage = () => {
           <div className="mb-12">
             <div className="flex items-center space-x-3">
               <img 
-                src="../assets/Logo uni.png" 
+                src="assets/Logo uni.png" 
                 alt="HC University" 
                 className="w-12 h-12 object-contain"
               />
@@ -187,7 +213,7 @@ const SignupPage = () => {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <div>
               <input
                 id="email"
@@ -324,8 +350,17 @@ const SignupPage = () => {
               disabled={loading}
               className="w-full py-3.5 px-4 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-medium rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 group mt-6"
             >
-              <span>Start Creating</span>
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              {loading ? (
+                <>
+                  <span>Creating Account...</span>
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                </>
+              ) : (
+                <>
+                  <span>Start Creating</span>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
             </button>
           </form>
 
