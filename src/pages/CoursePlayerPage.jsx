@@ -43,6 +43,42 @@ const CoursePlayerPage = () => {
 
   const chapterNum = parseInt(chapterNumber);
   const lessonNum = parseInt(lessonNumber);
+  
+  // Check if accessed from roadmap (free access mode)
+  const [fromRoadmap, setFromRoadmap] = useState(false);
+  const [returnUrl, setReturnUrl] = useState(null);
+  const [allowedLesson, setAllowedLesson] = useState(null); // Store the allowed lesson ID
+  
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const fromRoadmapParam = params.get('fromRoadmap');
+    const returnParam = params.get('return');
+    
+    if (fromRoadmapParam === 'true') {
+      setFromRoadmap(true);
+      // Store the allowed lesson (current lesson when accessed from roadmap)
+      setAllowedLesson(`${courseId}-${chapterNum}-${lessonNum}`);
+      if (returnParam) {
+        setReturnUrl(decodeURIComponent(returnParam));
+      }
+    }
+  }, [courseId, chapterNum, lessonNum]);
+  
+  // Validate lesson access when in roadmap mode
+  useEffect(() => {
+    if (fromRoadmap && allowedLesson) {
+      const currentLessonKey = `${courseId}-${chapterNum}-${lessonNum}`;
+      if (currentLessonKey !== allowedLesson) {
+        // User tried to access a different lesson - redirect back
+        toast.error('Access restricted. You can only access the lesson you selected from the roadmap.');
+        if (returnUrl) {
+          navigate(returnUrl);
+        } else {
+          navigate('/roadmap/ignition');
+        }
+      }
+    }
+  }, [courseId, chapterNum, lessonNum, fromRoadmap, allowedLesson, returnUrl, navigate]);
 
   useEffect(() => {
     if (courseId && chapterNum && lessonNum) {
@@ -298,6 +334,11 @@ const CoursePlayerPage = () => {
   };
 
   const handleNavigateLesson = (targetChapterNum, targetLessonNum) => {
+    // Block navigation if accessed from roadmap (free access mode)
+    if (fromRoadmap) {
+      toast.error('Access restricted. This lesson is only available through the roadmap.');
+      return;
+    }
     navigate(`/courses/${courseId}/chapters/${targetChapterNum}/lessons/${targetLessonNum}`);
   };
 
@@ -347,8 +388,8 @@ const CoursePlayerPage = () => {
   return (
     <div className={`flex h-[calc(100vh-80px)] overflow-hidden transition-all duration-500 ${cinemaMode ? 'fixed inset-0 z-50' : ''}`} style={cinemaMode ? { backgroundColor: 'var(--bg-secondary, #0f0f0f)' } : {}}>
 
-      {/* Mobile Menu Overlay */}
-      {showMobileMenu && (
+      {/* Mobile Menu Overlay - Disabled in roadmap mode */}
+      {showMobileMenu && !fromRoadmap && (
         <div 
           className="fixed inset-0 z-40 lg:hidden"
           onClick={() => setShowMobileMenu(false)}
@@ -408,7 +449,8 @@ const CoursePlayerPage = () => {
         </div>
       )}
 
-      {/* Sidebar - Course Structure (Desktop) */}
+      {/* Sidebar - Course Structure (Desktop) - Hidden in roadmap mode */}
+      {!fromRoadmap && (
       <div
         className={`glass-effect border-r border-white/10 transition-all duration-300 flex-col
           ${cinemaMode ? (showSidebar ? 'w-80 flex' : 'w-0 opacity-0 overflow-hidden hidden') : 'hidden lg:flex lg:w-80'}
@@ -458,6 +500,27 @@ const CoursePlayerPage = () => {
           ))}
         </div>
       </div>
+      )}
+
+      {/* Roadmap Mode Notice */}
+      {fromRoadmap && (
+        <div className="hidden lg:flex lg:w-80 flex-col items-center justify-center p-6 text-center border-r border-white/10">
+          <div className="glass-panel-floating p-6 max-w-xs">
+            <div className="text-4xl mb-4">🔒</div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Free Preview Mode</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              You're viewing this lesson from the roadmap. Access to other lessons requires a subscription.
+            </p>
+            <button
+              onClick={() => returnUrl ? navigate(returnUrl) : navigate('/roadmap/ignition')}
+              className="w-full px-4 py-2 text-sm font-medium text-white rounded-lg transition-all"
+              style={{ backgroundColor: 'var(--color-primary)' }}
+            >
+              Back to Roadmap
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
@@ -465,7 +528,8 @@ const CoursePlayerPage = () => {
         {/* Top Bar - Mobile Optimized */}
         <div className={`flex items-center justify-between px-3 sm:px-6 py-3 ${cinemaMode ? 'backdrop-blur-md' : ''}`} style={cinemaMode ? { backgroundColor: 'color-mix(in srgb, var(--bg-secondary, #0f0f0f) 80%, transparent)' } : {}}>
           <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
-            {/* Mobile Menu Button */}
+            {/* Mobile Menu Button - Disabled in roadmap mode */}
+            {!fromRoadmap && (
             <button
               onClick={() => setShowMobileMenu(true)}
               className="lg:hidden p-2 hover:bg-white/10 rounded-lg text-gray-500 dark:text-gray-400 dark:hover:text-white transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
@@ -473,6 +537,7 @@ const CoursePlayerPage = () => {
             >
               <List size={20} />
             </button>
+            )}
             
             {/* Cinema Mode Sidebar Toggle */}
             {cinemaMode && !showSidebar && (
@@ -488,13 +553,21 @@ const CoursePlayerPage = () => {
             {/* Back Button */}
             {!cinemaMode && (
               <button
-                onClick={() => navigate(`/courses/${courseId}`)}
+                onClick={() => {
+                  if (fromRoadmap && returnUrl) {
+                    navigate(returnUrl);
+                  } else {
+                    navigate(`/courses/${courseId}`);
+                  }
+                }}
                 className="flex items-center gap-1.5 sm:gap-2 text-gray-500 dark:text-gray-400 dark:hover:text-white transition-colors min-h-[44px]"
                 onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
                 onMouseLeave={(e) => e.currentTarget.style.color = ''}
               >
                 <ArrowLeft size={18} className="sm:w-5 sm:h-5" aria-hidden="true"/>
-                <span className="hidden sm:inline text-sm sm:text-base">Back</span>
+                <span className="hidden sm:inline text-sm sm:text-base">
+                  {fromRoadmap ? 'Back to Roadmap' : 'Back'}
+                </span>
               </button>
             )}
             
@@ -531,6 +604,12 @@ const CoursePlayerPage = () => {
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 10%, transparent)', color: 'var(--color-primary)', borderColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', borderWidth: '1px', borderStyle: 'solid' }}>
                 Chapter {chapterNum} • Lesson {lessonNum}
               </div>
+              {fromRoadmap && (
+                <div className="mb-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
+                  <span>🔓</span>
+                  <span>Free Preview Mode - Roadmap Access</span>
+                </div>
+              )}
               <h1 className="text-3xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4 font-heading leading-tight">
                 {currentLesson.lesson_title}
               </h1>
@@ -723,8 +802,8 @@ const CoursePlayerPage = () => {
                       <span className="text-xl font-bold">Lesson Completed</span>
                     </div>
                     
-                    {/* Next Lesson Button - Show after completion */}
-                    {nextLesson && (
+                    {/* Next Lesson Button - Show after completion (disabled in roadmap mode) */}
+                    {nextLesson && !fromRoadmap && (
                       <button
                         onClick={() => handleNavigateLesson(nextLesson.lesson.chapter_number, nextLesson.lesson.lesson_number)}
                         className="group relative px-8 py-4 text-white rounded-full font-bold text-lg shadow-lg transition-all transform hover:scale-105 active:scale-95 overflow-hidden"
@@ -745,6 +824,23 @@ const CoursePlayerPage = () => {
                         <div className="relative flex items-center gap-3">
                           <ChevronRight size={24} />
                           <span>Next Lesson</span>
+                        </div>
+                      </button>
+                    )}
+                    {/* Roadmap mode - return to roadmap after completion */}
+                    {fromRoadmap && isCompleted && (
+                      <button
+                        onClick={() => returnUrl ? navigate(returnUrl) : navigate('/roadmap/ignition')}
+                        className="group relative px-8 py-4 text-white rounded-full font-bold text-lg shadow-lg transition-all transform hover:scale-105 active:scale-95 overflow-hidden"
+                        style={{ 
+                          background: 'var(--gradient-primary)',
+                          backgroundColor: 'var(--color-primary)'
+                        }}
+                      >
+                        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                        <div className="relative flex items-center gap-3">
+                          <ArrowLeft size={24} />
+                          <span>Return to Roadmap</span>
                         </div>
                       </button>
                     )}
@@ -789,7 +885,8 @@ const CoursePlayerPage = () => {
                   </div>
                 )}
 
-                {/* Navigation Buttons */}
+                {/* Navigation Buttons - Disabled in roadmap mode */}
+                {!fromRoadmap && (
                 <div className="flex items-center gap-4 mt-8 w-full max-w-md justify-between">
                   {previousLesson ? (
                     <button
@@ -818,6 +915,7 @@ const CoursePlayerPage = () => {
                     </button>
                   )}
                 </div>
+                )}
               </div>
             )}
 

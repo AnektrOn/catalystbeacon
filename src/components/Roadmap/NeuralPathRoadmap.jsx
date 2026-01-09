@@ -192,9 +192,9 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition' }) => {
     if (!selectedNode) return;
     
     const { lesson } = selectedNode;
-    // Add return URL for completion detection
+    // Add return URL for completion detection and fromRoadmap flag
     const returnUrl = encodeURIComponent(`/roadmap/ignition?completed=true&lessonId=${lesson.course_id}-${lesson.chapter_number}-${lesson.lesson_number}&xp=${lesson.lesson_xp_reward || 0}`);
-    navigate(`/courses/${lesson.course_id}/chapters/${lesson.chapter_number}/lessons/${lesson.lesson_number}?return=${returnUrl}`);
+    navigate(`/courses/${lesson.course_id}/chapters/${lesson.chapter_number}/lessons/${lesson.lesson_number}?return=${returnUrl}&fromRoadmap=true`);
     setIsModalOpen(false);
   };
 

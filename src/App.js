@@ -30,8 +30,6 @@ const AchievementsPage = React.lazy(() => import('./pages/Achievements'))
 const ForgotPasswordPage = React.lazy(() => import('./pages/ForgotPasswordPage'))
 const TermsPage = React.lazy(() => import('./pages/TermsPage'))
 const PrivacyPage = React.lazy(() => import('./pages/PrivacyPage'))
-const LandingPage = React.lazy(() => import('./pages/LandingPage'))
-const EnhancedLandingPage = React.lazy(() => import('./pages/EnhancedLandingPage'))
 const AwakeningLandingPage = React.lazy(() => import('./pages/AwakeningLandingPage'))
 const RoadmapIgnition = React.lazy(() => import('./pages/RoadmapIgnition'))
 
@@ -88,16 +86,6 @@ const AppRoutes = () => {
       <Route path="/privacy" element={
         <React.Suspense fallback={<LoadingScreen />}>
           <PrivacyPage />
-        </React.Suspense>
-      } />
-      <Route path="/landing" element={
-        <React.Suspense fallback={<LoadingScreen />}>
-          <LandingPage />
-        </React.Suspense>
-      } />
-      <Route path="/landing-3d" element={
-        <React.Suspense fallback={<LoadingScreen />}>
-          <EnhancedLandingPage />
         </React.Suspense>
       } />
       
