@@ -799,7 +799,7 @@ const Dashboard = () => {
   }, [])
 
   return (
-    <div className="w-full max-w-7xl mx-auto">
+    <div className="w-full max-w-7xl mx-auto" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', overflowX: 'hidden', padding: '0 1rem' }}>
       <SEOHead 
         title="Dashboard - The Human Catalyst University"
         description="Track your progress, view your achievements, and continue your learning journey"
@@ -828,7 +828,7 @@ const Dashboard = () => {
       </header>
 
       {/* Top Metric Cards Row - Ethereal Stats Cards */}
-      <div className="mb-8 w-full">
+      <div className="mb-8 w-full" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', overflowX: 'hidden', padding: '0' }}>
         <EtherealStatsCards
           streak={dashboardData.ritual.streak}
           lessonsCompleted={dashboardData.stats.lessonsCompleted}

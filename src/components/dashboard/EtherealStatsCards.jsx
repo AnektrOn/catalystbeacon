@@ -66,27 +66,46 @@ const EtherealStatsCards = ({
 
     .ethereal-stats-wrapper {
       width: 100%;
+      max-width: 100%;
       display: block;
+      box-sizing: border-box;
+      overflow: hidden;
     }
 
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
       width: 100%;
+      max-width: 100%;
       margin: 0;
+      padding: 0;
       font-family: 'Rajdhani', sans-serif;
+      box-sizing: border-box;
+      overflow: hidden;
     }
 
     @media (min-width: 768px) {
       .stats-grid {
         grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
       }
     }
 
     @media (max-width: 767px) {
       .stats-grid {
         grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        min-width: 0;
+        width: 100%;
+        max-width: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .stats-grid {
+        gap: 6px;
+        padding: 0;
       }
     }
 
@@ -107,6 +126,26 @@ const EtherealStatsCards = ({
       gap: 12px;
       min-height: 140px;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      min-width: 0;
+    }
+
+    @media (max-width: 767px) {
+      .stat-card {
+        padding: 16px;
+        min-height: 120px;
+        gap: 8px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .stat-card {
+        padding: 12px;
+        min-height: 110px;
+        gap: 6px;
+      }
     }
 
     .stat-card:hover {

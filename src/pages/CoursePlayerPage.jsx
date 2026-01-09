@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import courseService from '../services/courseService';
+import roadmapService from '../services/roadmapService';
 import { supabase } from '../lib/supabaseClient';
 import QuizComponent from '../components/QuizComponent';
 import LessonTracker from '../components/Roadmap/LessonTracker';
@@ -239,57 +240,139 @@ const CoursePlayerPage = () => {
   };
 
   const handleCompleteLesson = async (xpBonus = 0) => {
-    
-    if (!user || !course?.course_id) return;
+    if (!user || !course?.course_id || !currentLesson) return;
 
     try {
       setIsCompleting(true);
 
-      // Complete lesson (awards XP)
-      const { data, error: completeError } = await courseService.completeLesson(
-        user.id,
-        course.course_id,
-        chapterNum,
-        lessonNum,
-        50 + xpBonus
-      );
+      // If course has masterschool, use roadmapService which updates roadmap_progress
+      if (course.masterschool && currentLesson.lesson_id) {
+        const result = await roadmapService.completeLesson(
+          user.id,
+          currentLesson.lesson_id,
+          course.course_id,
+          chapterNum,
+          lessonNum,
+          course.masterschool,
+          currentLesson.lesson_title
+        );
 
-      if (completeError) throw completeError;
+        if (!result.success) {
+          throw new Error(result.message || 'Failed to complete lesson');
+        }
 
-      setUserLessonProgress({ ...data.lessonProgress, is_completed: true });
+        // Verify DB change by checking roadmap_progress
+        const { data: roadmapProgress } = await supabase
+          .from('roadmap_progress')
+          .select('lessons_completed')
+          .eq('user_id', user.id)
+          .eq('masterschool', course.masterschool)
+          .single();
 
-      // Update completed lessons Set to reflect the newly completed lesson
-      const lessonKey = `${chapterNum}_${lessonNum}`;
-      setCompletedLessons(prev => new Set([...prev, lessonKey]));
+        // Verify lesson is in completed list
+        const lessonKey = `${course.course_id}-${chapterNum}-${lessonNum}`;
+        const isInCompleted = roadmapProgress?.lessons_completed?.some(
+          (l) => `${l.course_id}-${l.chapter_number}-${l.lesson_number}` === lessonKey
+        );
 
-      // Recalculate course progress
-      await courseService.calculateCourseProgress(user.id, course.course_id);
+        if (!isInCompleted) {
+          throw new Error('Lesson completion not confirmed in database');
+        }
 
-      // Refresh profile to update XP (after course progress is calculated to ensure DB is updated)
-      if (user.id) {
-        await fetchProfile(user.id);
+        // Update local state only after DB confirmation
+        setUserLessonProgress(prev => ({ ...prev, is_completed: true }));
+        const lessonKeyLocal = `${chapterNum}_${lessonNum}`;
+        setCompletedLessons(prev => new Set([...prev, lessonKeyLocal]));
+
+        // Refresh profile to update XP
+        if (user.id) {
+          await fetchProfile(user.id);
+        }
+
+        // Navigate back to roadmap if accessed from roadmap
+        if (fromRoadmap && returnUrl) {
+          setTimeout(() => {
+            navigate(returnUrl);
+          }, 1500);
+        }
+
+        toast.success(`Lesson completed! +${result.rewards?.xp_earned || 0} XP earned`, {
+          duration: 4000,
+          style: {
+            background: 'rgba(30, 41, 59, 0.95)',
+            color: '#fff',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
+            borderRadius: '12px',
+            padding: '16px 20px',
+            fontSize: '14px',
+            fontWeight: '500',
+            zIndex: 9999,
+          },
+          iconTheme: {
+            primary: '#10B981',
+            secondary: '#fff',
+          },
+        });
+      } else {
+        // For non-roadmap courses, use courseService
+        const { data, error: completeError } = await courseService.completeLesson(
+          user.id,
+          course.course_id,
+          chapterNum,
+          lessonNum,
+          50 + xpBonus
+        );
+
+        if (completeError) throw completeError;
+
+        // Verify DB change
+        const { data: progressCheck } = await supabase
+          .from('user_lesson_progress')
+          .select('is_completed')
+          .eq('user_id', user.id)
+          .eq('course_id', course.course_id)
+          .eq('chapter_number', chapterNum)
+          .eq('lesson_number', lessonNum)
+          .single();
+
+        if (!progressCheck?.is_completed) {
+          throw new Error('Lesson completion not confirmed in database');
+        }
+
+        // Update local state only after DB confirmation
+        setUserLessonProgress({ ...data.lessonProgress, is_completed: true });
+        const lessonKey = `${chapterNum}_${lessonNum}`;
+        setCompletedLessons(prev => new Set([...prev, lessonKey]));
+
+        // Recalculate course progress
+        await courseService.calculateCourseProgress(user.id, course.course_id);
+
+        // Refresh profile to update XP
+        if (user.id) {
+          await fetchProfile(user.id);
+        }
+
+        toast.success(`Lesson completed! +${data.xpAwarded} XP earned`, {
+          duration: 4000,
+          style: {
+            background: 'rgba(30, 41, 59, 0.95)',
+            color: '#fff',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
+            borderRadius: '12px',
+            padding: '16px 20px',
+            fontSize: '14px',
+            fontWeight: '500',
+            zIndex: 9999,
+          },
+          iconTheme: {
+            primary: '#10B981',
+            secondary: '#fff',
+          },
+        });
       }
-
-      toast.success(`Lesson completed! +${data.xpAwarded} XP earned`, {
-        duration: 4000,
-        style: {
-          background: 'rgba(30, 41, 59, 0.95)',
-          color: '#fff',
-          border: '1px solid rgba(16, 185, 129, 0.3)',
-          borderRadius: '12px',
-          padding: '16px 20px',
-          fontSize: '14px',
-          fontWeight: '500',
-          zIndex: 9999,
-        },
-        iconTheme: {
-          primary: '#10B981',
-          secondary: '#fff',
-        },
-      });
     } catch (err) {
       console.error('Error completing lesson:', err);
-      toast.error('Failed to complete lesson. Please try again.');
+      toast.error(err.message || 'Failed to complete lesson. Please try again.');
     } finally {
       setIsCompleting(false);
     }

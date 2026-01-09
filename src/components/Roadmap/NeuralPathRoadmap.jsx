@@ -102,27 +102,57 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition' }) => {
       const allLessons = await roadmapService.getRoadmapLessons(masterschool);
       setLessons(allLessons);
 
-      // Get completed lessons
-      const { data } = await supabase
+      // Get roadmap progress from roadmap_progress table
+      const roadmapProgress = await roadmapService.getUserRoadmapProgress(user.id, masterschool);
+      
+      // Extract completed lessons from roadmap_progress
+      const completedFromRoadmap = new Set();
+      if (roadmapProgress?.lessons_completed && Array.isArray(roadmapProgress.lessons_completed)) {
+        roadmapProgress.lessons_completed.forEach((lesson) => {
+          const key = `${lesson.course_id}-${lesson.chapter_number}-${lesson.lesson_number}`;
+          completedFromRoadmap.add(key);
+        });
+      }
+
+      // Also check user_lesson_progress as fallback
+      const { data: lessonProgressData } = await supabase
         .from('user_lesson_progress')
         .select('course_id, chapter_number, lesson_number, is_completed')
         .eq('user_id', user.id)
         .eq('is_completed', true);
 
-      const completed = new Set(
-        (data || []).map(c => `${c.course_id}-${c.chapter_number}-${c.lesson_number}`)
+      const completedFromProgress = new Set(
+        (lessonProgressData || []).map(c => `${c.course_id}-${c.chapter_number}-${c.lesson_number}`)
       );
+
+      // Merge both sets (roadmap_progress is authoritative)
+      const completed = new Set([...completedFromRoadmap, ...completedFromProgress]);
       setCompletedSet(completed);
 
-      // Find current level (first incomplete lesson)
-      const currentIndex = allLessons.findIndex((lesson, index) => {
-        const key = `${lesson.course_id}-${lesson.chapter_number}-${lesson.lesson_number}`;
-        return !completed.has(key);
-      });
-      setCurrentLevel(currentIndex >= 0 ? currentIndex : allLessons.length - 1);
+      // Find current level based on roadmap_progress current_lesson_id or first incomplete
+      let currentIndex = -1;
+      if (roadmapProgress?.current_lesson_id) {
+        // Find lesson by lesson_id from roadmap_progress
+        currentIndex = allLessons.findIndex(l => l.lesson_id === roadmapProgress.current_lesson_id);
+      }
+      
+      // If not found, find first incomplete lesson
+      if (currentIndex === -1) {
+        currentIndex = allLessons.findIndex((lesson) => {
+          const key = `${lesson.course_id}-${lesson.chapter_number}-${lesson.lesson_number}`;
+          return !completed.has(key);
+        });
+      }
 
-      // Create nodes
-      createNodes(allLessons, completed, currentIndex >= 0 ? currentIndex : allLessons.length - 1);
+      // If all completed, set to last lesson
+      if (currentIndex === -1) {
+        currentIndex = allLessons.length - 1;
+      }
+
+      setCurrentLevel(currentIndex);
+
+      // Create nodes - use roadmap_progress to determine unlocked status
+      await createNodes(allLessons, completed, currentIndex);
 
       // Update user XP
       const { data: profile } = await supabase
@@ -142,7 +172,7 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition' }) => {
     }
   };
 
-  // Create nodes from lessons
+  // Create nodes from lessons - determine unlock status from roadmap_progress
   const createNodes = (lessonsList, completed, currentIdx) => {
     const nodeList = [];
     
@@ -151,7 +181,20 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition' }) => {
       const key = `${lesson.course_id}-${lesson.chapter_number}-${lesson.lesson_number}`;
       const isCompleted = completed.has(key);
       const isActive = i === currentIdx;
-      const isLocked = i > currentIdx && !isCompleted;
+      
+      // Determine if lesson is unlocked based on roadmap_progress
+      // First lesson is always unlocked, others require previous lesson completion
+      let isUnlocked = false;
+      if (i === 0) {
+        isUnlocked = true; // First lesson always unlocked
+      } else {
+        // Check if previous lesson is completed
+        const prevLesson = lessonsList[i - 1];
+        const prevKey = `${prevLesson.course_id}-${prevLesson.chapter_number}-${prevLesson.lesson_number}`;
+        isUnlocked = completed.has(prevKey);
+      }
+      
+      const isLocked = !isUnlocked && !isCompleted;
       const isBoss = (i + 1) % CONFIG.bossInterval === 0;
 
       const irregularity = Math.sin(i * 1.5) * 30;
@@ -160,7 +203,8 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition' }) => {
 
       let status = 'locked';
       if (isCompleted) status = 'completed';
-      if (isActive) status = 'active';
+      else if (isActive && isUnlocked) status = 'active';
+      else if (isUnlocked) status = 'unlocked';
 
       nodeList.push({
         id: i,
@@ -169,7 +213,7 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition' }) => {
         y,
         status,
         isBoss,
-        isLocked
+        isLocked: !isUnlocked
       });
     }
 

@@ -154,7 +154,7 @@ const SignupPage = () => {
           <div className="mb-12">
             <div className="flex items-center space-x-3">
               <img 
-                src="/Logo uni.png" 
+                src="../assets/Logo uni.png" 
                 alt="HC University" 
                 className="w-12 h-12 object-contain"
               />
@@ -288,6 +288,36 @@ const SignupPage = () => {
                 <p className="mt-1.5 text-xs text-red-400">{errors.confirmPassword}</p>
               )}
             </div>
+
+            {/* Terms Agreement Checkbox */}
+            <div className="flex items-start gap-3 mt-6">
+              <input
+                id="agreeToTerms"
+                name="agreeToTerms"
+                type="checkbox"
+                checked={formData.agreeToTerms}
+                onChange={handleChange}
+                disabled={loading}
+                className="mt-1 w-4 h-4 rounded border-white/20 bg-white/5 text-emerald-500 focus:ring-2 focus:ring-emerald-500/50 focus:ring-offset-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+              <label htmlFor="agreeToTerms" className="text-sm text-white/60 cursor-pointer">
+                I agree to the{' '}
+                <Link to="/terms" className="text-emerald-400 hover:text-emerald-300 underline">
+                  Terms of Service
+                </Link>
+                ,{' '}
+                <Link to="/privacy" className="text-emerald-400 hover:text-emerald-300 underline">
+                  Privacy Policy
+                </Link>
+                {' '}and{' '}
+                <Link to="/cookies" className="text-emerald-400 hover:text-emerald-300 underline">
+                  Data Usage Practices
+                </Link>
+              </label>
+            </div>
+            {errors.agreeToTerms && (
+              <p className="text-xs text-red-400 -mt-2">{errors.agreeToTerms}</p>
+            )}
 
             <button
               type="submit"

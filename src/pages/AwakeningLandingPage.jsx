@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 // Keep your existing imports or use these lucide icons as replacements
 import { Button } from '../components/ui/button';
+// Logo Import
+import LogoUni from '../assets/Logo uni.png';
 import { 
   ArrowRight,
   Sparkles,
@@ -280,24 +282,18 @@ const EnhancedLandingPage = () => {
         <div className="container mx-auto px-6">
           <div className="flex items-center justify-between h-24">
             <div className="flex items-center gap-3">
-              <div className="relative w-10 h-10 flex items-center justify-center">
-                <div className="absolute inset-0 bg-cyan-200/10 rounded-full animate-pulse" />
-                <Sparkles className="w-6 h-6 text-cyan-200 drop-shadow-[0_0_10px_rgba(165,243,252,0.8)]" />
-              </div>
-              <span className="text-xl font-bold font-rajdhani tracking-[0.2em] text-white">
-                HC <span className="text-cyan-200 text-shadow-glow">UNIVERSITY</span>
-              </span>
+              <img src={LogoUni} alt="HC University" className="h-12 w-auto object-contain drop-shadow-[0_0_15px_rgba(165,243,252,0.6)]" />
             </div>
 
             <div className="flex items-center gap-8">
               <Link to="/login" className="hidden md:block text-sm font-rajdhani tracking-widest text-gray-400 hover:text-cyan-200 transition-colors uppercase">
                 Access
               </Link>
-              <Link to="/signup">
-                <Button className="btn-ethereal-primary rounded-full px-8 py-2 text-xs">
+              <Button asChild className="btn-ethereal-primary rounded-full px-8 py-2 text-xs">
+                <Link to="/signup">
                   INITIALIZE
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
           </div>
         </div>
@@ -338,17 +334,17 @@ const EnhancedLandingPage = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-8 mb-20">
-            <Link to="/signup">
-              <Button size="lg" className="btn-ethereal-primary rounded-full px-12 py-8 text-xl">
+            <Button asChild size="lg" className="btn-ethereal-primary rounded-full px-12 py-8 text-xl">
+              <Link to="/signup">
                 BEGIN JOURNEY
                 <ArrowRight className="ml-3 w-5 h-5" />
-              </Button>
-            </Link>
-            <Link to="/courses">
-              <Button size="lg" variant="ghost" className="btn-ethereal-text rounded-full px-8 py-8 text-lg font-rajdhani">
+              </Link>
+            </Button>
+            <Button asChild size="lg" variant="ghost" className="btn-ethereal-text rounded-full px-8 py-8 text-lg font-rajdhani">
+              <Link to="/courses">
                 Explore Archives
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
 
           {/* Ethereal Stats (Revised for Genesis/Exclusivity Hook) */}
@@ -534,11 +530,11 @@ const EnhancedLandingPage = () => {
           </div>
           
           <div className="text-center mt-12">
-             <Link to="/signup">
-                <Button size="lg" className="btn-ethereal-primary rounded-full px-12 py-6 text-lg">
-                  INITIALIZE ACCESS
-                </Button>
-             </Link>
+             <Button asChild size="lg" className="btn-ethereal-primary rounded-full px-12 py-6 text-lg">
+               <Link to="/signup">
+                 INITIALIZE ACCESS
+               </Link>
+             </Button>
           </div>
         </div>
       </section>
@@ -566,11 +562,11 @@ const EnhancedLandingPage = () => {
                   </li>
                 ))}
               </ul>
-              <Link to="/signup" className="w-full">
-                <Button variant="ghost" className="w-full btn-ethereal-text py-6 rounded-full border border-white/10 hover:bg-white/5">
+              <Button asChild variant="ghost" className="w-full btn-ethereal-text py-6 rounded-full border border-white/10 hover:bg-white/5">
+                <Link to="/signup" className="w-full">
                   START FREE
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </NeomorphicCard>
 
             {/* Paid Tier */}
@@ -595,11 +591,11 @@ const EnhancedLandingPage = () => {
                   </li>
                 ))}
               </ul>
-              <Link to="/signup" className="w-full">
-                <Button className="w-full btn-ethereal-primary py-6 rounded-full text-lg">
+              <Button asChild className="w-full btn-ethereal-primary py-6 rounded-full text-lg">
+                <Link to="/signup" className="w-full">
                   UPGRADE SYSTEM
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </NeomorphicCard>
           </div>
         </div>
@@ -610,7 +606,7 @@ const EnhancedLandingPage = () => {
         <div className="container mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-8">
             <div>
-              <h4 className="text-2xl font-bold font-cinzel text-white mb-2">HC <span className="text-cyan-200">UNI</span></h4>
+              <img src={LogoUni} alt="HC University" className="h-10 w-auto mb-4 object-contain opacity-80" />
               <p className="text-gray-500 font-rajdhani text-sm tracking-wide">System Version 2.4.0 // Neural Net Active</p>
             </div>
             <div className="flex gap-10 text-sm font-rajdhani text-gray-400 tracking-[0.15em] uppercase">
