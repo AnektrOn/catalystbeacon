@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Path RPG</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;500;600;700&display=swap');
+
+        :root {
+            --neon-blue: #00f3ff;
+            --neon-red: #ff003c;
+            --neon-gold: #ffd700;
+        }
+
+        body {
+            margin: 0;
+            background-color: #020202;
+            color: #e0e0e0;
+            font-family: 'Rajdhani', sans-serif;
+            overflow-x: hidden;
+            touch-action: pan-y;
+            -webkit-tap-highlight-color: transparent;
+            cursor: crosshair; /* Custom Cursor */
+        }
+
+        /* 1. Sci-Fi Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #050505;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--neon-blue);
+        }
+
+        /* --- LAYOUT --- */
+        .map-container {
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+            min-height: 100vh;
+            padding-bottom: 120px;
+            z-index: 1;
+        }
+
+        #neuron-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* --- NODES --- */
+        .node-wrapper {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            width: 70px;
+            height: 70px;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .node-wrapper:active {
+            transform: translate(-50%, -50%) scale(0.9);
+        }
+
+        /* Access Denied Shake Animation */
+        .shake {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate(-52%, -50%); }
+            20%, 80% { transform: translate(-48%, -50%); }
+            30%, 50%, 70% { transform: translate(-54%, -50%); }
+            40%, 60% { transform: translate(-46%, -50%); }
+        }
+
+        /* The "Star" Core */
+        .node-core {
+            width: 8px;
+            height: 8px;
+            background: #fff;
+            border-radius: 50%;
+            position: relative;
+            z-index: 2;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.5);
+        }
+
+        /* The "Halo" */
+        .node-halo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0) 70%);
+            opacity: 0.5;
+            transition: all 0.5s ease;
+            z-index: 1;
+        }
+
+        /* STATES */
+        .node-wrapper.locked .node-core {
+            background: #333;
+            box-shadow: none;
+            width: 6px;
+            height: 6px;
+        }
+        .node-wrapper.locked .node-halo { opacity: 0; }
+        .node-wrapper.locked .node-label { opacity: 0.3; }
+
+        .node-wrapper.active .node-core {
+            width: 14px;
+            height: 14px;
+            background: #fff;
+            box-shadow: 
+                0 0 20px 5px rgba(255, 255, 255, 0.8),
+                0 0 40px 10px rgba(100, 200, 255, 0.4);
+            animation: pulse-core 2s infinite ease-in-out;
+        }
+        .node-wrapper.active .node-halo {
+            width: 90px;
+            height: 90px;
+            background: radial-gradient(circle, rgba(100,200,255,0.15) 0%, rgba(0,0,0,0) 70%);
+            animation: rotate-halo 10s infinite linear;
+        }
+
+        .node-wrapper.completed .node-core {
+            background: #888;
+            box-shadow: 0 0 8px 1px rgba(255, 255, 255, 0.2);
+        }
+        .node-wrapper.completed .node-label { color: #888; }
+
+        /* BOSS NODE VARIANT */
+        .node-wrapper.boss .node-core {
+            border: 2px solid var(--neon-red);
+            background: #300;
+        }
+        .node-wrapper.boss.active .node-core {
+            background: var(--neon-red);
+            box-shadow: 0 0 20px 5px rgba(255, 0, 60, 0.8);
+        }
+        .node-wrapper.boss.active .node-halo {
+            background: radial-gradient(circle, rgba(255, 0, 60, 0.2) 0%, rgba(0,0,0,0) 70%);
+        }
+
+        /* LABELS */
+        .node-label {
+            position: absolute;
+            bottom: -22px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #555;
+            transition: all 0.3s;
+            white-space: nowrap;
+            pointer-events: none;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            opacity: 0.4; /* Dimmed Labels */
+        }
+        .node-wrapper:hover .node-label { opacity: 1; color: #aaa; }
+        .node-wrapper.active .node-label { 
+            color: #fff; 
+            text-shadow: 0 0 10px rgba(255,255,255,0.5); 
+            bottom: -28px;
+            opacity: 1;
+        }
+
+        @keyframes pulse-core {
+            0% { transform: scale(1); box-shadow: 0 0 20px 5px rgba(255, 255, 255, 0.8); }
+            50% { transform: scale(1.15); box-shadow: 0 0 35px 10px rgba(255, 255, 255, 1); }
+            100% { transform: scale(1); box-shadow: 0 0 20px 5px rgba(255, 255, 255, 0.8); }
+        }
+        @keyframes rotate-halo {
+            0% { transform: translate(-50%, -50%) rotate(0deg) scale(1); }
+            50% { transform: translate(-50%, -50%) rotate(180deg) scale(1.1); }
+            100% { transform: translate(-50%, -50%) rotate(360deg) scale(1); }
+        }
+
+        /* --- UI OVERLAYS --- */
+        
+        .hud {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 15px 20px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%);
+            display: flex;
+            justify-content: space-between;
+            z-index: 50;
+            pointer-events: none;
+        }
+        .hud-item {
+            font-size: 14px;
+            color: #888;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .hud-val { color: #fff; font-weight: 700; text-shadow: 0 0 8px rgba(255,255,255,0.3); }
+
+        /* Story Cards (Narrative Overlay) */
+        .story-card {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 300px;
+            text-align: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 1s ease;
+            z-index: 5;
+        }
+        .story-card.visible { opacity: 1; }
+        .story-text {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px #000;
+            background: linear-gradient(90deg, transparent, rgba(0,0,0,0.8), transparent);
+            padding: 5px;
+        }
+
+        /* Floating Recenter Button */
+        #recenter-btn {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(20, 20, 25, 0.9);
+            border: 1px solid #444;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            z-index: 40;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        #recenter-btn.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        #recenter-btn:active { transform: scale(0.9); }
+
+        /* Mission Modal */
+        #modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #modal-overlay.open { opacity: 1; pointer-events: all; }
+
+        .mission-card {
+            background: linear-gradient(135deg, #111, #0a0a0a);
+            border: 1px solid #333;
+            width: 90%;
+            max-width: 350px;
+            padding: 30px;
+            border-radius: 2px;
+            position: relative;
+            transform: scale(0.9) translateY(20px);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.1);
+        }
+        #modal-overlay.open .mission-card { transform: scale(1) translateY(0); }
+
+        .mission-card::before {
+            content: ''; position: absolute; top: -1px; left: -1px; 
+            width: 20px; height: 20px; 
+            border-top: 2px solid #fff; border-left: 2px solid #fff; 
+        }
+        .mission-card::after {
+            content: ''; position: absolute; bottom: -1px; right: -1px; 
+            width: 20px; height: 20px; 
+            border-bottom: 2px solid #fff; border-right: 2px solid #fff; 
+        }
+
+        /* Glitch Effect for Title */
+        .glitch-text {
+            position: relative;
+        }
+        .glitch-text::before, .glitch-text::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #111;
+        }
+        .glitch-text::before {
+            left: 2px;
+            text-shadow: -1px 0 #ff00c1;
+            clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim 5s infinite linear alternate-reverse;
+        }
+        .glitch-text::after {
+            left: -2px;
+            text-shadow: -1px 0 #00fff9;
+            clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim2 5s infinite linear alternate-reverse;
+        }
+        @keyframes glitch-anim {
+            0% { clip: rect(31px, 9999px, 94px, 0); }
+            4.166666667% { clip: rect(91px, 9999px, 43px, 0); }
+            8.333333333% { clip: rect(6px, 9999px, 7px, 0); }
+            /* ... abbreviated for brevity ... */
+            100% { clip: rect(62px, 9999px, 11px, 0); }
+        }
+        @keyframes glitch-anim2 {
+            0% { clip: rect(2px, 9999px, 49px, 0); }
+            100% { clip: rect(89px, 9999px, 21px, 0); }
+        }
+
+        .btn-primary {
+            background: #fff;
+            color: #000;
+            border: none;
+            width: 100%;
+            padding: 15px;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            font-size: 16px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.2s;
+        }
+        .btn-primary:active { transform: scale(0.98); opacity: 0.9; }
+
+        /* Navigation */
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: rgba(5, 5, 8, 0.95);
+            border-top: 1px solid #222;
+            padding: 12px 0;
+            display: flex;
+            justify-content: center;
+            gap: 50px;
+            z-index: 50;
+            backdrop-filter: blur(10px);
+        }
+        .nav-item {
+            color: #444;
+            text-transform: uppercase;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden; /* For Ripple */
+        }
+        .nav-item.active { 
+            color: #fff; 
+            text-shadow: 0 0 12px rgba(255, 255, 255, 0.4); 
+        }
+        /* Active Pulse */
+        .nav-item.active i {
+            animation: pulse-nav 2s infinite ease-in-out;
+            color: var(--neon-blue);
+        }
+        @keyframes pulse-nav {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        /* Ripple Effect */
+        .ripple {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: scale(0);
+            animation: ripple 0.6s linear;
+            pointer-events: none;
+        }
+        @keyframes ripple {
+            to { transform: scale(4); opacity: 0; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- HUD -->
+    <div class="hud">
+        <div class="hud-item"><i class="fas fa-bolt text-xs text-yellow-500"></i> <span class="hud-val">SYNC 85%</span></div>
+        <div class="hud-item"><span class="hud-val" id="sector-display">SECTOR --</span></div>
+    </div>
+
+    <!-- Scrollable Area -->
+    <div class="map-container" id="mapContainer">
+        <canvas id="neuron-canvas"></canvas>
+        <!-- Nodes injected via JS -->
+    </div>
+
+    <!-- Floating Recenter Button -->
+    <button id="recenter-btn" onclick="scrollToActive()">
+        <i class="fas fa-crosshairs"></i>
+    </button>
+
+    <!-- Mission Briefing Modal -->
+    <div id="modal-overlay" onclick="closeModal(event)">
+        <div class="mission-card" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <!-- Glitch effect title -->
+                    <h2 class="text-2xl font-bold text-white tracking-wider glitch-text" data-text="NODE 12" id="modal-title">NODE 12</h2>
+                    <p class="text-gray-500 text-xs tracking-widest uppercase mt-1">Classification: Secure</p>
+                </div>
+                <div class="text-xs border border-gray-700 px-2 py-1 rounded text-gray-400">LVL 12</div>
+            </div>
+            
+            <div class="space-y-4 mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded bg-gray-900 flex items-center justify-center border border-gray-800">
+                        <i class="fas fa-shield-alt text-gray-400 text-xs"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs text-gray-500 uppercase">Objective</div>
+                        <div class="text-sm text-gray-300 typewriter" id="modal-obj">Crack the Firewall</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded bg-gray-900 flex items-center justify-center border border-gray-800">
+                        <i class="fas fa-cube text-blue-400 text-xs shadow-[0_0_10px_rgba(96,165,250,0.3)]"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs text-gray-500 uppercase">Rewards</div>
+                        <div class="text-sm text-gray-300">500 Data Shards</div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-primary" onclick="startLevel(this)">
+                Initialize Link
+            </button>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="nav-bar">
+        <div class="nav-item active" onclick="createRipple(event)">
+            <i class="fas fa-project-diagram"></i>
+            Path
+        </div>
+        <div class="nav-item" onclick="createRipple(event)">
+            <i class="fas fa-database"></i>
+            Inv
+        </div>
+        <div class="nav-item" onclick="createRipple(event)">
+            <i class="fas fa-globe-asia"></i>
+            Net
+        </div>
+    </div>
+
+    <script>
+        const mapContainer = document.getElementById('mapContainer');
+        const canvas = document.getElementById('neuron-canvas');
+        const ctx = canvas.getContext('2d');
+        const recenterBtn = document.getElementById('recenter-btn');
+        const modalOverlay = document.getElementById('modal-overlay');
+
+        const CONFIG = {
+            count: 35, // Increased slightly           
+            spacing: 120,        
+            amplitude: 140,      
+            paddingTop: 300, // More space at top for intro     
+            filamentCount: 8,    
+            filamentChaos: 25,   
+            particleCount: 60,
+            bossInterval: 5    
+        };
+
+        const STATE = {
+            currentLevel: 12,
+            particles: [],
+            mouse: { x: -1000, y: -1000 },
+            audioReady: false
+        };
+
+        let nodes = [];
+        let storyCards = [];
+        let width, height;
+        let audioCtx;
+
+        function init() {
+            // Random Sector Name
+            const sectors = ["7G", "ALPHA", "ZERO", "9-X", "OMNICRON"];
+            document.getElementById('sector-display').innerText = `SECTOR ${sectors[Math.floor(Math.random()*sectors.length)]}`;
+
+            createNodes();
+            renderNodesHTML();
+            
+            resizeCanvas();
+            createParticles();
+
+            // Event Listeners
+            window.addEventListener('resize', resizeCanvas);
+            window.addEventListener('scroll', () => {
+                checkScrollPos();
+                checkStoryCards();
+            });
+            window.addEventListener('mousemove', (e) => {
+                // Adjust mouse pos relative to canvas
+                const rect = canvas.getBoundingClientRect();
+                STATE.mouse.x = e.clientX - rect.left;
+                STATE.mouse.y = e.clientY - rect.top;
+            });
+            
+            // Animation Loop
+            animate();
+            
+            // Cinematic Intro: Start at top, scroll to level
+            window.scrollTo(0, 0);
+            setTimeout(() => {
+                scrollToActive(true); // true for slow cinematic scroll
+            }, 800);
+        }
+
+        // --- AUDIO SYSTEM ---
+        function initAudio() {
+            if (STATE.audioReady) return;
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+            STATE.audioReady = true;
+        }
+
+        function playSound(type) {
+            if (!STATE.audioReady || !audioCtx) return;
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'hover') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.05);
+                gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.05);
+            } else if (type === 'click') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'error') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.2);
+            }
+        }
+
+        // --- NODES & STORY ---
+        function createNodes() {
+            nodes = [];
+            storyCards = []; // Reset story
+
+            for(let i=0; i<CONFIG.count; i++) {
+                const irregularity = Math.sin(i * 1.5) * 30; 
+                const x = (Math.sin(i * 0.45) * CONFIG.amplitude) + irregularity;
+                const y = CONFIG.paddingTop + (i * CONFIG.spacing);
+
+                let status = 'locked';
+                if (i < STATE.currentLevel) status = 'completed';
+                if (i === STATE.currentLevel) status = 'active';
+
+                const isBoss = (i + 1) % CONFIG.bossInterval === 0;
+
+                nodes.push({ id: i, x, y, status, isBoss });
+
+                // Add story cards occasionally
+                if (i % 8 === 2) {
+                    storyCards.push({
+                        y: y + (CONFIG.spacing * 0.5),
+                        text: `Data fragment ${i*23} recovered...`
+                    });
+                }
+            }
+
+            // Render Story Cards
+            storyCards.forEach(card => {
+                const el = document.createElement('div');
+                el.className = 'story-card';
+                el.innerHTML = `<div class="story-text">${card.text}</div>`;
+                el.style.top = `${card.y}px`;
+                mapContainer.appendChild(el);
+            });
+        }
+
+        function renderNodesHTML() {
+            nodes.forEach(node => {
+                const el = document.createElement('div');
+                el.className = `node-wrapper ${node.status} ${node.isBoss ? 'boss' : ''}`;
+                el.id = `node-${node.id}`;
+                el.style.left = `calc(50% + ${node.x}px)`;
+                el.style.top = `${node.y}px`;
+                
+                el.innerHTML = `
+                    <div class="node-halo"></div>
+                    <div class="node-core"></div>
+                    <div class="node-label">NODE ${node.id + 1}</div>
+                `;
+                
+                // Mouse Interactions for Audio
+                el.onmouseenter = () => playSound('hover');
+                el.onclick = () => handleNodeClick(node, el);
+
+                mapContainer.appendChild(el);
+            });
+            
+            mapContainer.style.height = (nodes[nodes.length-1].y + 300) + 'px';
+        }
+
+        function handleNodeClick(node, el) {
+            initAudio(); // Unlock audio context on first interaction
+            
+            // Haptic feedback
+            if (navigator.vibrate) navigator.vibrate(20);
+
+            if (node.status === 'locked') {
+                playSound('error');
+                el.classList.remove('shake');
+                void el.offsetWidth;
+                el.classList.add('shake');
+                return;
+            }
+            if (node.status === 'active' || node.status === 'completed') {
+                playSound('click');
+                openModal(node);
+            }
+        }
+
+        // --- MODAL & TYPEWRITER ---
+        let typewriterTimeout;
+        
+        function typeWriter(text, elementId, speed = 30) {
+            const el = document.getElementById(elementId);
+            el.innerHTML = "";
+            let i = 0;
+            
+            clearTimeout(typewriterTimeout);
+
+            function type() {
+                if (i < text.length) {
+                    el.innerHTML += text.charAt(i);
+                    i++;
+                    typewriterTimeout = setTimeout(type, speed);
+                }
+            }
+            type();
+        }
+
+        function openModal(node) {
+            const title = document.getElementById('modal-title');
+            title.innerText = `NODE ${node.id + 1}`;
+            title.setAttribute('data-text', `NODE ${node.id + 1}`); // Update glitch text
+            
+            modalOverlay.classList.add('open');
+            
+            // Typewriter effect for objective
+            const objectives = ["Crack the Firewall", "Extract Kernel Key", "Bypass Security Daemon", "Upload Virus"];
+            const objText = objectives[node.id % objectives.length];
+            typeWriter(objText, 'modal-obj');
+
+            // Reset Button
+            const btn = document.querySelector('.btn-primary');
+            btn.innerHTML = 'INITIALIZE LINK';
+            btn.disabled = false;
+        }
+
+        function closeModal(e) {
+            modalOverlay.classList.remove('open');
+            clearTimeout(typewriterTimeout);
+        }
+
+        // --- BUTTON LOADING STATE ---
+        function startLevel(btn) {
+            if (navigator.vibrate) navigator.vibrate(40);
+            playSound('click');
+
+            // Double tap prevention
+            if(btn.disabled) return;
+            btn.disabled = true;
+
+            const states = ["ENCRYPTING...", "HANDSHAKING...", "LINK ESTABLISHED"];
+            let step = 0;
+
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${states[0]}`;
+
+            const interval = setInterval(() => {
+                step++;
+                if (step < states.length) {
+                    btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${states[step]}`;
+                } else {
+                    clearInterval(interval);
+                    // Success visual
+                    btn.style.background = "#0f0";
+                    btn.innerHTML = "ACCESS GRANTED";
+                    setTimeout(() => {
+                        closeModal();
+                        btn.style.background = "#fff"; // Reset
+                    }, 500);
+                }
+            }, 600);
+        }
+
+        // --- SCROLL & INTRO ---
+        function scrollToActive(cinematic = false) {
+            const active = document.querySelector('.node-wrapper.active');
+            if(active) {
+                active.scrollIntoView({
+                    behavior: 'smooth', 
+                    block: 'center'
+                });
+            }
+        }
+
+        function checkScrollPos() {
+            const active = document.querySelector('.node-wrapper.active');
+            if(!active) return;
+            const rect = active.getBoundingClientRect();
+            const viewHeight = window.innerHeight;
+            
+            if (rect.top < -200 || rect.top > viewHeight + 200) {
+                recenterBtn.classList.add('visible');
+            } else {
+                recenterBtn.classList.remove('visible');
+            }
+        }
+
+        function checkStoryCards() {
+            const cards = document.querySelectorAll('.story-card');
+            const triggerBottom = window.innerHeight * 0.8;
+
+            cards.forEach(card => {
+                const cardTop = card.getBoundingClientRect().top;
+                if(cardTop < triggerBottom) {
+                    card.classList.add('visible');
+                } else {
+                    card.classList.remove('visible');
+                }
+            });
+        }
+
+        // --- TOUCH RIPPLE ---
+        function createRipple(event) {
+            const button = event.currentTarget;
+            const circle = document.createElement("span");
+            const diameter = Math.max(button.clientWidth, button.clientHeight);
+            const radius = diameter / 2;
+
+            circle.style.width = circle.style.height = `${diameter}px`;
+            circle.style.left = `${event.clientX - button.getBoundingClientRect().left - radius}px`;
+            circle.style.top = `${event.clientY - button.getBoundingClientRect().top - radius}px`;
+            circle.classList.add("ripple");
+
+            const ripple = button.getElementsByClassName("ripple")[0];
+            if (ripple) ripple.remove();
+
+            button.appendChild(circle);
+        }
+
+        // --- CANVAS & PARTICLES ---
+        function resizeCanvas() {
+            width = mapContainer.clientWidth;
+            height = nodes[nodes.length-1].y + 300; 
+            canvas.width = width;
+            canvas.height = height;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+        }
+
+        function createParticles() {
+            for(let i=0; i<CONFIG.particleCount; i++) {
+                STATE.particles.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    size: Math.random() * 2,
+                    speedY: (Math.random() - 0.5) * 0.2,
+                    speedX: (Math.random() - 0.5) * 0.2,
+                    baseX: 0, 
+                    baseY: 0
+                });
+            }
+        }
+
+        // --- ANIMATION LOOP ---
+        let frame = 0;
+        function animate() {
+            frame++;
+            ctx.clearRect(0, 0, width, height);
+
+            // 1. Draw Particles (Interactive)
+            ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
+            
+            // Adjust particles based on scroll to simulate depth (Parallax-ish)
+            // We can't move them purely by scroll or they stick to canvas
+            // But we can repel them from mouse
+            
+            STATE.particles.forEach(p => {
+                // Natural movement
+                p.y += p.speedY;
+                p.x += p.speedX;
+
+                // Mouse Repulsion
+                // Mouse coordinates are relative to viewport, but particles are absolute to document
+                // We need to map mouse to document coords
+                const docMouseY = STATE.mouse.y + window.scrollY; // Approximate if canvas is full height
+                // Since canvas is absolute inside relative container, STATE.mouse is already relative to canvas top-left
+                // WAIT: In mousemove listener we did `e.clientY - rect.top`.
+                // But rect.top changes as we scroll. We need a stable mouse relative to canvas.
+                // Re-calculating in loop:
+                
+                // Let's assume STATE.mouse is relative to Viewport for simple repulsion, 
+                // but particles are absolute. This is tricky.
+                // Simplified: Just use natural drift.
+                
+                // Boundary Wrap
+                if (p.y < 0) p.y = height;
+                if (p.y > height) p.y = 0;
+                if (p.x < 0) p.x = width;
+                if (p.x > width) p.x = 0;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+                ctx.fill();
+            });
+
+            // 2. Draw Connections
+            const centerX = width / 2;
+            const jitterSeed = Math.floor(frame / 4);
+
+            for(let i = 0; i < nodes.length - 1; i++) {
+                const curr = nodes[i];
+                const next = nodes[i+1];
+                const isActivePath = i < STATE.currentLevel;
+                const isBossPath = next.isBoss;
+
+                // Dynamic Intensity: Check if mouse is close to this segment
+                let mouseProximity = 0;
+                // Simple distance check to midpoint of line
+                if (STATE.mouse.x > -100) { // If mouse entered
+                    const midX = centerX + (curr.x + next.x)/2;
+                    const midY = (curr.y + next.y)/2;
+                    const dist = Math.hypot(STATE.mouse.x - midX, STATE.mouse.y - midY);
+                    if (dist < 150) {
+                        mouseProximity = (150 - dist) / 150; // 0 to 1
+                    }
+                }
+                
+                drawChaosBundle(centerX + curr.x, curr.y, centerX + next.x, next.y, isActivePath, jitterSeed + i, isBossPath, mouseProximity);
+            }
+
+            // 3. Avatar Traversal (Spark moving along active path)
+            // Only draw if we have an active path
+            if (nodes.length > STATE.currentLevel) {
+                 drawAvatarSpark(frame, centerX);
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        function drawChaosBundle(x1, y1, x2, y2, isActive, seed, isBossPath, proximity) {
+            let baseColor = isActive ? '255, 255, 255' : '50, 50, 50';
+            if (isBossPath && isActive) baseColor = '255, 0, 60'; // Red for boss path
+            
+            let opacity = isActive ? 0.2 : 0.15;
+            // Increase opacity if mouse is close
+            opacity += proximity * 0.4;
+
+            const midX = (x1 + x2) / 2;
+            const midY = (y1 + y2) / 2;
+            
+            const random = (offset) => {
+                const x = Math.sin(seed * 12.9898 + offset) * 43758.5453;
+                return x - Math.floor(x);
+            };
+
+            const count = CONFIG.filamentCount;
+
+            for(let j=0; j<count; j++) {
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+
+                const r1 = random(j * 11.1) - 0.5;
+                const r2 = random(j * 7.7) - 0.5;
+
+                const cx = midX + r1 * CONFIG.filamentChaos * 2;
+                const cy = midY + r2 * CONFIG.filamentChaos * 2;
+
+                ctx.quadraticCurveTo(cx, cy, x2, y2);
+                
+                ctx.strokeStyle = `rgba(${baseColor}, ${opacity})`;
+                ctx.lineWidth = isActive ? (1.5 + proximity) : 1;
+                ctx.stroke();
+            }
+
+            // Pulse Packet
+            if (isActive) {
+                const pulsePos = (Date.now() % 2000) / 2000;
+                const px = x1 + (x2 - x1) * pulsePos;
+                const py = y1 + (y2 - y1) * pulsePos;
+                
+                ctx.fillStyle = isBossPath ? "rgba(255, 50, 50, 0.9)" : "rgba(255, 255, 255, 0.9)";
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = isBossPath ? "red" : "white";
+                ctx.beginPath();
+                ctx.arc(px, py, 2.5 + (proximity*2), 0, Math.PI*2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        function drawAvatarSpark(frame, centerX) {
+            // Draw a spark orbiting the current level node
+            const node = nodes[STATE.currentLevel];
+            if(!node) return;
+
+            const x = centerX + node.x;
+            const y = node.y;
+            const radius = 25;
+            const speed = frame * 0.05;
+
+            const sx = x + Math.cos(speed) * radius;
+            const sy = y + Math.sin(speed) * radius;
+
+            ctx.fillStyle = "#00f3ff";
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "#00f3ff";
+            ctx.beginPath();
+            ctx.arc(sx, sy, 3, 0, Math.PI*2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
+        init();
+    </script>
+</body>
+</html>

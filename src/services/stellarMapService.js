@@ -174,7 +174,7 @@ class StellarMapService {
       const [minDifficulty, maxDifficulty] = range;
 
       // Get all nodes for this level that are within the difficulty range
-      // and have XP threshold <= userXP
+      // (XP filter removed - show all nodes)
       const { data, error } = await supabase
         .from('stellar_map_nodes')
         .select(`
@@ -196,7 +196,6 @@ class StellarMapService {
         .eq('constellations.level', level)
         .gte('difficulty', minDifficulty)
         .lte('difficulty', maxDifficulty)
-        .lte('xp_threshold', userXP)
         .order('difficulty', { ascending: true });
 
       if (error) throw error;
@@ -295,7 +294,7 @@ class StellarMapService {
         }
       });
 
-      // Then get all nodes for this level that user can see
+      // Then get all nodes for this level (XP filter removed - show all nodes)
       const { data: nodes, error: nodesError } = await supabase
         .from('stellar_map_nodes')
         .select(`
@@ -309,7 +308,6 @@ class StellarMapService {
           )
         `)
         .eq('constellations.level', finalLevel)
-        .lte('xp_threshold', xp)
         .order('difficulty', { ascending: true });
 
       if (nodesError) {
@@ -333,17 +331,15 @@ class StellarMapService {
         
         logDebug(`[StellarMapService] Query results for level "${level}":`, {
           totalNodesInLevel: totalNodeCount || 0,
-          nodesAfterXPFilter: nodes?.length || 0,
+          nodesLoaded: nodes?.length || 0,
           userXP: xp,
-          xpThresholdFilter: `xp_threshold <= ${xp}`,
-          minimumXPRequired: level === 'Insight' ? 15000 : level === 'Transformation' ? 36000 : 0
+          note: 'XP filter removed - all nodes are visible'
         });
 
         if ((nodes?.length || 0) === 0 && (totalNodeCount || 0) > 0) {
           console.warn(
-            `[StellarMapService] WARNING: ${totalNodeCount} nodes exist for level "${level}" but 0 nodes visible. ` +
-            `This means all nodes have xp_threshold > ${xp}. ` +
-            `Minimum XP requirements: Insight (15000), Transformation (36000)`
+            `[StellarMapService] WARNING: ${totalNodeCount} nodes exist for level "${level}" but 0 nodes loaded. ` +
+            `This may indicate a data structure issue.`
           );
         }
 
@@ -474,10 +470,7 @@ class StellarMapService {
             misgroupedNodes: misgroupedNodes.length,
             totalNodesInResult: totalNodes,
             userXP: xp,
-            xpThresholds: {
-              Insight: { min: 15000 },
-              Transformation: { min: 36000 }
-            }
+            note: 'XP filter removed - all nodes are visible'
           }
         );
 
@@ -504,11 +497,9 @@ class StellarMapService {
 
         if (totalNodes === 0 && (nodes?.length || 0) === 0) {
           console.warn(
-            `[StellarMapService] No nodes found for level "${level}" with XP threshold <= ${xp}. ` +
-            `Check if:\n` +
-            `1. Nodes exist in database for this level\n` +
-            `2. User XP (${xp}) meets minimum requirements (Insight: 15000+, Transformation: 36000+)\n` +
-            `3. Nodes have xp_threshold values that allow visibility`
+            `[StellarMapService] No nodes found for level "${level}". ` +
+            `Check if nodes exist in database for this level. ` +
+            `(XP filter has been removed - all nodes should be visible)`
           );
         }
       }

@@ -58,6 +58,15 @@ const StellarMap = () => {
           throw fetchError;
         }
 
+        if (DEBUG) {
+          console.log('[StellarMap] Data loaded:', data);
+          console.log('[StellarMap] Data keys:', Object.keys(data || {}));
+          const totalNodes = Object.values(data || {}).reduce((sum, constellations) => 
+            sum + Object.values(constellations).reduce((s, nodes) => s + (nodes?.length || 0), 0), 0
+          );
+          console.log('[StellarMap] Total nodes in data:', totalNodes);
+        }
+
         setHierarchyData(data || {});
       } catch (err) {
         console.error('Error loading stellar map data:', err);

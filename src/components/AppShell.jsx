@@ -494,7 +494,7 @@ const AppShell = () => {
                 (item.path === '/mastery' && location.pathname.startsWith('/mastery')) ||
                 (item.path === '/courses' && location.pathname.startsWith('/courses')) ||
                 (item.path === '/roadmap/ignition' && location.pathname.startsWith('/roadmap')) ||
-                (item.path === '/stellar-map-2d' && (location.pathname.startsWith('/stellar-map') || location.pathname === '/stellar-map-2d'));
+                (item.path === '/stellar-map' && location.pathname.startsWith('/stellar-map'));
 
               return (
                 <SidebarNavItem

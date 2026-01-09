@@ -1,0 +1,151 @@
+.completion-animation-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(10px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.completion-animation-overlay.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.completion-animation-content {
+  text-align: center;
+  color: #fff;
+  animation: fadeInScale 0.5s ease;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.completion-checkmark {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 30px;
+  position: relative;
+}
+
+.checkmark {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: block;
+  stroke-width: 3;
+  stroke: #00f3ff;
+  stroke-miterlimit: 10;
+  box-shadow: 0 0 30px rgba(0, 243, 255, 0.5);
+  animation: checkmark-scale 0.6s ease-in-out;
+}
+
+.checkmark-circle {
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  stroke-width: 3;
+  stroke-miterlimit: 10;
+  stroke: #00f3ff;
+  fill: none;
+  animation: checkmark-stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.checkmark-check {
+  transform-origin: 50% 50%;
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: checkmark-stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+}
+
+@keyframes checkmark-scale {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes checkmark-stroke {
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.completion-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: #00f3ff;
+  text-shadow: 0 0 20px rgba(0, 243, 255, 0.8);
+  margin-bottom: 15px;
+  animation: pulse-glow 2s infinite ease-in-out;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    text-shadow: 0 0 20px rgba(0, 243, 255, 0.8);
+  }
+  50% {
+    text-shadow: 0 0 40px rgba(0, 243, 255, 1), 0 0 60px rgba(0, 243, 255, 0.6);
+  }
+}
+
+.completion-lesson {
+  font-size: 1.2rem;
+  color: #aaa;
+  margin-bottom: 25px;
+  font-weight: 500;
+}
+
+.completion-xp {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #ffd700;
+  margin-bottom: 20px;
+}
+
+.completion-xp i {
+  animation: star-spin 1s ease-in-out;
+}
+
+@keyframes star-spin {
+  0% {
+    transform: rotate(0deg) scale(0);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.2);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+.completion-message {
+  font-size: 0.9rem;
+  color: #888;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-top: 20px;
+}

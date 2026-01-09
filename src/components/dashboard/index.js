@@ -4,7 +4,6 @@
  */
 
 export { default as NeomorphicCard } from './NeomorphicCard'
-export { default as XPCircleWidget } from './XPCircleWidget'
 export { default as StreakCard } from './StreakCard'
 export { default as ActiveCourseCard } from './ActiveCourseCard'
 export { default as QuickActionsGrid } from './QuickActionsGrid'

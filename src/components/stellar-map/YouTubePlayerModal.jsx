@@ -22,6 +22,7 @@ const YouTubePlayerModal = ({
   const watchTimeRef = useRef(0); // Track watch time in seconds
   const watchTimeIntervalRef = useRef(null);
   const lastPlayTimeRef = useRef(0);
+  const playerInitializedRef = useRef(false);
 
   // Get XP reward from node data
   const xpReward = nodeData?.metadata?.xp_reward || nodeData?.xp_reward || 50;
@@ -76,6 +77,12 @@ const YouTubePlayerModal = ({
   // Initialize player when API is ready
   useEffect(() => {
     if (!isOpen || !youtubeAPIReady.current || !playerContainerRef.current || !videoId) {
+      playerInitializedRef.current = false;
+      return;
+    }
+
+    // Don't create a new player if one already exists for this video
+    if (playerInitializedRef.current && player) {
       return;
     }
 
@@ -167,8 +174,10 @@ const YouTubePlayerModal = ({
     });
 
     setPlayer(newPlayer);
+    playerInitializedRef.current = true;
 
     return () => {
+      playerInitializedRef.current = false;
       // Clean up watch time tracking
       if (watchTimeIntervalRef.current) {
         clearInterval(watchTimeIntervalRef.current);
@@ -177,16 +186,27 @@ const YouTubePlayerModal = ({
       watchTimeRef.current = 0;
       lastPlayTimeRef.current = 0;
       
+      // Safely destroy player - check if container still exists in DOM
       if (newPlayer && newPlayer.destroy) {
         try {
-          newPlayer.destroy();
+          // Check if the container element still exists in the DOM
+          if (playerContainerRef.current && playerContainerRef.current.parentNode) {
+            newPlayer.destroy();
+          } else {
+            // Container already removed, just clear the player reference
+            // The iframe will be cleaned up by React
+            console.log('Player container already removed, skipping destroy');
+          }
         } catch (err) {
-          console.warn('Error destroying player:', err);
+          // Silently handle errors - container may already be removed
+          if (err.name !== 'NotFoundError') {
+            console.warn('Error destroying player:', err);
+          }
         }
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, youtubeAPIReady.current, videoId, user?.id, nodeData?.id]);
+  }, [isOpen, videoId, user?.id, nodeData?.id]);
 
   // Handle video completion
   const handleVideoComplete = async () => {
@@ -305,14 +325,25 @@ const YouTubePlayerModal = ({
     watchTimeRef.current = 0;
     lastPlayTimeRef.current = 0;
     
+    // Safely destroy player - check if container still exists in DOM
     if (player && player.destroy) {
       try {
-        player.destroy();
+        // Check if the container element still exists in the DOM
+        if (playerContainerRef.current && playerContainerRef.current.parentNode) {
+          player.destroy();
+        } else {
+          // Container already removed, just clear the player reference
+          console.log('Player container already removed, skipping destroy');
+        }
       } catch (err) {
-        console.warn('Error destroying player on close:', err);
+        // Silently handle NotFoundError - container may already be removed
+        if (err.name !== 'NotFoundError') {
+          console.warn('Error destroying player on close:', err);
+        }
       }
     }
     setPlayer(null);
+    playerInitializedRef.current = false;
     setIsCompleted(false);
     setIsCompleting(false);
     setError(null);

@@ -1,0 +1,149 @@
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;500;600;700&display=swap');
+
+:root {
+  --neon-blue: #00f3ff;
+  --neon-red: #ff003c;
+  --neon-gold: #ffd700;
+}
+
+.neural-path-container {
+  margin: 0;
+  background-color: #020202;
+  color: #e0e0e0;
+  font-family: 'Rajdhani', sans-serif;
+  overflow-x: hidden;
+  touch-action: pan-y;
+  -webkit-tap-highlight-color: transparent;
+  cursor: crosshair;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Sci-Fi Scrollbar */
+.neural-path-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.neural-path-container::-webkit-scrollbar-track {
+  background: #050505;
+}
+
+.neural-path-container::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 3px;
+}
+
+.neural-path-container::-webkit-scrollbar-thumb:hover {
+  background: var(--neon-blue);
+}
+
+/* Map Container */
+.map-container {
+  max-width: 600px;
+  margin: 0 auto;
+  position: relative;
+  min-height: 100vh;
+  padding-bottom: 120px;
+  z-index: 1;
+}
+
+.neuron-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* HUD */
+.neural-hud {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  padding: 15px 20px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%);
+  display: flex;
+  justify-content: space-between;
+  z-index: 50;
+  pointer-events: none;
+}
+
+.hud-item {
+  font-size: 14px;
+  color: #888;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hud-item i {
+  font-size: 12px;
+  color: #ffd700;
+}
+
+.hud-val {
+  color: #fff;
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(255,255,255,0.3);
+}
+
+/* Recenter Button */
+.recenter-btn {
+  position: fixed;
+  bottom: 100px;
+  right: 20px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(20, 20, 25, 0.9);
+  border: 1px solid #444;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  z-index: 40;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.recenter-btn.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.recenter-btn:active {
+  transform: scale(0.9);
+}
+
+/* Navigation removed - no bottom menu */
+
+/* Loading */
+.neural-path-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: #020202;
+  color: #e0e0e0;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255,255,255,0.1);
+  border-top-color: var(--neon-blue);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

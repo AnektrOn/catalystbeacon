@@ -10,16 +10,24 @@
       "components/Debug.jsx",
       "components/DebugSignOut.jsx",
       "components/EnvDebug.jsx",
+      "components/EnvTest.jsx",
       "components/ErrorBoundary.jsx",
       "components/NotificationBadge.jsx",
       "components/ProtectedRoute.jsx",
+      "components/ProtectedSubscriptionRoute.jsx",
       "components/QuizComponent.jsx",
       "components/RequireRole.jsx",
+      "components/Roadmap/CompleteLessonModal.jsx",
+      "components/Roadmap/LessonTracker.jsx",
+      "components/Roadmap/RoadmapNode.jsx",
+      "components/Roadmap/RoadmapNotificationBanner.jsx",
+      "components/Roadmap/RoadmapPath.jsx",
       "components/SEOHead.jsx",
       "components/SignupTest.jsx",
       "components/SimpleSupabaseTest.jsx",
       "components/SupabaseTest.jsx",
       "components/TestAuth.jsx",
+      "components/UpgradeModal.jsx",
       "components/UserProfileDropdown.jsx",
       "components/auth/AuthLayout.jsx",
       "components/auth/LoginForm.jsx",
@@ -29,13 +37,33 @@
       "components/common/LoadingSpinner.jsx",
       "components/common/SkeletonLoader.jsx",
       "components/dashboard/AchievementsWidget.jsx",
+      "components/dashboard/ActiveCourseCard.jsx",
+      "components/dashboard/AllLessonsCard.jsx",
       "components/dashboard/CoherenceWidget.jsx",
       "components/dashboard/ConstellationNavigatorWidget.jsx",
       "components/dashboard/CurrentLessonWidget.jsx",
       "components/dashboard/DailyRitualWidget.jsx",
+      "components/dashboard/HabitsCompletedCard.jsx",
+      "components/dashboard/ModernCard.jsx",
+      "components/dashboard/MoodTracker.jsx",
+      "components/dashboard/NeomorphicCard.jsx",
+      "components/dashboard/QuickActionsGrid.jsx",
       "components/dashboard/QuickActionsWidget.jsx",
+      "components/dashboard/SchoolProgressAreaChart.jsx",
+      "components/dashboard/SchoolProgressAreaChartDesktop.jsx",
+      "components/dashboard/SchoolProgressAreaChartMobile.jsx",
+      "components/dashboard/StatCard.jsx",
+      "components/dashboard/StatCardV2.jsx",
+      "components/dashboard/StatCardV2.test.jsx",
+      "components/dashboard/StreakCard.jsx",
       "components/dashboard/TeacherFeedWidget.jsx",
+      "components/dashboard/XPCircleWidget.jsx",
+      "components/dashboard/XPCircleWidgetV2.jsx",
+      "components/dashboard/XPProgressChart.jsx",
       "components/dashboard/XPProgressWidget.jsx",
+      "components/landing/Interactive3DSection.jsx",
+      "components/landing/ScrollAware3D.jsx",
+      "components/landing/SpaceSlideshow3D.jsx",
       "components/mastery/CalendarTab.jsx",
       "components/mastery/CalendarTabMobile.jsx",
       "components/mastery/HabitsTab.jsx",
@@ -52,24 +80,39 @@
       "components/profile/ProgressBar.jsx",
       "components/profile/RadarChart.jsx",
       "components/social/CreatePostModal.jsx",
+      "components/stellar-map/FogOverlay2D.jsx",
       "components/stellar-map/NodeTooltip.jsx",
       "components/stellar-map/StellarMap.jsx",
-      "components/stellar-map/StellarMap2D.jsx",
+      "components/stellar-map/StellarMapAnalytics.jsx",
+      "components/stellar-map/StellarMapBreadcrumb.jsx",
       "components/stellar-map/StellarMapControls.jsx",
       "components/stellar-map/StellarMapDebugOverlay.jsx",
       "components/stellar-map/StellarMapErrorBoundary.jsx",
+      "components/stellar-map/StellarMapLegend.jsx",
+      "components/stellar-map/StellarMapMiniMap.jsx",
+      "components/stellar-map/StellarMapSearch.jsx",
+      "components/stellar-map/StellarMapSettings.jsx",
       "components/stellar-map/YouTubePlayerModal.jsx",
       "components/stellar-map/core/InteractionManager.js",
       "components/stellar-map/core/NodeRenderer.js",
       "components/stellar-map/core/ThreeSceneManager.js",
       "components/stellar-map/hooks/useXPVisibility.js",
+      "components/stellar-map/r3f/CameraTracker.jsx",
+      "components/stellar-map/r3f/CanvasNode.jsx",
+      "components/stellar-map/r3f/CanvasStarNode.jsx",
+      "components/stellar-map/r3f/CanvasStellarMap.jsx",
       "components/stellar-map/r3f/ConnectionLines.jsx",
       "components/stellar-map/r3f/CoreSun.jsx",
+      "components/stellar-map/r3f/FogOverlay.jsx",
       "components/stellar-map/r3f/FogSphere.jsx",
       "components/stellar-map/r3f/NodeSphere.jsx",
+      "components/stellar-map/r3f/StarNode.jsx",
+      "components/stellar-map/r3f/StarfieldBackground.jsx",
       "components/stellar-map/r3f/StellarMapScene.jsx",
       "components/stellar-map/utils/debugHelpers.js",
       "components/test/MasteryTestComponent.jsx",
+      "components/ui/3d-image-gallery.jsx",
+      "components/ui/CosmicLoader.jsx",
       "components/ui/alert.jsx",
       "components/ui/avatar.jsx",
       "components/ui/badge.jsx",
@@ -86,21 +129,27 @@
       "components/ui/sonner.jsx",
       "components/ui/tabs.jsx",
       "pages/Achievements.jsx",
+      "pages/AwakeningLandingPage.jsx",
       "pages/CommunityPage.jsx",
       "pages/CourseCatalogPage.jsx",
       "pages/CourseCreationPage.jsx",
       "pages/CourseDetailPage.jsx",
       "pages/CoursePlayerPage.jsx",
       "pages/Dashboard.jsx",
+      "pages/DashboardNeomorphic.jsx",
+      "pages/EnhancedLandingPage.jsx",
       "pages/ForgotPasswordPage.jsx",
+      "pages/LandingPage.jsx",
       "pages/LoginPage.jsx",
       "pages/Mastery.jsx",
       "pages/PricingPage.jsx",
       "pages/PrivacyPage.jsx",
+      "pages/ProfessionalLandingPage.jsx",
       "pages/ProfilePage.jsx",
+      "pages/RoadmapIgnition.jsx",
       "pages/SettingsPage.jsx",
       "pages/SignupPage.jsx",
-      "pages/StellarMap2DPage.jsx",
+      "pages/StellarCardGalleryDemo.jsx",
       "pages/StellarMapPage.jsx",
       "pages/TermsPage.jsx",
       "pages/TimerPage.jsx"
@@ -116,9 +165,12 @@
       "/forgot-password",
       "/terms",
       "/privacy",
+      "/landing",
+      "/landing-3d",
       "/test",
       "/mastery-test",
       "/dashboard",
+      "/dashboard/classic",
       "/profile",
       "/mastery",
       "/mastery/calendar",
@@ -130,19 +182,18 @@
       "/community",
       "/timer",
       "/settings",
+      "/roadmap/ignition",
+      "/roadmap/ignition/:statLink",
       "/courses",
       "/courses/create",
       "/courses/:courseId",
       "/courses/:courseId/chapters/:chapterNumber/lessons/:lessonNumber",
       "/stellar-map",
-      "/stellar-map-2d",
       "/achievements",
       "/",
       "*"
     ],
     "used": [
-      "/login",
-      "/dashboard",
       "/login",
       "/mastery/calendar",
       "/mastery/timer",
@@ -151,8 +202,10 @@
       "/login",
       "/login",
       "/dashboard",
+      "/pricing",
       "/login",
       "/login",
+      "/dashboard",
       "/forgot-password",
       "/signup",
       "/login",
@@ -168,55 +221,117 @@
       "/mastery",
       "/courses",
       "/community",
-      "/stellar-map-2d",
+      "/login",
+      "/signup",
+      "/signup",
+      "/signup",
+      "/stellar-map",
+      "/signup",
+      "/stellar-map",
+      "/courses",
+      "/signup",
+      "/courses",
+      "/stellar-map",
+      "/mastery",
+      "/community",
+      "/achievements",
+      "/terms",
+      "/privacy",
       "/courses",
       "/courses",
       "/courses",
       "/courses",
       "/courses",
       "/courses",
+      "/pricing",
+      "/pricing",
+      "/signup",
+      "/login",
+      "/signup",
+      "/signup",
+      "/courses",
+      "/community",
+      "/signup",
+      "/courses",
+      "/stellar-map",
+      "/pricing",
+      "/community",
+      "/achievements",
+      "/terms",
+      "/privacy",
       "/login",
       "/login",
+      "/signup",
+      "/login",
+      "/signup",
+      "/signup",
       "/dashboard",
+      "/",
       "/signup",
       "/forgot-password",
-      "/mastery/timer",
-      "/mastery/habits",
-      "/mastery/achievements",
+      "/terms",
+      "/privacy",
       "/login",
       "/signup",
+      "/login",
+      "/signup",
+      "/signup",
+      "/courses",
+      "/signup",
+      "/signup",
+      "/courses",
+      "/courses",
+      "/stellar-map",
+      "/pricing",
+      "/community",
+      "/terms",
+      "/privacy",
       "/pricing",
       "/pricing",
       "/pricing",
       "/dashboard",
       "/login",
+      "/",
       "/login",
       "/terms",
       "/privacy",
+      "/cookies",
       "/signup"
     ],
     "missing": [
       "14",
-      "0"
+      "0",
+      "/cookies"
     ],
     "broken": [
+      "/landing",
+      "/landing-3d",
       "/test",
       "/mastery-test",
+      "/dashboard/classic",
+      "/mastery/habits",
       "/mastery/toolbox",
+      "/mastery/achievements",
       "/calendar",
       "/timer",
       "/settings",
+      "/roadmap/ignition",
+      "/roadmap/ignition/:statLink",
       "/courses/create",
       "/courses/:courseId",
-      "/courses/:courseId/chapters/:chapterNumber/lessons/:lessonNumber",
-      "/stellar-map"
+      "/courses/:courseId/chapters/:chapterNumber/lessons/:lessonNumber"
     ]
   },
   "services": {
     "checked": [
       "services/courseService.js",
+      "services/emailService.js",
+      "services/habitsService.js",
+      "services/lessonProgressService.js",
+      "services/lessonsService.js",
       "services/levelsService.js",
       "services/masteryService.js",
+      "services/roadmapService.js",
       "services/schoolService.js",
       "services/skillsService.js",
       "services/socialService.js",
@@ -227,7 +342,14 @@
   },
   "database": {
     "tables": [
+      "roadmap_progress",
+      "roadmap_notifications",
+      "course_structure",
+      "course_description",
       "user_stellar_node_completions",
+      "payments",
+      "affiliate_commissions",
+      "email_queue",
       "notifications",
       "badges",
       "user_badges",
@@ -237,17 +359,25 @@
     ],
     "queries": [],
     "mismatches": [],
-    "unused": []
+    "unused": [
+      "payments",
+      "affiliate_commissions",
+      "email_queue"
+    ]
   },
   "errors": {
     "handlers": [
       "components/ErrorBoundary.jsx",
       "components/stellar-map/StellarMapErrorBoundary.jsx",
-      "pages/StellarMap2DPage.jsx",
       "pages/StellarMapPage.jsx",
       "App.js"
     ],
-    "missing": [],
+    "missing": [
+      {
+        "file": "components/ui/CosmicLoader.jsx",
+        "issue": "Async function without try/catch"
+      }
+    ],
     "issues": []
   },
   "accessibility": {
@@ -278,109 +408,139 @@
       },
       {
         "file": "components/AppShell.jsx",
-        "line": 210,
+        "line": 55,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/AppShell.jsx",
-        "line": 222,
+        "line": 415,
         "issue": "Image without alt text",
         "code": "<img"
       },
       {
         "file": "components/AppShell.jsx",
-        "line": 253,
+        "line": 438,
+        "issue": "Button without accessible name",
+        "code": "<button className=\"glass-icon-btn\">"
+      },
+      {
+        "file": "components/AppShell.jsx",
+        "line": 447,
+        "issue": "Image without alt text",
+        "code": "<img"
+      },
+      {
+        "file": "components/AppShell.jsx",
+        "line": 481,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/AppShell.jsx",
-        "line": 273,
+        "line": 514,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/AppShell.jsx",
-        "line": 296,
-        "issue": "Button without accessible name",
-        "code": "<button"
-      },
-      {
-        "file": "components/AppShell.jsx",
-        "line": 304,
+        "line": 521,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/AppShellMobile.jsx",
-        "line": 168,
+        "line": 432,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/AppShellMobile.jsx",
-        "line": 207,
+        "line": 472,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/AppShellMobile.jsx",
-        "line": 217,
+        "line": 511,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/AppShellMobile.jsx",
-        "line": 244,
+        "line": 532,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/AppShellMobile.jsx",
-        "line": 262,
+        "line": 554,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/AppShellMobile.jsx",
-        "line": 279,
+        "line": 563,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/AppShellMobile.jsx",
-        "line": 287,
+        "line": 591,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/AppShellMobile.jsx",
-        "line": 315,
+        "line": 609,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/AppShellMobile.jsx",
-        "line": 328,
+        "line": 626,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/AppShellMobile.jsx",
+        "line": 634,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/AppShellMobile.jsx",
+        "line": 662,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/AppShellMobile.jsx",
+        "line": 676,
         "issue": "Image without alt text",
         "code": "<img"
       },
       {
         "file": "components/AppShellMobile.jsx",
-        "line": 359,
+        "line": 719,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/AppShellMobile.jsx",
-        "line": 379,
+        "line": 744,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/AppShellMobile.jsx",
-        "line": 411,
+        "line": 760,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/AppShellMobile.jsx",
+        "line": 792,
         "issue": "Button without accessible name",
         "code": "<button"
       },
@@ -427,6 +587,60 @@
         "code": "<button"
       },
       {
+        "file": "components/Roadmap/CompleteLessonModal.jsx",
+        "line": 104,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/Roadmap/CompleteLessonModal.jsx",
+        "line": 111,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/Roadmap/CompleteLessonModal.jsx",
+        "line": 172,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/Roadmap/CompleteLessonModal.jsx",
+        "line": 178,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/Roadmap/LessonTracker.jsx",
+        "line": 85,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/Roadmap/LessonTracker.jsx",
+        "line": 174,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/Roadmap/RoadmapNotificationBanner.jsx",
+        "line": 60,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/Roadmap/RoadmapNotificationBanner.jsx",
+        "line": 68,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/Roadmap/RoadmapNotificationBanner.jsx",
+        "line": 75,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
         "file": "components/SignupTest.jsx",
         "line": 60,
         "issue": "Form input without label association",
@@ -463,6 +677,24 @@
         "code": "<button"
       },
       {
+        "file": "components/UpgradeModal.jsx",
+        "line": 73,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/UpgradeModal.jsx",
+        "line": 130,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/UpgradeModal.jsx",
+        "line": 136,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
         "file": "components/UserProfileDropdown.jsx",
         "line": 54,
         "issue": "Image without alt text",
@@ -470,13 +702,13 @@
       },
       {
         "file": "components/common/ColorPaletteDropdown.jsx",
-        "line": 42,
+        "line": 45,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/common/ColorPaletteDropdown.jsx",
-        "line": 62,
+        "line": 79,
         "issue": "Button without accessible name",
         "code": "<button"
       },
@@ -489,6 +721,30 @@
       {
         "file": "components/dashboard/AchievementsWidget.jsx",
         "line": 24,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/dashboard/ActiveCourseCard.jsx",
+        "line": 29,
+        "issue": "Image without alt text",
+        "code": "<img"
+      },
+      {
+        "file": "components/dashboard/ActiveCourseCard.jsx",
+        "line": 37,
+        "issue": "Button without accessible name",
+        "code": "<button className=\"course-play-button\">"
+      },
+      {
+        "file": "components/dashboard/ActiveCourseCard.jsx",
+        "line": 70,
+        "issue": "Button without accessible name",
+        "code": "<button className=\"course-continue-button\">"
+      },
+      {
+        "file": "components/dashboard/AllLessonsCard.jsx",
+        "line": 80,
         "issue": "Button without accessible name",
         "code": "<button"
       },
@@ -512,7 +768,61 @@
       },
       {
         "file": "components/dashboard/DailyRitualWidget.jsx",
-        "line": 35,
+        "line": 42,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/dashboard/HabitsCompletedCard.jsx",
+        "line": 114,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/dashboard/MoodTracker.jsx",
+        "line": 278,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/dashboard/MoodTracker.jsx",
+        "line": 393,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/dashboard/MoodTracker.jsx",
+        "line": 433,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/dashboard/MoodTracker.jsx",
+        "line": 450,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "components/dashboard/MoodTracker.jsx",
+        "line": 469,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "components/dashboard/MoodTracker.jsx",
+        "line": 488,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "components/dashboard/MoodTracker.jsx",
+        "line": 502,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/dashboard/QuickActionsGrid.jsx",
+        "line": 45,
         "issue": "Button without accessible name",
         "code": "<button"
       },
@@ -523,8 +833,68 @@
         "code": "<button"
       },
       {
+        "file": "components/dashboard/SchoolProgressAreaChart.jsx",
+        "line": 159,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/dashboard/SchoolProgressAreaChart.jsx",
+        "line": 165,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/dashboard/SchoolProgressAreaChartDesktop.jsx",
+        "line": 147,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/dashboard/SchoolProgressAreaChartDesktop.jsx",
+        "line": 153,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/dashboard/SchoolProgressAreaChartDesktop.jsx",
+        "line": 159,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/dashboard/SchoolProgressAreaChartMobile.jsx",
+        "line": 181,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/dashboard/SchoolProgressAreaChartMobile.jsx",
+        "line": 187,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
         "file": "components/dashboard/TeacherFeedWidget.jsx",
         "line": 42,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/landing/SpaceSlideshow3D.jsx",
+        "line": 463,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/landing/SpaceSlideshow3D.jsx",
+        "line": 476,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/landing/SpaceSlideshow3D.jsx",
+        "line": 492,
         "issue": "Button without accessible name",
         "code": "<button"
       },
@@ -548,223 +918,229 @@
       },
       {
         "file": "components/mastery/CalendarTab.jsx",
-        "line": 556,
+        "line": 557,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/CalendarTab.jsx",
-        "line": 569,
+        "line": 571,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/CalendarTab.jsx",
-        "line": 589,
+        "line": 592,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/CalendarTab.jsx",
-        "line": 735,
+        "line": 741,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/CalendarTab.jsx",
-        "line": 751,
+        "line": 757,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/CalendarTab.jsx",
-        "line": 774,
+        "line": 780,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/CalendarTab.jsx",
-        "line": 800,
+        "line": 806,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/CalendarTab.jsx",
-        "line": 807,
+        "line": 813,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/CalendarTab.jsx",
-        "line": 837,
+        "line": 843,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/CalendarTab.jsx",
-        "line": 940,
+        "line": 945,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/CalendarTab.jsx",
-        "line": 993,
+        "line": 996,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/CalendarTab.jsx",
-        "line": 1000,
+        "line": 1003,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/CalendarTab.jsx",
-        "line": 1026,
+        "line": 1029,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/CalendarTab.jsx",
-        "line": 1158,
+        "line": 1162,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/CalendarTabMobile.jsx",
-        "line": 228,
+        "line": 263,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/CalendarTabMobile.jsx",
-        "line": 242,
+        "line": 313,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/CalendarTabMobile.jsx",
-        "line": 252,
+        "line": 338,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/CalendarTabMobile.jsx",
-        "line": 261,
+        "line": 351,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/CalendarTabMobile.jsx",
-        "line": 270,
+        "line": 365,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/CalendarTabMobile.jsx",
-        "line": 302,
+        "line": 403,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/CalendarTabMobile.jsx",
-        "line": 358,
+        "line": 438,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/CalendarTabMobile.jsx",
+        "line": 534,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/CalendarTabMobile.jsx",
+        "line": 570,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/HabitsTab.jsx",
-        "line": 414,
+        "line": 378,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/HabitsTab.jsx",
-        "line": 430,
+        "line": 397,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/HabitsTab.jsx",
-        "line": 440,
+        "line": 407,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/HabitsTab.jsx",
-        "line": 461,
+        "line": 428,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/HabitsTab.jsx",
-        "line": 482,
+        "line": 448,
         "issue": "Form input without label association",
         "code": "<input"
       },
       {
         "file": "components/mastery/HabitsTab.jsx",
-        "line": 494,
+        "line": 460,
         "issue": "Form input without label association",
         "code": "<textarea"
       },
       {
         "file": "components/mastery/HabitsTab.jsx",
-        "line": 521,
+        "line": 487,
         "issue": "Form input without label association",
         "code": "<input"
       },
       {
         "file": "components/mastery/HabitsTab.jsx",
-        "line": 532,
+        "line": 498,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/HabitsTab.jsx",
-        "line": 540,
+        "line": 505,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/HabitsTab.jsx",
-        "line": 565,
+        "line": 529,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/HabitsTab.jsx",
-        "line": 607,
+        "line": 574,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/HabitsTab.jsx",
-        "line": 631,
+        "line": 598,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/HabitsTab.jsx",
-        "line": 673,
+        "line": 642,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/HabitsTabCompact.jsx",
-        "line": 476,
+        "line": 487,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/HabitsTabCompact.jsx",
-        "line": 492,
-        "issue": "Button without accessible name",
-        "code": "<button"
-      },
-      {
-        "file": "components/mastery/HabitsTabCompact.jsx",
-        "line": 503,
+        "line": 504,
         "issue": "Button without accessible name",
         "code": "<button"
       },
@@ -776,61 +1152,79 @@
       },
       {
         "file": "components/mastery/HabitsTabCompact.jsx",
-        "line": 534,
+        "line": 526,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/HabitsTabCompact.jsx",
-        "line": 540,
+        "line": 536,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/HabitsTabCompact.jsx",
-        "line": 593,
+        "line": 557,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/HabitsTabCompact.jsx",
-        "line": 604,
+        "line": 564,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/HabitsTabCompact.jsx",
-        "line": 672,
+        "line": 571,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/HabitsTabCompact.jsx",
-        "line": 693,
+        "line": 626,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabCompact.jsx",
+        "line": 637,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabCompact.jsx",
+        "line": 705,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabCompact.jsx",
+        "line": 735,
         "issue": "Form input without label association",
         "code": "<input"
       },
       {
         "file": "components/mastery/HabitsTabCompact.jsx",
-        "line": 703,
+        "line": 745,
         "issue": "Form input without label association",
         "code": "<textarea"
       },
       {
         "file": "components/mastery/HabitsTabCompact.jsx",
-        "line": 713,
+        "line": 755,
         "issue": "Form input without label association",
         "code": "<input"
       },
       {
         "file": "components/mastery/HabitsTabCompact.jsx",
-        "line": 724,
+        "line": 766,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/HabitsTabCompact.jsx",
-        "line": 730,
+        "line": 772,
         "issue": "Button without accessible name",
         "code": "<button"
       },
@@ -914,31 +1308,43 @@
       },
       {
         "file": "components/mastery/HabitsTabMobile.jsx",
-        "line": 210,
+        "line": 334,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/HabitsTabMobile.jsx",
-        "line": 219,
+        "line": 343,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/HabitsTabMobile.jsx",
-        "line": 237,
+        "line": 367,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/HabitsTabMobile.jsx",
-        "line": 272,
+        "line": 394,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/HabitsTabMobile.jsx",
-        "line": 309,
+        "line": 406,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabMobile.jsx",
+        "line": 423,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/HabitsTabMobile.jsx",
+        "line": 460,
         "issue": "Button without accessible name",
         "code": "<button"
       },
@@ -1082,67 +1488,67 @@
       },
       {
         "file": "components/mastery/ToolboxTab.jsx",
-        "line": 460,
+        "line": 459,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/ToolboxTab.jsx",
-        "line": 476,
+        "line": 478,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/ToolboxTab.jsx",
-        "line": 483,
+        "line": 485,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/ToolboxTab.jsx",
-        "line": 535,
+        "line": 537,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/ToolboxTab.jsx",
-        "line": 548,
+        "line": 550,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/ToolboxTab.jsx",
-        "line": 611,
+        "line": 613,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/ToolboxTab.jsx",
-        "line": 644,
+        "line": 647,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/ToolboxTab.jsx",
-        "line": 674,
+        "line": 680,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/ToolboxTab.jsx",
-        "line": 695,
+        "line": 701,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/ToolboxTab.jsx",
-        "line": 735,
+        "line": 744,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/ToolboxTab.jsx",
-        "line": 741,
+        "line": 750,
         "issue": "Button without accessible name",
         "code": "<button"
       },
@@ -1268,31 +1674,43 @@
       },
       {
         "file": "components/mastery/ToolboxTabMobile.jsx",
-        "line": 107,
+        "line": 230,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/ToolboxTabMobile.jsx",
-        "line": 116,
+        "line": 239,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/ToolboxTabMobile.jsx",
-        "line": 134,
+        "line": 263,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/ToolboxTabMobile.jsx",
-        "line": 165,
+        "line": 286,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/mastery/ToolboxTabMobile.jsx",
-        "line": 199,
+        "line": 298,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabMobile.jsx",
+        "line": 319,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/mastery/ToolboxTabMobile.jsx",
+        "line": 353,
         "issue": "Button without accessible name",
         "code": "<button"
       },
@@ -1417,44 +1835,56 @@
         "code": "<button"
       },
       {
+        "file": "components/stellar-map/NodeTooltip.jsx",
+        "line": 57,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
         "file": "components/stellar-map/StellarMap.jsx",
-        "line": 284,
+        "line": 260,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
-        "file": "components/stellar-map/StellarMap2D.jsx",
-        "line": 356,
+        "file": "components/stellar-map/StellarMapAnalytics.jsx",
+        "line": 71,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
-        "file": "components/stellar-map/StellarMap2D.jsx",
-        "line": 363,
+        "file": "components/stellar-map/StellarMapBreadcrumb.jsx",
+        "line": 28,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
-        "file": "components/stellar-map/StellarMap2D.jsx",
-        "line": 370,
-        "issue": "Button without accessible name",
-        "code": "<button"
-      },
-      {
-        "file": "components/stellar-map/StellarMapControls.jsx",
-        "line": 45,
+        "file": "components/stellar-map/StellarMapBreadcrumb.jsx",
+        "line": 40,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/stellar-map/StellarMapControls.jsx",
-        "line": 73,
+        "line": 47,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/stellar-map/StellarMapControls.jsx",
-        "line": 153,
+        "line": 75,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/stellar-map/StellarMapControls.jsx",
+        "line": 155,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/stellar-map/StellarMapControls.jsx",
+        "line": 201,
         "issue": "Button without accessible name",
         "code": "<button"
       },
@@ -1465,20 +1895,116 @@
         "code": "<button"
       },
       {
+        "file": "components/stellar-map/StellarMapLegend.jsx",
+        "line": 12,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/stellar-map/StellarMapLegend.jsx",
+        "line": 30,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/stellar-map/StellarMapMiniMap.jsx",
+        "line": 42,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/stellar-map/StellarMapSearch.jsx",
+        "line": 120,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "components/stellar-map/StellarMapSearch.jsx",
+        "line": 133,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/stellar-map/StellarMapSearch.jsx",
+        "line": 146,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/stellar-map/StellarMapSearch.jsx",
+        "line": 169,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/stellar-map/StellarMapSearch.jsx",
+        "line": 190,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "components/stellar-map/StellarMapSearch.jsx",
+        "line": 201,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "components/stellar-map/StellarMapSearch.jsx",
+        "line": 246,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/stellar-map/StellarMapSearch.jsx",
+        "line": 261,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/stellar-map/StellarMapSettings.jsx",
+        "line": 38,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/stellar-map/StellarMapSettings.jsx",
+        "line": 55,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "components/stellar-map/StellarMapSettings.jsx",
+        "line": 72,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "components/stellar-map/StellarMapSettings.jsx",
+        "line": 88,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "components/stellar-map/StellarMapSettings.jsx",
+        "line": 107,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
         "file": "components/stellar-map/YouTubePlayerModal.jsx",
-        "line": 252,
+        "line": 340,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/stellar-map/YouTubePlayerModal.jsx",
-        "line": 277,
+        "line": 375,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "components/stellar-map/YouTubePlayerModal.jsx",
-        "line": 313,
+        "line": 419,
         "issue": "Button without accessible name",
         "code": "<button"
       },
@@ -1493,6 +2019,30 @@
         "line": 249,
         "issue": "Button without accessible name",
         "code": "<button"
+      },
+      {
+        "file": "components/ui/3d-image-gallery.jsx",
+        "line": 276,
+        "issue": "Button without accessible name",
+        "code": "<button onClick={handleClose} className=\"absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors z-10\">"
+      },
+      {
+        "file": "components/ui/3d-image-gallery.jsx",
+        "line": 311,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/ui/3d-image-gallery.jsx",
+        "line": 321,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "components/ui/CosmicLoader.jsx",
+        "line": 138,
+        "issue": "Image without alt text",
+        "code": "<img"
       },
       {
         "file": "components/ui/input.jsx",
@@ -1580,25 +2130,127 @@
       },
       {
         "file": "pages/CourseCatalogPage.jsx",
-        "line": 120,
+        "line": 496,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "pages/CourseCatalogPage.jsx",
-        "line": 160,
+        "line": 524,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "pages/CourseCatalogPage.jsx",
-        "line": 185,
+        "line": 535,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "pages/CourseCatalogPage.jsx",
-        "line": 343,
+        "line": 546,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseCatalogPage.jsx",
+        "line": 568,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "pages/CourseCatalogPage.jsx",
+        "line": 577,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseCatalogPage.jsx",
+        "line": 594,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseCatalogPage.jsx",
+        "line": 613,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseCatalogPage.jsx",
+        "line": 677,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseCatalogPage.jsx",
+        "line": 691,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseCatalogPage.jsx",
+        "line": 718,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseCatalogPage.jsx",
+        "line": 845,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseCatalogPage.jsx",
+        "line": 1022,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseCatalogPage.jsx",
+        "line": 1066,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseCatalogPage.jsx",
+        "line": 1084,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseCatalogPage.jsx",
+        "line": 1109,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseCatalogPage.jsx",
+        "line": 1228,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseCatalogPage.jsx",
+        "line": 1343,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseCatalogPage.jsx",
+        "line": 1387,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseCatalogPage.jsx",
+        "line": 1409,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CourseCatalogPage.jsx",
+        "line": 1424,
         "issue": "Button without accessible name",
         "code": "<button"
       },
@@ -1694,283 +2346,361 @@
       },
       {
         "file": "pages/CourseDetailPage.jsx",
-        "line": 170,
+        "line": 173,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "pages/CourseDetailPage.jsx",
-        "line": 191,
+        "line": 194,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "pages/CourseDetailPage.jsx",
-        "line": 318,
+        "line": 320,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "pages/CourseDetailPage.jsx",
-        "line": 383,
+        "line": 386,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "pages/CoursePlayerPage.jsx",
-        "line": 249,
+        "line": 333,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "pages/CoursePlayerPage.jsx",
-        "line": 293,
+        "line": 363,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "pages/CoursePlayerPage.jsx",
-        "line": 323,
+        "line": 382,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "pages/CoursePlayerPage.jsx",
-        "line": 332,
+        "line": 439,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "pages/CoursePlayerPage.jsx",
-        "line": 345,
+        "line": 469,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "pages/CoursePlayerPage.jsx",
-        "line": 383,
+        "line": 479,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "pages/CoursePlayerPage.jsx",
-        "line": 517,
+        "line": 490,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "pages/CoursePlayerPage.jsx",
-        "line": 526,
+        "line": 515,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "pages/CoursePlayerPage.jsx",
-        "line": 561,
+        "line": 553,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "pages/CoursePlayerPage.jsx",
-        "line": 575,
+        "line": 728,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CoursePlayerPage.jsx",
+        "line": 754,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CoursePlayerPage.jsx",
+        "line": 795,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/CoursePlayerPage.jsx",
+        "line": 810,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/Dashboard.jsx",
+        "line": 822,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/DashboardNeomorphic.jsx",
+        "line": 447,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "pages/LoginPage.jsx",
-        "line": 73,
+        "line": 80,
+        "issue": "Image without alt text",
+        "code": "<img"
+      },
+      {
+        "file": "pages/LoginPage.jsx",
+        "line": 96,
+        "issue": "Image without alt text",
+        "code": "<img"
+      },
+      {
+        "file": "pages/LoginPage.jsx",
+        "line": 107,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/LoginPage.jsx",
+        "line": 132,
         "issue": "Form input without label association",
         "code": "<input"
       },
       {
         "file": "pages/LoginPage.jsx",
-        "line": 90,
+        "line": 147,
         "issue": "Form input without label association",
         "code": "<input"
       },
       {
         "file": "pages/LoginPage.jsx",
-        "line": 117,
+        "line": 159,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/LoginPage.jsx",
+        "line": 181,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "pages/Mastery.jsx",
-        "line": 104,
-        "issue": "Button without accessible name",
-        "code": "<button"
-      },
-      {
-        "file": "pages/Mastery.jsx",
-        "line": 115,
-        "issue": "Button without accessible name",
-        "code": "<button"
-      },
-      {
-        "file": "pages/Mastery.jsx",
-        "line": 126,
-        "issue": "Button without accessible name",
-        "code": "<button"
-      },
-      {
-        "file": "pages/Mastery.jsx",
-        "line": 163,
+        "line": 133,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "pages/PricingPage.jsx",
-        "line": 166,
+        "line": 425,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "pages/ProfilePage.jsx",
-        "line": 217,
+        "line": 479,
         "issue": "Button without accessible name",
         "code": "<button className=\"hidden md:block px-3 py-2 sm:px-4 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 shadow-lg hover:shadow-emerald-500/25\">"
       },
       {
         "file": "pages/ProfilePage.jsx",
-        "line": 220,
+        "line": 482,
         "issue": "Button without accessible name",
         "code": "<button className=\"hidden md:block px-3 py-2 sm:px-4 bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 shadow-lg hover:shadow-cyan-500/25\">"
       },
       {
         "file": "pages/ProfilePage.jsx",
-        "line": 223,
+        "line": 485,
         "issue": "Button without accessible name",
         "code": "<button className=\"hidden md:block px-3 py-2 sm:px-4 bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-500 hover:to-violet-600 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 shadow-lg hover:shadow-violet-500/25\">"
       },
       {
         "file": "pages/ProfilePage.jsx",
-        "line": 239,
+        "line": 501,
         "issue": "Image without alt text",
         "code": "<img"
       },
       {
         "file": "pages/ProfilePage.jsx",
-        "line": 367,
+        "line": 629,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "pages/ProfilePage.jsx",
-        "line": 493,
+        "line": 755,
         "issue": "Form input without label association",
         "code": "<input"
       },
       {
         "file": "pages/ProfilePage.jsx",
-        "line": 508,
+        "line": 775,
+        "issue": "Image without alt text",
+        "code": "<img"
+      },
+      {
+        "file": "pages/ProfilePage.jsx",
+        "line": 780,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/ProfilePage.jsx",
+        "line": 797,
         "issue": "Form input without label association",
         "code": "<input"
       },
       {
         "file": "pages/ProfilePage.jsx",
-        "line": 523,
+        "line": 834,
         "issue": "Form input without label association",
         "code": "<textarea"
       },
       {
         "file": "pages/ProfilePage.jsx",
-        "line": 538,
+        "line": 857,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/ProfilePage.jsx",
+        "line": 870,
         "issue": "Form input without label association",
         "code": "<input"
       },
       {
         "file": "pages/ProfilePage.jsx",
-        "line": 558,
+        "line": 904,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/RoadmapIgnition.jsx",
+        "line": 275,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
         "file": "pages/SettingsPage.jsx",
-        "line": 264,
+        "line": 306,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/SettingsPage.jsx",
+        "line": 323,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "pages/SettingsPage.jsx",
+        "line": 441,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "pages/SettingsPage.jsx",
+        "line": 775,
+        "issue": "Form input without label association",
+        "code": "<input type=\"checkbox\" className=\"w-4 h-4 rounded border-gray-300\" defaultChecked />"
+      },
+      {
+        "file": "pages/SettingsPage.jsx",
+        "line": 784,
+        "issue": "Form input without label association",
+        "code": "<input type=\"checkbox\" className=\"w-4 h-4 rounded border-gray-300\" defaultChecked />"
+      },
+      {
+        "file": "pages/SettingsPage.jsx",
+        "line": 793,
+        "issue": "Form input without label association",
+        "code": "<input type=\"checkbox\" className=\"w-4 h-4 rounded border-gray-300\" defaultChecked />"
+      },
+      {
+        "file": "pages/SettingsPage.jsx",
+        "line": 826,
+        "issue": "Form input without label association",
+        "code": "<input type=\"checkbox\" className=\"w-4 h-4 rounded border-gray-300\" defaultChecked />"
+      },
+      {
+        "file": "pages/SettingsPage.jsx",
+        "line": 835,
+        "issue": "Form input without label association",
+        "code": "<input type=\"checkbox\" className=\"w-4 h-4 rounded border-gray-300\" defaultChecked />"
+      },
+      {
+        "file": "pages/SignupPage.jsx",
+        "line": 140,
         "issue": "Image without alt text",
         "code": "<img"
       },
       {
-        "file": "pages/SettingsPage.jsx",
-        "line": 273,
+        "file": "pages/SignupPage.jsx",
+        "line": 156,
+        "issue": "Image without alt text",
+        "code": "<img"
+      },
+      {
+        "file": "pages/SignupPage.jsx",
+        "line": 167,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
-        "file": "pages/SettingsPage.jsx",
-        "line": 290,
-        "issue": "Form input without label association",
-        "code": "<input"
-      },
-      {
-        "file": "pages/SettingsPage.jsx",
-        "line": 656,
-        "issue": "Form input without label association",
-        "code": "<input type=\"checkbox\" className=\"w-4 h-4 rounded border-gray-300\" defaultChecked />"
-      },
-      {
-        "file": "pages/SettingsPage.jsx",
-        "line": 665,
-        "issue": "Form input without label association",
-        "code": "<input type=\"checkbox\" className=\"w-4 h-4 rounded border-gray-300\" defaultChecked />"
-      },
-      {
-        "file": "pages/SettingsPage.jsx",
-        "line": 674,
-        "issue": "Form input without label association",
-        "code": "<input type=\"checkbox\" className=\"w-4 h-4 rounded border-gray-300\" defaultChecked />"
-      },
-      {
-        "file": "pages/SettingsPage.jsx",
-        "line": 707,
-        "issue": "Form input without label association",
-        "code": "<input type=\"checkbox\" className=\"w-4 h-4 rounded border-gray-300\" defaultChecked />"
-      },
-      {
-        "file": "pages/SettingsPage.jsx",
-        "line": 716,
-        "issue": "Form input without label association",
-        "code": "<input type=\"checkbox\" className=\"w-4 h-4 rounded border-gray-300\" defaultChecked />"
-      },
-      {
         "file": "pages/SignupPage.jsx",
-        "line": 139,
+        "line": 192,
         "issue": "Form input without label association",
         "code": "<input"
       },
       {
         "file": "pages/SignupPage.jsx",
-        "line": 161,
+        "line": 212,
         "issue": "Form input without label association",
         "code": "<input"
       },
       {
         "file": "pages/SignupPage.jsx",
-        "line": 184,
+        "line": 231,
         "issue": "Form input without label association",
         "code": "<input"
       },
       {
         "file": "pages/SignupPage.jsx",
-        "line": 210,
-        "issue": "Form input without label association",
-        "code": "<input"
-      },
-      {
-        "file": "pages/SignupPage.jsx",
-        "line": 230,
-        "issue": "Form input without label association",
-        "code": "<input"
-      },
-      {
-        "file": "pages/SignupPage.jsx",
-        "line": 256,
+        "line": 245,
         "issue": "Button without accessible name",
         "code": "<button"
       },
       {
-        "file": "pages/StellarMap2DPage.jsx",
-        "line": 241,
+        "file": "pages/SignupPage.jsx",
+        "line": 262,
+        "issue": "Form input without label association",
+        "code": "<input"
+      },
+      {
+        "file": "pages/SignupPage.jsx",
+        "line": 276,
+        "issue": "Button without accessible name",
+        "code": "<button"
+      },
+      {
+        "file": "pages/SignupPage.jsx",
+        "line": 292,
         "issue": "Button without accessible name",
         "code": "<button"
       },
@@ -2012,6 +2742,11 @@
         "line": 86
       },
       {
+        "file": "components/AppShell.jsx",
+        "issue": "Button without aria-label",
+        "line": 54
+      },
+      {
         "file": "components/Auth.jsx",
         "issue": "Button without aria-label",
         "line": 41
@@ -2025,6 +2760,11 @@
         "file": "components/QuizComponent.jsx",
         "issue": "Button without aria-label",
         "line": 85
+      },
+      {
+        "file": "components/Roadmap/CompleteLessonModal.jsx",
+        "issue": "Button without aria-label",
+        "line": 103
       },
       {
         "file": "components/SignupTest.jsx",
@@ -2047,14 +2787,39 @@
         "line": 22
       },
       {
-        "file": "components/mastery/CalendarTabMobile.jsx",
+        "file": "components/dashboard/ActiveCourseCard.jsx",
         "issue": "Button without aria-label",
-        "line": 227
+        "line": 36
+      },
+      {
+        "file": "components/dashboard/AllLessonsCard.jsx",
+        "issue": "Button without aria-label",
+        "line": 79
+      },
+      {
+        "file": "components/dashboard/HabitsCompletedCard.jsx",
+        "issue": "Button without aria-label",
+        "line": 113
+      },
+      {
+        "file": "components/dashboard/SchoolProgressAreaChart.jsx",
+        "issue": "Button without aria-label",
+        "line": 158
+      },
+      {
+        "file": "components/dashboard/SchoolProgressAreaChartDesktop.jsx",
+        "issue": "Button without aria-label",
+        "line": 146
+      },
+      {
+        "file": "components/dashboard/SchoolProgressAreaChartMobile.jsx",
+        "issue": "Button without aria-label",
+        "line": 180
       },
       {
         "file": "components/mastery/HabitsTabCompact.jsx",
         "issue": "Button without aria-label",
-        "line": 475
+        "line": 486
       },
       {
         "file": "components/mastery/HabitsTabFixed.jsx",
@@ -2064,7 +2829,7 @@
       {
         "file": "components/mastery/HabitsTabMobile.jsx",
         "issue": "Button without aria-label",
-        "line": 209
+        "line": 333
       },
       {
         "file": "components/mastery/HabitsTabRobust.jsx",
@@ -2082,14 +2847,14 @@
         "line": 89
       },
       {
-        "file": "components/stellar-map/StellarMap2D.jsx",
-        "issue": "Button without aria-label",
-        "line": 355
-      },
-      {
         "file": "components/stellar-map/StellarMapErrorBoundary.jsx",
         "issue": "Button without aria-label",
         "line": 42
+      },
+      {
+        "file": "components/stellar-map/StellarMapSearch.jsx",
+        "issue": "Button without aria-label",
+        "line": 132
       },
       {
         "file": "components/test/MasteryTestComponent.jsx",
@@ -2097,49 +2862,74 @@
         "line": 241
       },
       {
+        "file": "components/ui/3d-image-gallery.jsx",
+        "issue": "Button without aria-label",
+        "line": 275
+      },
+      {
         "file": "pages/CourseCatalogPage.jsx",
         "issue": "Button without aria-label",
-        "line": 119
+        "line": 495
       },
       {
         "file": "pages/CourseDetailPage.jsx",
         "issue": "Button without aria-label",
-        "line": 169
+        "line": 172
       },
       {
         "file": "pages/CoursePlayerPage.jsx",
         "issue": "Button without aria-label",
-        "line": 248
+        "line": 332
+      },
+      {
+        "file": "pages/Dashboard.jsx",
+        "issue": "Button without aria-label",
+        "line": 821
+      },
+      {
+        "file": "pages/DashboardNeomorphic.jsx",
+        "issue": "Button without aria-label",
+        "line": 446
       },
       {
         "file": "pages/LoginPage.jsx",
         "issue": "Button without aria-label",
-        "line": 116
+        "line": 106
       },
       {
         "file": "pages/Mastery.jsx",
         "issue": "Button without aria-label",
-        "line": 103
+        "line": 132
       },
       {
         "file": "pages/PricingPage.jsx",
         "issue": "Button without aria-label",
-        "line": 165
+        "line": 424
+      },
+      {
+        "file": "pages/ProfessionalLandingPage.jsx",
+        "issue": "Button without aria-label",
+        "line": 519
       },
       {
         "file": "pages/ProfilePage.jsx",
         "issue": "Button without aria-label",
-        "line": 216
+        "line": 478
+      },
+      {
+        "file": "pages/RoadmapIgnition.jsx",
+        "issue": "Button without aria-label",
+        "line": 274
       },
       {
         "file": "pages/SettingsPage.jsx",
         "issue": "Button without aria-label",
-        "line": 272
+        "line": 305
       },
       {
         "file": "pages/SignupPage.jsx",
         "issue": "Button without aria-label",
-        "line": 255
+        "line": 166
       },
       {
         "file": "pages/TimerPage.jsx",
@@ -2151,18 +2941,43 @@
   "performance": {
     "issues": [
       {
+        "file": "components/AppShell.jsx",
+        "issue": "Large file (568 lines) - consider splitting",
+        "severity": "medium"
+      },
+      {
+        "file": "components/AppShellMobile.jsx",
+        "issue": "Large file (817 lines) - consider splitting",
+        "severity": "medium"
+      },
+      {
+        "file": "components/dashboard/MoodTracker.jsx",
+        "issue": "Large file (518 lines) - consider splitting",
+        "severity": "medium"
+      },
+      {
+        "file": "components/landing/SpaceSlideshow3D.jsx",
+        "issue": "Large file (512 lines) - consider splitting",
+        "severity": "medium"
+      },
+      {
         "file": "components/mastery/CalendarTab.jsx",
-        "issue": "Large file (1174 lines) - consider splitting",
+        "issue": "Large file (1181 lines) - consider splitting",
+        "severity": "medium"
+      },
+      {
+        "file": "components/mastery/CalendarTabMobile.jsx",
+        "issue": "Large file (599 lines) - consider splitting",
         "severity": "medium"
       },
       {
         "file": "components/mastery/HabitsTab.jsx",
-        "issue": "Large file (692 lines) - consider splitting",
+        "issue": "Large file (660 lines) - consider splitting",
         "severity": "medium"
       },
       {
         "file": "components/mastery/HabitsTabCompact.jsx",
-        "issue": "Large file (745 lines) - consider splitting",
+        "issue": "Large file (787 lines) - consider splitting",
         "severity": "medium"
       },
       {
@@ -2182,7 +2997,7 @@
       },
       {
         "file": "components/mastery/ToolboxTab.jsx",
-        "issue": "Large file (759 lines) - consider splitting",
+        "issue": "Large file (768 lines) - consider splitting",
         "severity": "medium"
       },
       {
@@ -2201,8 +3016,18 @@
         "severity": "medium"
       },
       {
-        "file": "components/stellar-map/StellarMap2D.jsx",
-        "issue": "Large file (832 lines) - consider splitting",
+        "file": "config/colorPalettes.js",
+        "issue": "Large file (526 lines) - consider splitting",
+        "severity": "medium"
+      },
+      {
+        "file": "contexts/AuthContext.jsx",
+        "issue": "Large file (552 lines) - consider splitting",
+        "severity": "medium"
+      },
+      {
+        "file": "pages/AwakeningLandingPage.jsx",
+        "issue": "Large file (1410 lines) - consider splitting",
         "severity": "medium"
       },
       {
@@ -2211,48 +3036,59 @@
         "severity": "medium"
       },
       {
+        "file": "pages/CourseCatalogPage.jsx",
+        "issue": "Large file (1445 lines) - consider splitting",
+        "severity": "medium"
+      },
+      {
         "file": "pages/CoursePlayerPage.jsx",
-        "issue": "Large file (597 lines) - consider splitting",
+        "issue": "Large file (845 lines) - consider splitting",
         "severity": "medium"
       },
       {
         "file": "pages/Dashboard.jsx",
-        "issue": "Large file (741 lines) - consider splitting",
+        "issue": "Large file (854 lines) - consider splitting",
+        "severity": "medium"
+      },
+      {
+        "file": "pages/ProfessionalLandingPage.jsx",
+        "issue": "Large file (552 lines) - consider splitting",
         "severity": "medium"
       },
       {
         "file": "pages/ProfilePage.jsx",
-        "issue": "Large file (572 lines) - consider splitting",
+        "issue": "Large file (918 lines) - consider splitting",
         "severity": "medium"
       },
       {
         "file": "pages/SettingsPage.jsx",
-        "issue": "Large file (798 lines) - consider splitting",
+        "issue": "Large file (919 lines) - consider splitting",
         "severity": "medium"
       },
       {
         "file": "services/courseService.js",
-        "issue": "Large file (885 lines) - consider splitting",
+        "issue": "Large file (1005 lines) - consider splitting",
         "severity": "medium"
       },
       {
         "file": "services/masteryService.js",
-        "issue": "Large file (905 lines) - consider splitting",
+        "issue": "Large file (908 lines) - consider splitting",
+        "severity": "medium"
+      },
+      {
+        "file": "services/roadmapService.js",
+        "issue": "Large file (631 lines) - consider splitting",
         "severity": "medium"
       },
       {
         "file": "services/stellarMapService.js",
-        "issue": "Large file (741 lines) - consider splitting",
+        "issue": "Large file (792 lines) - consider splitting",
         "severity": "medium"
       }
     ],
     "opportunities": [
       {
-        "file": "components/Account.jsx",
-        "suggestion": "Consider using React.memo for large component"
-      },
-      {
-        "file": "components/AppShellMobile.jsx",
+        "file": "components/AppShell.jsx",
         "suggestion": "Consider using React.memo for large component"
       },
       {
@@ -2264,7 +3100,15 @@
         "suggestion": "Consider using React.memo for large component"
       },
       {
+        "file": "components/EnvTest.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
         "file": "components/ErrorBoundary.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/ProtectedSubscriptionRoute.jsx",
         "suggestion": "Consider using React.memo for large component"
       },
       {
@@ -2273,6 +3117,26 @@
       },
       {
         "file": "components/RequireRole.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/Roadmap/CompleteLessonModal.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/Roadmap/LessonTracker.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/Roadmap/RoadmapNode.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/Roadmap/RoadmapNotificationBanner.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/Roadmap/RoadmapPath.jsx",
         "suggestion": "Consider using React.memo for large component"
       },
       {
@@ -2289,6 +3153,10 @@
       },
       {
         "file": "components/SupabaseTest.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/UpgradeModal.jsx",
         "suggestion": "Consider using React.memo for large component"
       },
       {
@@ -2316,6 +3184,14 @@
         "suggestion": "Consider using React.memo for large component"
       },
       {
+        "file": "components/dashboard/ActiveCourseCard.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/dashboard/AllLessonsCard.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
         "file": "components/dashboard/CurrentLessonWidget.jsx",
         "suggestion": "Consider using React.memo for large component"
       },
@@ -2324,15 +3200,55 @@
         "suggestion": "Consider using React.memo for large component"
       },
       {
+        "file": "components/dashboard/HabitsCompletedCard.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/dashboard/QuickActionsGrid.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
         "file": "components/dashboard/QuickActionsWidget.jsx",
         "suggestion": "Consider using React.memo for large component"
       },
       {
-        "file": "components/mastery/CalendarTab.jsx",
+        "file": "components/dashboard/SchoolProgressAreaChart.jsx",
         "suggestion": "Consider using React.memo for large component"
       },
       {
-        "file": "components/mastery/CalendarTabMobile.jsx",
+        "file": "components/dashboard/SchoolProgressAreaChartDesktop.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/dashboard/SchoolProgressAreaChartMobile.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/dashboard/StatCardV2.test.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/dashboard/XPCircleWidget.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/dashboard/XPCircleWidgetV2.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/dashboard/XPProgressChart.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/landing/ScrollAware3D.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/landing/SpaceSlideshow3D.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/mastery/CalendarTab.jsx",
         "suggestion": "Consider using React.memo for large component"
       },
       {
@@ -2392,6 +3308,10 @@
         "suggestion": "Consider using React.memo for large component"
       },
       {
+        "file": "components/stellar-map/StellarMapBreadcrumb.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
         "file": "components/stellar-map/StellarMapControls.jsx",
         "suggestion": "Consider using React.memo for large component"
       },
@@ -2401,6 +3321,14 @@
       },
       {
         "file": "components/stellar-map/StellarMapErrorBoundary.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/stellar-map/StellarMapLegend.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "components/stellar-map/StellarMapSettings.jsx",
         "suggestion": "Consider using React.memo for large component"
       },
       {
@@ -2416,11 +3344,11 @@
         "suggestion": "Consider using React.memo for large component"
       },
       {
-        "file": "pages/CommunityPage.jsx",
+        "file": "pages/AwakeningLandingPage.jsx",
         "suggestion": "Consider using React.memo for large component"
       },
       {
-        "file": "pages/CourseCatalogPage.jsx",
+        "file": "pages/CommunityPage.jsx",
         "suggestion": "Consider using React.memo for large component"
       },
       {
@@ -2436,7 +3364,15 @@
         "suggestion": "Consider using React.memo for large component"
       },
       {
+        "file": "pages/EnhancedLandingPage.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
         "file": "pages/ForgotPasswordPage.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "pages/LandingPage.jsx",
         "suggestion": "Consider using React.memo for large component"
       },
       {
@@ -2453,6 +3389,10 @@
       },
       {
         "file": "pages/PrivacyPage.jsx",
+        "suggestion": "Consider using React.memo for large component"
+      },
+      {
+        "file": "pages/ProfessionalLandingPage.jsx",
         "suggestion": "Consider using React.memo for large component"
       },
       {
@@ -2476,19 +3416,47 @@
         "suggestion": "Consider using React.memo for large component"
       },
       {
-        "file": "components/AppShellMobile.jsx",
+        "file": "components/AppShell.jsx",
         "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "components/Roadmap/LessonTracker.jsx",
+        "suggestion": "Consider using React.memo for component optimization"
       },
       {
         "file": "components/common/ColorPaletteDropdown.jsx",
         "suggestion": "Consider using useMemo for expensive computations"
       },
       {
-        "file": "components/mastery/CalendarTab.jsx",
+        "file": "components/dashboard/AllLessonsCard.jsx",
         "suggestion": "Consider using useMemo for expensive computations"
       },
       {
-        "file": "components/mastery/CalendarTabMobile.jsx",
+        "file": "components/dashboard/HabitsCompletedCard.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "components/dashboard/SchoolProgressAreaChart.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "components/dashboard/SchoolProgressAreaChartDesktop.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "components/dashboard/SchoolProgressAreaChartMobile.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "components/dashboard/XPProgressChart.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "components/landing/SpaceSlideshow3D.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
+        "file": "components/mastery/CalendarTab.jsx",
         "suggestion": "Consider using useMemo for expensive computations"
       },
       {
@@ -2544,6 +3512,14 @@
         "suggestion": "Consider lazy loading this page component"
       },
       {
+        "file": "pages/AwakeningLandingPage.jsx",
+        "suggestion": "Consider lazy loading this page component"
+      },
+      {
+        "file": "pages/AwakeningLandingPage.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
         "file": "pages/CommunityPage.jsx",
         "suggestion": "Consider lazy loading this page component"
       },
@@ -2554,10 +3530,6 @@
       {
         "file": "pages/CourseCatalogPage.jsx",
         "suggestion": "Consider lazy loading this page component"
-      },
-      {
-        "file": "pages/CourseCatalogPage.jsx",
-        "suggestion": "Consider using useMemo for expensive computations"
       },
       {
         "file": "pages/CourseCreationPage.jsx",
@@ -2588,7 +3560,23 @@
         "suggestion": "Consider lazy loading this page component"
       },
       {
+        "file": "pages/DashboardNeomorphic.jsx",
+        "suggestion": "Consider lazy loading this page component"
+      },
+      {
+        "file": "pages/EnhancedLandingPage.jsx",
+        "suggestion": "Consider lazy loading this page component"
+      },
+      {
+        "file": "pages/EnhancedLandingPage.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
         "file": "pages/ForgotPasswordPage.jsx",
+        "suggestion": "Consider lazy loading this page component"
+      },
+      {
+        "file": "pages/LandingPage.jsx",
         "suggestion": "Consider lazy loading this page component"
       },
       {
@@ -2608,8 +3596,20 @@
         "suggestion": "Consider lazy loading this page component"
       },
       {
+        "file": "pages/PricingPage.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
+      },
+      {
         "file": "pages/PrivacyPage.jsx",
         "suggestion": "Consider lazy loading this page component"
+      },
+      {
+        "file": "pages/ProfessionalLandingPage.jsx",
+        "suggestion": "Consider lazy loading this page component"
+      },
+      {
+        "file": "pages/ProfessionalLandingPage.jsx",
+        "suggestion": "Consider using useMemo for expensive computations"
       },
       {
         "file": "pages/ProfilePage.jsx",
@@ -2620,6 +3620,10 @@
         "suggestion": "Consider using useMemo for expensive computations"
       },
       {
+        "file": "pages/RoadmapIgnition.jsx",
+        "suggestion": "Consider lazy loading this page component"
+      },
+      {
         "file": "pages/SettingsPage.jsx",
         "suggestion": "Consider lazy loading this page component"
       },
@@ -2628,7 +3632,7 @@
         "suggestion": "Consider lazy loading this page component"
       },
       {
-        "file": "pages/StellarMap2DPage.jsx",
+        "file": "pages/StellarCardGalleryDemo.jsx",
         "suggestion": "Consider lazy loading this page component"
       },
       {
@@ -2651,6 +3655,14 @@
   },
   "security": {
     "issues": [
+      {
+        "file": "services/habitsService.js",
+        "issue": "Database query may not respect RLS policies"
+      },
+      {
+        "file": "services/lessonsService.js",
+        "issue": "Database query may not respect RLS policies"
+      },
       {
         "file": "services/levelsService.js",
         "issue": "Database query may not respect RLS policies"

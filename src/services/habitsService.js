@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabaseClient'
+import { getTodayStartISO } from '../utils/dateUtils'
 
 /**
  * Habits Service
@@ -17,7 +18,8 @@ class HabitsService {
 
       switch (period) {
         case 'day':
-          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+          // Use local timezone for accurate "today"
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
           break
         case 'week':
           const dayOfWeek = now.getDay()
@@ -26,13 +28,13 @@ class HabitsService {
           startDate.setHours(0, 0, 0, 0)
           break
         case 'month':
-          startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0)
           break
         case 'year':
-          startDate = new Date(now.getFullYear(), 0, 1)
+          startDate = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0)
           break
         default:
-          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
       }
 
       // Query user_habit_completions table
@@ -63,7 +65,8 @@ class HabitsService {
 
       switch (period) {
         case 'day':
-          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+          // Use local timezone for accurate "today"
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
           break
         case 'week':
           const dayOfWeek = now.getDay()
@@ -72,13 +75,13 @@ class HabitsService {
           startDate.setHours(0, 0, 0, 0)
           break
         case 'month':
-          startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0)
           break
         case 'year':
-          startDate = new Date(now.getFullYear(), 0, 1)
+          startDate = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0)
           break
         default:
-          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
       }
 
       const { data, error } = await supabase
@@ -89,7 +92,7 @@ class HabitsService {
 
       if (error) throw error
 
-      // Group by period
+      // Group by period - use local timezone for date calculations
       const grouped = {}
       data?.forEach(completion => {
         const date = new Date(completion.completed_at)
@@ -97,7 +100,11 @@ class HabitsService {
 
         switch (period) {
           case 'day':
-            key = date.toISOString().split('T')[0] // YYYY-MM-DD
+            // Use local date string for accurate day grouping
+            const year = date.getFullYear()
+            const month = String(date.getMonth() + 1).padStart(2, '0')
+            const day = String(date.getDate()).padStart(2, '0')
+            key = `${year}-${month}-${day}`
             break
           case 'week':
             const weekStart = new Date(date)
@@ -111,7 +118,10 @@ class HabitsService {
             key = String(date.getFullYear())
             break
           default:
-            key = date.toISOString().split('T')[0]
+            const defaultYear = date.getFullYear()
+            const defaultMonth = String(date.getMonth() + 1).padStart(2, '0')
+            const defaultDay = String(date.getDate()).padStart(2, '0')
+            key = `${defaultYear}-${defaultMonth}-${defaultDay}`
         }
 
         grouped[key] = (grouped[key] || 0) + 1

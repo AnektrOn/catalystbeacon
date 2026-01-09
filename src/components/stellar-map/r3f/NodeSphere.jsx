@@ -38,7 +38,7 @@ const NodeSphereComponent = ({
       groupRef.current.lookAt(camera.position);
     }
   });
-  
+
   const handlePointerOver = (e) => {
     e.stopPropagation();
     setHovered(true);

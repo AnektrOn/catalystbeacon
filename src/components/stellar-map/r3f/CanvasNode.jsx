@@ -45,13 +45,16 @@ const CanvasNodeComponent = ({
   // Memoize style calculation
   const style = useMemo(() => {
     const baseStyle = DIFFICULTY_STYLES[difficulty] || DIFFICULTY_STYLES[0];
-    // Random color from palette like HTML example
-    const color = NODE_COLORS[Math.floor(Math.random() * NODE_COLORS.length)];
+    // Use base style color for consistent visibility (was random before)
+    const color = baseStyle.color;
     return { ...baseStyle, color };
   }, [difficulty]);
   
   const nodeRadius = useMemo(() => style.size, [style.size]);
-  const canvasSize = useMemo(() => Math.max(nodeRadius * 20, 60), [nodeRadius]); // Larger canvas for visibility
+  // Scale canvas size with difficulty - higher difficulty = larger node
+  // Base size scales from 60px (difficulty 0) to 140px (difficulty 10)
+  const baseSize = 60 + (difficulty * 8);
+  const canvasSize = useMemo(() => baseSize, [baseSize]);
   
   // Make node always face the camera
   useFrame(({ camera }) => {
@@ -63,32 +66,74 @@ const CanvasNodeComponent = ({
   // Animate canvas star (like HTML example)
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[CanvasNode] Canvas ref is null');
+      }
+      return;
+    }
     
     // Set canvas size immediately
     canvas.width = canvasSize;
     canvas.height = canvasSize;
     
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[CanvasNode] Could not get 2D context');
+      }
+      return;
+    }
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[CanvasNode] Rendering node:', {
+        canvasSize,
+        difficulty,
+        color: style.color,
+        baseRadius: 5 + (difficulty * 1.5)
+      });
+    }
     
     // Initial render
     const render = (time = 0) => {
       timeRef.current = time * 0.001;
       
-      // Clear
+      // Clear with transparent background
       ctx.clearRect(0, 0, canvasSize, canvasSize);
       
-      // Pulse effect (like HTML example)
-      const pulse = Math.sin(timeRef.current * 2 + pulseOffsetRef.current) * 0.5 + 1;
-      const currentRadius = nodeRadius * pulse;
+      // Pulse effect - subtle pulse (15% variation)
+      const pulse = Math.sin(timeRef.current * 2 + pulseOffsetRef.current) * 0.15 + 1;
+      // Scale radius with difficulty - higher difficulty = larger radius
+      // Base radius scales from 5px (difficulty 0) to 20px (difficulty 10)
+      const baseRadius = 5 + (difficulty * 1.5);
+      const currentRadius = baseRadius * pulse;
       
-      // Glow
-      ctx.shadowBlur = 15;
-      ctx.shadowColor = style.color;
+      // Draw outer glow - bright and visible
+      const gradient = ctx.createRadialGradient(
+        canvasSize / 2, canvasSize / 2, 0,
+        canvasSize / 2, canvasSize / 2, currentRadius * 2.5
+      );
+      // Convert hex to rgba for opacity
+      const hexToRgba = (hex, alpha) => {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      };
+      gradient.addColorStop(0, hexToRgba(style.color, 1.0));
+      gradient.addColorStop(0.3, hexToRgba(style.color, 0.8));
+      gradient.addColorStop(0.6, hexToRgba(style.color, 0.4));
+      gradient.addColorStop(1, hexToRgba(style.color, 0));
       
-      // Core star
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(canvasSize / 2, canvasSize / 2, currentRadius * 2, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Core star - bright and visible
       ctx.fillStyle = style.color;
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = style.color;
       ctx.beginPath();
       ctx.arc(canvasSize / 2, canvasSize / 2, currentRadius, 0, Math.PI * 2);
       ctx.fill();
@@ -96,14 +141,12 @@ const CanvasNodeComponent = ({
       // Reset shadow
       ctx.shadowBlur = 0;
       
-      // Orbit ring for larger nodes (like HTML example)
-      if (nodeRadius > 3.5) {
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.arc(canvasSize / 2, canvasSize / 2, currentRadius * 2.5, 0, Math.PI * 2);
-        ctx.stroke();
-      }
+      // Always draw orbit ring for visibility
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(canvasSize / 2, canvasSize / 2, currentRadius * 1.5, 0, Math.PI * 2);
+      ctx.stroke();
       
       animationIdRef.current = requestAnimationFrame(render);
     };
@@ -116,7 +159,7 @@ const CanvasNodeComponent = ({
         cancelAnimationFrame(animationIdRef.current);
       }
     };
-  }, [canvasSize, nodeRadius, style.color]);
+  }, [canvasSize, difficulty, style.color]);
   
   const handlePointerOver = (e) => {
     e.stopPropagation();
@@ -139,16 +182,26 @@ const CanvasNodeComponent = ({
 
   const isActiveHovered = hovered || isHovered;
 
+  // Calculate interaction plane size to match visible node size
+  // Base radius: 5px + 1.5px per difficulty, with 15% pulse margin
+  const interactionSize = useMemo(() => {
+    const nodeBaseRadius = 5 + (difficulty * 1.5);
+    const maxRadius = nodeBaseRadius * 1.15; // Account for pulse (15% max)
+    // Convert pixel size to 3D units (approximately 0.01 units per pixel at distanceFactor 12)
+    return (maxRadius * 2) / 1000;
+  }, [difficulty]);
+
   return (
     <group ref={groupRef} position={position}>
-      {/* Invisible plane for interaction */}
+      {/* Invisible plane for interaction - precise size matching visible node */}
       <mesh
         userData={{ ...userData, _is3DSubnode: true }}
         onClick={handleClick}
         onPointerOver={handlePointerOver}
         onPointerOut={handlePointerOut}
       >
-        <planeGeometry args={[canvasSize / 15, canvasSize / 15]} />
+        {/* Match interaction area to actual visible node size for precise mouse events */}
+        <planeGeometry args={[interactionSize, interactionSize]} />
         <meshBasicMaterial transparent opacity={0} />
       </mesh>
 
@@ -156,8 +209,10 @@ const CanvasNodeComponent = ({
       {Html ? (
         <Html
           transform
-          distanceFactor={10}
+          distanceFactor={12}
           position={[0, 0, 0.01]}
+          center
+          zIndexRange={[100, 0]}
           style={{
             transition: "all 0.3s ease",
             transform: isActiveHovered ? "scale(1.15)" : "scale(1)",
@@ -172,6 +227,8 @@ const CanvasNodeComponent = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              position: 'relative',
+              zIndex: 1000,
             }}
           >
             <canvas
@@ -182,6 +239,7 @@ const CanvasNodeComponent = ({
                 width: '100%',
                 height: '100%',
                 display: 'block',
+                imageRendering: 'auto',
               }}
             />
           </div>

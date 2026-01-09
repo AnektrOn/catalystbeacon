@@ -3,6 +3,7 @@ import ModernCard from './ModernCard'
 import { Heart, Moon, AlertCircle, Plus } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import toast from 'react-hot-toast'
+import { getLocalDateString, getFirstDayOfMonth, getLastDayOfMonth, isToday } from '../../utils/dateUtils'
 import './MoodTracker.css'
 
 /**
@@ -38,7 +39,7 @@ const MoodTracker = ({ userId }) => {
     for (let day = 1; day <= lastDay.getDate(); day++) {
       const date = new Date(currentYear, currentMonth, day)
       days.push({
-        date: date.toISOString().split('T')[0],
+        date: getLocalDateString(date),
         day: day,
         dayLabel: date.toLocaleDateString('en-US', { weekday: 'short' })
       })
@@ -77,19 +78,16 @@ const MoodTracker = ({ userId }) => {
         // Still proceed with authenticated user ID for RLS compliance
       }
       
-      // Get current month date range
-      const today = new Date()
-      const currentMonth = today.getMonth()
-      const currentYear = today.getFullYear()
-      const firstDayOfMonth = new Date(currentYear, currentMonth, 1)
-      const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0)
+      // Get current month date range using local timezone
+      const firstDayOfMonthStr = getFirstDayOfMonth()
+      const lastDayOfMonthStr = getLastDayOfMonth()
 
       const { data, error } = await supabase
         .from('user_daily_tracking')
         .select('*')
         .eq('user_id', authenticatedUserId)
-        .gte('date', firstDayOfMonth.toISOString().split('T')[0])
-        .lte('date', lastDayOfMonth.toISOString().split('T')[0])
+        .gte('date', firstDayOfMonthStr)
+        .lte('date', lastDayOfMonthStr)
         .order('date', { ascending: true })
 
       if (error) {
@@ -225,11 +223,7 @@ const MoodTracker = ({ userId }) => {
   }
 
   const getTodayDate = () => {
-    return new Date().toISOString().split('T')[0]
-  }
-
-  const isToday = (date) => {
-    return date === getTodayDate()
+    return getLocalDateString()
   }
 
   const chartHeight = 120
@@ -254,9 +248,66 @@ const MoodTracker = ({ userId }) => {
       .filter(p => p !== null)
 
     if (points.length === 0) return ''
-    const firstPoint = points[0]
-    const restPoints = points.slice(1).map(p => `L ${p.x},${p.y}`).join(' ')
-    return `M ${firstPoint.x},${firstPoint.y} ${restPoints}`
+    if (points.length === 1) return `M ${points[0].x},${points[0].y}`
+    
+    // Create smooth curve using cubic bezier curves
+    let pathD = `M ${points[0].x},${points[0].y}`
+    
+    for (let i = 0; i < points.length - 1; i++) {
+      const current = points[i]
+      const next = points[i + 1]
+      
+      // Calculate control points for smooth curve
+      // Control point 1: extends from current point in the direction of the curve
+      // Control point 2: extends toward next point
+      const dx = next.x - current.x
+      const dy = next.y - current.y
+      
+      // For the first point, use next point's direction
+      // For intermediate points, use average direction
+      let cp1x, cp1y, cp2x, cp2y
+      
+      if (i === 0) {
+        // First segment: control point extends forward
+        const tension = 0.3 // Controls curve smoothness (0-1)
+        cp1x = current.x + dx * tension
+        cp1y = current.y + dy * tension
+        cp2x = next.x - dx * (1 - tension)
+        cp2y = next.y - dy * (1 - tension)
+      } else if (i === points.length - 2) {
+        // Last segment: control point extends backward
+        const prev = points[i - 1]
+        const prevDx = current.x - prev.x
+        const prevDy = current.y - prev.y
+        const tension = 0.2
+        cp1x = current.x + prevDx * tension
+        cp1y = current.y + prevDy * tension
+        cp2x = next.x - dx * (1 - tension)
+        cp2y = next.y - dy * (1 - tension)
+      } else {
+        // Intermediate segments: use average direction for smoothness
+        const prev = points[i - 1]
+        const prevDx = current.x - prev.x
+        const prevDy = current.y - prev.y
+        const nextDx = next.x - current.x
+        const nextDy = next.y - current.y
+        
+        // Average the directions
+        const avgDx = (prevDx + nextDx) / 2
+        const avgDy = (prevDy + nextDy) / 2
+        const tension = 0.3
+        
+        cp1x = current.x + avgDx * tension
+        cp1y = current.y + avgDy * tension
+        cp2x = next.x - avgDx * tension
+        cp2y = next.y - avgDy * tension
+      }
+      
+      // Use cubic bezier curve (C command)
+      pathD += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${next.x},${next.y}`
+    }
+    
+    return pathD
   }
 
   if (loading) {
@@ -327,7 +378,7 @@ const MoodTracker = ({ userId }) => {
               d={getPathD('mood', days)}
               className="mood-tracker-line mood-tracker-line-mood"
               fill="none"
-              strokeWidth="1.5"
+              strokeWidth="0.1"
             />
 
             {/* Sleep line (solid) */}
@@ -335,7 +386,7 @@ const MoodTracker = ({ userId }) => {
               d={getPathD('sleep', days)}
               className="mood-tracker-line mood-tracker-line-sleep"
               fill="none"
-              strokeWidth="2"
+              strokeWidth="0.1"
             />
 
             {/* Stress line (dashed) */}
@@ -343,7 +394,7 @@ const MoodTracker = ({ userId }) => {
               d={getPathD('stress', days)}
               className="mood-tracker-line mood-tracker-line-stress"
               fill="none"
-              strokeWidth="1.5"
+              strokeWidth="0.5"
             />
 
             {/* Data points - always show all 3 dots if entry exists */}
@@ -388,6 +439,8 @@ const MoodTracker = ({ userId }) => {
             const entry = entries[day.date]
             const hasEntry = entry && (entry.mood || entry.sleep || entry.stress)
             const today = isToday(day.date)
+            // Calculate position to match chart x-coordinates exactly
+            const positionPercent = days.length > 1 ? (i / (days.length - 1)) * 100 : 50
 
             return (
               <button
@@ -395,6 +448,11 @@ const MoodTracker = ({ userId }) => {
                 className={`mood-tracker-day ${today ? 'mood-tracker-day-today' : ''} ${hasEntry ? 'mood-tracker-day-has-entry' : ''}`}
                 onClick={() => handleDayClick(day)}
                 aria-label={`${day.dayLabel} ${day.day}`}
+                style={{
+                  position: 'absolute',
+                  left: `${positionPercent}%`,
+                  transform: 'translateX(-50%)'
+                }}
               >
                 <span className="mood-tracker-day-number">{day.day}</span>
                 {hasEntry && <span className="mood-tracker-day-dot"></span>}
@@ -428,7 +486,7 @@ const MoodTracker = ({ userId }) => {
           >
             <div className="mood-tracker-modal-header">
               <h3>
-                {editingDate === getTodayDate() ? "Today's Entry" : new Date(editingDate).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+                {isToday(editingDate) ? "Today's Entry" : new Date(editingDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
               </h3>
               <button
                 className="mood-tracker-modal-close"

@@ -7,7 +7,6 @@ import * as THREE from 'three';
 import { CoreSun } from './CoreSun';
 import { FogSphere } from './FogSphere';
 import { CanvasNode } from './CanvasNode';
-import { FogOverlay } from './FogOverlay';
 import { GoldLine, WhiteLine } from './ConnectionLines';
 import {
   positionSubnodeMetatron,
@@ -104,7 +103,15 @@ function SceneContent({
 
   const sceneElements = useMemo(() => {
     if (!hierarchyData || Object.keys(hierarchyData).length === 0) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[StellarMapScene] No hierarchyData or empty hierarchyData');
+      }
       return null;
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[StellarMapScene] Rendering nodes, hierarchyData keys:', Object.keys(hierarchyData));
+      console.log('[StellarMapScene] hierarchyData:', hierarchyData);
     }
 
     const elements = [];
@@ -206,6 +213,17 @@ function SceneContent({
           nodePositionsRef.current[node.id] = nodePosArray;
           nodeDifficultiesRef.current[node.id] = node.difficulty || 0;
 
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[StellarMapScene] Creating CanvasNode:', {
+              id: node.id,
+              title: node.title,
+              position: nodePosArray,
+              difficulty: node.difficulty,
+              nodeIndex,
+              totalNodes: nodes.length
+            });
+          }
+
           elements.push(
             <CanvasNode
               key={`node-${node.id}`}
@@ -261,6 +279,17 @@ function SceneContent({
     });
 
     setConstellationCenters(centers);
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[StellarMapScene] Total elements to render:', elements.length);
+      console.log('[StellarMapScene] Total nodes:', Object.keys(nodePositionsRef.current).length);
+      console.log('[StellarMapScene] Node positions:', nodePositionsRef.current);
+      console.log('[StellarMapScene] Elements breakdown:', {
+        totalElements: elements.length,
+        nodeElements: elements.filter(el => el?.key?.startsWith('node-')).length,
+        fogElements: elements.filter(el => el?.key?.startsWith('family-') || el?.key?.startsWith('constellation-')).length
+      });
+    }
     
     // Notify parent of centers and positions
     if (onConstellationCentersReady) {
@@ -394,7 +423,7 @@ export function StellarMapScene({
       }}
       dpr={[0.5, 1.0]}
       performance={{ min: 0.3 }}
-      frameloop="demand"
+      frameloop="always"
       style={{ background: 'transparent' }}
       onCreated={({ gl }) => {
         gl.domElement.style.pointerEvents = "auto"
@@ -437,14 +466,6 @@ export function StellarMapScene({
         onSubnodeFocus={onSubnodeFocus}
         constellationCenters={constellationCenters}
         nodePositions={nodePositions}
-      />
-
-      {/* 2D Fog Overlay - hides nodes based on difficulty/XP thresholds */}
-      <FogOverlay
-        userXP={userXP}
-        coreName={coreName}
-        nodePositions={nodeData?.positions || {}}
-        nodeDifficulties={nodeData?.difficulties || {}}
       />
 
       {/* Bloom effect disabled for performance - very expensive with many objects */}

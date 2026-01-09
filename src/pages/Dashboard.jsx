@@ -9,6 +9,7 @@ import socialService from '../services/socialService'
 import levelsService from '../services/levelsService'
 import useSubscription from '../hooks/useSubscription'
 import UpgradeModal from '../components/UpgradeModal'
+import { getLocalDateString, getTodayStartISO } from '../utils/dateUtils'
 
 // Import Dashboard Widgets
 import XPProgressWidget from '../components/dashboard/XPProgressWidget'
@@ -19,6 +20,7 @@ import CurrentLessonWidget from '../components/dashboard/CurrentLessonWidget'
 import ConstellationNavigatorWidget from '../components/dashboard/ConstellationNavigatorWidget'
 import TeacherFeedWidget from '../components/dashboard/TeacherFeedWidget'
 import QuickActionsWidget from '../components/dashboard/QuickActionsWidget'
+import EtherealStatsCards from '../components/dashboard/EtherealStatsCards'
 
 const Dashboard = () => {
   const { user, profile, fetchProfile } = useAuth()
@@ -93,6 +95,11 @@ const Dashboard = () => {
     },
     teacherFeed: {
       posts: []
+    },
+    stats: {
+      learningTime: 0, // hours
+      lessonsCompleted: 0,
+      averageScore: 0
     }
   })
 
@@ -104,14 +111,15 @@ const Dashboard = () => {
       const streak = profile.completion_streak || 0
       
       // Check if ritual completed today (any habit completed today)
-      const today = new Date().toISOString().split('T')[0]
+      // Use local timezone to get accurate "today"
+      const todayStart = getTodayStartISO()
       
-      // Check habit completions for today
+      // Check habit completions for today (using local timezone)
       const { data: completions, error: completionsError } = await supabase
         .from('user_habit_completions')
         .select('id')
         .eq('user_id', user.id)
-        .gte('completed_at', `${today}T00:00:00`)
+        .gte('completed_at', todayStart)
         .limit(1)
       
       if (completionsError && completionsError.code !== 'PGRST116') {
@@ -279,15 +287,80 @@ const Dashboard = () => {
     }
   }, [user, profile])
 
+  // Load stats data (learning time and lessons completed)
+  const loadStatsData = useCallback(async () => {
+    if (!user || !profile) return
+    
+    try {
+      // Get learning time from XP logs (estimate hours from XP earned this week)
+      const oneWeekAgo = new Date()
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+      
+      const { data: xpLogs, error: xpError } = await supabase
+        .from('xp_logs')
+        .select('xp_earned, created_at')
+        .eq('user_id', user.id)
+        .gte('created_at', oneWeekAgo.toISOString())
+
+      if (xpError && xpError.code !== 'PGRST116') {
+        console.warn('Error loading XP logs:', xpError)
+      }
+
+      // Estimate hours (assuming 50 XP per hour of learning)
+      const totalXP = xpLogs?.reduce((sum, log) => sum + (log.xp_earned || 0), 0) || 0
+      const learningTime = Math.floor(totalXP / 50)
+
+      // Get lessons completed count
+      const { count: lessonsCount, error: lessonsError } = await supabase
+        .from('user_lesson_progress')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('is_completed', true)
+
+      if (lessonsError && lessonsError.code !== 'PGRST116') {
+        console.warn('Error loading lessons completed:', lessonsError)
+      }
+
+      // Calculate average score from lesson progress (if available)
+      // For now, we'll use a placeholder or calculate from completed lessons
+      let averageScore = 0
+      try {
+        const { data: lessonProgress, error: progressError } = await supabase
+          .from('user_lesson_progress')
+          .select('score')
+          .eq('user_id', user.id)
+          .eq('is_completed', true)
+          .not('score', 'is', null)
+
+        if (!progressError && lessonProgress && lessonProgress.length > 0) {
+          const scores = lessonProgress.map(lp => lp.score || 0).filter(s => s > 0)
+          if (scores.length > 0) {
+            averageScore = scores.reduce((sum, score) => sum + score, 0) / scores.length
+          }
+        }
+      } catch (err) {
+        console.warn('Error calculating average score:', err)
+      }
+
+      setDashboardData(prev => ({
+        ...prev,
+        stats: {
+          learningTime,
+          lessonsCompleted: lessonsCount || 0,
+          averageScore
+        }
+      }))
+    } catch (error) {
+      console.error('Error loading stats data:', error)
+    }
+  }, [user, profile])
+
   // Load current lesson data
   const loadCurrentLesson = useCallback(async () => {
     if (!user) return
     
     try {
       // Get user's most recent course progress
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:288',message:'Loading current lesson - querying thumbnail_url',data:{userId:user.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
       const { data: courseProgressData, error: progressError } = await supabase
         .from('user_course_progress')
         .select(`
@@ -457,9 +530,6 @@ const Dashboard = () => {
       const nodes = await Promise.all(
         courses.slice(0, 5).map(async (course, index) => {
           try {
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:458',message:'Constellation course progress - course object',data:{courseId:course.id,courseIdType:typeof course.id,courseCourseId:course.course_id,courseCourseIdType:typeof course.course_id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-            // #endregion
             // Use course.course_id (integer) not course.id (UUID) for getUserCourseProgress
             if (!course.course_id) {
               console.warn('Course missing course_id:', course);
@@ -633,7 +703,8 @@ const Dashboard = () => {
           loadAchievementsData(),
           loadCurrentLesson(),
           loadConstellationData(),
-          loadTeacherFeed()
+          loadTeacherFeed(),
+          loadStatsData()
         ])
       } catch (error) {
         console.error('Error loading dashboard data:', error)
@@ -643,7 +714,7 @@ const Dashboard = () => {
     }
 
     loadDashboardData()
-  }, [user, profile, loadLevelData, loadRitualData, loadCoherenceData, loadAchievementsData, loadCurrentLesson, loadConstellationData, loadTeacherFeed])
+  }, [user, profile, loadLevelData, loadRitualData, loadCoherenceData, loadAchievementsData, loadCurrentLesson, loadConstellationData, loadTeacherFeed, loadStatsData])
 
   // Handle payment success redirect
   useEffect(() => {
@@ -746,32 +817,13 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* Top Metric Cards Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <XPProgressWidget
-          level={levelData.level}
-          levelTitle={levelData.levelTitle}
-          currentXP={levelData.currentXP}
-          nextLevelXP={levelData.nextLevelXP}
-          phase={getPhase(levelData.level)}
-        />
-
-        <DailyRitualWidget
-          completed={dashboardData.ritual.completed}
+      {/* Top Metric Cards Row - Ethereal Stats Cards */}
+      <div className="mb-8 w-full">
+        <EtherealStatsCards
           streak={dashboardData.ritual.streak}
-          xpReward={dashboardData.ritual.xpReward}
-        />
-
-        <CoherenceWidget
-          energy={dashboardData.coherence.energy}
-          mind={dashboardData.coherence.mind}
-          heart={dashboardData.coherence.heart}
-        />
-
-        <AchievementsWidget
-          recentAchievements={dashboardData.achievements.recent}
-          totalCount={dashboardData.achievements.total}
-          nextUnlock={dashboardData.achievements.nextUnlock}
+          lessonsCompleted={dashboardData.stats.lessonsCompleted}
+          learningTime={dashboardData.stats.learningTime}
+          achievementsUnlocked={dashboardData.achievements.total}
         />
       </div>
 

@@ -1,155 +1,314 @@
 import React from 'react'
-import ModernCard from './ModernCard'
-import { Award } from 'lucide-react'
-import './XPCircleWidgetV2.css'
+import { Sparkles } from 'lucide-react'
 
 /**
- * XP Circle Widget - Hero element inspired by thermostat design
- * Large circular progress gauge with center content
+ * Neural XP Widget V4 - "Ethereal Essence"
+ * Features: Floating particles, delicate orbital rings, soft diffused lighting
  */
 const XPCircleWidgetV2 = ({ 
   currentXP = 0, 
   levelXP = 1000,
   level = 1,
   nextLevel = 2,
-  levelTitle = '',
+  levelTitle = 'Ascendant',
   isActive = true
 }) => {
-  // Force a stable visual format (avoid locale spaces that look like line breaks)
   const xpText = new Intl.NumberFormat('en-US').format(currentXP ?? 0)
-  const xpDigits = xpText.replace(/[^0-9]/g, '').length
   const nextXpText = new Intl.NumberFormat('en-US').format(levelXP ?? 0)
 
-  // Calculate progress for the circle
-  const radius = 70
+  // Calculate progress
+  const radius = 88
   const circumference = 2 * Math.PI * radius
-  // Ensure progress never exceeds 100%
   const progress = Math.min(Math.max(currentXP / levelXP, 0), 1)
   const strokeDashoffset = circumference - progress * circumference
-  const progressPercentage = Math.round(progress * 100)
+
+  const styles = `
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Rajdhani:wght@300;400;500;600&display=swap');
+
+    :root {
+      --ethereal-cyan: #a5f3fc;
+      --ethereal-white: #ffffff;
+      --ethereal-violet: #a78bfa;
+      --bg-glass: rgba(8, 8, 12, 0.4);
+    }
+
+    .xp-widget-container {
+      font-family: 'Rajdhani', sans-serif;
+      color: #e0e0e0;
+      position: relative;
+      max-width: 400px;
+      margin: 0 auto;
+      perspective: 1000px;
+    }
+
+    /* --- ETHEREAL CARD --- */
+    .ethereal-card {
+      background: var(--bg-glass);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
+      padding: 32px;
+      box-shadow: 
+        0 20px 50px rgba(0, 0, 0, 0.5),
+        inset 0 0 80px rgba(165, 243, 252, 0.05);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.5s ease;
+    }
+
+    .ethereal-card:hover {
+      box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.6),
+        inset 0 0 100px rgba(165, 243, 252, 0.08);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    /* Ambient Light Source */
+    .light-source {
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle at 50% 50%, rgba(165, 243, 252, 0.08), transparent 60%);
+      pointer-events: none;
+      animation: breathe-light 8s ease-in-out infinite;
+    }
+
+    @keyframes breathe-light {
+      0%, 100% { opacity: 0.5; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.1); }
+    }
+
+    /* Floating Particles */
+    .particles {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none;
+    }
+    .particle {
+      position: absolute;
+      background: white;
+      border-radius: 50%;
+      opacity: 0;
+      animation: float-particle 10s infinite linear;
+    }
+    
+    /* Generate varying animations for particles */
+    .p1 { width: 2px; height: 2px; top: 80%; left: 20%; animation-duration: 12s; animation-delay: 0s; }
+    .p2 { width: 1px; height: 1px; top: 60%; left: 80%; animation-duration: 15s; animation-delay: 2s; }
+    .p3 { width: 3px; height: 3px; top: 40%; left: 10%; animation-duration: 18s; animation-delay: 1s; box-shadow: 0 0 5px white; }
+    .p4 { width: 1px; height: 1px; top: 90%; left: 90%; animation-duration: 20s; animation-delay: 4s; }
+
+    @keyframes float-particle {
+      0% { transform: translateY(0) translateX(0); opacity: 0; }
+      20% { opacity: 0.8; }
+      80% { opacity: 0.8; }
+      100% { transform: translateY(-100px) translateX(20px); opacity: 0; }
+    }
+
+    /* --- HEADER --- */
+    .header-content {
+      text-align: center;
+      position: relative;
+      z-index: 2;
+      margin-bottom: 20px;
+    }
+
+    .level-label {
+      font-family: 'Cinzel', serif;
+      font-size: 12px;
+      letter-spacing: 4px;
+      color: rgba(255, 255, 255, 0.6);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .level-value {
+      font-size: 32px;
+      font-weight: 300;
+      color: var(--ethereal-white);
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+      letter-spacing: 2px;
+    }
+
+    /* --- GAUGE --- */
+    .gauge-container {
+      position: relative;
+      width: 280px;
+      height: 280px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 2;
+    }
+
+    .gauge-center {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: float-center 6s ease-in-out infinite;
+    }
+
+    @keyframes float-center {
+      0%, 100% { transform: translate(-50%, -50%); }
+      50% { transform: translate(-50%, -55%); }
+    }
+
+    .xp-value {
+      font-size: 48px;
+      font-weight: 200;
+      color: #fff;
+      line-height: 1;
+      text-shadow: 0 0 30px rgba(165, 243, 252, 0.6);
+      font-family: 'Rajdhani', sans-serif;
+    }
+
+    .xp-unit {
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: rgba(255, 255, 255, 0.7);
+      margin-top: 4px;
+    }
+
+    /* --- ANIMATIONS & SVG --- */
+    @keyframes rotate-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes rotate-rev { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
+    
+    .orbit-1 { transform-origin: center; animation: rotate-slow 60s linear infinite; opacity: 0.3; }
+    .orbit-2 { transform-origin: center; animation: rotate-rev 45s linear infinite; opacity: 0.2; }
+    .orbit-3 { transform-origin: center; animation: rotate-slow 30s linear infinite; opacity: 0.1; }
+
+    .progress-glow {
+      filter: drop-shadow(0 0 8px var(--ethereal-cyan));
+      transition: stroke-dashoffset 1.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    /* --- FOOTER --- */
+    .footer-info {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 11px;
+      letter-spacing: 1px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .next-pill {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 4px 12px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      backdrop-filter: blur(4px);
+    }
+
+  `
 
   return (
-    <ModernCard className="xp-circle-widget-v2" elevated>
-      {/* Header */}
-      <div className="xp-widget-header">
-        <div>
-          <h2 className="xp-widget-title">Level {level}</h2>
-          {levelTitle && (
-            <p className="xp-widget-level-name">{levelTitle}</p>
-          )}
-          <div className="flex items-center gap-2 mt-1">
-            <span 
-              className={`xp-status-dot ${isActive ? 'xp-status-dot-active' : 'xp-status-dot-inactive'}`}
-            />
-            <p className="xp-widget-subtitle">Experience Points</p>
-          </div>
+    <div className="xp-widget-container">
+      <style>{styles}</style>
+      
+      <div className="ethereal-card">
+        <div className="light-source"></div>
+        <div className="particles">
+          <div className="particle p1"></div>
+          <div className="particle p2"></div>
+          <div className="particle p3"></div>
+          <div className="particle p4"></div>
         </div>
-      </div>
 
-      {/* Central Circle Visualization */}
-      <div className="xp-circle-container">
-        <div className="xp-circle-wrapper">
-          <svg className="w-full h-full transform -rotate-90" viewBox="0 0 256 256">
+        {/* Header */}
+        <div className="header-content">
+          <div className="level-label">Current Resonance</div>
+          <div className="level-value">{levelTitle} • {level}</div>
+        </div>
+
+        {/* Ethereal Gauge */}
+        <div className="gauge-container">
+          <svg width="280" height="280" viewBox="0 0 256 256">
             <defs>
-              {/* Gradient for progress arc */}
-              <linearGradient id="xpProgressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="1" />
-                <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.8" />
+              <linearGradient id="etherealGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#a5f3fc" stopOpacity="0" />
+                <stop offset="50%" stopColor="#ffffff" stopOpacity="0.8" />
+                <stop offset="100%" stopColor="#a5f3fc" stopOpacity="0" />
               </linearGradient>
-              {/* Glow filter */}
-              <filter id="xpGlow">
-                <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+              
+              <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
                 <feMerge>
                   <feMergeNode in="coloredBlur"/>
                   <feMergeNode in="SourceGraphic"/>
                 </feMerge>
               </filter>
             </defs>
-            {/* Background track */}
+
+            {/* 1. Delicate Orbital Rings */}
+            <g className="orbit-1">
+               <circle cx="128" cy="128" r="120" stroke="rgba(255,255,255,0.5)" strokeWidth="0.5" fill="none" strokeDasharray="1 10" />
+            </g>
+            <g className="orbit-2">
+               <circle cx="128" cy="128" r="105" stroke="rgba(165, 243, 252, 0.5)" strokeWidth="0.5" fill="none" />
+               <circle cx="128" cy="128" r="105" stroke="white" strokeWidth="1.5" fill="none" strokeDasharray="0.5 30" />
+            </g>
+            <g className="orbit-3">
+               <circle cx="128" cy="128" r="95" stroke="rgba(167, 139, 250, 0.4)" strokeWidth="0.5" fill="none" strokeDasharray="4 4" />
+            </g>
+
+            {/* 2. Main Progress Track (Barely visible) */}
+            <circle cx="128" cy="128" r={radius} stroke="rgba(255, 255, 255, 0.03)" strokeWidth="2" fill="none" />
+
+            {/* 3. Ethereal Progress Arc */}
             <circle
               cx="128"
               cy="128"
               r={radius}
-              stroke="hsl(var(--muted))"
-              strokeWidth="20"
-              fill="transparent"
-              strokeLinecap="round"
-              opacity="0.3"
-            />
-            {/* Progress arc with gradient and glow */}
-            <circle
-              cx="128"
-              cy="128"
-              r={radius}
-              stroke="url(#xpProgressGradient)"
-              strokeWidth="20"
-              fill="transparent"
+              stroke="url(#etherealGradient)"
+              strokeWidth="4"
+              fill="none"
               strokeDasharray={circumference}
               strokeDashoffset={strokeDashoffset}
               strokeLinecap="round"
-              className={`xp-progress-arc transition-all duration-500 ease-out ${
-                isActive ? 'xp-progress-arc-active' : 'opacity-20 grayscale'
-              }`}
-              style={{ 
-                filter: isActive ? 'url(#xpGlow)' : 'none'
-              }}
+              className="progress-glow"
+              transform="rotate(-90 128 128)"
+              style={{ filter: 'url(#softGlow)' }}
             />
+            
+            {/* 4. Trailing Light Point */}
+             <g style={{ transform: `rotate(${(progress * 360) - 90}deg)`, transformOrigin: '128px 128px', transition: 'transform 1.5s cubic-bezier(0.2, 0.8, 0.2, 1)' }}>
+               <circle cx={128 + radius} cy="128" r="3" fill="white" style={{ filter: 'drop-shadow(0 0 10px white)' }} />
+             </g>
           </svg>
 
-          {/* Center content */}
-          <div className="xp-circle-center">
-            <div className="flex items-center justify-center flex-col">
-              <div className="flex items-baseline justify-center gap-1">
-                <span 
-                  className={`xp-circle-value ${isActive ? 'xp-circle-value-active' : 'xp-circle-value-inactive'}`}
-                  style={{ fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace' }}
-                  data-digits={xpDigits}
-                >
-                  {xpText}
-                </span>
-                <span 
-                  className={`xp-circle-unit ${isActive ? 'xp-circle-unit-active' : 'xp-circle-unit-inactive'}`}
-                >
-                  XP
-                </span>
-              </div>
-              <div 
-                className={`xp-status-badge ${isActive ? 'xp-status-active' : 'xp-status-inactive'}`}
-              >
-                {isActive ? (
-                  <>
-                    <Award size={12} />
-                    <span>Level {nextLevel}</span>
-                  </>
-                ) : (
-                  <span>Off</span>
-                )}
-              </div>
-              {isActive && (
-                <>
-                  <div className="xp-progress-percentage" aria-label={`${progressPercentage}% progress`}>
-                    {progressPercentage}%
-                  </div>
-                  <div className="xp-next-threshold" aria-label={`Next level at ${nextXpText} XP`}>
-                    Next at <span className="xp-next-threshold-value">{nextXpText}</span>
-                  </div>
-                </>
-              )}
-            </div>
+          {/* Center Content */}
+          <div className="gauge-center">
+            <div className="xp-value">{xpText}</div>
+            <div className="xp-unit">EXP POINTS</div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="footer-info">
+          <div className="next-pill">
+            <Sparkles size={10} style={{ color: '#a5f3fc' }} />
+            <span>Target: {nextXpText}</span>
           </div>
         </div>
       </div>
-
-      {/* Progress info */}
-      <div className="xp-widget-footer">
-        <div className="flex justify-between text-xs font-medium text-muted-foreground uppercase tracking-wide px-1">
-          <span>0</span>
-          <span>{levelXP.toLocaleString()}</span>
-        </div>
-      </div>
-    </ModernCard>
+    </div>
   )
 }
 
 export default XPCircleWidgetV2
-

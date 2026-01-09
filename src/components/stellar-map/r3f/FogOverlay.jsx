@@ -1,5 +1,4 @@
-import React, { useRef, useEffect, useMemo } from 'react';
-import { useThree } from '@react-three/fiber';
+import React, { useRef, useEffect, useMemo, useState } from 'react';
 import * as THREE from 'three';
 import { XP_THRESHOLDS, DEPTH_RANGES, getCurrentGroup } from '../hooks/useXPVisibility';
 
@@ -18,9 +17,10 @@ export function FogOverlay({
   userXP = 0, 
   coreName = 'Ignition',
   nodePositions = {}, 
-  nodeDifficulties = {} 
+  nodeDifficulties = {},
+  canvasSize = { width: 0, height: 0 },
+  camera = null
 }) {
-  const { size, camera } = useThree();
   const fogCanvasRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -51,11 +51,13 @@ export function FogOverlay({
 
   // Project 3D positions to 2D screen coordinates
   const projectToScreen = (position3D) => {
+    if (!camera) return { x: 0, y: 0, visible: false };
+    
     const vector = new THREE.Vector3(...position3D);
     vector.project(camera);
     
-    const x = (vector.x * 0.5 + 0.5) * size.width;
-    const y = (-vector.y * 0.5 + 0.5) * size.height;
+    const x = (vector.x * 0.5 + 0.5) * canvasSize.width;
+    const y = (-vector.y * 0.5 + 0.5) * canvasSize.height;
     
     return { x, y, visible: vector.z < 1 };
   };
@@ -63,15 +65,15 @@ export function FogOverlay({
   // Update fog canvas
   useEffect(() => {
     const fogCanvas = fogCanvasRef.current;
-    if (!fogCanvas) return;
+    if (!fogCanvas || canvasSize.width === 0 || canvasSize.height === 0 || !camera) return;
 
     const ctx = fogCanvas.getContext('2d');
-    fogCanvas.width = size.width;
-    fogCanvas.height = size.height;
+    fogCanvas.width = canvasSize.width;
+    fogCanvas.height = canvasSize.height;
 
     // Fill with fog
     ctx.fillStyle = 'rgba(0, 0, 0, 0.95)';
-    ctx.fillRect(0, 0, size.width, size.height);
+    ctx.fillRect(0, 0, canvasSize.width, canvasSize.height);
 
     // Clear fog around visible nodes
     ctx.globalCompositeOperation = 'destination-out';
@@ -97,7 +99,9 @@ export function FogOverlay({
     });
 
     ctx.globalCompositeOperation = 'source-over';
-  }, [size, camera, nodePositions, visibleNodes]);
+  }, [canvasSize, camera, nodePositions, visibleNodes]);
+
+  if (canvasSize.width === 0 || canvasSize.height === 0 || !camera) return null;
 
   return (
     <div
@@ -106,8 +110,8 @@ export function FogOverlay({
         position: 'absolute',
         top: 0,
         left: 0,
-        width: size.width,
-        height: size.height,
+        width: canvasSize.width,
+        height: canvasSize.height,
         pointerEvents: 'none',
         zIndex: 1000,
       }}

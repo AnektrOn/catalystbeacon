@@ -78,21 +78,32 @@
 }
 
 .mood-tracker-legend-line.mood-tracker-line-mood {
-  border-top: 2px dotted hsl(var(--primary));
+  border-top: 2px dotted #10b981; /* Green for mood */
 }
 
 .mood-tracker-legend-line.mood-tracker-line-sleep {
-  background: hsl(var(--primary));
+  background: #3b82f6; /* Blue for sleep */
 }
 
 .mood-tracker-legend-line.mood-tracker-line-stress {
-  border-top: 2px dashed hsl(var(--primary));
+  border-top: 2px dashed #ef4444; /* Red for stress */
 }
 
 .mood-tracker-legend-item svg {
   width: 14px;
   height: 14px;
-  color: hsl(var(--primary));
+}
+
+.mood-tracker-legend-item:first-child svg {
+  color: #10b981; /* Green for mood */
+}
+
+.mood-tracker-legend-item:nth-child(2) svg {
+  color: #3b82f6; /* Blue for sleep */
+}
+
+.mood-tracker-legend-item:nth-child(3) svg {
+  color: #ef4444; /* Red for stress */
 }
 
 /* Chart Container */
@@ -126,16 +137,16 @@
 }
 
 .mood-tracker-line-mood {
-  stroke: hsl(var(--primary));
+  stroke: #10b981; /* Green for mood */
   stroke-dasharray: 2, 2;
 }
 
 .mood-tracker-line-sleep {
-  stroke: hsl(var(--primary));
+  stroke: #3b82f6; /* Blue for sleep */
 }
 
 .mood-tracker-line-stress {
-  stroke: hsl(var(--primary));
+  stroke: #ef4444; /* Red for stress */
   stroke-dasharray: 4, 2;
 }
 
@@ -157,15 +168,15 @@
 }
 
 .mood-tracker-dot-mood {
-  fill: hsl(var(--primary));
+  fill: #10b981; /* Green for mood */
 }
 
 .mood-tracker-dot-sleep {
-  fill: hsl(var(--primary));
+  fill: #3b82f6; /* Blue for sleep */
 }
 
 .mood-tracker-dot-stress {
-  fill: hsl(var(--primary));
+  fill: #ef4444; /* Red for stress */
 }
 
 @keyframes moodTrackerDotAppear {
@@ -181,36 +192,17 @@
 
 /* Day Labels */
 .mood-tracker-days {
+  position: relative;
   display: flex;
-  justify-content: space-between;
-  gap: 2px;
   margin-bottom: 8px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding-bottom: 4px;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
   width: 100%;
   max-width: 100%;
+  height: 32px;
 }
 
-.mood-tracker-days::-webkit-scrollbar {
-  height: 4px;
-}
-
-.mood-tracker-days::-webkit-scrollbar-track {
-  background: hsl(var(--muted) / 0.1);
-  border-radius: 2px;
-}
-
-.mood-tracker-days::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted) / 0.3);
-  border-radius: 2px;
-}
 
 .mood-tracker-day {
-  flex: 0 0 auto;
-  min-width: 28px;
+  position: absolute;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -221,7 +213,7 @@
   cursor: pointer;
   border-radius: 4px;
   transition: all 0.2s ease;
-  position: relative;
+  min-width: 28px;
 }
 
 .mood-tracker-day:hover {
@@ -363,8 +355,16 @@
   color: hsl(var(--foreground));
 }
 
-.mood-tracker-input-label svg {
-  color: hsl(var(--primary));
+.mood-tracker-input-group:first-of-type .mood-tracker-input-label svg {
+  color: #10b981; /* Green for mood */
+}
+
+.mood-tracker-input-group:nth-of-type(2) .mood-tracker-input-label svg {
+  color: #3b82f6; /* Blue for sleep */
+}
+
+.mood-tracker-input-group:nth-of-type(3) .mood-tracker-input-label svg {
+  color: #ef4444; /* Red for stress */
 }
 
 .mood-tracker-slider-container {
@@ -386,37 +386,103 @@
   appearance: none;
 }
 
-.mood-tracker-slider::-webkit-slider-thumb {
+.mood-tracker-slider-mood::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: hsl(var(--primary));
+  background: #10b981;
   cursor: pointer;
-  box-shadow: 0 2px 8px hsl(var(--primary) / 0.3);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
   transition: all 0.2s ease;
 }
 
-.mood-tracker-slider::-webkit-slider-thumb:hover {
+.mood-tracker-slider-mood::-webkit-slider-thumb:hover {
   transform: scale(1.1);
-  box-shadow: 0 4px 12px hsl(var(--primary) / 0.4);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
 }
 
-.mood-tracker-slider::-moz-range-thumb {
+.mood-tracker-slider-sleep::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: hsl(var(--primary));
+  background: #3b82f6;
   cursor: pointer;
-  border: none;
-  box-shadow: 0 2px 8px hsl(var(--primary) / 0.3);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
   transition: all 0.2s ease;
 }
 
-.mood-tracker-slider::-moz-range-thumb:hover {
+.mood-tracker-slider-sleep::-webkit-slider-thumb:hover {
   transform: scale(1.1);
-  box-shadow: 0 4px 12px hsl(var(--primary) / 0.4);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.mood-tracker-slider-stress::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ef4444;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+  transition: all 0.2s ease;
+}
+
+.mood-tracker-slider-stress::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.mood-tracker-slider-mood::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #10b981;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  transition: all 0.2s ease;
+}
+
+.mood-tracker-slider-mood::-moz-range-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.mood-tracker-slider-sleep::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  transition: all 0.2s ease;
+}
+
+.mood-tracker-slider-sleep::-moz-range-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.mood-tracker-slider-stress::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ef4444;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+  transition: all 0.2s ease;
+}
+
+.mood-tracker-slider-stress::-moz-range-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
 }
 
 .mood-tracker-value {
@@ -424,8 +490,19 @@
   text-align: center;
   font-size: 18px;
   font-weight: 700;
-  color: hsl(var(--primary));
   font-variant-numeric: tabular-nums;
+}
+
+.mood-tracker-input-group:first-of-type .mood-tracker-value {
+  color: #10b981; /* Green for mood */
+}
+
+.mood-tracker-input-group:nth-of-type(2) .mood-tracker-value {
+  color: #3b82f6; /* Blue for sleep */
+}
+
+.mood-tracker-input-group:nth-of-type(3) .mood-tracker-value {
+  color: #ef4444; /* Red for stress */
 }
 
 .mood-tracker-modal-actions {
@@ -512,8 +589,7 @@
   }
 
   .mood-tracker-days {
-    gap: 1px;
-    padding-bottom: 6px;
+    height: 30px;
   }
 
   .mood-tracker-day {
