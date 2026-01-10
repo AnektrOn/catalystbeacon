@@ -373,6 +373,7 @@
   color: var(--text-primary, #333);
   @apply overflow-auto;
   margin: 16px;
+  padding:0!important;
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
   background: var(--glass-bg-strong) !important;

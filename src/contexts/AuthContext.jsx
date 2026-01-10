@@ -388,24 +388,85 @@ export const AuthProvider = ({ children }) => {
       logDebug('Signup successful:', data)
       
       // Send sign-up confirmation email (non-blocking)
+      // Try Supabase Edge Function first, then fall back to server API
       try {
-        const { emailService } = await import('../services/emailService')
         const userName = userData?.full_name || data.user?.user_metadata?.full_name || null
         
         console.log('📧 Attempting to send sign-up confirmation email to:', email)
-        const emailResult = await emailService.sendSignUpConfirmation(
-          email,
-          userName
-        )
         
-        if (emailResult.success) {
-          console.log('✅ Sign-up confirmation email sent successfully')
+        // Try Supabase Edge Function first
+        const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL
+        const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY
+        
+        if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+          try {
+            const response = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+              },
+              body: JSON.stringify({
+                emailType: 'sign-up',
+                email,
+                userName: userName || 'there'
+              })
+            })
+            
+            if (response.ok) {
+              const result = await response.json()
+              console.log('✅ Sign-up confirmation email sent via Supabase Edge Function')
+              return // Success, exit early
+            } else if (response.status === 404) {
+              console.warn('⚠️ send-email Edge Function not deployed (404). Trying server API...')
+            } else {
+              console.warn('⚠️ Supabase Edge Function error:', response.status)
+            }
+          } catch (supabaseError) {
+            console.warn('⚠️ Supabase Edge Function unavailable:', supabaseError.message)
+          }
+        }
+        
+        // Fall back to server API
+        let API_URL = process.env.REACT_APP_API_URL
+        if (!API_URL) {
+          if (process.env.NODE_ENV === 'development') {
+            API_URL = 'http://localhost:3001'
+          } else {
+            API_URL = window.location.origin
+          }
+        }
+        
+        console.log('📧 Falling back to server API:', API_URL)
+        
+        const response = await fetch(`${API_URL}/api/send-signup-email`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email,
+            userName
+          })
+        })
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Failed to send email' }))
+          console.warn('⚠️ Sign-up email send failed:', errorData.error || errorData.message)
+          if (errorData.warning) {
+            console.warn('Email service warning:', errorData.warning)
+          }
         } else {
-          console.error('❌ Sign-up email send failed:', emailResult.error)
+          const result = await response.json()
+          if (result.success) {
+            console.log('✅ Sign-up confirmation email sent via server API')
+          } else {
+            console.warn('⚠️ Sign-up email not sent:', result.message || 'Unknown error')
+          }
         }
       } catch (emailError) {
-        console.error('❌ Sign-up email error:', emailError)
-        // Don't fail signup if email fails
+        console.warn('⚠️ Sign-up email error (non-critical):', emailError.message)
+        // Don't fail signup if email fails - this is non-critical
       }
 
       // Handle successful signup

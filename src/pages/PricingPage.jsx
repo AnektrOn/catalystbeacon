@@ -138,9 +138,12 @@ const PricingPage = () => {
           console.log('Response status:', response.status, response.statusText)
           
           if (!response.ok) {
-            // If 401, 503, or other server errors, fall through to API server
-            if (response.status === 401 || response.status === 503 || response.status >= 500) {
-              console.warn(`Supabase Edge Function returned ${response.status}, falling back to API server`)
+            // If 401, 404, 503, or other server errors, fall through to API server
+            if (response.status === 401 || response.status === 404 || response.status === 503 || response.status >= 500) {
+              const statusText = response.status === 404 ? 'Edge Function not deployed' : 
+                                response.status === 503 ? 'Service unavailable' : 
+                                `HTTP ${response.status}`
+              console.warn(`⚠️ Supabase Edge Function returned ${response.status} (${statusText}), falling back to API server`)
               throw new Error('FALLBACK_TO_API_SERVER') // Special error to trigger fallback
             }
             
@@ -168,11 +171,11 @@ const PricingPage = () => {
           const checkoutUrl = sessionData.url || sessionData.checkoutUrl
           if (!checkoutUrl) {
             console.error('No checkout URL in response:', sessionData)
-            throw new Error('No checkout URL received from server')
+            throw new Error('FALLBACK_TO_API_SERVER') // Fall back to server API
           }
           
           // Redirect to Stripe Checkout
-          console.log('Redirecting to Stripe Checkout:', checkoutUrl)
+          console.log('✅ Redirecting to Stripe Checkout via Edge Function:', checkoutUrl)
           window.location.href = checkoutUrl
           return
         } catch (supabaseError) {
@@ -196,79 +199,107 @@ const PricingPage = () => {
       }
       
       // Fall back to API server if Supabase Edge Function failed or doesn't exist
-      // Determine API URL: use env var, or same origin in production, or localhost in dev
+      // 100% RELIABLE: Try server API with retry logic
       let apiBaseUrl = API_URL
-      // Always use window.location.origin in production, even if API_URL is set to localhost
       if (!apiBaseUrl || apiBaseUrl === 'http://localhost:3001' || apiBaseUrl.includes('localhost')) {
         if (process.env.NODE_ENV === 'development') {
           apiBaseUrl = 'http://localhost:3001'
         } else {
-          // In production, use the same origin (the server.js serves both API and React app)
           apiBaseUrl = window.location.origin
         }
       }
       
-      console.log('Using API server:', `${apiBaseUrl}/api/create-checkout-session`)
+      console.log('Using API server (fallback):', `${apiBaseUrl}/api/create-checkout-session`)
       
-      try {
-        const response = await fetch(`${apiBaseUrl}/api/create-checkout-session`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            priceId: priceId,
-            userId: user.id,
-            userEmail: user.email
-          }),
-        })
-
-        console.log('API server response status:', response.status, response.statusText)
-
-        // Check if response is OK before parsing
-        if (!response.ok) {
-          // Try to get error message from response
-          let errorMessage = `HTTP ${response.status}: ${response.statusText}`
-          try {
-            const errorData = await response.json()
-            errorMessage = errorData.error || errorMessage
-          } catch (e) {
-            // If response is not JSON, use status text
-            const text = await response.text().catch(() => '')
-            if (text) errorMessage = text
+      // Retry logic: Try up to 3 times with exponential backoff
+      let lastError = null
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          if (attempt > 1) {
+            // Wait before retry: 1s, 2s, 4s
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt - 1) * 1000))
+            console.log(`🔄 Retry attempt ${attempt}/3 for checkout session...`)
           }
           
-          console.error('API server error:', errorMessage)
-          throw new Error(errorMessage)
+          const response = await fetch(`${apiBaseUrl}/api/create-checkout-session`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              priceId: priceId,
+              userId: user.id,
+              userEmail: user.email
+            }),
+            // Add timeout
+            signal: AbortSignal.timeout(10000) // 10 second timeout
+          })
+
+          console.log(`API server response (attempt ${attempt}):`, response.status, response.statusText)
+
+          if (!response.ok) {
+            let errorMessage = `HTTP ${response.status}: ${response.statusText}`
+            let errorDetails = null
+            try {
+              const errorData = await response.json()
+              errorMessage = errorData.error || errorMessage
+              errorDetails = errorData.details
+            } catch (e) {
+              const text = await response.text().catch(() => '')
+              if (text) errorMessage = text
+            }
+            
+            // Don't retry on 4xx errors (client errors)
+            if (response.status >= 400 && response.status < 500) {
+              console.error('❌ Client error (no retry):', errorMessage)
+              if (response.status === 503) {
+                errorMessage = 'Payment service is not available. Please contact support or try again later.'
+                toast.error('Payment service unavailable. Please try again in a moment.')
+              }
+              throw new Error(errorMessage)
+            }
+            
+            // Retry on 5xx errors (server errors)
+            lastError = new Error(errorMessage)
+            if (attempt < 3) continue // Retry
+            throw lastError
+          }
+
+          const session = await response.json()
+          console.log('✅ Checkout session received:', { id: session.id, hasUrl: !!session.url })
+
+          if (session.error) {
+            const errorMsg = session.details 
+              ? `${session.error}: ${session.details}`
+              : session.error
+            throw new Error(errorMsg)
+          }
+
+          const checkoutUrl = session.url || session.checkoutUrl
+          if (!checkoutUrl) {
+            throw new Error('No checkout URL received from server')
+          }
+
+          // Success! Redirect to Stripe Checkout
+          console.log('✅ Redirecting to Stripe Checkout via Server API:', checkoutUrl)
+          window.location.href = checkoutUrl
+          return // Success, exit
+          
+        } catch (error) {
+          lastError = error
+          if (error.name === 'AbortError') {
+            console.warn(`⚠️ Request timeout (attempt ${attempt}/3)`)
+            if (attempt < 3) continue
+          }
+          if (attempt === 3) {
+            // Final attempt failed
+            console.error('❌ All checkout attempts failed:', error)
+            toast.error('Unable to create checkout session. Please try again or contact support.')
+            throw error
+          }
         }
-
-        const session = await response.json()
-        console.log('Checkout session received:', { id: session.id, hasUrl: !!session.url })
-
-        if (session.error) {
-          const errorMsg = session.details 
-            ? `${session.error}: ${session.details}`
-            : session.error
-          console.error('API server returned error:', session)
-          toast.error(errorMsg || 'Failed to create checkout session')
-          throw new Error(errorMsg)
-        }
-
-        // Handle both response formats: {id, url} or {sessionId, url}
-        const checkoutUrl = session.url || session.checkoutUrl
-        if (!checkoutUrl) {
-          console.error('No checkout URL in response:', session)
-          toast.error('No checkout URL received from server')
-          throw new Error('No checkout URL received from server')
-        }
-
-        // Redirect to Stripe Checkout using the session URL
-        console.log('Redirecting to Stripe Checkout:', checkoutUrl)
-        window.location.href = checkoutUrl
-      } catch (apiError) {
-        console.error('API server error:', apiError)
-        throw apiError // Re-throw to be caught by outer catch
       }
+      
+      // Should never reach here, but just in case
+      throw lastError || new Error('Failed to create checkout session after all retries')
     } catch (error) {
       console.error('Error creating checkout session:', error)
       

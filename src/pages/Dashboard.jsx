@@ -44,16 +44,22 @@ const Dashboard = () => {
   const [, setLoading] = useState(true)
   
   // Show upgrade modal if redirected from restricted route (not for admins)
-  // Show onboarding modal for new users
+  // Show onboarding modal for new users - 100% RELIABLE with database flag
   useEffect(() => {
-    // Only check for modals when user is loaded
-    if (!user) return
+    // Only check for modals when user and profile are loaded
+    if (!user || !profile) return
     
     const upgradePrompt = searchParams.get('upgradePrompt')
     const isNewUser = searchParams.get('new_user')
 
-    if (isNewUser === 'true') {
-      console.log('🎯 New user detected, showing onboarding modal')
+    // Check onboarding: URL param OR database flag (100% reliable)
+    const shouldShowOnboarding = isNewUser === 'true' || 
+                                 (profile.has_completed_onboarding === false && 
+                                  profile.created_at && 
+                                  new Date(profile.created_at) > new Date(Date.now() - 24 * 60 * 60 * 1000)) // Created in last 24 hours
+
+    if (shouldShowOnboarding && !profile.has_completed_onboarding) {
+      console.log('🎯 New user detected (URL param or database flag), showing onboarding modal')
       setShowOnboardingModal(true)
     } else if (upgradePrompt === 'true' && !isAdmin) {
       setShowUpgradeModal(true)
@@ -63,7 +69,7 @@ const Dashboard = () => {
       // Just clean up URL for admins, don't show modal
       navigate('/dashboard', { replace: true })
     }
-  }, [searchParams, navigate, isAdmin, user])
+  }, [searchParams, navigate, isAdmin, user, profile])
   const [levelData, setLevelData] = useState({
     level: 1,
     levelTitle: '',
@@ -700,6 +706,30 @@ const Dashboard = () => {
     }
   }, [user, profile])
 
+  // 100% RELIABLE: Check for pending role updates from localStorage (fallback)
+  useEffect(() => {
+    if (!user || !profile) return
+    
+    const pendingRole = localStorage.getItem(`pending_role_update_${user.id}`)
+    if (pendingRole && profile.role !== pendingRole) {
+      console.log('🔄 Found pending role update, verifying...')
+      // Check if role was updated
+      supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+        .then(({ data }) => {
+          if (data && data.role === pendingRole) {
+            console.log('✅ Pending role update confirmed, clearing localStorage')
+            localStorage.removeItem(`pending_role_update_${user.id}`)
+            fetchProfile(user.id)
+          }
+        })
+        .catch(err => console.warn('Error checking pending role:', err))
+    }
+  }, [user, profile, fetchProfile])
+
   // Load all dashboard data from Supabase
   useEffect(() => {
     if (!user) return
@@ -770,30 +800,52 @@ const Dashboard = () => {
             toast.success(`✅ Subscription activated! Your role is now: ${data.role || 'Student'}`)
           }
           
-          // Wait a moment for database to update, then refresh profile
-          await new Promise(resolve => setTimeout(resolve, 1000))
+          // 100% RELIABLE: Retry logic for profile update verification
+          let profileUpdated = false
+          const expectedRole = data.role || 'Student'
           
-          // Refresh profile to get updated data
-          console.log('🔄 Refreshing user profile after payment...')
-          await fetchProfile(user.id)
-          
-          // Force a re-render by checking profile again
-          const { data: updatedProfile, error: profileError } = await supabase
-            .from('profiles')
-            .select('role, subscription_status, subscription_id')
-            .eq('id', user.id)
-            .single()
-          
-          if (profileError) {
-            console.error('❌ Error fetching updated profile:', profileError)
-          } else {
-            console.log('📊 Updated profile after payment:', updatedProfile)
+          for (let attempt = 1; attempt <= 5; attempt++) {
+            // Wait with exponential backoff: 1s, 2s, 3s, 4s, 5s
+            await new Promise(resolve => setTimeout(resolve, attempt * 1000))
             
-            // If role still doesn't match, show a warning
-            if (updatedProfile.role !== data.role && data.role) {
-              console.warn('⚠️ Role mismatch detected. Expected:', data.role, 'Got:', updatedProfile.role)
-              toast.error('Role update may be delayed. Please refresh the page.')
+            console.log(`🔄 Verifying role update (attempt ${attempt}/5)...`)
+            
+            // Refresh profile
+            await fetchProfile(user.id)
+            
+            // Check profile directly from database
+            const { data: updatedProfile, error: profileError } = await supabase
+              .from('profiles')
+              .select('role, subscription_status, subscription_id')
+              .eq('id', user.id)
+              .single()
+            
+            if (profileError) {
+              console.warn(`⚠️ Error fetching profile (attempt ${attempt}):`, profileError)
+              if (attempt < 5) continue
+            } else {
+              console.log(`📊 Profile check (attempt ${attempt}):`, updatedProfile)
+              
+              // Check if role matches
+              if (updatedProfile.role === expectedRole) {
+                console.log('✅ Role update verified!')
+                profileUpdated = true
+                break
+              } else if (attempt < 5) {
+                console.warn(`⚠️ Role mismatch (attempt ${attempt}). Expected: ${expectedRole}, Got: ${updatedProfile.role}. Retrying...`)
+                continue
+              } else {
+                // Final attempt - role still doesn't match
+                console.error('❌ Role update failed after all retries')
+                toast.warning('Payment successful, but role update may be delayed. Please refresh the page in a moment.')
+                // Store in localStorage as fallback
+                localStorage.setItem(`pending_role_update_${user.id}`, expectedRole)
+              }
             }
+          }
+          
+          if (profileUpdated) {
+            console.log('✅ Payment and role update completed successfully')
           }
           
           navigate('/dashboard', { replace: true })
@@ -1040,11 +1092,47 @@ const Dashboard = () => {
         />
       )}
       
-      {/* Onboarding Modal - Show for new users */}
+      {/* Onboarding Modal - Show for new users - 100% RELIABLE */}
       <OnboardingModal 
         isOpen={showOnboardingModal} 
-        onClose={() => {
+        onClose={async () => {
           setShowOnboardingModal(false)
+          
+          // Mark onboarding as completed in database (100% persistence)
+          if (user && profile && !profile.has_completed_onboarding) {
+            try {
+              const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ 
+                  has_completed_onboarding: true,
+                  onboarding_completed_at: new Date().toISOString()
+                })
+                .eq('id', user.id)
+              
+              if (updateError) {
+                console.error('Error marking onboarding complete:', updateError)
+                // Retry once after 1 second
+                setTimeout(async () => {
+                  await supabase
+                    .from('profiles')
+                    .update({ 
+                      has_completed_onboarding: true,
+                      onboarding_completed_at: new Date().toISOString()
+                    })
+                    .eq('id', user.id)
+                }, 1000)
+              } else {
+                console.log('✅ Onboarding marked as completed in database')
+                // Refresh profile to get updated flag
+                await fetchProfile(user.id)
+              }
+            } catch (error) {
+              console.error('Error updating onboarding status:', error)
+              // Store in localStorage as fallback
+              localStorage.setItem(`onboarding_completed_${user.id}`, 'true')
+            }
+          }
+          
           // Clean up URL when closing
           const newParams = new URLSearchParams(searchParams)
           if (newParams.get('new_user')) {

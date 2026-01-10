@@ -65,6 +65,11 @@ const supabase = createClient(
 // Helper function to send email via Supabase Edge Function
 async function sendEmailViaSupabase(emailType, emailData) {
   try {
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.warn('⚠️ Supabase configuration missing - cannot send email')
+      return { success: false, error: 'Supabase configuration missing' }
+    }
+
     const response = await fetch(`${process.env.SUPABASE_URL}/functions/v1/send-email`, {
       method: 'POST',
       headers: {
@@ -78,13 +83,22 @@ async function sendEmailViaSupabase(emailType, emailData) {
     })
 
     if (!response.ok) {
-      const error = await response.json()
+      const errorText = await response.text()
+      let error
+      try {
+        error = JSON.parse(errorText)
+      } catch {
+        error = { error: errorText || 'Failed to send email' }
+      }
+      console.error('❌ Supabase Edge Function error:', error)
       throw new Error(error.error || 'Failed to send email')
     }
 
-    return await response.json()
+    const result = await response.json()
+    console.log('✅ Email sent via Supabase Edge Function:', result)
+    return { success: true, ...result }
   } catch (error) {
-    console.error('Error sending email via Supabase:', error)
+    console.error('❌ Error sending email via Supabase:', error)
     return { success: false, error: error.message }
   }
 }
@@ -173,7 +187,7 @@ app.post('/api/create-customer', async (req, res) => {
   }
 })
 
-// Send sign-up confirmation email
+// Send sign-up confirmation email via Supabase Edge Function
 app.post('/api/send-signup-email', async (req, res) => {
   try {
     const { email, userName } = req.body
@@ -182,21 +196,34 @@ app.post('/api/send-signup-email', async (req, res) => {
       return res.status(400).json({ error: 'Email is required' })
     }
 
-    if (!emailService) {
-      console.error('❌ Email service not available')
-      return res.status(503).json({ error: 'Email service not configured' })
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.warn('⚠️ Supabase configuration missing - cannot send email')
+      return res.json({ 
+        success: false, 
+        message: 'Email service not configured. Account created but no email sent.',
+        warning: 'Supabase configuration missing'
+      })
     }
 
-    console.log('📧 Sending sign-up confirmation email to:', email)
+    console.log('📧 Sending sign-up confirmation email via Supabase to:', email)
 
-    const result = await emailService.sendSignUpConfirmation(email, userName)
+    // Use Supabase Edge Function for email
+    const result = await sendEmailViaSupabase('sign-up', {
+      email,
+      userName: userName || 'there'
+    })
 
     if (result.success) {
-      console.log('✅ Sign-up email sent successfully')
+      console.log('✅ Sign-up email sent successfully via Supabase')
       return res.json({ success: true, message: 'Email sent successfully' })
     } else {
       console.error('❌ Failed to send sign-up email:', result.error)
-      return res.status(500).json({ error: result.error || 'Failed to send email' })
+      // Don't fail the request - email is non-critical
+      return res.json({ 
+        success: false, 
+        message: 'Email could not be sent, but account was created successfully',
+        error: result.error 
+      })
     }
   } catch (error) {
     console.error('❌ Error sending sign-up email:', error)
@@ -221,8 +248,12 @@ app.post('/api/create-checkout-session', paymentLimiter, async (req, res) => {
 
     // Validate Stripe key
     if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes('your_stripe_secret_key')) {
-      console.error('ERROR: STRIPE_SECRET_KEY is not configured')
-      return res.status(503).json({ error: 'Payment service is not configured. Please contact support.' })
+      console.error('❌ ERROR: STRIPE_SECRET_KEY is not configured')
+      console.error('Please set STRIPE_SECRET_KEY in server.env file')
+      return res.status(503).json({ 
+        error: 'Payment service is not configured. Please contact support.',
+        details: process.env.NODE_ENV === 'development' ? 'STRIPE_SECRET_KEY is missing or invalid in server.env' : undefined
+      })
     }
 
     // Get or create Stripe customer
