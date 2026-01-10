@@ -3,8 +3,9 @@
  * This service calls Supabase Edge Functions to send emails
  */
 
-const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL
-const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY
+// Get Supabase configuration - use Vite format with fallback
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.REACT_APP_SUPABASE_ANON_KEY
 
 /**
  * Call Supabase Edge Function to send email
@@ -16,6 +17,10 @@ async function callEmailFunction(emailType, emailData) {
       return { success: false, error: 'Supabase configuration missing' }
     }
 
+    // Add 5s timeout to prevent hanging
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000)
+
     const response = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
       method: 'POST',
       headers: {
@@ -25,8 +30,11 @@ async function callEmailFunction(emailType, emailData) {
       body: JSON.stringify({
         emailType,
         ...emailData
-      })
+      }),
+      signal: controller.signal
     })
+    
+    clearTimeout(timeoutId)
 
     if (!response.ok) {
       // Handle 404 (Edge Function not deployed) gracefully
@@ -47,7 +55,11 @@ async function callEmailFunction(emailType, emailData) {
 
     return await response.json()
   } catch (error) {
-    // Handle network errors (CORS, etc.) gracefully
+    // Handle timeout and network errors gracefully
+    if (error.name === 'AbortError' || error.message?.includes('timeout')) {
+      console.warn('⚠️ Email service timeout. Email will not be sent.')
+      return { success: false, error: 'Email service timeout' }
+    }
     if (error.message.includes('NetworkError') || error.message.includes('CORS')) {
       console.warn('⚠️ Email service unavailable (network error). Email will not be sent.')
       return { success: false, error: 'Email service unavailable' }
@@ -87,14 +99,23 @@ class EmailService {
     
     // Method 2: Try Server API (fallback)
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 
-                      (process.env.NODE_ENV === 'development' ? 'http://localhost:3001' : window.location.origin)
+      const API_URL = import.meta.env.VITE_API_URL || 
+                      (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
+                        ? 'http://localhost:3001' 
+                        : window.location.origin)
+      
+      // Add timeout to prevent hanging
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000)
       
       const response = await fetch(`${API_URL}/api/send-signup-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, userName })
+        body: JSON.stringify({ email, userName }),
+        signal: controller.signal
       })
+      
+      clearTimeout(timeoutId)
 
       if (response.ok) {
         const result = await response.json()
@@ -144,9 +165,16 @@ class EmailService {
           continue
         }
         
-        // Try to send
+        // Try to send with timeout protection
         try {
-          const result = await callEmailFunction(emailItem.emailType, emailItem)
+          // Add timeout wrapper to prevent hanging
+          const result = await Promise.race([
+            callEmailFunction(emailItem.emailType, emailItem),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Email send timeout')), 5000)
+            )
+          ])
+          
           if (result.success) {
             console.log('✅ Queued email sent successfully:', emailItem.email)
             processed.push(emailItem)
@@ -156,6 +184,10 @@ class EmailService {
             emailItem.lastRetry = Date.now()
           }
         } catch (error) {
+          // Handle timeout and other errors
+          if (error.message?.includes('timeout') || error.name === 'AbortError') {
+            console.warn('⚠️ Email send timeout, will retry later:', emailItem.email)
+          }
           emailItem.retries = (emailItem.retries || 0) + 1
           emailItem.lastRetry = Date.now()
         }

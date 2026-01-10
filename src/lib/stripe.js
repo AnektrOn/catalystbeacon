@@ -1,29 +1,32 @@
 import { loadStripe } from '@stripe/stripe-js'
 
 // Get Stripe publishable key from environment variables
-// Create React App uses REACT_APP_ prefix
-const STRIPE_PUBLISHABLE_KEY = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY
+// Vite uses VITE_ prefix, with fallback to REACT_APP_ for compatibility
+const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY
 
 if (!STRIPE_PUBLISHABLE_KEY) {
   console.warn(
     'Missing Stripe publishable key. ' +
-    'Please set REACT_APP_STRIPE_PUBLISHABLE_KEY in your .env file.'
+    'Please set VITE_STRIPE_PUBLISHABLE_KEY in your .env file.'
   )
 }
 
 // Price IDs for the subscription plans (from environment variables)
-// Create React App uses REACT_APP_ prefix
+// Vite uses VITE_ prefix, with fallback to REACT_APP_ for compatibility
 // Fallback to test IDs if not set in env
 export const PRICE_IDS = {
-  STUDENT_MONTHLY: process.env.REACT_APP_STRIPE_STUDENT_MONTHLY_PRICE_ID || 'price_1RutXI2MKT6Humxnh0WBkhCp',
-  STUDENT_YEARLY: process.env.REACT_APP_STRIPE_STUDENT_YEARLY_PRICE_ID || 'price_1SB9e52MKT6Humxnx7qxZ2hj',
-  TEACHER_MONTHLY: process.env.REACT_APP_STRIPE_TEACHER_MONTHLY_PRICE_ID || 'price_1SBPN62MKT6HumxnBoQgAdd0',
-  TEACHER_YEARLY: process.env.REACT_APP_STRIPE_TEACHER_YEARLY_PRICE_ID || 'price_1SB9co2MKT6HumxnOSALvAM4'
+  STUDENT_MONTHLY: import.meta.env.VITE_STRIPE_STUDENT_MONTHLY_PRICE_ID || process.env.REACT_APP_STRIPE_STUDENT_MONTHLY_PRICE_ID || 'price_1RutXI2MKT6Humxnh0WBkhCp',
+  STUDENT_YEARLY: import.meta.env.VITE_STRIPE_STUDENT_YEARLY_PRICE_ID || process.env.REACT_APP_STRIPE_STUDENT_YEARLY_PRICE_ID || 'price_1SB9e52MKT6Humxnx7qxZ2hj',
+  TEACHER_MONTHLY: import.meta.env.VITE_STRIPE_TEACHER_MONTHLY_PRICE_ID || process.env.REACT_APP_STRIPE_TEACHER_MONTHLY_PRICE_ID || 'price_1SBPN62MKT6HumxnBoQgAdd0',
+  TEACHER_YEARLY: import.meta.env.VITE_STRIPE_TEACHER_YEARLY_PRICE_ID || process.env.REACT_APP_STRIPE_TEACHER_YEARLY_PRICE_ID || 'price_1SB9co2MKT6HumxnOSALvAM4'
 }
 
 // Get API URL from environment variables
-// Create React App uses REACT_APP_ prefix
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001'
+// Vite uses VITE_ prefix, with proper fallback
+const API_URL = import.meta.env.VITE_API_URL || 
+                (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
+                  ? 'http://localhost:3001' 
+                  : window.location.origin)
 
 // Modern Stripe Checkout approach - create session on backend first
 export const createCheckoutSession = async (priceId, userEmail) => {

@@ -472,7 +472,14 @@ const SubscriptionSection = ({ profile }) => {
     const navigate = useNavigate();
     const { user } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
-    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+    
+    // WORKAROUND 1: Use Supabase Edge Function (best - no CORS issues)
+    // WORKAROUND 2: Auto-detect environment with fallback
+    const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
+    const API_URL = process.env.REACT_APP_API_URL || import.meta.env.VITE_API_URL || 
+                    (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
+                        ? 'http://localhost:3001' 
+                        : window.location.origin);
 
     const handleManageSubscription = async () => {
         if (!user?.id) {
@@ -488,6 +495,61 @@ const SubscriptionSection = ({ profile }) => {
 
         setIsLoading(true);
         try {
+            // WORKAROUND 1: Try Supabase Edge Function first (no CORS issues)
+            if (SUPABASE_URL) {
+                try {
+                    const { data: { session: authSession }, error: sessionError } = await supabase.auth.getSession();
+                    
+                    if (sessionError || !authSession) {
+                        throw new Error('You must be logged in to manage subscription');
+                    }
+                    
+                    const supabaseEndpoint = `${SUPABASE_URL}/functions/v1/create-portal-session`;
+                    const accessToken = authSession.access_token;
+                    
+                    console.log('Using Supabase Edge Function:', supabaseEndpoint);
+                    
+                    // Add 5s timeout to prevent hanging
+                    const controller = new AbortController()
+                    const timeoutId = setTimeout(() => controller.abort(), 5000)
+                    
+                    const response = await fetch(supabaseEndpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${accessToken}`,
+                        },
+                        signal: controller.signal
+                    });
+                    
+                    clearTimeout(timeoutId)
+                    
+                    if (response.ok) {
+                        const { url } = await response.json();
+                        if (url) {
+                            window.location.href = url;
+                            return;
+                        }
+                    } else if (response.status === 401 || response.status === 404 || response.status === 503 || response.status >= 500) {
+                        console.warn(`⚠️ Supabase Edge Function returned ${response.status}, falling back to API server`);
+                        throw new Error('FALLBACK_TO_API_SERVER');
+                    }
+                } catch (supabaseError) {
+                    // Handle timeout and other errors
+                    if (supabaseError.name === 'AbortError' || 
+                        supabaseError.message === 'FALLBACK_TO_API_SERVER' ||
+                        supabaseError.message?.includes('timeout')) {
+                        console.warn('Supabase Edge Function timeout or error, falling back to API server:', supabaseError.name || supabaseError.message);
+                        // Fall through to API server
+                    } else {
+                        console.warn('Supabase Edge Function error:', supabaseError);
+                        throw new Error('FALLBACK_TO_API_SERVER');
+                    }
+                }
+            }
+            
+            // WORKAROUND 2: Fallback to API server (with proper URL detection)
+            console.log('Using API server:', `${API_URL}/api/create-portal-session`);
             const response = await fetch(`${API_URL}/api/create-portal-session`, {
                 method: 'POST',
                 headers: {

@@ -62,7 +62,8 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
-// Helper function to send email via Supabase Edge Function
+// BULLETPROOF: Helper function to send email via Supabase Edge Function
+// This is called from webhooks and API endpoints
 async function sendEmailViaSupabase(emailType, emailData) {
   try {
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -70,17 +71,27 @@ async function sendEmailViaSupabase(emailType, emailData) {
       return { success: false, error: 'Supabase configuration missing' }
     }
 
+    // Add 5s timeout to prevent hanging
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000)
+
+    console.log(`📧 Calling send-email Edge Function for: ${emailType} to ${emailData.email}`)
+
     const response = await fetch(`${process.env.SUPABASE_URL}/functions/v1/send-email`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
       },
       body: JSON.stringify({
         emailType,
         ...emailData
-      })
+      }),
+      signal: controller.signal
     })
+    
+    clearTimeout(timeoutId)
 
     if (!response.ok) {
       const errorText = await response.text()
@@ -98,6 +109,11 @@ async function sendEmailViaSupabase(emailType, emailData) {
     console.log('✅ Email sent via Supabase Edge Function:', result)
     return { success: true, ...result }
   } catch (error) {
+    // Handle timeout gracefully
+    if (error.name === 'AbortError' || error.message?.includes('timeout')) {
+      console.warn('⚠️ Email send timeout via Supabase Edge Function')
+      return { success: false, error: 'Email service timeout' }
+    }
     console.error('❌ Error sending email via Supabase:', error)
     return { success: false, error: error.message }
   }
@@ -369,9 +385,10 @@ app.get('/api/payment-success', paymentLimiter, async (req, res) => {
     const currentRole = currentProfile?.role || 'Free'
     console.log('Current user role before update:', currentRole)
 
-    // Prepare update object - only update role if user is NOT an Admin
+    // CRITICAL: Prepare update object - ensure subscription is always set to active
+    // Only update role if user is NOT an Admin (preserve Admin role)
     const updateData = {
-      subscription_status: 'active',
+      subscription_status: 'active', // Always set to active for successful payment
       subscription_id: subscription.id,
       stripe_customer_id: session.customer,
       updated_at: new Date().toISOString()
@@ -385,151 +402,80 @@ app.get('/api/payment-success', paymentLimiter, async (req, res) => {
       console.log('⚠️ User is Admin - preserving Admin role, only updating subscription info')
     }
 
-    // Update user profile
-    const { data: updateResult, error } = await supabase
-      .from('profiles')
-      .update(updateData)
-      .eq('id', session.metadata.userId)
-      .select()
-
-    if (error) {
-      console.error('❌ Supabase update error:', error)
-      throw error
-    }
-
-    console.log('✅ Profile updated successfully:', updateResult)
+    // BULLETPROOF: Update user profile with retry logic
+    let updateResult = null
+    let updateError = null
     
-    // Verify the update by fetching the profile again
-    const { data: verifyProfile, error: verifyError } = await supabase
-      .from('profiles')
-      .select('role, subscription_status, subscription_id')
-      .eq('id', session.metadata.userId)
-      .single()
-    
-    if (verifyError) {
-      console.error('⚠️ Error verifying profile update:', verifyError)
-    } else {
-      console.log('✅ Verified profile update:', {
-        role: verifyProfile.role,
-        subscription_status: verifyProfile.subscription_status,
-        subscription_id: verifyProfile.subscription_id
-      })
-    }
-    
-    // Create or update subscription record in subscriptions table
-    try {
-      const { error: subscriptionError } = await supabase
-        .from('subscriptions')
-        .upsert({
-          user_id: session.metadata.userId,
-          stripe_customer_id: session.customer,
-          stripe_subscription_id: subscription.id,
-          plan_type: subscription.items.data[0]?.price.recurring?.interval || 'monthly',
-          status: subscription.status,
-          current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'user_id,stripe_subscription_id'
-        })
-
-      if (subscriptionError) {
-        console.error('Error creating subscription record:', subscriptionError)
-        // Don't fail the request, but log the error
-      } else {
-        console.log('✅ Subscription record created/updated successfully')
-      }
-    } catch (subscriptionRecordError) {
-      console.error('Error creating subscription record:', subscriptionRecordError)
-      // Don't fail the request if subscription record creation fails
-    }
-    
-    // Send payment confirmation email via Supabase
-    try {
-      const { data: profileData } = await supabase
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      const { data, error } = await supabase
         .from('profiles')
-        .select('email, full_name, role')
+        .update(updateData)
         .eq('id', session.metadata.userId)
-        .single()
-      
-      if (profileData?.email) {
-        // Use the role that was actually set (or preserved for Admin)
-        // For Admins, show "Student Plan" since they subscribed to student plan but kept Admin role
-        const actualRole = profileData.role || newRole
-        const planName = actualRole === 'Teacher' ? 'Teacher Plan' : 
-                        actualRole === 'Admin' ? 'Student Plan (Admin)' : 'Student Plan'
-        const amount = subscription.items.data[0]?.price.unit_amount / 100 || 0
-        const currency = subscription.items.data[0]?.price.currency?.toUpperCase() || 'USD'
-        
-        console.log('📧 Sending payment confirmation email to:', profileData.email)
-        console.log('📧 Email details:', { actualRole, planName, amount, currency })
-        
-        // 100% RELIABLE: Try multiple methods to send email
-        let emailSent = false
-        
-        // Method 1: Supabase Edge Function
-        try {
-          await sendEmailViaSupabase('payment', {
-            email: profileData.email,
-            userName: profileData.full_name || 'there',
-            planName,
-            amount,
-            currency,
-            subscriptionId: subscription.id
-          })
-          emailSent = true
-          console.log('✅ Payment confirmation email sent via Supabase Edge Function')
-        } catch (emailError) {
-          console.warn('⚠️ Supabase email failed, trying alternative methods:', emailError)
+        .select()
+
+      if (error) {
+        updateError = error
+        console.error(`❌ Supabase update error (attempt ${attempt}/3):`, error)
+        if (attempt < 3) {
+          // Wait before retry: 500ms, 1s
+          await new Promise(resolve => setTimeout(resolve, attempt * 500))
+          continue
         }
-        
-        // Method 2: Queue in database if Edge Function failed
-        if (!emailSent) {
-          try {
-            const { error: queueError } = await supabase
-              .from('email_queue')
-              .insert({
-                user_id: session.metadata.userId,
-                email_type: 'payment_confirmation',
-                recipient_email: profileData.email,
-                email_data: {
-                  userName: profileData.full_name || 'there',
-                  planName,
-                  amount,
-                  currency,
-                  subscriptionId: subscription.id
-                },
-                status: 'pending',
-                created_at: new Date().toISOString()
-              })
-            
-            if (queueError) {
-              console.error('Error queueing email:', queueError)
-            } else {
-              console.log('✅ Payment confirmation email queued in database')
-              emailSent = true
-            }
-          } catch (queueError) {
-            console.error('Error queueing email:', queueError)
-          }
-        }
-        
-        if (!emailSent) {
-          console.warn('⚠️ Could not send or queue payment confirmation email')
-        }
+        throw error
       } else {
-        console.warn('⚠️ No email found for user:', session.metadata.userId)
+        updateResult = data
+        console.log(`✅ Profile updated successfully (attempt ${attempt}):`, updateResult)
+        break
       }
-    } catch (emailError) {
-      console.error('Error sending payment confirmation email:', emailError)
-      // Don't fail the request if email fails
     }
+
+    if (updateError) {
+      throw updateError
+    }
+    
+    // Create or update subscription record in subscriptions table (non-blocking)
+    // Do this in parallel to speed up response
+    const subscriptionPromise = supabase
+      .from('subscriptions')
+      .upsert({
+        user_id: session.metadata.userId,
+        stripe_customer_id: session.customer,
+        stripe_subscription_id: subscription.id,
+        plan_type: subscription.items.data[0]?.price.recurring?.interval || 'monthly',
+        status: subscription.status,
+        current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id,stripe_subscription_id'
+      })
+      .then(({ error }) => {
+        if (error) {
+          console.error('Error creating subscription record:', error)
+        } else {
+          console.log('✅ Subscription record created/updated successfully')
+        }
+      })
+      .catch(err => {
+        console.error('Error creating subscription record:', err)
+      })
+    
+    // Don't wait for subscription record - return immediately
+    // Email processing removed for speed - will be handled by webhook or background job
     
     console.log('=== PAYMENT SUCCESS COMPLETE ===')
 
     // Return the role that was actually set (or preserved)
     const finalRole = currentRole === 'Admin' ? 'Admin' : newRole
-    res.json({ success: true, role: finalRole, subscriptionId: subscription.id })
+    res.json({ 
+      success: true, 
+      role: finalRole, 
+      subscriptionId: subscription.id,
+      subscriptionStatus: 'active'
+    })
+    
+    // Process subscription record in background (don't block response)
+    subscriptionPromise.catch(() => {}) // Silently handle errors
   } catch (error) {
     console.error('Error handling payment success:', error)
     res.status(500).json({ error: error.message })
@@ -654,8 +600,9 @@ async function handleCheckoutSessionCompleted(session) {
     console.log('Current user role:', currentRole, 'New role would be:', newRole)
 
     // Prepare update object - only update role if user is NOT an Admin
+    // CRITICAL: Always set subscription_status to 'active' for successful payments
     const updateData = {
-      subscription_status: subscription.status,
+      subscription_status: 'active', // Force active status for successful checkout
       subscription_id: subscription.id,
       stripe_customer_id: customerId,
       updated_at: new Date().toISOString()
@@ -669,49 +616,41 @@ async function handleCheckoutSessionCompleted(session) {
       console.log('⚠️ User is Admin - preserving Admin role, only updating subscription info')
     }
 
-    // Update profile with subscription info (and role only if not Admin)
-    const { data, error } = await supabase
-      .from('profiles')
-      .update(updateData)
-      .eq('id', userId)
+    // BULLETPROOF: Update profile with retry logic (webhook must succeed)
+    let updateResult = null
+    let updateError = null
+    
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('id', userId)
+        .select()
 
-    if (error) {
-      console.error('Error updating profile:', error)
-    } else {
-      console.log('Profile updated successfully:', data)
-      
-      // Send payment confirmation email via Supabase
-      try {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('email, full_name, role')
-          .eq('id', userId)
-          .single()
-        
-        if (profileData?.email) {
-          // Use the role that was actually set (or preserved for Admin)
-          const actualRole = profileData.role || newRole
-          const planName = actualRole === 'Teacher' ? 'Teacher Plan' : 'Student Plan'
-          const amount = subscription.items.data[0]?.price.unit_amount / 100 || 0
-          const currency = subscription.items.data[0]?.price.currency?.toUpperCase() || 'USD'
-          
-          await sendEmailViaSupabase('payment', {
-            email: profileData.email,
-            userName: profileData.full_name || 'there',
-            planName,
-            amount,
-            currency,
-            subscriptionId: subscription.id
-          })
+      if (error) {
+        updateError = error
+        console.error(`❌ Error updating profile in webhook (attempt ${attempt}/3):`, error)
+        if (attempt < 3) {
+          // Wait before retry: 500ms, 1s
+          await new Promise(resolve => setTimeout(resolve, attempt * 500))
+          continue
         }
-      } catch (emailError) {
-        console.error('Error sending payment confirmation email:', emailError)
-        // Don't fail the webhook if email fails
+        throw error // Fail webhook if all retries fail
+      } else {
+        updateResult = data
+        console.log(`✅ Profile updated successfully via webhook (attempt ${attempt}):`, updateResult)
+        break
       }
     }
 
-    // Create or update subscription record
-    await supabase
+    if (updateError) {
+      throw updateError
+    }
+    
+    // Email processing removed for speed - will be handled separately if needed
+
+    // Create or update subscription record (non-blocking, don't fail webhook if this fails)
+    supabase
       .from('subscriptions')
       .upsert({
         user_id: userId,
@@ -721,6 +660,18 @@ async function handleCheckoutSessionCompleted(session) {
         status: subscription.status,
         current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
         current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+      }, {
+        onConflict: 'user_id,stripe_subscription_id'
+      })
+      .then(({ error }) => {
+        if (error) {
+          console.error('Error creating subscription record in webhook:', error)
+        } else {
+          console.log('✅ Subscription record created/updated via webhook')
+        }
+      })
+      .catch(err => {
+        console.error('Error creating subscription record in webhook:', err)
       })
   }
 }

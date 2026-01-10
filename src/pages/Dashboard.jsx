@@ -768,73 +768,54 @@ const Dashboard = () => {
       console.log('🎯 PAYMENT SUCCESS DETECTED:', { payment, sessionId, userId: user.id })
       console.log('🎯 Current profile role:', profile?.role)
       
-      // Determine API URL: use env var, or same origin in production, or localhost in dev
-      let API_URL = process.env.REACT_APP_API_URL
-      if (!API_URL) {
-        if (process.env.NODE_ENV === 'development') {
-          API_URL = 'http://localhost:3001'
-        } else {
-          // In production, use the same origin (the server.js serves both API and React app)
-          API_URL = window.location.origin
-        }
-      }
+      // Determine API URL: use Vite env var with proper fallback
+      const API_URL = import.meta.env.VITE_API_URL || 
+                      (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
+                        ? 'http://localhost:3001' 
+                        : window.location.origin)
       
       toast.success('🎉 Payment completed! Processing your subscription...')
       console.log('🔄 Processing payment success for session:', sessionId)
       console.log('📍 API URL:', API_URL)
 
-      // 100% RELIABLE: Retry logic for payment success processing
-      const processPaymentSuccess = async (attempt = 1) => {
+      // FAST: Single attempt with short timeout for speed
+      const processPaymentSuccess = async () => {
         try {
-          console.log(`🔄 Payment success attempt ${attempt}/3`)
+          console.log('🔄 Processing payment success...')
           
           const response = await fetch(`${API_URL}/api/payment-success?session_id=${sessionId}`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
             },
-            // Add timeout
-            signal: AbortSignal.timeout(15000) // 15 second timeout
+            // Short timeout for speed - 5 seconds max
+            signal: AbortSignal.timeout(5000)
           })
+          
           console.log('📡 Payment success response status:', response.status)
           
           if (!response.ok) {
             const errorText = await response.text()
             console.error('❌ Payment success endpoint error:', response.status, errorText)
             
-            // Retry on 5xx errors
-            if (response.status >= 500 && attempt < 3) {
-              console.log(`⚠️ Server error, retrying in ${attempt * 2} seconds...`)
-              await new Promise(resolve => setTimeout(resolve, attempt * 2000))
-              return processPaymentSuccess(attempt + 1)
-            }
-            
-            throw new Error(`Server error: ${response.status} - ${errorText}`)
+            // Don't retry - webhook will handle it
+            toast.warning('Payment successful! Subscription update may take a moment. Please refresh if needed.')
+            return null
           }
           
           const data = await response.json()
           return data
         } catch (error) {
-          console.error(`❌ Payment success error (attempt ${attempt}):`, error)
+          console.error('❌ Payment success error:', error)
           
-          // Retry on network errors or timeouts
-          if ((error.name === 'AbortError' || error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) && attempt < 3) {
-            console.log(`⚠️ Network error, retrying in ${attempt * 2} seconds...`)
-            await new Promise(resolve => setTimeout(resolve, attempt * 2000))
-            return processPaymentSuccess(attempt + 1)
+          // Don't retry - webhook will handle database update
+          if (error.name === 'AbortError') {
+            toast.warning('Payment successful! Processing subscription update...')
+          } else {
+            toast.warning('Payment successful! Subscription update may take a moment. Please refresh if needed.')
           }
           
-          // Final attempt failed - show error but don't block user
-          toast.error('Payment processed, but subscription update may be delayed. Please refresh in a moment.')
-          console.error('❌ All payment success attempts failed:', error)
-          
-          // Store in localStorage as fallback
-          localStorage.setItem(`pending_payment_${user.id}`, JSON.stringify({
-            sessionId,
-            timestamp: Date.now()
-          }))
-          
-          // Clean up URL
+          // Clean up URL immediately
           const newParams = new URLSearchParams(searchParams)
           newParams.delete('payment')
           newParams.delete('session_id')
@@ -862,72 +843,11 @@ const Dashboard = () => {
             toast.success(roleMessage)
           }
           
-          // 100% RELIABLE: Retry logic for profile update verification
-          let profileUpdated = false
-          // For Admins, we expect subscription_status to be 'active', not role change
-          const expectedRole = profile?.role === 'Admin' ? 'Admin' : (data.role || 'Student')
+          // FAST: Single quick refresh, then navigate immediately
+          // Webhook ensures database is updated even if this fails
+          await fetchProfile(user.id)
           
-          for (let attempt = 1; attempt <= 5; attempt++) {
-            // Wait with exponential backoff: 1s, 2s, 3s, 4s, 5s
-            await new Promise(resolve => setTimeout(resolve, attempt * 1000))
-            
-            console.log(`🔄 Verifying role update (attempt ${attempt}/5)...`)
-            
-            // Refresh profile
-            await fetchProfile(user.id)
-            
-            // Check profile directly from database
-            const { data: updatedProfile, error: profileError } = await supabase
-              .from('profiles')
-              .select('role, subscription_status, subscription_id')
-              .eq('id', user.id)
-              .single()
-            
-            if (profileError) {
-              console.warn(`⚠️ Error fetching profile (attempt ${attempt}):`, profileError)
-              if (attempt < 5) continue
-            } else {
-              console.log(`📊 Profile check (attempt ${attempt}):`, updatedProfile)
-              
-              // For Admins, check subscription_status instead of role
-              if (profile?.role === 'Admin') {
-                if (updatedProfile.subscription_status === 'active' && updatedProfile.subscription_id) {
-                  console.log('✅ Admin subscription update verified!')
-                  profileUpdated = true
-                  break
-                } else if (attempt < 5) {
-                  console.warn(`⚠️ Admin subscription not updated yet (attempt ${attempt}). Retrying...`)
-                  continue
-                }
-              } else {
-                // For non-Admins, check if role matches
-                if (updatedProfile.role === expectedRole) {
-                  console.log('✅ Role update verified!')
-                  profileUpdated = true
-                  break
-                } else if (attempt < 5) {
-                  console.warn(`⚠️ Role mismatch (attempt ${attempt}). Expected: ${expectedRole}, Got: ${updatedProfile.role}. Retrying...`)
-                  continue
-                }
-              }
-              
-              // Final attempt - update still pending
-              if (attempt === 5) {
-                console.error('❌ Update verification failed after all retries')
-                if (profile?.role === 'Admin') {
-                  toast.warning('Payment successful, but subscription update may be delayed. Please refresh the page in a moment.')
-                } else {
-                  toast.warning('Payment successful, but role update may be delayed. Please refresh the page in a moment.')
-                  localStorage.setItem(`pending_role_update_${user.id}`, expectedRole)
-                }
-              }
-            }
-          }
-          
-          if (profileUpdated) {
-            console.log('✅ Payment and role update completed successfully')
-          }
-          
+          // Navigate immediately - don't wait for verification
           navigate('/dashboard', { replace: true })
         })
         .catch(error => {

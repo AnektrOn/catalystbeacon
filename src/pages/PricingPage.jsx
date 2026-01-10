@@ -92,16 +92,18 @@ const PricingPage = () => {
     setLoading(true)
 
     try {
-      // Get environment variables - log for debugging
-      const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL
-      const API_URL = process.env.REACT_APP_API_URL
+      // Get environment variables - use Vite format with fallback
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL
+      const API_URL = import.meta.env.VITE_API_URL || 
+                      (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
+                        ? 'http://localhost:3001' 
+                        : window.location.origin)
       
       // Debug: Log what we're getting
       console.log('🔍 Payment Debug - Environment Check:', {
         SUPABASE_URL: SUPABASE_URL || 'UNDEFINED',
         API_URL: API_URL || 'UNDEFINED',
-        allProcessEnvKeys: Object.keys(process.env).filter(k => k.includes('REACT_APP') || k.includes('SUPABASE')),
-        nodeEnv: process.env.NODE_ENV
+        nodeEnv: import.meta.env.MODE || process.env.NODE_ENV
       })
       
       // Determine plan type from price ID (always student now)
@@ -123,6 +125,10 @@ const PricingPage = () => {
           console.log('Using Supabase Edge Function:', supabaseEndpoint)
           console.log('Request payload:', { priceId, planType })
           
+          // Add 5s timeout to prevent hanging
+          const controller = new AbortController()
+          const timeoutId = setTimeout(() => controller.abort(), 5000)
+          
           const response = await fetch(supabaseEndpoint, {
             method: 'POST',
             headers: {
@@ -133,7 +139,10 @@ const PricingPage = () => {
               priceId: priceId,
               planType: planType
             }),
+            signal: controller.signal
           })
+          
+          clearTimeout(timeoutId)
           
           console.log('Response status:', response.status, response.statusText)
           
@@ -182,14 +191,16 @@ const PricingPage = () => {
           console.error('Supabase Edge Function error:', supabaseError)
           
           // Always fall back to API server if Edge Function fails
-          // (401, 503, network errors, etc.)
-          if (supabaseError.message === 'FALLBACK_TO_API_SERVER' || 
+          // (401, 503, network errors, timeouts, etc.)
+          if (supabaseError.name === 'AbortError' || 
+              supabaseError.message === 'FALLBACK_TO_API_SERVER' || 
               supabaseError.message?.includes('Failed to fetch') ||
               supabaseError.message?.includes('401') ||
               supabaseError.message?.includes('503') ||
               supabaseError.message?.includes('Unauthorized') ||
-              supabaseError.message?.includes('NetworkError')) {
-            console.log('Falling back to API server due to:', supabaseError.message)
+              supabaseError.message?.includes('NetworkError') ||
+              supabaseError.message?.includes('timeout')) {
+            console.log('Falling back to API server due to:', supabaseError.name || supabaseError.message)
             // Continue to API server fallback below
           } else {
             // For other errors, still try API server as fallback
@@ -199,26 +210,19 @@ const PricingPage = () => {
       }
       
       // Fall back to API server if Supabase Edge Function failed or doesn't exist
-      // 100% RELIABLE: Try server API with retry logic
-      let apiBaseUrl = API_URL
-      if (!apiBaseUrl || apiBaseUrl === 'http://localhost:3001' || apiBaseUrl.includes('localhost')) {
-        if (process.env.NODE_ENV === 'development') {
-          apiBaseUrl = 'http://localhost:3001'
-        } else {
-          apiBaseUrl = window.location.origin
-        }
-      }
+      // Optimized: Try server API with reduced retry logic
+      const apiBaseUrl = API_URL
       
       console.log('Using API server (fallback):', `${apiBaseUrl}/api/create-checkout-session`)
       
-      // Retry logic: Try up to 3 times with exponential backoff
+      // Retry logic: Try up to 2 times with exponential backoff (reduced from 3)
       let lastError = null
-      for (let attempt = 1; attempt <= 3; attempt++) {
+      for (let attempt = 1; attempt <= 2; attempt++) {
         try {
           if (attempt > 1) {
-            // Wait before retry: 1s, 2s, 4s
-            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt - 1) * 1000))
-            console.log(`🔄 Retry attempt ${attempt}/3 for checkout session...`)
+            // Wait before retry: 1s
+            await new Promise(resolve => setTimeout(resolve, 1000))
+            console.log(`🔄 Retry attempt ${attempt}/2 for checkout session...`)
           }
           
           const response = await fetch(`${apiBaseUrl}/api/create-checkout-session`, {
@@ -229,8 +233,8 @@ const PricingPage = () => {
               userId: user.id,
               userEmail: user.email
             }),
-            // Add timeout
-            signal: AbortSignal.timeout(10000) // 10 second timeout
+            // Reduced timeout from 10s to 8s
+            signal: AbortSignal.timeout(8000) // 8 second timeout
           })
 
           console.log(`API server response (attempt ${attempt}):`, response.status, response.statusText)
@@ -286,10 +290,10 @@ const PricingPage = () => {
         } catch (error) {
           lastError = error
           if (error.name === 'AbortError') {
-            console.warn(`⚠️ Request timeout (attempt ${attempt}/3)`)
-            if (attempt < 3) continue
+            console.warn(`⚠️ Request timeout (attempt ${attempt}/2)`)
+            if (attempt < 2) continue
           }
-          if (attempt === 3) {
+          if (attempt === 2) {
             // Final attempt failed
             console.error('❌ All checkout attempts failed:', error)
             toast.error('Unable to create checkout session. Please try again or contact support.')
@@ -307,8 +311,8 @@ const PricingPage = () => {
       let errorMessage = 'Something went wrong. Please try again.'
       
       if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
-        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001'
-        errorMessage = `Cannot connect to server at ${API_URL}. Please make sure the server is running.`
+        const apiUrl = import.meta.env.VITE_API_URL || window.location.origin
+        errorMessage = `Cannot connect to server at ${apiUrl}. Please make sure the server is running.`
       } else if (error.message) {
         errorMessage = error.message
       }
@@ -316,7 +320,7 @@ const PricingPage = () => {
       toast.error(errorMessage)
       console.error('Full error details:', {
         error,
-        API_URL: process.env.REACT_APP_API_URL || 'http://localhost:3001',
+        API_URL: import.meta.env.VITE_API_URL || window.location.origin,
         SUPABASE_URL: process.env.REACT_APP_SUPABASE_URL,
         priceId,
         envCheck: {
