@@ -62,7 +62,7 @@ const EtherealStatsCards = ({
   ]
 
   const styles = `
-    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+    /* Uses global fonts and variables from ethereal-design-system.css */
 
     .ethereal-stats-wrapper {
       width: 100%;
@@ -83,6 +83,7 @@ const EtherealStatsCards = ({
       font-family: 'Rajdhani', sans-serif;
       box-sizing: border-box;
       overflow: hidden;
+      min-width: 0;
     }
 
     @media (min-width: 768px) {
@@ -94,18 +95,46 @@ const EtherealStatsCards = ({
 
     @media (max-width: 767px) {
       .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
+        display: grid;
+        grid-template-columns: repeat(2, calc(50% - 4px));
         gap: 8px;
         min-width: 0;
-        width: 100%;
-        max-width: 100%;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      
+      .ethereal-stats-wrapper {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+      }
+      
+      .stat-card {
+        min-width: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
       }
     }
 
     @media (max-width: 480px) {
       .stats-grid {
+        grid-template-columns: repeat(2, calc(50% - 3px));
         gap: 6px;
-        padding: 0;
+        padding: 0 !important;
+        max-width: 100% !important;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, calc(50% - 2px));
+        gap: 4px;
+        max-width: 100% !important;
       }
     }
 
@@ -130,21 +159,34 @@ const EtherealStatsCards = ({
       max-width: 100%;
       box-sizing: border-box;
       min-width: 0;
+      flex: 1 1 0;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
     }
 
     @media (max-width: 767px) {
       .stat-card {
-        padding: 16px;
+        padding: 12px;
         min-height: 120px;
         gap: 8px;
+        border-radius: 12px;
       }
     }
 
     @media (max-width: 480px) {
       .stat-card {
-        padding: 12px;
+        padding: 10px;
         min-height: 110px;
         gap: 6px;
+        border-radius: 10px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .stat-card {
+        padding: 8px;
+        min-height: 100px;
+        gap: 4px;
       }
     }
 
@@ -202,9 +244,9 @@ const EtherealStatsCards = ({
       transform: scale(1.1);
     }
 
-    /* Text */
+    /* Text - Uses global fonts */
     .stat-label {
-      font-family: 'Cinzel', serif;
+      font-family: var(--font-ethereal-heading);
       font-size: 10px;
       letter-spacing: 1px;
       text-transform: uppercase;
@@ -216,7 +258,8 @@ const EtherealStatsCards = ({
     .stat-value {
       font-size: 24px;
       font-weight: 600;
-      color: #fff;
+      font-family: var(--font-ethereal-body);
+      color: var(--ethereal-white);
       line-height: 1;
       text-shadow: 0 0 20px rgba(0,0,0,0.5);
       word-wrap: break-word;
@@ -225,6 +268,7 @@ const EtherealStatsCards = ({
 
     .stat-subtext {
       font-size: 11px;
+      font-family: var(--font-ethereal-body);
       color: rgba(255, 255, 255, 0.3);
       letter-spacing: 0.5px;
       word-wrap: break-word;
@@ -288,8 +332,16 @@ const EtherealStatsCards = ({
   return (
     <>
       <style>{styles}</style>
-      <div className="ethereal-stats-wrapper" style={{ width: '100%' }}>
-        <div className="stats-grid">
+      <div className="ethereal-stats-wrapper" style={{ 
+        width: '100%', 
+        maxWidth: '100%', 
+        boxSizing: 'border-box',
+        overflow: 'hidden',
+        margin: 0,
+        padding: 0,
+        minWidth: 0
+      }}>
+        <div className="stats-grid" style={{ minWidth: 0, width: '100%', maxWidth: '100%' }}>
           {cards.map((card) => (
             <div 
               key={card.id} 
@@ -302,7 +354,7 @@ const EtherealStatsCards = ({
               <div className="icon-box">
                 {card.icon}
               </div>
-            <div style={{ width: '100%', minWidth: 0, flex: 1 }}>
+            <div style={{ width: '100%', minWidth: 0, flex: 1, maxWidth: '100%', boxSizing: 'border-box', overflow: 'hidden' }}>
               <div className="stat-label">{card.label}</div>
               <div className="stat-value">{card.value}</div>
               <div className="stat-subtext">{card.subtext}</div>

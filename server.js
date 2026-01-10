@@ -355,17 +355,35 @@ app.get('/api/payment-success', paymentLimiter, async (req, res) => {
     }
 
     // Update user profile
-    const { data, error } = await supabase
+    const { data: updateResult, error } = await supabase
       .from('profiles')
       .update(updateData)
       .eq('id', session.metadata.userId)
+      .select()
 
     if (error) {
-      console.error('Supabase update error:', error)
+      console.error('❌ Supabase update error:', error)
       throw error
     }
 
-    console.log('Profile updated successfully:', data)
+    console.log('✅ Profile updated successfully:', updateResult)
+    
+    // Verify the update by fetching the profile again
+    const { data: verifyProfile, error: verifyError } = await supabase
+      .from('profiles')
+      .select('role, subscription_status, subscription_id')
+      .eq('id', session.metadata.userId)
+      .single()
+    
+    if (verifyError) {
+      console.error('⚠️ Error verifying profile update:', verifyError)
+    } else {
+      console.log('✅ Verified profile update:', {
+        role: verifyProfile.role,
+        subscription_status: verifyProfile.subscription_status,
+        subscription_id: verifyProfile.subscription_id
+      })
+    }
     
     // Create or update subscription record in subscriptions table
     try {

@@ -392,15 +392,19 @@ export const AuthProvider = ({ children }) => {
         const { emailService } = await import('../services/emailService')
         const userName = userData?.full_name || data.user?.user_metadata?.full_name || null
         
-        await emailService.sendSignUpConfirmation(
+        console.log('📧 Attempting to send sign-up confirmation email to:', email)
+        const emailResult = await emailService.sendSignUpConfirmation(
           email,
           userName
-        ).catch(err => {
-          logDebug('Sign-up email send failed (non-critical):', err)
-          // Don't fail signup if email fails
-        })
+        )
+        
+        if (emailResult.success) {
+          console.log('✅ Sign-up confirmation email sent successfully')
+        } else {
+          console.error('❌ Sign-up email send failed:', emailResult.error)
+        }
       } catch (emailError) {
-        logDebug('Sign-up email error (non-critical):', emailError)
+        console.error('❌ Sign-up email error:', emailError)
         // Don't fail signup if email fails
       }
 

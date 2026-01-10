@@ -10,6 +10,19 @@
   box-sizing: border-box;
   overflow-x: hidden;
   margin: 0;
+  position: relative;
+}
+
+/* Prevent any child from causing overflow */
+.dashboard-neomorphic * {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Global overflow prevention */
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 /* Header */
@@ -19,14 +32,14 @@
 
 .dashboard-title {
   font-size: 32px;
-  font-weight: 700;
+  font-weight: 500;
   color: hsl(var(--foreground));
   margin: 0 0 8px 0;
 }
 
 .dashboard-subtitle {
   font-size: 16px;
-  font-weight: 400;
+  font-weight: 00;
   color: hsl(var(--muted-foreground));
   margin: 0;
 }
@@ -72,6 +85,13 @@
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.grid-stats > * {
+  min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
 }
@@ -322,11 +342,12 @@
   .dashboard-grid {
     grid-template-columns: 1fr;
     gap: 12px;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-    padding: 0;
-    margin: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow-x: hidden !important;
   }
 
   .grid-hero,
@@ -339,12 +360,16 @@
     grid-column: span 1;
   }
 
-  /* Stats grid - 4 columns on mobile for compact layout */
+  /* Stats grid - 2 columns on mobile to prevent overflow */
   .grid-stats {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 8px;
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
   }
 
   /* Extra stats - 3 columns on mobile */
@@ -359,14 +384,41 @@
     width: 100%;
   }
 
-  /* Ensure all stat cards are compact on mobile */
+  /* Ensure all stat cards are compact on mobile and don't overflow */
   .grid-stats .stat-card-v2,
   .grid-stat-extra .stat-card-v2,
   .grid-stats .streak-card {
-    width: 100%;
-    max-width: 100%;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
     min-height: 70px;
-    padding: 6px;
+    padding: 6px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+  
+  /* Force all grid items to respect container */
+  .dashboard-grid > * {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+  
+  /* XP Circle Widget centering and constraints */
+  .grid-hero {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  .grid-hero > * {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
   }
 
   /* Hide Quick Actions on mobile */

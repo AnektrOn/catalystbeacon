@@ -5,6 +5,8 @@
 /* Import Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+/* Ethereal Design System Fonts (from XPCircleWidget) */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Rajdhani:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
@@ -109,6 +111,40 @@
     --font-family-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     --font-family-heading: 'Space Grotesk', sans-serif;
     --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    
+    /* Ethereal Design System Fonts (from XPCircleWidget) */
+    --font-ethereal-body: 'Rajdhani', sans-serif;
+    --font-ethereal-heading: 'Cinzel', serif;
+    
+    /* === ETHEREAL CARD DESIGN SYSTEM (from XPCircleWidget) === */
+    /* Colors */
+    --ethereal-cyan: #a5f3fc;
+    --ethereal-white: #ffffff;
+    --ethereal-violet: #a78bfa;
+    --ethereal-text: #e0e0e0;
+    --ethereal-bg-glass: rgba(8, 8, 12, 0.4);
+    --ethereal-border: rgba(255, 255, 255, 0.08);
+    --ethereal-border-hover: rgba(255, 255, 255, 0.15);
+    --ethereal-bg-hover: rgba(20, 20, 25, 0.6);
+    
+    /* Card Shadows */
+    --ethereal-shadow-base: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 0 80px rgba(165, 243, 252, 0.05);
+    --ethereal-shadow-hover: 0 20px 60px rgba(0, 0, 0, 0.6), inset 0 0 100px rgba(165, 243, 252, 0.08);
+    --ethereal-shadow-elevated: 0 30px 70px rgba(0, 0, 0, 0.6), inset 0 0 100px rgba(165, 243, 252, 0.08);
+    
+    /* Card Sizing */
+    --ethereal-card-padding-small: 24px;
+    --ethereal-card-padding-medium: 32px;
+    --ethereal-card-padding-large: 40px;
+    --ethereal-card-radius: 24px;
+    --ethereal-card-radius-small: 20px;
+    --ethereal-card-radius-large: 28px;
+    
+    /* Card Blur */
+    --ethereal-card-blur: 20px;
+    
+    /* Ambient Light */
+    --ethereal-light-color: rgba(165, 243, 252, 0.08);
   }
 
   /* Dark mode variables are now set by colorPaletteSwitcher */
@@ -123,9 +159,18 @@
   body {
     background-color: transparent;
     color: var(--text-primary);
-    font-family: var(--font-family-primary);
+    font-family: var(--font-ethereal-body);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Apply ethereal fonts globally - override defaults */
+  * {
+    font-family: var(--font-ethereal-body) !important;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-ethereal-heading) !important;
   }
 
   /* Dark mode text colors are now set by colorPaletteSwitcher */

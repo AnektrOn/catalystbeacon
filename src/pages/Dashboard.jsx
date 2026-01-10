@@ -44,11 +44,16 @@ const Dashboard = () => {
   const [, setLoading] = useState(true)
   
   // Show upgrade modal if redirected from restricted route (not for admins)
+  // Show onboarding modal for new users
   useEffect(() => {
+    // Only check for modals when user is loaded
+    if (!user) return
+    
     const upgradePrompt = searchParams.get('upgradePrompt')
     const isNewUser = searchParams.get('new_user')
 
     if (isNewUser === 'true') {
+      console.log('🎯 New user detected, showing onboarding modal')
       setShowOnboardingModal(true)
     } else if (upgradePrompt === 'true' && !isAdmin) {
       setShowUpgradeModal(true)
@@ -58,7 +63,7 @@ const Dashboard = () => {
       // Just clean up URL for admins, don't show modal
       navigate('/dashboard', { replace: true })
     }
-  }, [searchParams, navigate, isAdmin])
+  }, [searchParams, navigate, isAdmin, user])
   const [levelData, setLevelData] = useState({
     level: 1,
     levelTitle: '',
@@ -755,7 +760,7 @@ const Dashboard = () => {
           
           return response.json()
         })
-        .then(data => {
+        .then(async data => {
           console.log('✅ Payment success data received:', data)
           
           if (data.error) {
@@ -765,8 +770,32 @@ const Dashboard = () => {
             toast.success(`✅ Subscription activated! Your role is now: ${data.role || 'Student'}`)
           }
           
+          // Wait a moment for database to update, then refresh profile
+          await new Promise(resolve => setTimeout(resolve, 1000))
+          
           // Refresh profile to get updated data
-          fetchProfile(user.id)
+          console.log('🔄 Refreshing user profile after payment...')
+          await fetchProfile(user.id)
+          
+          // Force a re-render by checking profile again
+          const { data: updatedProfile, error: profileError } = await supabase
+            .from('profiles')
+            .select('role, subscription_status, subscription_id')
+            .eq('id', user.id)
+            .single()
+          
+          if (profileError) {
+            console.error('❌ Error fetching updated profile:', profileError)
+          } else {
+            console.log('📊 Updated profile after payment:', updatedProfile)
+            
+            // If role still doesn't match, show a warning
+            if (updatedProfile.role !== data.role && data.role) {
+              console.warn('⚠️ Role mismatch detected. Expected:', data.role, 'Got:', updatedProfile.role)
+              toast.error('Role update may be delayed. Please refresh the page.')
+            }
+          }
+          
           navigate('/dashboard', { replace: true })
         })
         .catch(error => {
@@ -795,8 +824,99 @@ const Dashboard = () => {
   }, [])
 
   return (
-    <div className="w-full max-w-7xl mx-auto" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', overflowX: 'hidden', padding: '0 clamp(0.5rem, 2vw, 1rem)' }}>
-      <SEOHead 
+    <>
+      <style>{`
+        /* Global mobile overflow fix */
+        @media (max-width: 767px) {
+          html, body {
+            overflow-x: hidden !important;
+            max-width: 100vw !important;
+          }
+          
+          /* Override AppShell padding for Dashboard on mobile */
+          .glass-main-panel {
+            padding: 0 !important;
+            margin: 0 !important;
+            width: 100vw !important;
+            max-width: 100vw !important;
+            box-sizing: border-box !important;
+            overflow-x: hidden !important;
+          }
+          
+          .glass-main-panel > div.p-4,
+          .glass-main-panel > div[class*="p-"] {
+            padding-left: 0.75rem !important;
+            padding-right: 0.75rem !important;
+            padding-top: 0.75rem !important;
+            padding-bottom: 0.75rem !important;
+            margin: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            overflow-x: hidden !important;
+          }
+          
+          .dashboard-container {
+            padding-left: 0.75rem !important;
+            padding-right: 0.75rem !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            overflow-x: hidden !important;
+          }
+          
+          /* Force all grid items to respect container */
+          .stats-grid > * {
+            min-width: 0 !important;
+            max-width: 100% !important;
+          }
+          
+          .dashboard-container > * {
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            overflow-x: hidden !important;
+          }
+          
+          .dashboard-container header {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+          
+          /* Ensure EtherealStatsCards container doesn't overflow */
+          .ethereal-stats-container {
+            width: 100% !important;
+            max-width: 100% !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            overflow-x: hidden !important;
+          }
+          
+          /* Center any XP widgets */
+          .xp-widget-container,
+          [class*="xp"],
+          [class*="XP"] {
+            margin-left: auto !important;
+            margin-right: auto !important;
+            max-width: 100% !important;
+          }
+        }
+      `}</style>
+      <div 
+        className="w-full max-w-7xl mx-auto dashboard-container" 
+        style={{ 
+          width: '100%', 
+          maxWidth: '100%', 
+          boxSizing: 'border-box', 
+          overflowX: 'hidden'
+        }}
+      >
+        <SEOHead 
         title="Dashboard - The Human Catalyst University"
         description="Track your progress, view your achievements, and continue your learning journey"
       />
@@ -824,7 +944,15 @@ const Dashboard = () => {
       </header>
 
       {/* Top Metric Cards Row - Ethereal Stats Cards */}
-      <div className="mb-8 w-full" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', overflowX: 'hidden', padding: '0' }}>
+      <div className="mb-8 ethereal-stats-container" style={{ 
+        width: '100%', 
+        maxWidth: '100%', 
+        boxSizing: 'border-box', 
+        overflowX: 'hidden', 
+        padding: 0,
+        margin: 0,
+        marginBottom: '2rem'
+      }}>
         <EtherealStatsCards
           streak={dashboardData.ritual.streak}
           lessonsCompleted={dashboardData.stats.lessonsCompleted}
@@ -925,7 +1053,8 @@ const Dashboard = () => {
           }
         }} 
       />
-    </div>
+      </div>
+    </>
   )
 }
 

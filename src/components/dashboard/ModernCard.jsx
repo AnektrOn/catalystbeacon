@@ -57,46 +57,43 @@ const ModernCard = ({
   ].filter(Boolean).join(' ')
 
   const styles = `
-    /* Modern Card - Ethereal Variant */
-    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Rajdhani:wght@300;400;500;600&display=swap');
-
-    :root {
-      --ethereal-bg: rgba(8, 8, 12, 0.4);
-      --ethereal-border: rgba(255, 255, 255, 0.08);
-      --ethereal-hover-bg: rgba(20, 20, 25, 0.6);
-      --ethereal-hover-border: rgba(255, 255, 255, 0.15);
-      --ethereal-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-      --radius-lg: 24px;
-    }
-
+    /* Modern Card - Uses Global Ethereal Design System Variables */
     .modern-card {
-      /* Glassmorphism Base - Matching Ethereal Card */
-      background: var(--ethereal-bg, rgba(8, 8, 12, 0.4));
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--ethereal-border, rgba(255, 255, 255, 0.08));
-      border-radius: var(--radius-lg, 24px);
-      color: #e0e0e0;
-      font-family: 'Rajdhani', sans-serif;
+      /* Use global CSS variables from ethereal-design-system.css */
+      background: var(--ethereal-bg-glass);
+      backdrop-filter: blur(var(--ethereal-card-blur));
+      -webkit-backdrop-filter: blur(var(--ethereal-card-blur));
+      border: 1px solid var(--ethereal-border);
+      border-radius: var(--ethereal-card-radius);
+      color: var(--ethereal-text);
+      font-family: var(--font-ethereal-body);
       
       /* Layout & Box Model */
-      padding: 32px;
+      padding: var(--ethereal-card-padding-medium);
       position: relative;
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
       overflow: hidden;
       
+      /* Centering */
+      margin-left: auto;
+      margin-right: auto;
+      
       /* Transitions */
       transition: all 0.5s ease;
       
-      /* Initial Shadow */
-      box-shadow: 
-        0 20px 50px rgba(0, 0, 0, 0.5),
-        inset 0 0 80px rgba(165, 243, 252, 0.05);
+      /* Initial Shadow - Using global variable */
+      box-shadow: var(--ethereal-shadow-base);
+    }
+    
+    .modern-card:hover {
+      box-shadow: var(--ethereal-shadow-hover);
+      border-color: var(--ethereal-border-hover);
+      background: var(--ethereal-bg-hover);
     }
 
-    /* Ambient Light Source (Pseudo-element) */
+    /* Ambient Light Source - Uses global animation from ethereal-design-system.css */
     .modern-card::before {
       content: '';
       position: absolute;
@@ -104,15 +101,10 @@ const ModernCard = ({
       left: -50%;
       width: 200%;
       height: 200%;
-      background: radial-gradient(circle at 50% 50%, rgba(165, 243, 252, 0.08), transparent 60%);
+      background: radial-gradient(circle at 50% 50%, var(--ethereal-light-color), transparent 60%);
       pointer-events: none;
       z-index: 0;
-      animation: breathe-light-card 8s ease-in-out infinite;
-    }
-
-    @keyframes breathe-light-card {
-      0%, 100% { opacity: 0.5; transform: scale(1); }
-      50% { opacity: 0.8; transform: scale(1.1); }
+      animation: breathe-light 8s ease-in-out infinite;
     }
 
     /* Content wrapper to ensure z-index stays above the glow */
@@ -121,39 +113,31 @@ const ModernCard = ({
       z-index: 1;
     }
 
-    /* Elevated Variant */
+    /* Elevated Variant - Uses global variable */
     .modern-card-elevated {
-      box-shadow: 
-        0 30px 60px rgba(0, 0, 0, 0.6),
-        inset 0 0 90px rgba(165, 243, 252, 0.08);
+      box-shadow: var(--ethereal-shadow-elevated);
     }
 
-    /* Interactive Variant (Hover Effects) */
+    /* Interactive Variant */
     .modern-card-interactive {
       cursor: pointer;
     }
 
     @media (hover: hover) {
       .modern-card-interactive:hover {
-        transform: translateY(-5px);
-        background: var(--ethereal-hover-bg, rgba(20, 20, 25, 0.6));
-        border-color: var(--ethereal-hover-border, rgba(255, 255, 255, 0.15));
-        box-shadow: 
-          0 20px 60px rgba(0, 0, 0, 0.6),
-          inset 0 0 100px rgba(165, 243, 252, 0.08);
+        transform: translateY(-2px);
       }
     }
 
     .modern-card-interactive:active {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      transform: translateY(-1px);
     }
 
-    /* Responsive */
+    /* Responsive - Uses global variables */
     @media (max-width: 768px) {
       .modern-card {
-        padding: 24px;
-        border-radius: 16px;
+        padding: var(--ethereal-card-padding-small);
+        border-radius: var(--ethereal-card-radius-small);
       }
     }
   `

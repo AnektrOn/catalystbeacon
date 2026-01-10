@@ -23,62 +23,49 @@ const XPCircleWidgetV2 = ({
   const strokeDashoffset = circumference - progress * circumference
 
   const styles = `
-    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Rajdhani:wght@300;400;500;600&display=swap');
-
-    :root {
-      --ethereal-cyan: #a5f3fc;
-      --ethereal-white: #ffffff;
-      --ethereal-violet: #a78bfa;
-      --bg-glass: rgba(8, 8, 12, 0.4);
-    }
+    /* Uses global CSS variables from ethereal-design-system.css */
 
     .xp-widget-container {
-      font-family: 'Rajdhani', sans-serif;
-      color: #e0e0e0;
+      font-family: var(--font-ethereal-body);
+      color: var(--ethereal-text);
       position: relative;
       max-width: 400px;
       margin: 0 auto;
       perspective: 1000px;
     }
 
-    /* --- ETHEREAL CARD --- */
+    /* --- ETHEREAL CARD - Uses Global Variables --- */
     .ethereal-card {
-      background: var(--bg-glass);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 24px;
-      padding: 32px;
-      box-shadow: 
-        0 20px 50px rgba(0, 0, 0, 0.5),
-        inset 0 0 80px rgba(165, 243, 252, 0.05);
+      background: var(--ethereal-bg-glass);
+      backdrop-filter: blur(var(--ethereal-card-blur));
+      -webkit-backdrop-filter: blur(var(--ethereal-card-blur));
+      border: 1px solid var(--ethereal-border);
+      border-radius: var(--ethereal-card-radius);
+      padding: var(--ethereal-card-padding-medium);
+      box-shadow: var(--ethereal-shadow-base);
       position: relative;
       overflow: hidden;
       transition: all 0.5s ease;
+      margin-left: auto;
+      margin-right: auto;
     }
 
     .ethereal-card:hover {
-      box-shadow: 
-        0 20px 60px rgba(0, 0, 0, 0.6),
-        inset 0 0 100px rgba(165, 243, 252, 0.08);
-      border-color: rgba(255, 255, 255, 0.15);
+      box-shadow: var(--ethereal-shadow-hover);
+      border-color: var(--ethereal-border-hover);
+      background: var(--ethereal-bg-hover);
     }
 
-    /* Ambient Light Source */
+    /* Ambient Light Source - Uses global animation */
     .light-source {
       position: absolute;
       top: -50%;
       left: -50%;
       width: 200%;
       height: 200%;
-      background: radial-gradient(circle at 50% 50%, rgba(165, 243, 252, 0.08), transparent 60%);
+      background: radial-gradient(circle at 50% 50%, var(--ethereal-light-color), transparent 60%);
       pointer-events: none;
       animation: breathe-light 8s ease-in-out infinite;
-    }
-
-    @keyframes breathe-light {
-      0%, 100% { opacity: 0.5; transform: scale(1); }
-      50% { opacity: 0.8; transform: scale(1.1); }
     }
 
     /* Floating Particles */
@@ -117,7 +104,7 @@ const XPCircleWidgetV2 = ({
     }
 
     .level-label {
-      font-family: 'Cinzel', serif;
+      font-family: var(--font-ethereal-heading);
       font-size: 12px;
       letter-spacing: 4px;
       color: rgba(255, 255, 255, 0.6);
@@ -128,6 +115,7 @@ const XPCircleWidgetV2 = ({
     .level-value {
       font-size: 32px;
       font-weight: 300;
+      font-family: var(--font-ethereal-body);
       color: var(--ethereal-white);
       text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
       letter-spacing: 2px;
@@ -164,10 +152,10 @@ const XPCircleWidgetV2 = ({
     .xp-value {
       font-size: 48px;
       font-weight: 200;
-      color: #fff;
+      color: var(--ethereal-white);
       line-height: 1;
       text-shadow: 0 0 30px rgba(165, 243, 252, 0.6);
-      font-family: 'Rajdhani', sans-serif;
+      font-family: var(--font-ethereal-body);
     }
 
     .xp-unit {
