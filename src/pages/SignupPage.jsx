@@ -180,7 +180,7 @@ const SignupPage = () => {
           <div className="mb-12">
             <div className="flex items-center space-x-3">
               <img 
-                src="assets/Logo uni.png" 
+                src="/assets/Logo uni.png" 
                 alt="HC University" 
                 className="w-12 h-12 object-contain"
               />

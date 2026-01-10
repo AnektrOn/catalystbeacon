@@ -1,32 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-// Keep your existing imports or use these lucide icons as replacements
 import { Button } from '../components/ui/button';
-// Logo Import
-import LogoUni from 'assets/Logo uni.png';
 import { 
   ArrowRight,
   Sparkles,
   Zap,
-  Target,
   TrendingUp,
   Unlock,
   Eye,
-  Brain,
   Infinity,
-  ChevronRight,
   Check,
   X,
   Users,
   Activity,
-  Flame,
-  Star,
-  Trophy,
   Award,
-  BookOpen,
-  Heart,
   Cpu
 } from 'lucide-react';
+
+// Logo path - production uses /assets/Logo uni.png
+// For local development, we'll try the production path first, then fallback to hc-logo.svg
+const LogoUni = '/assets/Logo uni.png';
 
 /* --- INTERNAL COMPONENT: ETHEREAL CARD (Matching XPCircleWidget V4) --- */
 const NeomorphicCard = ({ 
