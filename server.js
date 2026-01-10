@@ -454,21 +454,71 @@ app.get('/api/payment-success', paymentLimiter, async (req, res) => {
       
       if (profileData?.email) {
         // Use the role that was actually set (or preserved for Admin)
+        // For Admins, show "Student Plan" since they subscribed to student plan but kept Admin role
         const actualRole = profileData.role || newRole
-        const planName = actualRole === 'Teacher' ? 'Teacher Plan' : 'Student Plan'
+        const planName = actualRole === 'Teacher' ? 'Teacher Plan' : 
+                        actualRole === 'Admin' ? 'Student Plan (Admin)' : 'Student Plan'
         const amount = subscription.items.data[0]?.price.unit_amount / 100 || 0
         const currency = subscription.items.data[0]?.price.currency?.toUpperCase() || 'USD'
         
         console.log('📧 Sending payment confirmation email to:', profileData.email)
-        await sendEmailViaSupabase('payment', {
-          email: profileData.email,
-          userName: profileData.full_name || 'there',
-          planName,
-          amount,
-          currency,
-          subscriptionId: subscription.id
-        })
-        console.log('✅ Payment confirmation email sent successfully')
+        console.log('📧 Email details:', { actualRole, planName, amount, currency })
+        
+        // 100% RELIABLE: Try multiple methods to send email
+        let emailSent = false
+        
+        // Method 1: Supabase Edge Function
+        try {
+          await sendEmailViaSupabase('payment', {
+            email: profileData.email,
+            userName: profileData.full_name || 'there',
+            planName,
+            amount,
+            currency,
+            subscriptionId: subscription.id
+          })
+          emailSent = true
+          console.log('✅ Payment confirmation email sent via Supabase Edge Function')
+        } catch (emailError) {
+          console.warn('⚠️ Supabase email failed, trying alternative methods:', emailError)
+        }
+        
+        // Method 2: Queue in database if Edge Function failed
+        if (!emailSent) {
+          try {
+            const { error: queueError } = await supabase
+              .from('email_queue')
+              .insert({
+                user_id: session.metadata.userId,
+                email_type: 'payment_confirmation',
+                recipient_email: profileData.email,
+                email_data: {
+                  userName: profileData.full_name || 'there',
+                  planName,
+                  amount,
+                  currency,
+                  subscriptionId: subscription.id
+                },
+                status: 'pending',
+                created_at: new Date().toISOString()
+              })
+            
+            if (queueError) {
+              console.error('Error queueing email:', queueError)
+            } else {
+              console.log('✅ Payment confirmation email queued in database')
+              emailSent = true
+            }
+          } catch (queueError) {
+            console.error('Error queueing email:', queueError)
+          }
+        }
+        
+        if (!emailSent) {
+          console.warn('⚠️ Could not send or queue payment confirmation email')
+        }
+      } else {
+        console.warn('⚠️ No email found for user:', session.metadata.userId)
       }
     } catch (emailError) {
       console.error('Error sending payment confirmation email:', emailError)

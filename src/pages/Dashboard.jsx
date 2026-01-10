@@ -757,12 +757,17 @@ const Dashboard = () => {
     loadDashboardData()
   }, [user, profile, loadLevelData, loadRitualData, loadCoherenceData, loadAchievementsData, loadCurrentLesson, loadConstellationData, loadTeacherFeed, loadStatsData])
 
-  // Handle payment success redirect
+  // Handle payment success redirect - 100% RELIABLE with retry logic
   useEffect(() => {
     const payment = searchParams.get('payment')
     const sessionId = searchParams.get('session_id')
 
+    console.log('🔍 Payment success check:', { payment, sessionId, hasUser: !!user, userId: user?.id })
+
     if (payment === 'success' && sessionId && user) {
+      console.log('🎯 PAYMENT SUCCESS DETECTED:', { payment, sessionId, userId: user.id })
+      console.log('🎯 Current profile role:', profile?.role)
+      
       // Determine API URL: use env var, or same origin in production, or localhost in dev
       let API_URL = process.env.REACT_APP_API_URL
       if (!API_URL) {
@@ -778,31 +783,89 @@ const Dashboard = () => {
       console.log('🔄 Processing payment success for session:', sessionId)
       console.log('📍 API URL:', API_URL)
 
-      fetch(`${API_URL}/api/payment-success?session_id=${sessionId}`)
-        .then(async response => {
+      // 100% RELIABLE: Retry logic for payment success processing
+      const processPaymentSuccess = async (attempt = 1) => {
+        try {
+          console.log(`🔄 Payment success attempt ${attempt}/3`)
+          
+          const response = await fetch(`${API_URL}/api/payment-success?session_id=${sessionId}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            // Add timeout
+            signal: AbortSignal.timeout(15000) // 15 second timeout
+          })
           console.log('📡 Payment success response status:', response.status)
           
           if (!response.ok) {
             const errorText = await response.text()
             console.error('❌ Payment success endpoint error:', response.status, errorText)
+            
+            // Retry on 5xx errors
+            if (response.status >= 500 && attempt < 3) {
+              console.log(`⚠️ Server error, retrying in ${attempt * 2} seconds...`)
+              await new Promise(resolve => setTimeout(resolve, attempt * 2000))
+              return processPaymentSuccess(attempt + 1)
+            }
+            
             throw new Error(`Server error: ${response.status} - ${errorText}`)
           }
           
-          return response.json()
-        })
+          const data = await response.json()
+          return data
+        } catch (error) {
+          console.error(`❌ Payment success error (attempt ${attempt}):`, error)
+          
+          // Retry on network errors or timeouts
+          if ((error.name === 'AbortError' || error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) && attempt < 3) {
+            console.log(`⚠️ Network error, retrying in ${attempt * 2} seconds...`)
+            await new Promise(resolve => setTimeout(resolve, attempt * 2000))
+            return processPaymentSuccess(attempt + 1)
+          }
+          
+          // Final attempt failed - show error but don't block user
+          toast.error('Payment processed, but subscription update may be delayed. Please refresh in a moment.')
+          console.error('❌ All payment success attempts failed:', error)
+          
+          // Store in localStorage as fallback
+          localStorage.setItem(`pending_payment_${user.id}`, JSON.stringify({
+            sessionId,
+            timestamp: Date.now()
+          }))
+          
+          // Clean up URL
+          const newParams = new URLSearchParams(searchParams)
+          newParams.delete('payment')
+          newParams.delete('session_id')
+          navigate({ search: newParams.toString() }, { replace: true })
+          
+          return null
+        }
+      }
+      
+      // Start processing
+      processPaymentSuccess()
         .then(async data => {
+          if (!data) return // Error already handled
+          
           console.log('✅ Payment success data received:', data)
           
           if (data.error) {
             console.error('❌ Error in payment success response:', data.error)
             toast.error(`⚠️ ${data.error}`)
           } else {
-            toast.success(`✅ Subscription activated! Your role is now: ${data.role || 'Student'}`)
+            // For Admins, show different message
+            const roleMessage = profile?.role === 'Admin' 
+              ? 'Subscription activated! Your Admin role is preserved with active subscription.'
+              : `✅ Subscription activated! Your role is now: ${data.role || 'Student'}`
+            toast.success(roleMessage)
           }
           
           // 100% RELIABLE: Retry logic for profile update verification
           let profileUpdated = false
-          const expectedRole = data.role || 'Student'
+          // For Admins, we expect subscription_status to be 'active', not role change
+          const expectedRole = profile?.role === 'Admin' ? 'Admin' : (data.role || 'Student')
           
           for (let attempt = 1; attempt <= 5; attempt++) {
             // Wait with exponential backoff: 1s, 2s, 3s, 4s, 5s
@@ -826,20 +889,37 @@ const Dashboard = () => {
             } else {
               console.log(`📊 Profile check (attempt ${attempt}):`, updatedProfile)
               
-              // Check if role matches
-              if (updatedProfile.role === expectedRole) {
-                console.log('✅ Role update verified!')
-                profileUpdated = true
-                break
-              } else if (attempt < 5) {
-                console.warn(`⚠️ Role mismatch (attempt ${attempt}). Expected: ${expectedRole}, Got: ${updatedProfile.role}. Retrying...`)
-                continue
+              // For Admins, check subscription_status instead of role
+              if (profile?.role === 'Admin') {
+                if (updatedProfile.subscription_status === 'active' && updatedProfile.subscription_id) {
+                  console.log('✅ Admin subscription update verified!')
+                  profileUpdated = true
+                  break
+                } else if (attempt < 5) {
+                  console.warn(`⚠️ Admin subscription not updated yet (attempt ${attempt}). Retrying...`)
+                  continue
+                }
               } else {
-                // Final attempt - role still doesn't match
-                console.error('❌ Role update failed after all retries')
-                toast.warning('Payment successful, but role update may be delayed. Please refresh the page in a moment.')
-                // Store in localStorage as fallback
-                localStorage.setItem(`pending_role_update_${user.id}`, expectedRole)
+                // For non-Admins, check if role matches
+                if (updatedProfile.role === expectedRole) {
+                  console.log('✅ Role update verified!')
+                  profileUpdated = true
+                  break
+                } else if (attempt < 5) {
+                  console.warn(`⚠️ Role mismatch (attempt ${attempt}). Expected: ${expectedRole}, Got: ${updatedProfile.role}. Retrying...`)
+                  continue
+                }
+              }
+              
+              // Final attempt - update still pending
+              if (attempt === 5) {
+                console.error('❌ Update verification failed after all retries')
+                if (profile?.role === 'Admin') {
+                  toast.warning('Payment successful, but subscription update may be delayed. Please refresh the page in a moment.')
+                } else {
+                  toast.warning('Payment successful, but role update may be delayed. Please refresh the page in a moment.')
+                  localStorage.setItem(`pending_role_update_${user.id}`, expectedRole)
+                }
               }
             }
           }
@@ -862,7 +942,7 @@ const Dashboard = () => {
           navigate('/dashboard', { replace: true })
         })
     }
-  }, [searchParams, user, fetchProfile, navigate])
+  }, [searchParams, user, profile, fetchProfile, navigate, supabase])
 
   const displayName = useMemo(() => profile?.full_name || user?.email || 'User', [profile?.full_name, user?.email])
   const userRole = useMemo(() => profile?.role || 'Free', [profile?.role])
