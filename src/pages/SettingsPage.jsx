@@ -584,6 +584,11 @@ const SubscriptionSection = ({ profile }) => {
         const role = profile.role || 'Free';
         const subscriptionStatus = profile.subscription_status;
         
+        // Admins always have active status
+        if (role === 'Admin' || role === 'admin') {
+            return 'Active';
+        }
+        
         if (role === 'Free' || !subscriptionStatus) {
             return 'Free';
         }
@@ -593,6 +598,7 @@ const SubscriptionSection = ({ profile }) => {
 
     const getPlanName = () => {
         const role = profile?.role || 'Free';
+        if (role === 'Admin' || role === 'admin') return 'Admin Plan';
         if (role === 'Student') return 'Student Plan';
         if (role === 'Teacher') return 'Teacher Plan';
         return 'Free Plan';
@@ -628,7 +634,7 @@ const SubscriptionSection = ({ profile }) => {
                         </div>
                     </div>
                     
-                    {profile?.subscription_id && (
+                    {profile?.subscription_id && (profile?.role !== 'Admin' && profile?.role !== 'admin') && (
                         <div className="text-xs text-muted-foreground mt-2">
                             Subscription ID: {profile.subscription_id}
                         </div>
@@ -637,7 +643,14 @@ const SubscriptionSection = ({ profile }) => {
 
                 {/* Actions */}
                 <div className="space-y-3">
-                    {profile?.stripe_customer_id ? (
+                    {/* Admins don't need subscription management */}
+                    {profile?.role === 'Admin' || profile?.role === 'admin' ? (
+                        <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                            <p className="text-sm text-blue-800 dark:text-blue-200">
+                                As an Admin, you have full access to all features. No subscription management needed.
+                            </p>
+                        </div>
+                    ) : profile?.stripe_customer_id ? (
                         <Button 
                             onClick={handleManageSubscription}
                             disabled={isLoading}
