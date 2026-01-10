@@ -22,17 +22,18 @@ DECLARE
   v_subscription_record UUID;
   v_sub_id TEXT;
   v_attrs JSONB;
+  v_attrs_text TEXT;
 BEGIN
   -- Copier le paramètre
   v_sub_id := p_stripe_subscription_id;
   
   -- Récupérer les données de manière sécurisée
-  -- 1. Récupérer attrs et les dates d'abord
+  -- Éviter complètement les opérateurs JSONB dans EXECUTE format
   BEGIN
+    -- Récupérer d'abord customer et dates (colonnes directes)
     EXECUTE format('
       SELECT 
-        customer,
-        attrs::jsonb,
+        customer::TEXT,
         current_period_start,
         current_period_end
       FROM stripe.subscriptions
@@ -41,17 +42,42 @@ BEGIN
     ', v_sub_id)
     INTO 
       v_stripe_customer_id,
-      v_attrs,
       v_current_period_start,
       v_current_period_end;
       
-    -- 2. Extraire les champs du JSONB en mémoire (pas en SQL dynamique)
-    IF v_attrs IS NOT NULL THEN
-      v_status := v_attrs->>'status';
-      v_plan_type := v_attrs->'items'->'data'->0->'price'->>'recurring'->>'interval';
-    ELSE
-      v_status := 'active'; -- Fallback
-      v_plan_type := 'monthly'; -- Fallback
+    -- Récupérer attrs séparément comme TEXT, puis convertir
+    IF v_stripe_customer_id IS NOT NULL THEN
+      BEGIN
+        EXECUTE format('
+          SELECT attrs::TEXT
+          FROM stripe.subscriptions
+          WHERE id = %L
+          LIMIT 1
+        ', v_sub_id)
+        INTO v_attrs_text;
+        
+        -- Convertir TEXT en JSONB
+        IF v_attrs_text IS NOT NULL THEN
+          v_attrs := v_attrs_text::JSONB;
+        END IF;
+        
+        -- Extraire les champs du JSONB en PL/pgSQL (pas en SQL)
+        IF v_attrs IS NOT NULL THEN
+          v_status := v_attrs->>'status';
+          BEGIN
+            v_plan_type := v_attrs->'items'->'data'->0->'price'->>'recurring'->>'interval';
+          EXCEPTION WHEN OTHERS THEN
+            v_plan_type := 'monthly'; -- Fallback si structure différente
+          END;
+        ELSE
+          v_status := 'active';
+          v_plan_type := 'monthly';
+        END IF;
+      EXCEPTION WHEN OTHERS THEN
+        -- Si attrs échoue, utiliser valeurs par défaut
+        v_status := 'active';
+        v_plan_type := 'monthly';
+      END;
     END IF;
 
     -- 3. Récupérer l'email du customer
