@@ -305,7 +305,10 @@ const PricingPage = () => {
       // Should never reach here, but just in case
       throw lastError || new Error('Failed to create checkout session after all retries')
     } catch (error) {
-      console.error('Error creating checkout session:', error)
+      console.error('❌ Error creating checkout session:', error)
+      console.error('Error name:', error.name)
+      console.error('Error message:', error.message)
+      console.error('Error stack:', error.stack)
       
       // Provide more helpful error messages
       let errorMessage = 'Something went wrong. Please try again.'
@@ -313,6 +316,10 @@ const PricingPage = () => {
       if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
         const apiUrl = import.meta.env.VITE_API_URL || window.location.origin
         errorMessage = `Cannot connect to server at ${apiUrl}. Please make sure the server is running.`
+      } else if (error.message?.includes('FALLBACK_TO_API_SERVER')) {
+        // This is expected - fallback worked, don't show error
+        console.log('✅ Fallback to API server succeeded')
+        return
       } else if (error.message) {
         errorMessage = error.message
       }
@@ -320,8 +327,10 @@ const PricingPage = () => {
       toast.error(errorMessage)
       console.error('Full error details:', {
         error,
+        errorName: error.name,
+        errorMessage: error.message,
         API_URL: import.meta.env.VITE_API_URL || window.location.origin,
-        SUPABASE_URL: process.env.REACT_APP_SUPABASE_URL,
+        SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL,
         priceId,
         envCheck: {
           hasReactAppSupabaseUrl: !!process.env.REACT_APP_SUPABASE_URL,

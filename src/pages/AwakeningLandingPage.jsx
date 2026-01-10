@@ -322,20 +322,21 @@ const EnhancedLandingPage = () => {
           </h1>
 
           <p className="text-xl md:text-2xl text-gray-400 mb-12 max-w-2xl mx-auto font-light font-rajdhani tracking-wide leading-relaxed">
-            Interface with the ultimate learning system. Override your limits. 
-            <span className="text-cyan-200 drop-shadow-[0_0_8px_rgba(165,243,252,0.5)]"> Become the Architect.</span>
+          A system designed to transform how you perceive, decide, and act.
+          Not motivation. Not content. 
+            <span className="text-cyan-200 drop-shadow-[0_0_8px_rgba(165,243,252,0.5)]"> A complete framework for human evolution.</span>
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-8 mb-20">
             <Button asChild size="lg" className="btn-ethereal-primary rounded-full px-12 py-8 text-xl">
               <Link to="/signup">
-                BEGIN JOURNEY
+                BEGIN THE JOURNEY
                 <ArrowRight className="ml-3 w-5 h-5" />
               </Link>
             </Button>
             <Button asChild size="lg" variant="ghost" className="btn-ethereal-text rounded-full px-8 py-8 text-lg font-rajdhani">
               <Link to="/courses">
-                Explore Archives
+              Explore the system
               </Link>
             </Button>
           </div>
@@ -380,14 +381,14 @@ const EnhancedLandingPage = () => {
                 <div className="w-12 h-12 rounded-full bg-red-900/10 flex items-center justify-center border border-red-500/20">
                   <X className="w-5 h-5 text-red-400" />
                 </div>
-                <h3 className="text-2xl font-bold text-red-300/80 font-cinzel tracking-wider">Default State</h3>
+                <h3 className="text-2xl font-bold text-red-300/80 font-cinzel tracking-wider">UNAWAKENED</h3>
               </div>
               <ul className="space-y-6 font-rajdhani text-lg text-gray-500">
                 {[
-                  "Operating on Autopilot",
-                  "Limited Awareness",
-                  "Reactive to Stimuli",
-                  "Standardized Patterns"
+                  "Conditioned perception",
+                  "Reactive behavior",
+                  "Fragmented identity",
+                  "External influence"
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-4">
                     <div className="w-1.5 h-1.5 rounded-full bg-red-900" />

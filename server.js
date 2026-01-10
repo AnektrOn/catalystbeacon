@@ -177,7 +177,11 @@ app.use((req, res, next) => {
     res.setHeader(
       'Content-Security-Policy',
       "default-src 'self'; " +
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://*.stripe.com; " +
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://*.stripe.com " +
+      "'sha256-BNulBYV1JXGvq9NQg7814ZyyVZCqfRI1aq5d+PSIdgI=' " +
+      "'sha256-5Hr21t1F1f0L2UiWkQNDZLeFImeo/+Mjhgju4d39sLA=' " +
+      "'sha256-4LRRm+CrRt91043ELDDzsKtE9mgb52p2iOlf9CRXTJ0=' " +
+      "'sha256-ieoeWczDHkReVBsRBqaal5AFMlBtNjMzgwKvLqi/tSU='; " +
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
       "font-src 'self' https://fonts.gstatic.com; " +
       "img-src 'self' data: https: blob:; " +

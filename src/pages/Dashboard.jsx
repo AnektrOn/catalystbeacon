@@ -29,6 +29,13 @@ const Dashboard = () => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [showOnboardingModal, setShowOnboardingModal] = useState(false)
   
+  // DEBUG: Log component mount and URL params
+  useEffect(() => {
+    const payment = new URLSearchParams(window.location.search).get('payment')
+    const sessionId = new URLSearchParams(window.location.search).get('session_id')
+    console.log('🚀 Dashboard mounted/updated:', { payment, sessionId, hasUser: !!user, userId: user?.id })
+  }, [user])
+  
   // Track navigation and state
   useEffect(() => {
     
@@ -762,7 +769,13 @@ const Dashboard = () => {
     const payment = searchParams.get('payment')
     const sessionId = searchParams.get('session_id')
 
-    console.log('🔍 Payment success check:', { payment, sessionId, hasUser: !!user, userId: user?.id })
+    console.log('🔍 Payment success check:', { payment, sessionId, hasUser: !!user, userId: user?.id, searchParams: searchParams.toString() })
+
+    // Si on a payment=success mais pas encore user, attendre un peu
+    if (payment === 'success' && sessionId && !user) {
+      console.log('⏳ Waiting for user to load before processing payment...')
+      return
+    }
 
     if (payment === 'success' && sessionId && user) {
       console.log('🎯 PAYMENT SUCCESS DETECTED:', { payment, sessionId, userId: user.id })
@@ -944,7 +957,7 @@ const Dashboard = () => {
           navigate({ search: newParams.toString() }, { replace: true })
         })
     }
-  }, [searchParams, user, profile, fetchProfile, navigate, supabase])
+  }, [searchParams, user, profile, fetchProfile, navigate])
 
   const displayName = useMemo(() => profile?.full_name || user?.email || 'User', [profile?.full_name, user?.email])
   const userRole = useMemo(() => profile?.role || 'Free', [profile?.role])

@@ -111,24 +111,43 @@ serve(async (req) => {
             }
 
             if (userId) {
-              // Determine role from price
+              // Determine role from price or metadata
               const priceId = subscription.items.data[0]?.price.id
-              let newRole = 'Student'
-              if (priceId === 'price_1SBPN62MKT6HumxnBoQgAdd0') {
+              const planType = session.metadata?.planType || subscription.metadata?.planType
+              
+              let newRole = 'Student' // Default
+              
+              // Priority: metadata planType > price ID
+              if (planType === 'teacher' || planType === 'Teacher') {
                 newRole = 'Teacher'
+                console.log('📝 Role determined from metadata planType:', newRole)
+              } else if (priceId === 'price_1SBPN62MKT6HumxnBoQgAdd0') {
+                newRole = 'Teacher'
+                console.log('📝 Role determined from price ID:', newRole)
+              } else {
+                console.log('📝 Role defaulting to Student')
               }
 
               // Get current role
               const { data: currentProfile } = await supabaseClient
                 .from('profiles')
-                .select('role')
+                .select('role, subscription_status, subscription_id')
                 .eq('id', userId)
                 .single()
 
               const currentRole = currentProfile?.role || 'Free'
-              console.log('Current role:', currentRole, 'New role:', newRole)
+              console.log('📊 Current profile state:', {
+                role: currentRole,
+                subscription_status: currentProfile?.subscription_status,
+                subscription_id: currentProfile?.subscription_id
+              })
+              console.log('🔄 Will update to:', {
+                role: newRole,
+                subscription_status: 'active',
+                subscription_id: subscription.id
+              })
 
-              // Update profile
+              // Update profile - ALWAYS update subscription fields, role only if not Admin
               const updateData: any = {
                 subscription_status: 'active',
                 subscription_id: subscription.id,
@@ -137,17 +156,27 @@ serve(async (req) => {
 
               if (currentRole !== 'Admin') {
                 updateData.role = newRole
+                console.log(`✅ Will update role from "${currentRole}" to "${newRole}"`)
+              } else {
+                console.log('⚠️ User is Admin - preserving Admin role, only updating subscription fields')
               }
 
-              const { error: profileError } = await supabaseClient
+              const { data: updatedProfile, error: profileError } = await supabaseClient
                 .from('profiles')
                 .update(updateData)
                 .eq('id', userId)
+                .select('role, subscription_status, subscription_id')
 
               if (profileError) {
                 console.error('❌ Error updating profile:', profileError)
+                console.error('Error details:', {
+                  message: profileError.message,
+                  code: profileError.code,
+                  details: profileError.details,
+                  hint: profileError.hint
+                })
               } else {
-                console.log('✅ Profile updated successfully (fallback)')
+                console.log('✅ Profile updated successfully (fallback):', updatedProfile)
               }
 
               // Update subscriptions table
@@ -220,6 +249,23 @@ serve(async (req) => {
             .single()
 
           if (profile) {
+            // Determine role from price
+            const priceId = subscription.items.data[0]?.price.id
+            let newRole = 'Student'
+            if (priceId === 'price_1SBPN62MKT6HumxnBoQgAdd0') {
+              newRole = 'Teacher'
+            }
+
+            // Get current role to preserve Admin
+            const { data: currentProfile } = await supabaseClient
+              .from('profiles')
+              .select('role')
+              .eq('id', profile.id)
+              .single()
+
+            const currentRole = currentProfile?.role || 'Free'
+            
+            // Update subscriptions table
             const { error: subError } = await supabaseClient
               .from('subscriptions')
               .update({
@@ -234,17 +280,28 @@ serve(async (req) => {
               console.log('✅ Subscription record updated (fallback)')
             }
 
-            const { error: profileError } = await supabaseClient
+            // Update profile - include role update if not Admin
+            const updateData: any = {
+              subscription_status: subscription.status,
+            }
+
+            if (currentRole !== 'Admin') {
+              updateData.role = newRole
+              console.log(`🔄 Updating role from "${currentRole}" to "${newRole}"`)
+            } else {
+              console.log('⚠️ User is Admin - preserving Admin role')
+            }
+
+            const { data: updatedProfile, error: profileError } = await supabaseClient
               .from('profiles')
-              .update({
-                subscription_status: subscription.status,
-              })
+              .update(updateData)
               .eq('id', profile.id)
+              .select('role, subscription_status')
 
             if (profileError) {
               console.error('❌ Error updating profile:', profileError)
             } else {
-              console.log('✅ Profile updated (fallback)')
+              console.log('✅ Profile updated (fallback):', updatedProfile)
             }
           } else {
             console.error('❌ Profile not found for customer:', customerId)
