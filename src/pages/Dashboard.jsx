@@ -804,6 +804,16 @@ const Dashboard = () => {
           }
           
           const data = await response.json()
+          
+          // Log the response for debugging
+          console.log('📡 Payment success response:', data)
+          
+          if (!data.success) {
+            console.error('❌ Payment success endpoint returned error:', data.error)
+            toast.error(data.error || 'Failed to update subscription')
+            return null
+          }
+          
           return data
         } catch (error) {
           console.error('❌ Payment success error:', error)
@@ -835,12 +845,22 @@ const Dashboard = () => {
           if (data.error) {
             console.error('❌ Error in payment success response:', data.error)
             toast.error(`⚠️ ${data.error}`)
-          } else {
+          } else if (data.success) {
             // For Admins, show different message
             const roleMessage = profile?.role === 'Admin' 
               ? 'Subscription activated! Your Admin role is preserved with active subscription.'
               : `✅ Subscription activated! Your role is now: ${data.role || 'Student'}`
             toast.success(roleMessage)
+            
+            console.log('✅ Payment processed successfully:', {
+              role: data.role,
+              subscriptionId: data.subscriptionId,
+              subscriptionStatus: data.subscriptionStatus,
+              userId: data.userId
+            })
+          } else {
+            console.warn('⚠️ Payment success response missing success flag:', data)
+            toast.warning('Payment processed, but response was unclear. Please refresh the page.')
           }
           
           // FAST: Single quick refresh, then navigate immediately

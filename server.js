@@ -57,6 +57,20 @@ function getRoleFromPriceId(priceId) {
 }
 
 // Supabase client
+// CRITICAL: Verify Supabase configuration is loaded
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  console.error('❌ CRITICAL: Supabase configuration missing!')
+  console.error('SUPABASE_URL:', process.env.SUPABASE_URL ? 'SET' : 'MISSING')
+  console.error('SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'MISSING')
+  console.error('Please check your server.env file!')
+  process.exit(1)
+}
+
+console.log('✅ Supabase client initialized:', {
+  url: process.env.SUPABASE_URL,
+  hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY
+})
+
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -349,6 +363,11 @@ app.get('/api/payment-success', paymentLimiter, async (req, res) => {
     console.log('Session ID:', session_id)
     console.log('Request origin:', req.headers.origin)
     console.log('Request IP:', req.ip)
+    console.log('Supabase config check:', {
+      hasUrl: !!process.env.SUPABASE_URL,
+      hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      supabaseUrl: process.env.SUPABASE_URL ? process.env.SUPABASE_URL.substring(0, 30) + '...' : 'MISSING'
+    })
 
     const session = await stripe.checkout.sessions.retrieve(session_id)
     console.log('Stripe session retrieved:', {
@@ -358,32 +377,84 @@ app.get('/api/payment-success', paymentLimiter, async (req, res) => {
       subscriptionId: session.subscription
     })
 
+    // CRITICAL: Check if session has subscription
+    if (!session.subscription) {
+      console.error('❌ No subscription in session:', session.id)
+      throw new Error('No subscription found in checkout session')
+    }
+
     const subscription = await stripe.subscriptions.retrieve(session.subscription)
+    
+    // Safety check for subscription data
+    if (!subscription || !subscription.items || !subscription.items.data || subscription.items.data.length === 0) {
+      console.error('❌ Invalid subscription data:', subscription)
+      throw new Error('Invalid subscription data - no items found')
+    }
+    
+    const priceItem = subscription.items.data[0]
+    if (!priceItem || !priceItem.price || !priceItem.price.id) {
+      console.error('❌ Invalid price item in subscription:', priceItem)
+      throw new Error('Invalid price item in subscription')
+    }
+    
     console.log('Stripe subscription retrieved:', {
       id: subscription.id,
-      priceId: subscription.items.data[0].price.id,
-      status: subscription.status
+      priceId: priceItem.price.id,
+      status: subscription.status,
+      customer: subscription.customer,
+      itemsCount: subscription.items.data.length
     })
 
     // Determine role based on price
-    const priceId = subscription.items.data[0].price.id
+    const priceId = priceItem.price.id
+    
     const newRole = getRoleFromPriceId(priceId)
-
     console.log('Determined role:', newRole, 'for price ID:', priceId)
     
-    if (!session.metadata?.userId) {
-      throw new Error('Missing userId in session metadata')
+    // CRITICAL: Get userId from metadata or try to find by customer ID
+    let userId = session.metadata?.userId
+    
+    if (!userId) {
+      console.warn('⚠️ No userId in session metadata, trying to find by customer ID')
+      // Try to find user by stripe_customer_id
+      const { data: profileByCustomer } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('stripe_customer_id', session.customer)
+        .single()
+      
+      if (profileByCustomer) {
+        userId = profileByCustomer.id
+        console.log('✅ Found user by customer ID:', userId)
+      } else {
+        throw new Error('Missing userId in session metadata and could not find user by customer ID')
+      }
     }
+    
+    console.log('🔑 Using userId:', userId)
 
     // Get current user profile to check if they're an Admin
-    const { data: currentProfile } = await supabase
+    const { data: currentProfile, error: profileFetchError } = await supabase
       .from('profiles')
-      .select('role')
-      .eq('id', session.metadata.userId)
+      .select('role, subscription_status, subscription_id')
+      .eq('id', userId)
       .single()
 
+    if (profileFetchError) {
+      console.error('❌ Error fetching profile:', profileFetchError)
+      throw new Error(`Failed to fetch user profile: ${profileFetchError.message}`)
+    }
+
+    if (!currentProfile) {
+      throw new Error(`User profile not found for userId: ${userId}`)
+    }
+
     const currentRole = currentProfile?.role || 'Free'
-    console.log('Current user role before update:', currentRole)
+    console.log('Current user profile:', {
+      role: currentRole,
+      subscription_status: currentProfile.subscription_status,
+      subscription_id: currentProfile.subscription_id
+    })
 
     // CRITICAL: Prepare update object - ensure subscription is always set to active
     // Only update role if user is NOT an Admin (preserve Admin role)
@@ -406,16 +477,25 @@ app.get('/api/payment-success', paymentLimiter, async (req, res) => {
     let updateResult = null
     let updateError = null
     
+    console.log('🔄 Attempting to update profile with data:', updateData)
+    
     for (let attempt = 1; attempt <= 3; attempt++) {
+      console.log(`🔄 Database update attempt ${attempt}/3 for userId: ${userId}`)
+      
       const { data, error } = await supabase
         .from('profiles')
         .update(updateData)
-        .eq('id', session.metadata.userId)
+        .eq('id', userId)
         .select()
 
       if (error) {
         updateError = error
-        console.error(`❌ Supabase update error (attempt ${attempt}/3):`, error)
+        console.error(`❌ Supabase update error (attempt ${attempt}/3):`, {
+          error: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        })
         if (attempt < 3) {
           // Wait before retry: 500ms, 1s
           await new Promise(resolve => setTimeout(resolve, attempt * 500))
@@ -425,45 +505,136 @@ app.get('/api/payment-success', paymentLimiter, async (req, res) => {
       } else {
         updateResult = data
         console.log(`✅ Profile updated successfully (attempt ${attempt}):`, updateResult)
+        
+        // Verify the update actually happened
+        if (updateResult && updateResult.length > 0) {
+          const updated = updateResult[0]
+          console.log('✅ VERIFIED UPDATE:', {
+            id: updated.id,
+            role: updated.role,
+            subscription_status: updated.subscription_status,
+            subscription_id: updated.subscription_id
+          })
+        } else {
+          console.warn('⚠️ Update returned no data - verifying manually...')
+          // Verify manually
+          const { data: verifyData } = await supabase
+            .from('profiles')
+            .select('role, subscription_status, subscription_id')
+            .eq('id', userId)
+            .single()
+          console.log('📊 Manual verification:', verifyData)
+        }
         break
       }
     }
 
     if (updateError) {
+      console.error('❌ All update attempts failed:', updateError)
       throw updateError
     }
     
-    // Create or update subscription record in subscriptions table (non-blocking)
-    // Do this in parallel to speed up response
-    const subscriptionPromise = supabase
-      .from('subscriptions')
-      .upsert({
-        user_id: session.metadata.userId,
+    if (!updateResult || updateResult.length === 0) {
+      throw new Error('Profile update returned no data')
+    }
+    
+    // CRITICAL: Create or update subscription record in subscriptions table
+    // Do this synchronously and ensure it succeeds
+    let subData = null
+    let subError = null
+    
+    try {
+      console.log('🔄 Creating subscription record:', {
+        user_id: userId,
         stripe_customer_id: session.customer,
         stripe_subscription_id: subscription.id,
-        plan_type: subscription.items.data[0]?.price.recurring?.interval || 'monthly',
+        plan_type: priceItem.price.recurring?.interval || 'monthly',
+        status: subscription.status
+      })
+      
+      const subscriptionData = {
+        user_id: userId,
+        stripe_customer_id: session.customer,
+        stripe_subscription_id: subscription.id,
+        plan_type: priceItem.price.recurring?.interval || 'monthly',
         status: subscription.status,
         current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
         current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
         updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'user_id,stripe_subscription_id'
-      })
-      .then(({ error }) => {
-        if (error) {
-          console.error('Error creating subscription record:', error)
+      }
+      
+      // BULLETPROOF: Try insert first (most common case - new subscription)
+      const { data: insertData, error: insertError } = await supabase
+        .from('subscriptions')
+        .insert(subscriptionData)
+        .select()
+
+      if (insertError) {
+        // If insert fails (likely duplicate), try update
+        console.log('⚠️ Insert failed (likely duplicate), trying update:', insertError.message)
+        console.log('📋 Insert error details:', {
+          code: insertError.code,
+          message: insertError.message,
+          details: insertError.details,
+          hint: insertError.hint
+        })
+        
+        // Try update (if record exists)
+        const { data: updateData, error: updateError } = await supabase
+          .from('subscriptions')
+          .update({
+            user_id: userId,
+            stripe_customer_id: session.customer,
+            plan_type: priceItem.price.recurring?.interval || 'monthly',
+            status: subscription.status,
+            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('stripe_subscription_id', subscription.id)
+          .select()
+
+        if (updateError) {
+          subError = updateError
+          console.error('❌ All subscription record methods failed:', {
+            insertError: insertError.message,
+            updateError: updateError.message,
+            code: updateError.code,
+            details: updateError.details
+          })
         } else {
-          console.log('✅ Subscription record created/updated successfully')
+          subData = updateData
+          console.log('✅ Subscription record updated successfully:', subData)
         }
+      } else {
+        subData = insertData
+        console.log('✅ Subscription record inserted successfully:', subData)
+      }
+
+      if (subError) {
+        console.error('❌ CRITICAL: Failed to create/update subscription record:', subError)
+        // Don't fail the request, but log it as critical
+      } else if (!subData || subData.length === 0) {
+        console.error('❌ CRITICAL: Subscription record operation returned no data')
+      }
+
+    } catch (subErr) {
+      console.error('❌ CRITICAL: Exception creating subscription record:', subErr)
+      console.error('Exception details:', {
+        name: subErr.name,
+        message: subErr.message,
+        stack: subErr.stack
       })
-      .catch(err => {
-        console.error('Error creating subscription record:', err)
-      })
-    
-    // Don't wait for subscription record - return immediately
-    // Email processing removed for speed - will be handled by webhook or background job
+      // Don't fail the request, but this is critical
+    }
     
     console.log('=== PAYMENT SUCCESS COMPLETE ===')
+    console.log('📊 Final state:', {
+      userId,
+      role: currentRole === 'Admin' ? 'Admin' : newRole,
+      subscription_status: 'active',
+      subscription_id: subscription.id
+    })
 
     // Return the role that was actually set (or preserved)
     const finalRole = currentRole === 'Admin' ? 'Admin' : newRole
@@ -471,11 +642,9 @@ app.get('/api/payment-success', paymentLimiter, async (req, res) => {
       success: true, 
       role: finalRole, 
       subscriptionId: subscription.id,
-      subscriptionStatus: 'active'
+      subscriptionStatus: 'active',
+      userId: userId
     })
-    
-    // Process subscription record in background (don't block response)
-    subscriptionPromise.catch(() => {}) // Silently handle errors
   } catch (error) {
     console.error('Error handling payment success:', error)
     res.status(500).json({ error: error.message })
@@ -563,12 +732,20 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
 })
 
 async function handleCheckoutSessionCompleted(session) {
-  console.log('Handling checkout.session.completed for session:', session.id)
+  console.log('=== WEBHOOK: checkout.session.completed ===')
+  console.log('Session ID:', session.id)
+  console.log('Session mode:', session.mode)
+  console.log('Session metadata:', session.metadata)
   
   if (session.mode === 'subscription') {
+    if (!session.subscription) {
+      console.error('❌ No subscription in session')
+      return
+    }
+    
     const subscription = await stripe.subscriptions.retrieve(session.subscription)
     const customerId = session.customer
-    const userId = session.metadata?.userId
+    let userId = session.metadata?.userId
     const planType = session.metadata?.planType
 
     console.log('Subscription checkout completed:', {
@@ -578,9 +755,22 @@ async function handleCheckoutSessionCompleted(session) {
       subscriptionId: subscription.id
     })
 
+    // CRITICAL: If no userId in metadata, try to find by customer ID
     if (!userId) {
-      console.error('No userId in session metadata')
-      return
+      console.warn('⚠️ No userId in session metadata, trying to find by customer ID')
+      const { data: profileByCustomer } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('stripe_customer_id', customerId)
+        .single()
+      
+      if (profileByCustomer) {
+        userId = profileByCustomer.id
+        console.log('✅ Found user by customer ID:', userId)
+      } else {
+        console.error('❌ No userId in session metadata and could not find user by customer ID')
+        return
+      }
     }
 
     // Determine role based on plan type from metadata
@@ -601,6 +791,13 @@ async function handleCheckoutSessionCompleted(session) {
 
     // Prepare update object - only update role if user is NOT an Admin
     // CRITICAL: Always set subscription_status to 'active' for successful payments
+    // Get price ID safely
+    const priceItem = subscription.items.data[0]
+    if (!priceItem || !priceItem.price) {
+      console.error('❌ WEBHOOK: Invalid subscription items:', subscription.items)
+      throw new Error('Invalid subscription items')
+    }
+    
     const updateData = {
       subscription_status: 'active', // Force active status for successful checkout
       subscription_id: subscription.id,
@@ -620,7 +817,11 @@ async function handleCheckoutSessionCompleted(session) {
     let updateResult = null
     let updateError = null
     
+    console.log('🔄 WEBHOOK: Attempting to update profile with data:', updateData)
+    
     for (let attempt = 1; attempt <= 3; attempt++) {
+      console.log(`🔄 WEBHOOK: Database update attempt ${attempt}/3 for userId: ${userId}`)
+      
       const { data, error } = await supabase
         .from('profiles')
         .update(updateData)
@@ -629,7 +830,12 @@ async function handleCheckoutSessionCompleted(session) {
 
       if (error) {
         updateError = error
-        console.error(`❌ Error updating profile in webhook (attempt ${attempt}/3):`, error)
+        console.error(`❌ WEBHOOK: Error updating profile (attempt ${attempt}/3):`, {
+          error: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        })
         if (attempt < 3) {
           // Wait before retry: 500ms, 1s
           await new Promise(resolve => setTimeout(resolve, attempt * 500))
@@ -638,41 +844,86 @@ async function handleCheckoutSessionCompleted(session) {
         throw error // Fail webhook if all retries fail
       } else {
         updateResult = data
-        console.log(`✅ Profile updated successfully via webhook (attempt ${attempt}):`, updateResult)
+        console.log(`✅ WEBHOOK: Profile updated successfully (attempt ${attempt}):`, updateResult)
+        
+        // Verify the update
+        if (updateResult && updateResult.length > 0) {
+          const updated = updateResult[0]
+          console.log('✅ WEBHOOK: VERIFIED UPDATE:', {
+            id: updated.id,
+            role: updated.role,
+            subscription_status: updated.subscription_status,
+            subscription_id: updated.subscription_id
+          })
+        }
         break
       }
     }
 
     if (updateError) {
+      console.error('❌ WEBHOOK: All update attempts failed:', updateError)
       throw updateError
+    }
+    
+    if (!updateResult || updateResult.length === 0) {
+      console.error('❌ WEBHOOK: Profile update returned no data')
+      throw new Error('Profile update returned no data')
     }
     
     // Email processing removed for speed - will be handled separately if needed
 
-    // Create or update subscription record (non-blocking, don't fail webhook if this fails)
-    supabase
-      .from('subscriptions')
-      .upsert({
+    // CRITICAL: Create or update subscription record (webhook must succeed)
+    try {
+      console.log('🔄 WEBHOOK: Creating subscription record:', {
+        user_id: userId,
+        stripe_customer_id: customerId,
+        stripe_subscription_id: subscription.id
+      })
+      
+      // SIMPLE: Try insert first, if fails (duplicate), try update
+      const subscriptionData = {
         user_id: userId,
         stripe_customer_id: customerId,
         stripe_subscription_id: subscription.id,
-        plan_type: subscription.items.data[0]?.price.recurring?.interval || 'monthly',
+        plan_type: priceItem.price.recurring?.interval || 'monthly',
         status: subscription.status,
         current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
         current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-      }, {
-        onConflict: 'user_id,stripe_subscription_id'
-      })
-      .then(({ error }) => {
-        if (error) {
-          console.error('Error creating subscription record in webhook:', error)
+        updated_at: new Date().toISOString()
+      }
+      
+      const { data: insertData, error: insertError } = await supabase
+        .from('subscriptions')
+        .insert(subscriptionData)
+        .select()
+
+      if (insertError) {
+        // If insert fails (likely duplicate), try update
+        console.log('⚠️ WEBHOOK: Insert failed (likely duplicate), trying update:', insertError.message)
+        
+        const { data: updateData, error: updateError } = await supabase
+          .from('subscriptions')
+          .update(subscriptionData)
+          .eq('stripe_subscription_id', subscription.id)
+          .select()
+
+        if (updateError) {
+          console.error('❌ WEBHOOK: CRITICAL - Both insert and update failed:', {
+            insertError: insertError.message,
+            updateError: updateError.message,
+            code: updateError.code,
+            details: updateError.details,
+            subscriptionId: subscription.id
+          })
         } else {
-          console.log('✅ Subscription record created/updated via webhook')
+          console.log('✅ WEBHOOK: Subscription record updated:', updateData)
         }
-      })
-      .catch(err => {
-        console.error('Error creating subscription record in webhook:', err)
-      })
+      } else {
+        console.log('✅ WEBHOOK: Subscription record inserted:', insertData)
+      }
+    } catch (subErr) {
+      console.error('❌ WEBHOOK: CRITICAL - Exception creating subscription record:', subErr)
+    }
   }
 }
 
@@ -688,7 +939,18 @@ async function handleSubscriptionCreated(subscription) {
 
   if (profile) {
     // Get the price ID to determine the plan type
-    const priceId = subscription.items.data[0]?.price.id
+    if (!subscription.items || !subscription.items.data || subscription.items.data.length === 0) {
+      console.error('❌ WEBHOOK: Invalid subscription items in handleSubscriptionCreated')
+      return
+    }
+    
+    const priceItem = subscription.items.data[0]
+    if (!priceItem || !priceItem.price || !priceItem.price.id) {
+      console.error('❌ WEBHOOK: Invalid price item in handleSubscriptionCreated')
+      return
+    }
+    
+    const priceId = priceItem.price.id
     const newRole = getRoleFromPriceId(priceId)
 
     // Get current role to check if user is Admin
@@ -702,9 +964,11 @@ async function handleSubscriptionCreated(subscription) {
     console.log('Current user role:', currentRole, 'New role would be:', newRole)
 
     // Prepare update - only update role if user is NOT an Admin
+    // CRITICAL: Always set subscription_status to 'active' for new subscriptions
     const updateData = {
-      subscription_status: subscription.status,
+      subscription_status: 'active', // Force active for new subscriptions
       subscription_id: subscription.id,
+      stripe_customer_id: customerId,
       updated_at: new Date().toISOString()
     }
 
@@ -716,10 +980,32 @@ async function handleSubscriptionCreated(subscription) {
       console.log('⚠️ User is Admin - preserving Admin role, only updating subscription info')
     }
 
-    await supabase
-      .from('profiles')
-      .update(updateData)
-      .eq('id', profile.id)
+    // BULLETPROOF: Update with retry logic
+    let updateResult = null
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('id', profile.id)
+        .select()
+
+      if (error) {
+        console.error(`❌ WEBHOOK handleSubscriptionCreated: Update error (attempt ${attempt}/3):`, error)
+        if (attempt < 3) {
+          await new Promise(resolve => setTimeout(resolve, attempt * 500))
+          continue
+        }
+        throw error
+      } else {
+        updateResult = data
+        console.log(`✅ WEBHOOK handleSubscriptionCreated: Profile updated (attempt ${attempt}):`, updateResult)
+        break
+      }
+    }
+    
+    if (!updateResult) {
+      throw new Error('Failed to update profile in handleSubscriptionCreated')
+    }
   }
 }
 
@@ -735,15 +1021,28 @@ async function handleSubscriptionUpdate(subscription) {
 
   if (profile) {
     // Get the price ID to determine if role should change
-    const priceId = subscription.items.data[0]?.price.id
+    if (!subscription.items || !subscription.items.data || subscription.items.data.length === 0) {
+      console.error('❌ WEBHOOK: Invalid subscription items in handleSubscriptionUpdate')
+      return
+    }
+    
+    const priceItem = subscription.items.data[0]
+    if (!priceItem || !priceItem.price || !priceItem.price.id) {
+      console.error('❌ WEBHOOK: Invalid price item in handleSubscriptionUpdate')
+      return
+    }
+    
+    const priceId = priceItem.price.id
     const newRole = getRoleFromPriceId(priceId)
     const oldRole = profile.role
 
     console.log('Subscription updated, would set role to:', newRole, 'from:', oldRole)
 
     // Prepare update - only update role if user is NOT an Admin
+    // CRITICAL: Ensure subscription_status is set correctly
     const updateData = {
-      subscription_status: subscription.status,
+      subscription_status: subscription.status === 'active' ? 'active' : subscription.status,
+      subscription_id: subscription.id,
       updated_at: new Date().toISOString()
     }
 
@@ -755,11 +1054,32 @@ async function handleSubscriptionUpdate(subscription) {
       console.log('⚠️ User is Admin - preserving Admin role, only updating subscription status')
     }
 
-    // Update profile
-    await supabase
-      .from('profiles')
-      .update(updateData)
-      .eq('id', profile.id)
+    // BULLETPROOF: Update with retry logic
+    let updateResult = null
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('id', profile.id)
+        .select()
+
+      if (error) {
+        console.error(`❌ WEBHOOK handleSubscriptionUpdate: Update error (attempt ${attempt}/3):`, error)
+        if (attempt < 3) {
+          await new Promise(resolve => setTimeout(resolve, attempt * 500))
+          continue
+        }
+        throw error
+      } else {
+        updateResult = data
+        console.log(`✅ WEBHOOK handleSubscriptionUpdate: Profile updated (attempt ${attempt}):`, updateResult)
+        break
+      }
+    }
+    
+    if (!updateResult) {
+      throw new Error('Failed to update profile in handleSubscriptionUpdate')
+    }
 
     // Send email if role changed
     if (oldRole !== newRole && profile.email) {
@@ -1430,7 +1750,10 @@ app.use((req, res, next) => {
   })
 })
 
-app.listen(PORT, () => {
+// Listen on all interfaces (0.0.0.0) to be accessible via reverse proxy
+// This is required for production deployments behind nginx/apache
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`)
+  console.log(`Server listening on 0.0.0.0:${PORT} (accessible from all interfaces)`)
   console.log(`Serving React app from: ${buildPath}`)
 })

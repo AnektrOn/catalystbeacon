@@ -55,100 +55,201 @@ serve(async (req) => {
     }
 
     // Handle the event
+    console.log('📥 Webhook event received:', event.type)
+    
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
         
-        if (session.mode === 'subscription') {
-          const subscription = await stripe.subscriptions.retrieve(session.subscription as string)
-          const customerId = session.customer as string
-          const userId = session.metadata?.userId
-          const planType = session.metadata?.planType
+        console.log('🔄 Processing checkout.session.completed:', {
+          sessionId: session.id,
+          mode: session.mode,
+          subscriptionId: session.subscription,
+          customerId: session.customer,
+          userId: session.metadata?.userId
+        })
+        
+        if (session.mode === 'subscription' && session.subscription) {
+          console.log('✅ Subscription checkout detected, syncing via FDW function...')
+          
+          // SIMPLE: Use the sync function we created - it handles everything!
+          // This function reads from stripe.subscriptions (FDW) and updates both subscriptions and profiles tables
+          const { data: syncResult, error: syncError } = await supabaseClient.rpc(
+            'sync_single_subscription_from_stripe',
+            { p_stripe_subscription_id: session.subscription as string }
+          )
 
-          if (!userId) {
-            console.error('No userId in session metadata')
-            break
-          }
-
-          // Determine role based on plan type
-          let newRole = 'Student' // default
-          if (planType === 'teacher') {
-            newRole = 'Teacher'
-          }
-
-          // Get current user profile to check if they're an Admin
-          const { data: currentProfile } = await supabaseClient
-            .from('profiles')
-            .select('role')
-            .eq('id', userId)
-            .single()
-
-          const currentRole = currentProfile?.role || 'Free'
-          console.log('Current user role:', currentRole, 'New role would be:', newRole)
-
-          // Prepare update object - only update role if user is NOT an Admin
-          const updateData: any = {
-            subscription_status: 'active',
-            subscription_id: subscription.id,
-          }
-
-          // Only update role if user is not an Admin (preserve Admin role)
-          if (currentRole !== 'Admin') {
-            updateData.role = newRole
-            console.log('Updating role from', currentRole, 'to', newRole)
-          } else {
-            console.log('⚠️ User is Admin - preserving Admin role, only updating subscription info')
-          }
-
-          // Update profile with subscription info (and role only if not Admin)
-          await supabaseClient
-            .from('profiles')
-            .update(updateData)
-            .eq('id', userId)
-
-          // Create subscription record
-          await supabaseClient
-            .from('subscriptions')
-            .upsert({
-              user_id: userId,
-              stripe_customer_id: customerId,
-              stripe_subscription_id: subscription.id,
-              plan_type: subscription.items.data[0]?.price.recurring?.interval || 'monthly',
-              status: subscription.status,
-              current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          if (syncError) {
+            console.error('❌ Error syncing subscription via FDW function:', syncError)
+            console.error('Error details:', {
+              message: syncError.message,
+              code: syncError.code,
+              details: syncError.details,
+              hint: syncError.hint
             })
+            
+            // Fallback: Try manual update if sync function fails
+            console.log('⚠️ Falling back to manual update...')
+            const subscription = await stripe.subscriptions.retrieve(session.subscription as string)
+            const customerId = session.customer as string
+            let userId = session.metadata?.userId
+
+            // Find user by customer ID if userId not in metadata
+            if (!userId) {
+              console.log('⚠️ No userId in metadata, searching by customer ID:', customerId)
+              const { data: profileByCustomer } = await supabaseClient
+                .from('profiles')
+                .select('id')
+                .eq('stripe_customer_id', customerId)
+                .single()
+              if (profileByCustomer) {
+                userId = profileByCustomer.id
+                console.log('✅ Found user by customer ID:', userId)
+              } else {
+                console.error('❌ Could not find user by customer ID')
+              }
+            }
+
+            if (userId) {
+              // Determine role from price
+              const priceId = subscription.items.data[0]?.price.id
+              let newRole = 'Student'
+              if (priceId === 'price_1SBPN62MKT6HumxnBoQgAdd0') {
+                newRole = 'Teacher'
+              }
+
+              // Get current role
+              const { data: currentProfile } = await supabaseClient
+                .from('profiles')
+                .select('role')
+                .eq('id', userId)
+                .single()
+
+              const currentRole = currentProfile?.role || 'Free'
+              console.log('Current role:', currentRole, 'New role:', newRole)
+
+              // Update profile
+              const updateData: any = {
+                subscription_status: 'active',
+                subscription_id: subscription.id,
+                stripe_customer_id: customerId,
+              }
+
+              if (currentRole !== 'Admin') {
+                updateData.role = newRole
+              }
+
+              const { error: profileError } = await supabaseClient
+                .from('profiles')
+                .update(updateData)
+                .eq('id', userId)
+
+              if (profileError) {
+                console.error('❌ Error updating profile:', profileError)
+              } else {
+                console.log('✅ Profile updated successfully (fallback)')
+              }
+
+              // Update subscriptions table
+              const { error: subError } = await supabaseClient
+                .from('subscriptions')
+                .upsert({
+                  user_id: userId,
+                  stripe_customer_id: customerId,
+                  stripe_subscription_id: subscription.id,
+                  plan_type: subscription.items.data[0]?.price.recurring?.interval || 'monthly',
+                  status: subscription.status,
+                  current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+                  current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+                }, {
+                  onConflict: 'stripe_subscription_id'
+                })
+
+              if (subError) {
+                console.error('❌ Error updating subscriptions table:', subError)
+              } else {
+                console.log('✅ Subscription record updated successfully (fallback)')
+              }
+            } else {
+              console.error('❌ Cannot update: userId not found')
+            }
+          } else {
+            console.log('✅ Subscription synced successfully via FDW function:', syncResult)
+            if (syncResult && syncResult.length > 0) {
+              const result = syncResult[0]
+              console.log('Sync result:', {
+                success: result.success,
+                message: result.message,
+                subscription_id: result.subscription_id
+              })
+            }
+          }
+        } else {
+          console.log('⚠️ Session is not a subscription, skipping')
         }
         break
       }
 
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription
-        const customerId = subscription.customer as string
+        console.log('🔄 Processing customer.subscription.updated for subscription:', subscription.id)
+        console.log('Subscription status:', subscription.status)
+        
+        // SIMPLE: Use the sync function - it handles everything!
+        const { data: syncResult, error: syncError } = await supabaseClient.rpc(
+          'sync_single_subscription_from_stripe',
+          { p_stripe_subscription_id: subscription.id }
+        )
 
-        // Get user by customer ID
-        const { data: profile } = await supabaseClient
-          .from('profiles')
-          .select('id')
-          .eq('stripe_customer_id', customerId)
-          .single()
-
-        if (profile) {
-          // Update subscription status
-          await supabaseClient
-            .from('subscriptions')
-            .update({
-              status: subscription.status,
-              current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-            })
-            .eq('stripe_subscription_id', subscription.id)
-
-          // Update profile status
-          await supabaseClient
+        if (syncError) {
+          console.error('❌ Error syncing subscription update:', syncError)
+          console.error('Error details:', {
+            message: syncError.message,
+            code: syncError.code,
+            details: syncError.details
+          })
+          
+          // Fallback to manual update
+          console.log('⚠️ Falling back to manual update...')
+          const customerId = subscription.customer as string
+          const { data: profile } = await supabaseClient
             .from('profiles')
-            .update({
-              subscription_status: subscription.status,
-            })
-            .eq('id', profile.id)
+            .select('id')
+            .eq('stripe_customer_id', customerId)
+            .single()
+
+          if (profile) {
+            const { error: subError } = await supabaseClient
+              .from('subscriptions')
+              .update({
+                status: subscription.status,
+                current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+              })
+              .eq('stripe_subscription_id', subscription.id)
+
+            if (subError) {
+              console.error('❌ Error updating subscriptions table:', subError)
+            } else {
+              console.log('✅ Subscription record updated (fallback)')
+            }
+
+            const { error: profileError } = await supabaseClient
+              .from('profiles')
+              .update({
+                subscription_status: subscription.status,
+              })
+              .eq('id', profile.id)
+
+            if (profileError) {
+              console.error('❌ Error updating profile:', profileError)
+            } else {
+              console.log('✅ Profile updated (fallback)')
+            }
+          } else {
+            console.error('❌ Profile not found for customer:', customerId)
+          }
+        } else {
+          console.log('✅ Subscription update synced successfully via FDW function:', syncResult)
         }
         break
       }
