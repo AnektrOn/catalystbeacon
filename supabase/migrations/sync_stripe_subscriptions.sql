@@ -26,12 +26,13 @@ DECLARE
   v_subscription_record UUID;
 BEGIN
   -- Récupérer les données depuis Stripe FDW
+  -- Toujours caster attrs en JSONB pour éviter les erreurs de type
   SELECT 
-    s.customer,
-    s.attrs->>'status',
+    s.customer::TEXT,
+    (s.attrs::JSONB)->>'status' as status,
     s.current_period_start,
     s.current_period_end,
-    s.attrs->'items'->'data'->0->'price'->>'recurring'->>'interval'
+    (s.attrs::JSONB)->'items'->'data'->0->'price'->>'recurring'->>'interval' as plan_type
   INTO 
     v_stripe_customer_id,
     v_status,
@@ -134,9 +135,9 @@ BEGIN
     SELECT 
       s.id as stripe_subscription_id,
       s.customer as stripe_customer_id,
-      s.attrs->>'status' as status
+      (s.attrs::JSONB)->>'status' as status
     FROM stripe.subscriptions s
-    WHERE s.attrs->>'status' IN ('active', 'trialing', 'past_due', 'canceled', 'unpaid')
+    WHERE (s.attrs::JSONB)->>'status' IN ('active', 'trialing', 'past_due', 'canceled', 'unpaid')
   LOOP
     BEGIN
       -- Synchroniser chaque abonnement
@@ -194,7 +195,7 @@ BEGIN
   SELECT 
     'missing_in_db'::TEXT,
     s.id::TEXT,
-    s.attrs->>'status',
+    (s.attrs::JSONB)->>'status',
     NULL::TEXT,
     s.customer::TEXT,
     p.id
@@ -202,21 +203,21 @@ BEGIN
   LEFT JOIN subscriptions sub ON sub.stripe_subscription_id = s.id
   LEFT JOIN profiles p ON p.stripe_customer_id = s.customer
   WHERE sub.id IS NULL
-    AND s.attrs->>'status' IN ('active', 'trialing', 'past_due');
+    AND (s.attrs::JSONB)->>'status' IN ('active', 'trialing', 'past_due');
   
   -- Abonnements avec statut différent
   RETURN QUERY
   SELECT 
     'status_mismatch'::TEXT,
     s.id::TEXT,
-    s.attrs->>'status',
+    (s.attrs::JSONB)->>'status',
     sub.status,
     s.customer::TEXT,
     sub.user_id
   FROM stripe.subscriptions s
   JOIN subscriptions sub ON sub.stripe_subscription_id = s.id
-  WHERE s.attrs->>'status' != sub.status
-    AND s.attrs->>'status' IN ('active', 'trialing', 'past_due', 'canceled', 'unpaid');
+  WHERE (s.attrs::JSONB)->>'status' != sub.status
+    AND (s.attrs::JSONB)->>'status' IN ('active', 'trialing', 'past_due', 'canceled', 'unpaid');
   
   -- Abonnements dans la DB mais pas dans Stripe (peut-être supprimés)
   RETURN QUERY
@@ -241,16 +242,26 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION auto_sync_stripe_subscriptions()
 RETURNS void AS $$
 DECLARE
-  v_result RECORD;
+  v_synced_count INTEGER;
+  v_error_count INTEGER;
+  v_details JSONB;
 BEGIN
   -- Synchroniser tous les abonnements
-  SELECT * INTO v_result
-  FROM sync_all_subscriptions_from_stripe();
-  
+  SELECT 
+    synced_count,
+    error_count,
+    details
+  INTO 
+    v_synced_count,
+    v_error_count,
+    v_details
+  FROM sync_all_subscriptions_from_stripe()
+  LIMIT 1;
+
   -- Log le résultat (vous pouvez créer une table de logs si nécessaire)
   RAISE NOTICE 'Sync completed: % synced, % errors', 
-    (v_result).synced_count, 
-    (v_result).error_count;
+    v_synced_count, 
+    v_error_count;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

@@ -190,19 +190,20 @@ serve(async (req) => {
         break
       }
 
+      case 'customer.subscription.created':
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription
-        console.log('🔄 Processing customer.subscription.updated for subscription:', subscription.id)
+        console.log(`🔄 Processing customer.subscription.${event.type === 'customer.subscription.created' ? 'created' : 'updated'} for subscription:`, subscription.id)
         console.log('Subscription status:', subscription.status)
         
-        // SIMPLE: Use the sync function - it handles everything!
+        // AUTOMATIQUE: La fonction sync crée automatiquement les utilisateurs manquants
         const { data: syncResult, error: syncError } = await supabaseClient.rpc(
           'sync_single_subscription_from_stripe',
           { p_stripe_subscription_id: subscription.id }
         )
 
         if (syncError) {
-          console.error('❌ Error syncing subscription update:', syncError)
+          console.error('❌ Error syncing subscription:', syncError)
           console.error('Error details:', {
             message: syncError.message,
             code: syncError.code,
