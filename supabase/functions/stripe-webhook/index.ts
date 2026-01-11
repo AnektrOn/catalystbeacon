@@ -115,17 +115,22 @@ serve(async (req) => {
               const priceId = subscription.items.data[0]?.price.id
               const planType = session.metadata?.planType || subscription.metadata?.planType
               
-              let newRole = 'Student' // Default
+              let newRole = 'Student' // Default for student plans
               
               // Priority: metadata planType > price ID
               if (planType === 'teacher' || planType === 'Teacher') {
                 newRole = 'Teacher'
-                console.log('📝 Role determined from metadata planType:', newRole)
+                console.log('📝 Role determined from metadata planType: Teacher')
+              } else if (planType === 'student' || planType === 'Student') {
+                newRole = 'Student'
+                console.log('📝 Role determined from metadata planType: Student')
               } else if (priceId === 'price_1SBPN62MKT6HumxnBoQgAdd0') {
                 newRole = 'Teacher'
-                console.log('📝 Role determined from price ID:', newRole)
+                console.log('📝 Role determined from price ID: Teacher')
               } else {
-                console.log('📝 Role defaulting to Student')
+                // Default to Student for any subscription (student price IDs or unknown)
+                newRole = 'Student'
+                console.log('📝 Role defaulting to Student (planType:', planType, ', priceId:', priceId, ')')
               }
 
               // Get current role
@@ -161,43 +166,87 @@ serve(async (req) => {
                 console.log('⚠️ User is Admin - preserving Admin role, only updating subscription fields')
               }
 
-              const { data: updatedProfile, error: profileError } = await supabaseClient
-                .from('profiles')
-                .update(updateData)
-                .eq('id', userId)
-                .select('role, subscription_status, subscription_id')
+              // BULLETPROOF: Update profile with retry logic
+              let updateResult = null
+              let updateError = null
+              
+              console.log('🔄 Attempting to update profile with data:', updateData)
+              
+              for (let attempt = 1; attempt <= 3; attempt++) {
+                console.log(`🔄 Database update attempt ${attempt}/3 for userId: ${userId}`)
+                
+                const { data, error } = await supabaseClient
+                  .from('profiles')
+                  .update(updateData)
+                  .eq('id', userId)
+                  .select('role, subscription_status, subscription_id')
 
-              if (profileError) {
-                console.error('❌ Error updating profile:', profileError)
-                console.error('Error details:', {
-                  message: profileError.message,
-                  code: profileError.code,
-                  details: profileError.details,
-                  hint: profileError.hint
-                })
-              } else {
-                console.log('✅ Profile updated successfully (fallback):', updatedProfile)
+                if (error) {
+                  updateError = error
+                  console.error(`❌ Attempt ${attempt} failed:`, error.message)
+                  
+                  if (attempt < 3) {
+                    // Wait before retry (exponential backoff)
+                    const delay = attempt * 500 // 500ms, 1000ms
+                    console.log(`⏳ Waiting ${delay}ms before retry...`)
+                    await new Promise(resolve => setTimeout(resolve, delay))
+                  }
+                } else {
+                  updateResult = data
+                  updateError = null
+                  console.log(`✅ Profile updated successfully on attempt ${attempt} (fallback):`, data)
+                  break
+                }
               }
 
-              // Update subscriptions table
-              const { error: subError } = await supabaseClient
-                .from('subscriptions')
-                .upsert({
-                  user_id: userId,
-                  stripe_customer_id: customerId,
-                  stripe_subscription_id: subscription.id,
-                  plan_type: subscription.items.data[0]?.price.recurring?.interval || 'monthly',
-                  status: subscription.status,
-                  current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-                  current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-                }, {
-                  onConflict: 'stripe_subscription_id'
+              if (updateError) {
+                console.error('❌ Error updating profile after 3 attempts:', updateError)
+                console.error('Error details:', {
+                  message: updateError.message,
+                  code: updateError.code,
+                  details: updateError.details,
+                  hint: updateError.hint
                 })
+              } else if (updateResult && updateResult.length > 0) {
+                const updated = updateResult[0]
+                console.log('✅ Profile update confirmed:', {
+                  role: updated.role,
+                  subscription_status: updated.subscription_status,
+                  subscription_id: updated.subscription_id
+                })
+              }
 
-              if (subError) {
-                console.error('❌ Error updating subscriptions table:', subError)
-              } else {
-                console.log('✅ Subscription record updated successfully (fallback)')
+              // Update subscriptions table with retry logic
+              let subUpdateSuccess = false
+              for (let attempt = 1; attempt <= 3; attempt++) {
+                const { error: subError } = await supabaseClient
+                  .from('subscriptions')
+                  .upsert({
+                    user_id: userId,
+                    stripe_customer_id: customerId,
+                    stripe_subscription_id: subscription.id,
+                    plan_type: subscription.items.data[0]?.price.recurring?.interval || 'monthly',
+                    status: subscription.status,
+                    current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+                    current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+                  }, {
+                    onConflict: 'stripe_subscription_id'
+                  })
+
+                if (subError) {
+                  console.error(`❌ Error updating subscriptions table (attempt ${attempt}):`, subError)
+                  if (attempt < 3) {
+                    await new Promise(resolve => setTimeout(resolve, attempt * 500))
+                  }
+                } else {
+                  console.log(`✅ Subscription record updated successfully on attempt ${attempt} (fallback)`)
+                  subUpdateSuccess = true
+                  break
+                }
+              }
+              
+              if (!subUpdateSuccess) {
+                console.error('❌ Failed to update subscriptions table after 3 attempts')
               }
             } else {
               console.error('❌ Cannot update: userId not found')
@@ -211,6 +260,42 @@ serve(async (req) => {
                 message: result.message,
                 subscription_id: result.subscription_id
               })
+              
+              // Verify the role was updated correctly
+              const userId = session.metadata?.userId
+              if (userId) {
+                const { data: verifyProfile } = await supabaseClient
+                  .from('profiles')
+                  .select('role, subscription_status, subscription_id')
+                  .eq('id', userId)
+                  .single()
+                
+                if (verifyProfile) {
+                  console.log('✅ Verification - Profile state after sync:', {
+                    role: verifyProfile.role,
+                    subscription_status: verifyProfile.subscription_status,
+                    subscription_id: verifyProfile.subscription_id
+                  })
+                  
+                  // If role is still Free and user is not Admin, we need to update it
+                  if (verifyProfile.role === 'Free' || verifyProfile.role === null) {
+                    console.log('⚠️ Role is still Free after sync, updating manually...')
+                    const planType = session.metadata?.planType || 'student'
+                    const newRole = (planType === 'teacher' || planType === 'Teacher') ? 'Teacher' : 'Student'
+                    
+                    const { error: fixError } = await supabaseClient
+                      .from('profiles')
+                      .update({ role: newRole })
+                      .eq('id', userId)
+                    
+                    if (fixError) {
+                      console.error('❌ Error fixing role after sync:', fixError)
+                    } else {
+                      console.log(`✅ Role fixed from Free to ${newRole}`)
+                    }
+                  }
+                }
+              }
             }
           }
         } else {
@@ -249,35 +334,68 @@ serve(async (req) => {
             .single()
 
           if (profile) {
-            // Determine role from price
+            // Determine role from price or subscription metadata
             const priceId = subscription.items.data[0]?.price.id
-            let newRole = 'Student'
-            if (priceId === 'price_1SBPN62MKT6HumxnBoQgAdd0') {
+            const planType = subscription.metadata?.planType
+            
+            let newRole = 'Student' // Default
+            
+            if (planType === 'teacher' || planType === 'Teacher') {
               newRole = 'Teacher'
+              console.log('📝 Role determined from subscription metadata planType: Teacher')
+            } else if (planType === 'student' || planType === 'Student') {
+              newRole = 'Student'
+              console.log('📝 Role determined from subscription metadata planType: Student')
+            } else if (priceId === 'price_1SBPN62MKT6HumxnBoQgAdd0') {
+              newRole = 'Teacher'
+              console.log('📝 Role determined from price ID: Teacher')
+            } else {
+              newRole = 'Student'
+              console.log('📝 Role defaulting to Student (planType:', planType, ', priceId:', priceId, ')')
             }
 
             // Get current role to preserve Admin
             const { data: currentProfile } = await supabaseClient
               .from('profiles')
-              .select('role')
+              .select('role, subscription_status')
               .eq('id', profile.id)
               .single()
 
             const currentRole = currentProfile?.role || 'Free'
+            console.log('📊 Current profile state:', {
+              role: currentRole,
+              subscription_status: currentProfile?.subscription_status
+            })
+            console.log('🔄 Will update to:', {
+              role: newRole,
+              subscription_status: subscription.status
+            })
             
-            // Update subscriptions table
-            const { error: subError } = await supabaseClient
-              .from('subscriptions')
-              .update({
-                status: subscription.status,
-                current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-              })
-              .eq('stripe_subscription_id', subscription.id)
+            // Update subscriptions table with retry logic
+            let subUpdateSuccess = false
+            for (let attempt = 1; attempt <= 3; attempt++) {
+              const { error: subError } = await supabaseClient
+                .from('subscriptions')
+                .update({
+                  status: subscription.status,
+                  current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+                })
+                .eq('stripe_subscription_id', subscription.id)
 
-            if (subError) {
-              console.error('❌ Error updating subscriptions table:', subError)
-            } else {
-              console.log('✅ Subscription record updated (fallback)')
+              if (subError) {
+                console.error(`❌ Error updating subscriptions table (attempt ${attempt}):`, subError)
+                if (attempt < 3) {
+                  await new Promise(resolve => setTimeout(resolve, attempt * 500))
+                }
+              } else {
+                console.log(`✅ Subscription record updated successfully on attempt ${attempt} (fallback)`)
+                subUpdateSuccess = true
+                break
+              }
+            }
+            
+            if (!subUpdateSuccess) {
+              console.error('❌ Failed to update subscriptions table after 3 attempts')
             }
 
             // Update profile - include role update if not Admin
@@ -287,27 +405,99 @@ serve(async (req) => {
 
             if (currentRole !== 'Admin') {
               updateData.role = newRole
-              console.log(`🔄 Updating role from "${currentRole}" to "${newRole}"`)
+              console.log(`✅ Will update role from "${currentRole}" to "${newRole}"`)
             } else {
-              console.log('⚠️ User is Admin - preserving Admin role')
+              console.log('⚠️ User is Admin - preserving Admin role, only updating subscription status')
             }
 
-            const { data: updatedProfile, error: profileError } = await supabaseClient
-              .from('profiles')
-              .update(updateData)
-              .eq('id', profile.id)
-              .select('role, subscription_status')
+            // BULLETPROOF: Update profile with retry logic
+            let updateResult = null
+            let updateError = null
+            
+            console.log('🔄 Attempting to update profile with data:', updateData)
+            
+            for (let attempt = 1; attempt <= 3; attempt++) {
+              console.log(`🔄 Database update attempt ${attempt}/3 for userId: ${profile.id}`)
+              
+              const { data, error } = await supabaseClient
+                .from('profiles')
+                .update(updateData)
+                .eq('id', profile.id)
+                .select('role, subscription_status')
 
-            if (profileError) {
-              console.error('❌ Error updating profile:', profileError)
-            } else {
-              console.log('✅ Profile updated (fallback):', updatedProfile)
+              if (error) {
+                updateError = error
+                console.error(`❌ Attempt ${attempt} failed:`, error.message)
+                
+                if (attempt < 3) {
+                  const delay = attempt * 500
+                  console.log(`⏳ Waiting ${delay}ms before retry...`)
+                  await new Promise(resolve => setTimeout(resolve, delay))
+                }
+              } else {
+                updateResult = data
+                updateError = null
+                console.log(`✅ Profile updated successfully on attempt ${attempt} (fallback):`, data)
+                break
+              }
+            }
+
+            if (updateError) {
+              console.error('❌ Error updating profile after 3 attempts:', updateError)
+              console.error('Error details:', {
+                message: updateError.message,
+                code: updateError.code,
+                details: updateError.details
+              })
+            } else if (updateResult && updateResult.length > 0) {
+              const updated = updateResult[0]
+              console.log('✅ Profile update confirmed:', {
+                role: updated.role,
+                subscription_status: updated.subscription_status
+              })
             }
           } else {
             console.error('❌ Profile not found for customer:', customerId)
           }
         } else {
           console.log('✅ Subscription update synced successfully via FDW function:', syncResult)
+          
+          // Verify the role was updated correctly
+          const customerId = subscription.customer as string
+          const { data: verifyProfile } = await supabaseClient
+            .from('profiles')
+            .select('id, role, subscription_status')
+            .eq('stripe_customer_id', customerId)
+            .single()
+          
+          if (verifyProfile) {
+            console.log('✅ Verification - Profile state after sync:', {
+              userId: verifyProfile.id,
+              role: verifyProfile.role,
+              subscription_status: verifyProfile.subscription_status
+            })
+            
+            // If role is still Free/null and user is not Admin, update it
+            if ((verifyProfile.role === 'Free' || verifyProfile.role === null) && verifyProfile.role !== 'Admin') {
+              console.log('⚠️ Role is still Free/null after sync, updating manually...')
+              const planType = subscription.metadata?.planType || 'student'
+              const priceId = subscription.items.data[0]?.price.id
+              const newRole = (planType === 'teacher' || planType === 'Teacher' || priceId === 'price_1SBPN62MKT6HumxnBoQgAdd0') 
+                ? 'Teacher' 
+                : 'Student'
+              
+              const { error: fixError } = await supabaseClient
+                .from('profiles')
+                .update({ role: newRole })
+                .eq('id', verifyProfile.id)
+              
+              if (fixError) {
+                console.error('❌ Error fixing role after sync:', fixError)
+              } else {
+                console.log(`✅ Role fixed from ${verifyProfile.role} to ${newRole}`)
+              }
+            }
+          }
         }
         break
       }
@@ -316,30 +506,50 @@ serve(async (req) => {
         const subscription = event.data.object as Stripe.Subscription
         const customerId = subscription.customer as string
 
+        console.log('🔄 Processing customer.subscription.deleted for subscription:', subscription.id)
+        console.log('Customer ID:', customerId)
+
         // Get user by customer ID
         const { data: profile } = await supabaseClient
           .from('profiles')
-          .select('id')
+          .select('id, role, subscription_status')
           .eq('stripe_customer_id', customerId)
           .single()
 
         if (profile) {
-          // Update subscription status
-          await supabaseClient
-            .from('subscriptions')
-            .update({
-              status: 'cancelled',
-            })
-            .eq('stripe_subscription_id', subscription.id)
+          console.log('📊 Current profile state:', {
+            userId: profile.id,
+            role: profile.role,
+            subscription_status: profile.subscription_status
+          })
+          
+          // Update subscription status with retry logic
+          let subUpdateSuccess = false
+          for (let attempt = 1; attempt <= 3; attempt++) {
+            const { error: subError } = await supabaseClient
+              .from('subscriptions')
+              .update({
+                status: 'cancelled',
+              })
+              .eq('stripe_subscription_id', subscription.id)
 
-          // Get current role to check if user is Admin
-          const { data: currentProfile } = await supabaseClient
-            .from('profiles')
-            .select('role')
-            .eq('id', profile.id)
-            .single()
+            if (subError) {
+              console.error(`❌ Error updating subscriptions table (attempt ${attempt}):`, subError)
+              if (attempt < 3) {
+                await new Promise(resolve => setTimeout(resolve, attempt * 500))
+              }
+            } else {
+              console.log(`✅ Subscription record updated successfully on attempt ${attempt}`)
+              subUpdateSuccess = true
+              break
+            }
+          }
+          
+          if (!subUpdateSuccess) {
+            console.error('❌ Failed to update subscriptions table after 3 attempts')
+          }
 
-          const currentRole = currentProfile?.role || 'Free'
+          const currentRole = profile.role || 'Free'
           
           // Prepare update - only downgrade role if user is NOT an Admin
           const updateData: any = {
@@ -350,16 +560,54 @@ serve(async (req) => {
           // Only downgrade to Free if user is not an Admin
           if (currentRole !== 'Admin') {
             updateData.role = 'Free'
-            console.log('Downgrading role from', currentRole, 'to Free')
+            console.log(`✅ Will downgrade role from "${currentRole}" to "Free"`)
           } else {
             console.log('⚠️ User is Admin - preserving Admin role, only updating subscription status')
           }
 
-          // Update profile
-          await supabaseClient
-            .from('profiles')
-            .update(updateData)
-            .eq('id', profile.id)
+          // BULLETPROOF: Update profile with retry logic
+          let updateResult = null
+          let updateError = null
+          
+          console.log('🔄 Attempting to update profile with data:', updateData)
+          
+          for (let attempt = 1; attempt <= 3; attempt++) {
+            console.log(`🔄 Database update attempt ${attempt}/3 for userId: ${profile.id}`)
+            
+            const { data, error } = await supabaseClient
+              .from('profiles')
+              .update(updateData)
+              .eq('id', profile.id)
+              .select('role, subscription_status')
+
+            if (error) {
+              updateError = error
+              console.error(`❌ Attempt ${attempt} failed:`, error.message)
+              
+              if (attempt < 3) {
+                const delay = attempt * 500
+                console.log(`⏳ Waiting ${delay}ms before retry...`)
+                await new Promise(resolve => setTimeout(resolve, delay))
+              }
+            } else {
+              updateResult = data
+              updateError = null
+              console.log(`✅ Profile updated successfully on attempt ${attempt}:`, data)
+              break
+            }
+          }
+
+          if (updateError) {
+            console.error('❌ Error updating profile after 3 attempts:', updateError)
+          } else if (updateResult && updateResult.length > 0) {
+            const updated = updateResult[0]
+            console.log('✅ Profile update confirmed:', {
+              role: updated.role,
+              subscription_status: updated.subscription_status
+            })
+          }
+        } else {
+          console.error('❌ Profile not found for customer:', customerId)
         }
         break
       }

@@ -407,14 +407,14 @@ const EnhancedLandingPage = () => {
                 <div className="w-12 h-12 rounded-full bg-cyan-200/10 flex items-center justify-center border border-cyan-200/30 shadow-[0_0_15px_rgba(165,243,252,0.15)]">
                   <Sparkles className="w-5 h-5 text-cyan-200" />
                 </div>
-                <h3 className="text-2xl font-bold text-cyan-100 font-cinzel tracking-wider">Architect State</h3>
+                <h3 className="text-2xl font-bold text-cyan-100 font-cinzel tracking-wider">ENLIGHTENED</h3>
               </div>
               <ul className="space-y-6 font-rajdhani text-lg text-gray-300">
                 {[
-                  "Conscious Execution",
-                  "Expanded Bandwidth",
-                  "Proactive Creation",
-                  "Overridden Limits"
+                  "Conscious perception",
+                  "Deliberate action",
+                  "Integrated identity",
+                  "Internal authority"
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-4">
                     <Check className="w-4 h-4 text-cyan-200" />
