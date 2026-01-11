@@ -475,8 +475,8 @@ const SubscriptionSection = ({ profile }) => {
     
     // WORKAROUND 1: Use Supabase Edge Function (best - no CORS issues)
     // WORKAROUND 2: Auto-detect environment with fallback
-    const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
-    const API_URL = process.env.REACT_APP_API_URL || import.meta.env.VITE_API_URL || 
+    const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
+    const API_URL = process.env.REACT_APP_API_URL || 
                     (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
                         ? 'http://localhost:3001' 
                         : window.location.origin);

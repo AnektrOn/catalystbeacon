@@ -14,7 +14,6 @@ import './styles/mobile-responsive.css'
 // Lazy load pages for code splitting
 const LoginPage = React.lazy(() => import('./pages/LoginPage'))
 const SignupPage = React.lazy(() => import('./pages/SignupPage'))
-const Dashboard = React.lazy(() => import('./pages/Dashboard'))
 const DashboardNeomorphic = React.lazy(() => import('./pages/DashboardNeomorphic'))
 const PricingPage = React.lazy(() => import('./pages/PricingPage'))
 const ProfilePage = React.lazy(() => import('./pages/ProfilePage'))
@@ -126,13 +125,6 @@ const AppRoutes = () => {
           <ErrorBoundary>
             <React.Suspense fallback={<LoadingScreen />}>
               <DashboardNeomorphic />
-            </React.Suspense>
-          </ErrorBoundary>
-        } />
-        <Route path="/dashboard/classic" element={
-          <ErrorBoundary>
-            <React.Suspense fallback={<LoadingScreen />}>
-              <Dashboard />
             </React.Suspense>
           </ErrorBoundary>
         } />

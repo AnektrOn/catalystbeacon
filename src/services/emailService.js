@@ -3,9 +3,9 @@
  * This service calls Supabase Edge Functions to send emails
  */
 
-// Get Supabase configuration - use Vite format with fallback
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.REACT_APP_SUPABASE_ANON_KEY
+// Get Supabase configuration - Create React App uses REACT_APP_ prefix
+const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL
+const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY
 
 /**
  * Call Supabase Edge Function to send email
@@ -99,7 +99,7 @@ class EmailService {
     
     // Method 2: Try Server API (fallback)
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 
+      const API_URL = process.env.REACT_APP_API_URL || 
                       (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
                         ? 'http://localhost:3001' 
                         : window.location.origin)

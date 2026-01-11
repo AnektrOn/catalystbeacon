@@ -4,17 +4,15 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import SEOHead from '../components/SEOHead'
 import levelsService from '../services/levelsService'
+import courseService from '../services/courseService'
+import socialService from '../services/socialService'
 import useSubscription from '../hooks/useSubscription'
 import UpgradeModal from '../components/UpgradeModal'
-import { Clock, BookOpen, Award, Target, TrendingUp, Calendar } from 'lucide-react'
+import OnboardingModal from '../components/dashboard/OnboardingModal'
 import toast from 'react-hot-toast'
+import { getTodayStartISO } from '../utils/dateUtils'
 
 // Import Dashboard Components
-import StreakCard from '../components/dashboard/StreakCard'
-import ActiveCourseCard from '../components/dashboard/ActiveCourseCard'
-import QuickActionsGrid from '../components/dashboard/QuickActionsGrid'
-import StatCard from '../components/dashboard/StatCard'
-import StatCardV2 from '../components/dashboard/StatCardV2'
 import XPCircleWidgetV2 from '../components/dashboard/XPCircleWidgetV2'
 import XPProgressChart from '../components/dashboard/XPProgressChart'
 import MoodTracker from '../components/dashboard/MoodTracker'
@@ -22,6 +20,9 @@ import SchoolProgressAreaChartMobile from '../components/dashboard/SchoolProgres
 import SchoolProgressAreaChartDesktop from '../components/dashboard/SchoolProgressAreaChartDesktop'
 import AllLessonsCard from '../components/dashboard/AllLessonsCard'
 import HabitsCompletedCard from '../components/dashboard/HabitsCompletedCard'
+import ConstellationNavigatorWidget from '../components/dashboard/ConstellationNavigatorWidget'
+import TeacherFeedWidget from '../components/dashboard/TeacherFeedWidget'
+import EtherealStatsCards from '../components/dashboard/EtherealStatsCards'
 
 import './DashboardNeomorphic.css'
 
@@ -29,6 +30,7 @@ const DashboardNeomorphic = () => {
   const { user, profile, fetchProfile } = useAuth()
   const { isFreeUser, isAdmin } = useSubscription()
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false)
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [loading, setLoading] = useState(true)
@@ -43,29 +45,59 @@ const DashboardNeomorphic = () => {
     xpToNext: 1000
   })
 
-  // Dashboard stats
-  const [stats, setStats] = useState({
-    streak: 0,
-    streakRecord: 0,
-    timeThisWeek: '0h',
-    lessonsCompleted: 0,
-    achievementsUnlocked: 0,
-    coursesActive: 0
+
+  // Dashboard data for widgets
+  const [dashboardData, setDashboardData] = useState({
+    ritual: {
+      completed: false,
+      streak: 0,
+      xpReward: 50
+    },
+    constellation: {
+      currentSchool: 'Ignition',
+      currentConstellation: {
+        name: '',
+        nodes: []
+      }
+    },
+    teacherFeed: {
+      posts: []
+    },
+    stats: {
+      learningTime: 0, // hours
+      lessonsCompleted: 0,
+      averageScore: 0
+    },
+    achievements: {
+      total: 0
+    }
   })
 
-  // Active course
-  const [activeCourse, setActiveCourse] = useState(null)
-
   // Show upgrade modal if redirected from restricted route
+  // Show onboarding modal for new users
   useEffect(() => {
+    // Only check for modals when user and profile are loaded
+    if (!user || !profile) return
+    
     const upgradePrompt = searchParams.get('upgradePrompt')
-    if (upgradePrompt === 'true' && !isAdmin) {
+    const isNewUser = searchParams.get('new_user')
+
+    // Check onboarding: URL param OR database flag (100% reliable)
+    const shouldShowOnboarding = isNewUser === 'true' || 
+                                 (profile.has_completed_onboarding === false && 
+                                  profile.created_at && 
+                                  new Date(profile.created_at) > new Date(Date.now() - 24 * 60 * 60 * 1000)) // Created in last 24 hours
+
+    if (shouldShowOnboarding && !profile.has_completed_onboarding) {
+      console.log('🎯 New user detected (URL param or database flag), showing onboarding modal')
+      setShowOnboardingModal(true)
+    } else if (upgradePrompt === 'true' && !isAdmin) {
       setShowUpgradeModal(true)
       navigate('/dashboard', { replace: true })
     } else if (upgradePrompt === 'true' && isAdmin) {
       navigate('/dashboard', { replace: true })
     }
-  }, [searchParams, navigate, isAdmin])
+  }, [searchParams, navigate, isAdmin, user, profile])
 
   // Handle payment success redirect - PRIMARY: Use API server directly
   useEffect(() => {
@@ -113,8 +145,8 @@ const DashboardNeomorphic = () => {
       console.log('🎯 PAYMENT SUCCESS DETECTED:', { payment, sessionId, userId: user.id })
       console.log('🎯 Current profile role:', profile?.role)
       
-      // Determine API URL: use Vite env var with proper fallback
-      const API_URL = import.meta.env.VITE_API_URL || 
+      // Determine API URL: use Create React App env var with proper fallback
+      const API_URL = process.env.REACT_APP_API_URL || 
                       (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
                         ? 'http://localhost:3001' 
                         : window.location.origin)
@@ -131,7 +163,7 @@ const DashboardNeomorphic = () => {
           // PRIMARY METHOD: Call API server directly
           try {
             console.log('📞 Calling API server to update subscription...')
-            const API_URL = import.meta.env.VITE_API_URL || 
+            const API_URL = process.env.REACT_APP_API_URL || 
                             (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
                               ? 'http://localhost:3001' 
                               : window.location.origin)
@@ -269,140 +301,244 @@ const DashboardNeomorphic = () => {
     }
   }, [profile])
 
-  // Load streak data - Get max streak from all habits
-  const loadStreakData = useCallback(async () => {
-    if (!profile) return
 
+  // Load daily ritual data (habits completion streak)
+  const loadRitualData = useCallback(async () => {
+    if (!user || !profile) return
+    
     try {
-      const { data, error } = await supabase
-        .from('user_habits')
-        .select('streak, streak_record')
-        .eq('user_id', profile.id)
-
-      if (!error && data && data.length > 0) {
-        const maxStreak = Math.max(...data.map(h => h.streak || 0))
-        const maxStreakRecord = Math.max(...data.map(h => h.streak_record || 0))
-        setStats(prev => ({
-          ...prev,
-          streak: maxStreak,
-          streakRecord: maxStreakRecord
-        }))
-      } else {
-        setStats(prev => ({
-          ...prev,
-          streak: 0,
-          streakRecord: 0
-        }))
+      const streak = profile.completion_streak || 0
+      
+      // Check if ritual completed today (any habit completed today)
+      const todayStart = getTodayStartISO()
+      
+      // Check habit completions for today
+      const { data: completions, error: completionsError } = await supabase
+        .from('user_habit_completions')
+        .select('id')
+        .eq('user_id', user.id)
+        .gte('completed_at', todayStart)
+        .limit(1)
+      
+      if (completionsError && completionsError.code !== 'PGRST116') {
+        console.warn('Error loading habit completions:', completionsError)
       }
+      
+      const completed = completions && completions.length > 0
+
+      setDashboardData(prev => ({
+        ...prev,
+        ritual: {
+          completed,
+          streak,
+          xpReward: 50
+        }
+      }))
     } catch (error) {
-      console.error('Error loading streak:', error)
+      console.error('Error loading ritual data:', error)
     }
-  }, [profile])
+  }, [user, profile])
 
-  // Load stats
-  const loadStats = useCallback(async () => {
-    if (!profile) return
 
+  // Load constellation data (current school and progress)
+  const loadConstellationData = useCallback(async () => {
+    if (!user || !profile) return
+    
     try {
-      // Get time this week (from XP logs)
+      const { data: schools, error: schoolsError } = await supabase
+        .from('schools')
+        .select('*')
+        .order('unlock_xp', { ascending: true })
+
+      if (schoolsError && schoolsError.code !== 'PGRST116') {
+        console.warn('Error loading schools:', schoolsError)
+      }
+
+      const userXp = profile.current_xp || 0
+      let currentSchool = 'Ignition'
+      
+      if (schools && schools.length > 0) {
+        for (const school of schools) {
+          if (userXp >= school.unlock_xp) {
+            currentSchool = school.name
+          } else {
+            break
+          }
+        }
+      }
+
+      const { data: courses, error: coursesError } = await courseService.getAllCourses({
+        masterschool: currentSchool,
+        userId: user.id
+      })
+
+      if (coursesError) {
+        console.warn('Error loading courses:', coursesError)
+      }
+
+      if (!courses || courses.length === 0) {
+        setDashboardData(prev => ({
+          ...prev,
+          constellation: {
+            currentSchool,
+            currentConstellation: { name: `${currentSchool} Courses`, nodes: [] }
+          }
+        }))
+        return
+      }
+
+      const nodes = await Promise.all(
+        courses.slice(0, 5).map(async (course, index) => {
+          try {
+            if (!course.course_id) {
+              console.warn('Course missing course_id:', course);
+              return null;
+            }
+            const { data: progress, error: progressError } = await courseService.getUserCourseProgress(user.id, course.course_id)
+            if (progressError) {
+              console.warn('Error loading course progress:', progressError)
+              return null
+            }
+            const isCompleted = progress?.status === 'completed'
+            const isCurrent = index === 0 && progress?.status === 'in_progress'
+
+            return {
+              id: course.id,
+              name: course.title,
+              completed: isCompleted,
+              isCurrent
+            }
+          } catch (err) {
+            console.warn('Error processing course:', err)
+            return null
+          }
+        })
+      )
+
+      const validNodes = nodes.filter(n => n !== null)
+
+      setDashboardData(prev => ({
+        ...prev,
+        constellation: {
+          currentSchool,
+          currentConstellation: {
+            name: `${currentSchool} Path`,
+            nodes: validNodes
+          }
+        }
+      }))
+    } catch (error) {
+      console.error('Error loading constellation data:', error)
+    }
+  }, [user, profile])
+
+  // Load teacher feed (posts from teachers/admins)
+  const loadTeacherFeed = useCallback(async () => {
+    try {
+      const { data: posts, error: postsError } = await socialService.getPosts(5)
+      
+      if (postsError) {
+        console.warn('Error loading teacher feed:', postsError)
+        setDashboardData(prev => ({
+          ...prev,
+          teacherFeed: { posts: [] }
+        }))
+        return
+      }
+      
+      const teacherPosts = posts?.filter(post => {
+        const userRole = post.profiles?.role
+        return userRole === 'Teacher' || userRole === 'Admin' || userRole === 'teacher' || userRole === 'admin'
+      }) || []
+      
+      setDashboardData(prev => ({
+        ...prev,
+        teacherFeed: { posts: teacherPosts }
+      }))
+    } catch (error) {
+      console.error('Error loading teacher feed:', error)
+      setDashboardData(prev => ({
+        ...prev,
+        teacherFeed: { posts: [] }
+      }))
+    }
+  }, [])
+
+  // Load stats data (learning time and lessons completed)
+  const loadStatsData = useCallback(async () => {
+    if (!user || !profile) return
+    
+    try {
       const oneWeekAgo = new Date()
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
       
-      const { data: xpLogs } = await supabase
+      const { data: xpLogs, error: xpError } = await supabase
         .from('xp_logs')
         .select('xp_earned, created_at')
-        .eq('user_id', profile.id)
+        .eq('user_id', user.id)
         .gte('created_at', oneWeekAgo.toISOString())
 
-      // Estimate hours (assuming 50 XP per hour of learning)
+      if (xpError && xpError.code !== 'PGRST116') {
+        console.warn('Error loading XP logs:', xpError)
+      }
+
       const totalXP = xpLogs?.reduce((sum, log) => sum + (log.xp_earned || 0), 0) || 0
-      const hours = Math.floor(totalXP / 50)
-      
-      // Get lessons completed
-      const { count: lessonsCount } = await supabase
+      const learningTime = Math.floor(totalXP / 50)
+
+      const { count: lessonsCount, error: lessonsError } = await supabase
         .from('user_lesson_progress')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', profile.id)
+        .eq('user_id', user.id)
         .eq('is_completed', true)
 
-      // Get achievements
-      const { count: achievementsCount } = await supabase
+      if (lessonsError && lessonsError.code !== 'PGRST116') {
+        console.warn('Error loading lessons completed:', lessonsError)
+      }
+
+      // Get achievements count
+      const { count: achievementsCount, error: achievementsError } = await supabase
         .from('user_badges')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', profile.id)
+        .eq('user_id', user.id)
 
-      // Get active courses
-      const { count: coursesCount } = await supabase
-        .from('user_lesson_progress')
-        .select('course_id', { count: 'exact', head: true })
-        .eq('user_id', profile.id)
-        .eq('is_completed', false)
+      if (achievementsError && achievementsError.code !== 'PGRST116') {
+        console.warn('Error loading achievements:', achievementsError)
+      }
 
-      setStats(prev => ({
+      let averageScore = 0
+      try {
+        const { data: lessonProgress, error: progressError } = await supabase
+          .from('user_lesson_progress')
+          .select('score')
+          .eq('user_id', user.id)
+          .eq('is_completed', true)
+          .not('score', 'is', null)
+
+        if (!progressError && lessonProgress && lessonProgress.length > 0) {
+          const scores = lessonProgress.map(lp => lp.score || 0).filter(s => s > 0)
+          if (scores.length > 0) {
+            averageScore = scores.reduce((sum, score) => sum + score, 0) / scores.length
+          }
+        }
+      } catch (err) {
+        console.warn('Error calculating average score:', err)
+      }
+
+      setDashboardData(prev => ({
         ...prev,
-        timeThisWeek: `${hours}h`,
-        lessonsCompleted: lessonsCount || 0,
-        achievementsUnlocked: achievementsCount || 0,
-        coursesActive: coursesCount || 0
+        stats: {
+          learningTime,
+          lessonsCompleted: lessonsCount || 0,
+          averageScore
+        },
+        achievements: {
+          total: achievementsCount || 0
+        }
       }))
     } catch (error) {
-      console.error('Error loading stats:', error)
+      console.error('Error loading stats data:', error)
     }
-  }, [profile])
-
-  // Load active course
-  const loadActiveCourse = useCallback(async () => {
-    if (!profile) return
-
-    try {
-      const { data, error } = await supabase
-        .from('user_lesson_progress')
-        .select(`
-          *,
-          courses:course_id (
-            id,
-            title,
-            thumbnail_url,
-            description
-          )
-        `)
-        .eq('user_id', profile.id)
-        .eq('is_completed', false)
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .single()
-
-      if (!error && data && data.courses) {
-        // Get total lessons count
-        const { count } = await supabase
-          .from('course_lessons')
-          .select('*', { count: 'exact', head: true })
-          .eq('course_id', data.courses.id)
-
-        // Get completed lessons count
-        const { count: completedCount } = await supabase
-          .from('user_lesson_progress')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', profile.id)
-          .eq('course_id', data.courses.id)
-          .eq('is_completed', true)
-
-        const progress = count > 0 ? Math.round((completedCount / count) * 100) : 0
-        
-        setActiveCourse({
-          title: data.courses.title,
-          image: data.courses.thumbnail_url || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4',
-          progress,
-          lessonsCompleted: completedCount || 0,
-          totalLessons: count || 0,
-          timeRemaining: `${Math.ceil((count - completedCount) * 0.5)}h`,
-          courseId: data.courses.id
-        })
-      }
-    } catch (error) {
-      console.error('Error loading active course:', error)
-    }
-  }, [profile])
+  }, [user, profile])
 
   // Load all data
   useEffect(() => {
@@ -410,9 +546,10 @@ const DashboardNeomorphic = () => {
       setLoading(true)
       await Promise.all([
         loadLevelData(),
-        loadStreakData(),
-        loadStats(),
-        loadActiveCourse()
+        loadRitualData(),
+        loadConstellationData(),
+        loadTeacherFeed(),
+        loadStatsData()
       ])
       setLoading(false)
     }
@@ -420,32 +557,7 @@ const DashboardNeomorphic = () => {
     if (profile) {
       loadAllData()
     }
-  }, [profile, loadLevelData, loadStreakData, loadStats, loadActiveCourse])
-
-  // Handle quick action clicks
-  const handleActionClick = (actionId) => {
-    const routes = {
-      courses: '/courses',
-      achievements: '/achievements',
-      calendar: '/mastery?tab=calendar',
-      goals: '/mastery',
-      community: '/community',
-      favorites: '/courses',
-      boost: '/pricing',
-      settings: '/settings'
-    }
-    
-    if (routes[actionId]) {
-      navigate(routes[actionId])
-    }
-  }
-
-  // Handle course click
-  const handleCourseClick = () => {
-    if (activeCourse) {
-      navigate(`/course/${activeCourse.courseId}`)
-    }
-  }
+  }, [profile, loadLevelData, loadRitualData, loadConstellationData, loadTeacherFeed, loadStatsData])
 
   if (loading) {
     return (
@@ -480,7 +592,7 @@ const DashboardNeomorphic = () => {
 
       {/* Main Grid */}
       <div className="dashboard-grid">
-        {/* Hero - XP Circle */}
+        {/* 1. Hero - XP Circle */}
         <div className="grid-hero">
           <XPCircleWidgetV2
             currentXP={levelData.currentXP}
@@ -492,107 +604,60 @@ const DashboardNeomorphic = () => {
           />
         </div>
 
-        {/* Stats Row */}
+        {/* 17. Ethereal Stats Cards */}
         <div className="grid-stats">
-          <StreakCard 
-            streak={stats.streak} 
-            record={stats.streakRecord} 
-          />
-          <StatCardV2
-            icon={Clock}
-            value={stats.timeThisWeek}
-            label="This Week"
-            subtitle="Learning time"
-          />
-          <StatCardV2
-            icon={BookOpen}
-            value={stats.lessonsCompleted}
-            label="Lessons"
-            subtitle="Completed"
-          />
-          <StatCardV2
-            icon={Award}
-            value={stats.achievementsUnlocked}
-            label="Achievements"
-            subtitle="Unlocked"
+          <EtherealStatsCards
+            streak={dashboardData.ritual.streak}
+            lessonsCompleted={dashboardData.stats.lessonsCompleted}
+            learningTime={dashboardData.stats.learningTime}
+            achievementsUnlocked={dashboardData.achievements.total}
           />
         </div>
 
-        {/* Mood Tracker */}
+        {/* 4. Mood Tracker */}
         <div className="grid-mood-tracker">
           <MoodTracker userId={profile?.id} />
         </div>
 
-        {/* XP Progress Chart */}
+        {/* 5. XP Progress Chart */}
         <div className="grid-chart">
           <XPProgressChart userId={profile?.id} />
         </div>
 
+        {/* 6. All Lessons Card */}
+        <div className="grid-chart">
+          <AllLessonsCard />
+        </div>
+
+        {/* 7. Habits Completed Card */}
+        <div className="grid-chart">
+          <HabitsCompletedCard />
+        </div>
+
         {/* School Progress Area Chart */}
-        {/* School Progress Chart - Temporarily hidden until visibility issue is fixed */}
-        {/* <div className="grid-chart">
+        <div className="grid-chart">
           <div className="lg:hidden">
             <SchoolProgressAreaChartMobile userId={profile?.id} />
           </div>
           <div className="hidden lg:block">
             <SchoolProgressAreaChartDesktop userId={profile?.id} />
           </div>
-        </div> */}
-
-        {/* All Lessons Card */}
-        <div className="grid-chart">
-          <AllLessonsCard />
         </div>
 
-        {/* Habits Completed Card */}
-        <div className="grid-chart">
-          <HabitsCompletedCard />
-        </div>
-
-        {/* Active Course */}
-        {activeCourse && (
-          <div className="grid-course">
-            <ActiveCourseCard
-              title={activeCourse.title}
-              image={activeCourse.image}
-              progress={activeCourse.progress}
-              lessonsCompleted={activeCourse.lessonsCompleted}
-              totalLessons={activeCourse.totalLessons}
-              timeRemaining={activeCourse.timeRemaining}
-              onClick={handleCourseClick}
+        {/* 12. Constellation Navigator - Only show for paid users and admins */}
+        {(!isFreeUser || isAdmin) && (
+          <div className="grid-full-width">
+            <ConstellationNavigatorWidget
+              currentSchool={dashboardData.constellation.currentSchool}
+              currentConstellation={dashboardData.constellation.currentConstellation}
             />
           </div>
         )}
 
-        {/* Quick Actions - Removed on mobile (menu already provides navigation) */}
-
-        {/* Additional Stats - Only for paid users */}
+        {/* 13. Teacher Feed - Only show for paid users and admins */}
         {(!isFreeUser || isAdmin) && (
-          <div className="grid-stats-extra">
-            <div className="grid-stat-extra">
-              <StatCardV2
-                icon={Target}
-                value={`${Math.round((stats.lessonsCompleted / (stats.lessonsCompleted + 10)) * 100)}%`}
-                label="Weekly Goal"
-                subtitle="On track"
-              />
-            </div>
-            <div className="grid-stat-extra">
-              <StatCardV2
-                icon={TrendingUp}
-                value={stats.coursesActive}
-                label="Active Courses"
-                subtitle="In progress"
-              />
-            </div>
-            <div className="grid-stat-extra">
-              <StatCardV2
-                icon={Calendar}
-                value="5"
-                label="This Month"
-                subtitle="Sessions planned"
-              />
-            </div>
+          <div className="grid-full-width">
+            <TeacherFeedWidget posts={dashboardData.teacherFeed.posts} />
           </div>
         )}
       </div>
@@ -621,6 +686,54 @@ const DashboardNeomorphic = () => {
           restrictedFeature={searchParams.get('restrictedFeature')}
         />
       )}
+
+      {/* Onboarding Modal - Show for new users */}
+      <OnboardingModal 
+        isOpen={showOnboardingModal} 
+        onClose={async () => {
+          setShowOnboardingModal(false)
+          
+          // Mark onboarding as completed in database
+          if (user && profile && !profile.has_completed_onboarding) {
+            try {
+              const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ 
+                  has_completed_onboarding: true,
+                  onboarding_completed_at: new Date().toISOString()
+                })
+                .eq('id', user.id)
+              
+              if (updateError) {
+                console.error('Error marking onboarding complete:', updateError)
+                // Retry once after 1 second
+                setTimeout(async () => {
+                  await supabase
+                    .from('profiles')
+                    .update({ 
+                      has_completed_onboarding: true,
+                      onboarding_completed_at: new Date().toISOString()
+                    })
+                    .eq('id', user.id)
+                }, 1000)
+              } else {
+                console.log('✅ Onboarding marked as completed in database')
+                await fetchProfile(user.id)
+              }
+            } catch (error) {
+              console.error('Error updating onboarding status:', error)
+              localStorage.setItem(`onboarding_completed_${user.id}`, 'true')
+            }
+          }
+          
+          // Clean up URL when closing
+          const newParams = new URLSearchParams(searchParams)
+          if (newParams.get('new_user')) {
+            newParams.delete('new_user')
+            navigate({ search: newParams.toString() }, { replace: true })
+          }
+        }} 
+      />
     </div>
   )
 }

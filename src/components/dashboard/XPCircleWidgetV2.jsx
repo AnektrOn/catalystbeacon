@@ -30,8 +30,41 @@ const XPCircleWidgetV2 = ({
       color: var(--ethereal-text);
       position: relative;
       max-width: 400px;
+      width: 100%;
       margin: 0 auto;
       perspective: 1000px;
+      box-sizing: border-box;
+    }
+
+    /* Mobile optimizations */
+    @media (max-width: 640px) {
+      .xp-widget-container {
+        max-width: 100%;
+        padding: 0;
+      }
+      
+      .ethereal-card {
+        padding: 16px;
+        border-radius: 12px;
+      }
+      
+      .gauge-container {
+        width: 240px;
+        height: 240px;
+      }
+      
+      .level-value {
+        font-size: 24px;
+      }
+      
+      .xp-value {
+        font-size: 36px;
+      }
+      
+      .level-label {
+        font-size: 10px;
+        letter-spacing: 2px;
+      }
     }
 
     /* --- ETHEREAL CARD - Uses Global Variables --- */
@@ -48,12 +81,18 @@ const XPCircleWidgetV2 = ({
       transition: all 0.5s ease;
       margin-left: auto;
       margin-right: auto;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
     }
 
-    .ethereal-card:hover {
-      box-shadow: var(--ethereal-shadow-hover);
-      border-color: var(--ethereal-border-hover);
-      background: var(--ethereal-bg-hover);
+    /* Hover only works on devices with hover capability (desktop) */
+    @media (hover: hover) and (pointer: fine) {
+      .ethereal-card:hover {
+        box-shadow: var(--ethereal-shadow-hover);
+        border-color: var(--ethereal-border-hover);
+        background: var(--ethereal-bg-hover);
+      }
     }
 
     /* Ambient Light Source - Uses global animation */

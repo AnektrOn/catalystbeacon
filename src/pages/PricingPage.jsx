@@ -93,7 +93,7 @@ const PricingPage = () => {
 
     try {
       // Use API server as PRIMARY solution (most reliable)
-      const API_URL = import.meta.env.VITE_API_URL || 
+      const API_URL = process.env.REACT_APP_API_URL || 
                       (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
                         ? 'http://localhost:3001' 
                         : window.location.origin)
@@ -204,7 +204,7 @@ const PricingPage = () => {
       let errorMessage = 'Something went wrong. Please try again.'
       
       if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
-        const apiUrl = import.meta.env.VITE_API_URL || window.location.origin
+        const apiUrl = process.env.REACT_APP_API_URL || window.location.origin
         errorMessage = `Cannot connect to server at ${apiUrl}. Please make sure the server is running.`
       } else if (error.message?.includes('FALLBACK_TO_API_SERVER')) {
         // This should not happen since we use API server directly
@@ -218,8 +218,8 @@ const PricingPage = () => {
         error,
         errorName: error.name,
         errorMessage: error.message,
-        API_URL: import.meta.env.VITE_API_URL || window.location.origin,
-        SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL,
+        API_URL: process.env.REACT_APP_API_URL || window.location.origin,
+        SUPABASE_URL: process.env.REACT_APP_SUPABASE_URL,
         priceId,
         envCheck: {
           hasReactAppSupabaseUrl: !!process.env.REACT_APP_SUPABASE_URL,

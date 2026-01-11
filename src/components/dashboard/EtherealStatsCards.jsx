@@ -1,6 +1,11 @@
 import React from 'react'
 import { Flame, Brain, Activity, Crown } from 'lucide-react'
 
+// Verify all icons are imported correctly
+if (!Flame || !Brain || !Activity || !Crown) {
+  console.error('Missing icons from lucide-react:', { Flame: !!Flame, Brain: !!Brain, Activity: !!Activity, Crown: !!Crown })
+}
+
 const EtherealStatsCards = ({ 
   streak = 0, 
   lessonsCompleted = 0, 
@@ -28,7 +33,7 @@ const EtherealStatsCards = ({
       label: 'Resonance',
       value: streakDisplay,
       subtext: 'Harmonic Streak', // Learning Streak
-      icon: <Flame size={20} />,
+      icon: Flame,
       color: '#fb923c', // Orange/Gold
       delay: '0s'
     },
@@ -37,7 +42,7 @@ const EtherealStatsCards = ({
       label: 'Engrams', // Replaces Currency (Lessons/Modules)
       value: lessonsDisplay,
       subtext: 'Modules Integrated', // Lessons Completed
-      icon: <Brain size={20} />,
+      icon: Brain,
       color: '#38bdf8', // Sky Blue
       delay: '0.1s'
     },
@@ -46,7 +51,7 @@ const EtherealStatsCards = ({
       label: 'Clarity',
       value: learningTimeDisplay,
       subtext: 'Neural Precision', // Learning Time
-      icon: <Activity size={20} />,
+      icon: Activity,
       color: '#34d399', // Emerald
       delay: '0.2s'
     },
@@ -55,11 +60,18 @@ const EtherealStatsCards = ({
       label: 'Ascension',
       value: achievementsDisplay,
       subtext: 'Current Plane', // Achievements Unlocked
-      icon: <Crown size={20} />,
+      icon: Crown,
       color: '#a78bfa', // Violet
       delay: '0.3s'
     }
   ]
+
+  // Verify all card icons are defined
+  cards.forEach(card => {
+    if (!card.icon) {
+      console.error(`Card ${card.id} has undefined icon:`, card)
+    }
+  })
 
   const styles = `
     /* Uses global fonts and variables from ethereal-design-system.css */
@@ -73,31 +85,31 @@ const EtherealStatsCards = ({
     }
 
     .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 12px;
-      width: 100%;
-      max-width: 100%;
-      margin: 0;
-      padding: 0;
+      display: grid !important;
+      grid-template-columns: repeat(4, 1fr) !important;
+      gap: 4px !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+      margin: 0 !important;
+      padding: 0 !important;
       font-family: 'Rajdhani', sans-serif;
-      box-sizing: border-box;
       overflow: hidden;
       min-width: 0;
     }
 
     @media (min-width: 768px) {
       .stats-grid {
-        grid-template-columns: repeat(4, 1fr);
-        gap: 16px;
+        gap: 16px !important;
+        grid-template-columns: repeat(4, 1fr) !important;
       }
     }
 
+    /* Mobile: Keep 4 columns on 1 row - FORCE IT */
     @media (max-width: 767px) {
       .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(2, calc(50% - 4px));
-        gap: 8px;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 4px !important;
         min-width: 0;
         width: 100% !important;
         max-width: 100% !important;
@@ -118,23 +130,9 @@ const EtherealStatsCards = ({
         width: 100% !important;
         max-width: 100% !important;
         box-sizing: border-box !important;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .stats-grid {
-        grid-template-columns: repeat(2, calc(50% - 3px));
-        gap: 6px;
-        padding: 0 !important;
-        max-width: 100% !important;
-      }
-    }
-
-    @media (max-width: 360px) {
-      .stats-grid {
-        grid-template-columns: repeat(2, calc(50% - 2px));
-        gap: 4px;
-        max-width: 100% !important;
+        padding: 8px !important;
+        min-height: 90px !important;
+        gap: 4px !important;
       }
     }
 
@@ -152,6 +150,7 @@ const EtherealStatsCards = ({
       display: flex;
       flex-direction: column;
       align-items: flex-start;
+      justify-content: flex-start;
       gap: 12px;
       min-height: 140px;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
@@ -162,39 +161,32 @@ const EtherealStatsCards = ({
       flex: 1 1 0;
       overflow-wrap: break-word;
       word-wrap: break-word;
+      align-self: stretch;
     }
 
     @media (max-width: 767px) {
       .stat-card {
-        padding: 12px;
-        min-height: 120px;
-        gap: 8px;
-        border-radius: 12px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .stat-card {
-        padding: 10px;
-        min-height: 110px;
-        gap: 6px;
+        padding: 8px;
+        min-height: 90px;
+        gap: 4px;
         border-radius: 10px;
       }
     }
 
-    @media (max-width: 360px) {
-      .stat-card {
-        padding: 8px;
-        min-height: 100px;
-        gap: 4px;
+    /* Hover only works on devices with hover capability (desktop) */
+    @media (hover: hover) and (pointer: fine) {
+      .stat-card:hover {
+        transform: translateY(-5px);
+        background: rgba(20, 20, 25, 0.6);
+        border-color: rgba(255, 255, 255, 0.15);
+        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
       }
-    }
-
-    .stat-card:hover {
-      transform: translateY(-5px);
-      background: rgba(20, 20, 25, 0.6);
-      border-color: rgba(255, 255, 255, 0.15);
-      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+      
+      .stat-card:hover::before {
+        opacity: 0.15;
+      }
+      
+      
     }
 
     /* Inner Glow Gradient */
@@ -207,9 +199,7 @@ const EtherealStatsCards = ({
       transition: opacity 0.3s;
       pointer-events: none;
     }
-    .stat-card:hover::before {
-      opacity: 0.15;
-    }
+    
 
     /* Icon Container */
     .icon-box {
@@ -229,20 +219,14 @@ const EtherealStatsCards = ({
       box-sizing: border-box;
     }
 
-    @media (max-width: 480px) {
+    @media (max-width: 767px) {
       .icon-box {
-        width: 32px;
-        height: 32px;
-        min-width: 32px;
+        width: 24px;
+        height: 24px;
+        min-width: 24px;
       }
     }
     
-    .stat-card:hover .icon-box {
-      background: var(--card-color);
-      color: #000;
-      box-shadow: 0 0 15px var(--card-color);
-      transform: scale(1.1);
-    }
 
     /* Text - Uses global fonts */
     .stat-label {
@@ -277,27 +261,17 @@ const EtherealStatsCards = ({
 
     @media (max-width: 767px) {
       .stat-value {
-        font-size: 20px;
+        font-size: 14px;
       }
       .stat-label {
-        font-size: 9px;
+        font-size: 7px;
+        letter-spacing: 0.5px;
       }
       .stat-subtext {
-        font-size: 10px;
+        font-size: 8px;
       }
     }
 
-    @media (max-width: 480px) {
-      .stat-value {
-        font-size: 18px;
-      }
-      .stat-label {
-        font-size: 8px;
-      }
-      .stat-subtext {
-        font-size: 9px;
-      }
-    }
 
     /* Floating Particles for cards */
     .card-particle {
@@ -309,8 +283,11 @@ const EtherealStatsCards = ({
       pointer-events: none;
     }
     
-    .stat-card:hover .card-particle {
-      animation: float-up 2s infinite ease-out;
+    /* Particles animation on hover (desktop only) */
+    @media (hover: hover) and (pointer: fine) {
+      .stat-card:hover .card-particle {
+        animation: float-up 2s infinite ease-out;
+      }
     }
 
     @keyframes float-up {
@@ -342,7 +319,13 @@ const EtherealStatsCards = ({
         minWidth: 0
       }}>
         <div className="stats-grid" style={{ minWidth: 0, width: '100%', maxWidth: '100%' }}>
-          {cards.map((card) => (
+          {cards.map((card) => {
+            const Icon = card.icon
+            if (!Icon) {
+              console.error(`Icon is undefined for card ${card.id}:`, card)
+              return null
+            }
+            return (
             <div 
               key={card.id} 
               className="stat-card fade-in"
@@ -352,7 +335,7 @@ const EtherealStatsCards = ({
               }}
             >
               <div className="icon-box">
-                {card.icon}
+                <Icon size={16} />
               </div>
             <div style={{ width: '100%', minWidth: 0, flex: 1, maxWidth: '100%', boxSizing: 'border-box', overflow: 'hidden' }}>
               <div className="stat-label">{card.label}</div>
@@ -364,7 +347,8 @@ const EtherealStatsCards = ({
               <div className="card-particle" style={{ left: '20%', bottom: '10%', animationDelay: '0s' }}></div>
               <div className="card-particle" style={{ left: '80%', bottom: '20%', animationDelay: '0.5s' }}></div>
             </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </>

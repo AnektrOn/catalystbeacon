@@ -48,17 +48,18 @@ html, body {
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
-  gap: 16px;
+  gap: 20px;
   max-width: 1600px;
   margin: 0 auto;
   width: 100%;
-  max-width: 100%;
   box-sizing: border-box;
+  grid-auto-rows: min-content;
 }
 
 @media (max-width: 640px) {
   .dashboard-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
     width: 100%;
     max-width: 100%;
   }
@@ -70,13 +71,14 @@ html, body {
   }
 }
 
-/* Grid Areas */
+/* Grid Areas - Desktop Layout */
 .grid-hero {
   grid-column: span 4;
   grid-row: span 2;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+  min-height: 0;
 }
 
 .grid-stats {
@@ -88,12 +90,26 @@ html, body {
   max-width: 100%;
   box-sizing: border-box;
   overflow: hidden;
+  align-items: stretch;
 }
 
 .grid-stats > * {
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+}
+
+/* Desktop: Better spacing for stats */
+@media (min-width: 1024px) {
+  .grid-stats {
+    gap: 20px;
+  }
+  
+  .grid-stats > * {
+    min-height: 120px;
+  }
 }
 
 .grid-mood-tracker {
@@ -102,6 +118,7 @@ html, body {
   max-width: 100%;
   box-sizing: border-box;
   overflow: hidden;
+  min-height: 0;
 }
 
 .grid-chart {
@@ -109,6 +126,29 @@ html, body {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+  min-height: 0;
+}
+
+/* Full width items for Constellation and Teacher Feed */
+.grid-full-width {
+  grid-column: span 12;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-height: 0;
+}
+
+/* Ensure all cards have consistent styling */
+.dashboard-grid > * {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.dashboard-grid > * > * {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
 }
 
 .grid-course {
@@ -232,7 +272,7 @@ html, body {
 }
 
 /* Tablet Layout */
-@media (max-width: 1024px) {
+@media (max-width: 1024px) and (min-width: 641px) {
   .dashboard-neomorphic {
     padding: 20px;
   }
@@ -249,7 +289,7 @@ html, body {
 
   .grid-stats {
     grid-column: span 6;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 12px;
   }
 
@@ -261,22 +301,8 @@ html, body {
     grid-column: span 6;
   }
 
-  .grid-course {
+  .dashboard-grid > .mb-8 {
     grid-column: span 6;
-  }
-
-  .grid-actions {
-    grid-column: span 6;
-  }
-
-  .grid-stats-extra {
-    grid-column: span 6;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-  }
-
-  .grid-stat-extra {
-    grid-column: span 1;
   }
 
   .dashboard-title {
@@ -356,20 +382,37 @@ html, body {
   .grid-chart,
   .grid-course,
   .grid-actions,
-  .grid-stat-extra {
+  .grid-stat-extra,
+  .grid-full-width {
     grid-column: span 1;
   }
 
-  /* Stats grid - 2 columns on mobile to prevent overflow */
+  /* Stats grid - 4 columns on mobile (1 row) - FORCE IT */
   .grid-stats {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-    padding: 0;
-    margin: 0;
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 4px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: auto;
+    align-items: stretch;
+  }
+  
+  .grid-stats > * {
+    min-height: 90px;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Force the inner stats-grid to be 4 columns */
+  .grid-stats .stats-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 4px !important;
   }
 
   /* Extra stats - 3 columns on mobile */
@@ -437,6 +480,107 @@ html, body {
 
   .upgrade-prompt p {
     font-size: 14px;
+  }
+}
+
+/* Ensure all dashboard cards have consistent styling */
+.dashboard-grid > * {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.dashboard-grid .modern-card,
+.dashboard-grid .glass-panel-floating,
+.dashboard-grid [class*="card"],
+.dashboard-grid [class*="Card"],
+.dashboard-grid [class*="widget"],
+.dashboard-grid [class*="Widget"] {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* Consistent card styling for all widgets */
+.grid-hero > *,
+.grid-stats > *,
+.grid-mood-tracker > *,
+.grid-chart > *,
+.grid-full-width > * {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+/* Responsive adjustments for all cards */
+@media (max-width: 640px) {
+  .dashboard-grid .modern-card,
+  .dashboard-grid .glass-panel-floating,
+  .dashboard-grid [class*="card"],
+  .dashboard-grid [class*="Card"],
+  .dashboard-grid [class*="widget"],
+  .dashboard-grid [class*="Widget"] {
+    min-height: auto;
+    border-radius: 12px;
+  }
+  
+  .grid-hero > *,
+  .grid-stats > *,
+  .grid-mood-tracker > *,
+  .grid-chart > *,
+  .grid-full-width > * {
+    min-height: auto;
+  }
+}
+
+/* Desktop: Ensure proper spacing and alignment */
+@media (min-width: 1024px) {
+  .dashboard-grid {
+    align-items: start;
+    grid-auto-rows: minmax(200px, auto);
+  }
+  
+  .grid-hero {
+    align-self: stretch;
+    min-height: 400px;
+  }
+  
+  .grid-stats {
+    align-self: stretch;
+    min-height: 150px;
+  }
+  
+  .grid-mood-tracker,
+  .grid-chart {
+    align-self: stretch;
+    min-height: 350px;
+  }
+  
+  .grid-full-width {
+    align-self: stretch;
+    min-height: 250px;
+  }
+  
+  /* Ensure cards fill their grid areas properly */
+  .grid-hero > * {
+    min-height: 400px;
+  }
+  
+  .grid-mood-tracker > *,
+  .grid-chart > * {
+    min-height: 350px;
+  }
+  
+  .grid-full-width > * {
+    min-height: 250px;
   }
 }
 
