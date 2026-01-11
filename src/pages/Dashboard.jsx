@@ -28,6 +28,9 @@ const Dashboard = () => {
   const { isFreeUser, isAdmin } = useSubscription()
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [showOnboardingModal, setShowOnboardingModal] = useState(false)
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const [paymentProcessed, setPaymentProcessed] = useState(false)
   
   // DEBUG: Log component mount and URL params
   useEffect(() => {
@@ -63,8 +66,6 @@ const Dashboard = () => {
   // Track state changes
   useEffect(() => {
   }, [user, profile])
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
   const [, setLoading] = useState(true)
   
   // Show upgrade modal if redirected from restricted route (not for admins)
@@ -783,11 +784,13 @@ const Dashboard = () => {
 
   // Handle payment success redirect - 100% RELIABLE with retry logic
   useEffect(() => {
-    const payment = searchParams.get('payment')
-    const sessionId = searchParams.get('session_id')
+    // CRITICAL: Always check URL params directly from window.location (more reliable)
+    const urlParams = new URLSearchParams(window.location.search)
+    const payment = urlParams.get('payment') || searchParams.get('payment')
+    const sessionId = urlParams.get('session_id') || searchParams.get('session_id')
 
-    // CRITICAL: Always log this to debug
-    console.log('🔍 Payment success check:', { 
+    // CRITICAL: Always log this to debug - FORCE LOG even in production
+    console.log('🔍🔍🔍 Payment success check (FORCED LOG):', { 
       payment, 
       sessionId, 
       hasUser: !!user, 
@@ -796,7 +799,9 @@ const Dashboard = () => {
       profileRole: profile?.role,
       searchParams: searchParams.toString(),
       windowLocation: window.location.href,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      urlParamsPayment: urlParams.get('payment'),
+      urlParamsSessionId: urlParams.get('session_id')
     })
 
     // Si on a payment=success mais pas encore user, attendre un peu avec retry
@@ -922,7 +927,7 @@ const Dashboard = () => {
         console.log('⏳ Payment success detected but user not loaded yet')
       }
     }
-  }, [searchParams, user, profile, fetchProfile, navigate])
+  }, [searchParams, user, profile, fetchProfile, navigate, paymentProcessed])
 
   const displayName = useMemo(() => profile?.full_name || user?.email || 'User', [profile?.full_name, user?.email])
   const userRole = useMemo(() => profile?.role || 'Free', [profile?.role])

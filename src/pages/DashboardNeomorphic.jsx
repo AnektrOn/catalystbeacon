@@ -7,6 +7,7 @@ import levelsService from '../services/levelsService'
 import useSubscription from '../hooks/useSubscription'
 import UpgradeModal from '../components/UpgradeModal'
 import { Clock, BookOpen, Award, Target, TrendingUp, Calendar } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 // Import Dashboard Components
 import StreakCard from '../components/dashboard/StreakCard'
@@ -25,12 +26,13 @@ import HabitsCompletedCard from '../components/dashboard/HabitsCompletedCard'
 import './DashboardNeomorphic.css'
 
 const DashboardNeomorphic = () => {
-  const { user, profile } = useAuth()
+  const { user, profile, fetchProfile } = useAuth()
   const { isFreeUser, isAdmin } = useSubscription()
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [loading, setLoading] = useState(true)
+  const [paymentProcessed, setPaymentProcessed] = useState(false)
   
   // Level data
   const [levelData, setLevelData] = useState({
@@ -64,6 +66,164 @@ const DashboardNeomorphic = () => {
       navigate('/dashboard', { replace: true })
     }
   }, [searchParams, navigate, isAdmin])
+
+  // Handle payment success redirect - PRIMARY: Use API server directly
+  useEffect(() => {
+    // CRITICAL: Always check URL params directly from window.location (more reliable)
+    const urlParams = new URLSearchParams(window.location.search)
+    const payment = urlParams.get('payment') || searchParams.get('payment')
+    const sessionId = urlParams.get('session_id') || searchParams.get('session_id')
+
+    // CRITICAL: Always log this to debug - FORCE LOG even in production
+    console.log('🔍🔍🔍 Payment success check (DashboardNeomorphic - FORCED LOG):', { 
+      payment, 
+      sessionId, 
+      hasUser: !!user, 
+      userId: user?.id, 
+      hasProfile: !!profile,
+      profileRole: profile?.role,
+      searchParams: searchParams.toString(),
+      windowLocation: window.location.href,
+      timestamp: new Date().toISOString(),
+      paymentProcessed
+    })
+
+    // Prevent duplicate processing
+    if (paymentProcessed) {
+      console.log('⚠️ Payment already processed, skipping...')
+      return
+    }
+
+    // Si on a payment=success mais pas encore user, attendre un peu avec retry
+    if (payment === 'success' && sessionId && !user) {
+      console.log('⏳ Waiting for user to load before processing payment...')
+      // Retry après 1 seconde
+      const retryTimer = setTimeout(() => {
+        console.log('🔄 Retrying payment processing after user load delay...')
+        // Le useEffect se re-déclenchera quand user sera chargé
+      }, 1000)
+      return () => clearTimeout(retryTimer)
+    }
+
+    // CRITICAL: Process payment immediately when conditions are met
+    if (payment === 'success' && sessionId && user && !paymentProcessed) {
+      setPaymentProcessed(true) // Mark as processed immediately
+      
+      console.log('🎯🎯🎯 PAYMENT SUCCESS DETECTED - STARTING PROCESSING 🎯🎯🎯')
+      console.log('🎯 PAYMENT SUCCESS DETECTED:', { payment, sessionId, userId: user.id })
+      console.log('🎯 Current profile role:', profile?.role)
+      
+      // Determine API URL: use Vite env var with proper fallback
+      const API_URL = import.meta.env.VITE_API_URL || 
+                      (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
+                        ? 'http://localhost:3001' 
+                        : window.location.origin)
+      
+      toast.success('🎉 Payment completed! Processing your subscription...')
+      console.log('🔄 Processing payment success for session:', sessionId)
+      console.log('📍 API URL:', API_URL)
+
+      // PRIMARY: Use API server directly (most reliable)
+      const processPaymentSuccess = async () => {
+        try {
+          console.log('🔄 Processing payment success via API server...', { sessionId, userId: user.id })
+          
+          // PRIMARY METHOD: Call API server directly
+          try {
+            console.log('📞 Calling API server to update subscription...')
+            const API_URL = import.meta.env.VITE_API_URL || 
+                            (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
+                              ? 'http://localhost:3001' 
+                              : window.location.origin)
+            
+            console.log('🌐 API server URL:', `${API_URL}/api/payment-success?session_id=${sessionId}`)
+            
+            const response = await fetch(`${API_URL}/api/payment-success?session_id=${sessionId}`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              signal: AbortSignal.timeout(20000) // 20 second timeout
+            })
+            
+            console.log('📥 API server response status:', response.status)
+            
+            if (response.ok) {
+              const data = await response.json()
+              console.log('✅ API server updated subscription successfully:', data)
+              toast.success('✅ Subscription activated!')
+              // Wait a bit for DB to update
+              await new Promise(resolve => setTimeout(resolve, 1500))
+              if (fetchProfile) {
+                await fetchProfile(user.id)
+              }
+              return { success: true }
+            } else {
+              const errorText = await response.text()
+              console.error('❌ API server error:', response.status, errorText)
+              throw new Error(`API server returned ${response.status}: ${errorText}`)
+            }
+          } catch (apiError) {
+            console.error('❌ API server call failed:', apiError)
+            console.error('API Error details:', {
+              message: apiError.message,
+              name: apiError.name,
+              stack: apiError.stack
+            })
+            throw apiError
+          }
+          
+        } catch (error) {
+          console.error('❌ Payment success processing error:', error)
+          console.error('Error details:', {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+          })
+          
+          // Show user-friendly message
+          toast.warning('Payment successful! Subscription update may take a moment. Please refresh the page in a few seconds.')
+          
+          // Always refresh profile in case update happened anyway
+          await new Promise(resolve => setTimeout(resolve, 2000))
+          if (fetchProfile) {
+            await fetchProfile(user.id)
+          }
+          
+          return null
+        }
+      }
+      
+      // Start processing IMMEDIATELY
+      console.log('🚀 Starting payment processing function...')
+      processPaymentSuccess()
+        .then((result) => {
+          console.log('✅ Payment processing completed:', result)
+          // Clean up URL
+          const newParams = new URLSearchParams(searchParams)
+          newParams.delete('payment')
+          newParams.delete('session_id')
+          navigate({ search: newParams.toString() }, { replace: true })
+        })
+        .catch(error => {
+          console.error('❌ Error processing payment success:', error)
+          console.error('Error stack:', error.stack)
+          // Clean up URL even on error
+          const newParams = new URLSearchParams(searchParams)
+          newParams.delete('payment')
+          newParams.delete('session_id')
+          navigate({ search: newParams.toString() }, { replace: true })
+        })
+    } else {
+      // Log when conditions are not met
+      if (payment === 'success' && !sessionId) {
+        console.warn('⚠️ Payment=success but no session_id in URL')
+      }
+      if (payment === 'success' && sessionId && !user) {
+        console.log('⏳ Payment success detected but user not loaded yet')
+      }
+    }
+  }, [searchParams, user, profile, fetchProfile, navigate, paymentProcessed])
 
   // Load level data
   const loadLevelData = useCallback(async () => {

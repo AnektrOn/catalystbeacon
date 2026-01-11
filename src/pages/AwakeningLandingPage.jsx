@@ -11,14 +11,8 @@ import {
   Infinity,
   Check,
   X,
-  Users,
   Activity,
-  Award,
-  Cpu,
-  Filter,
-  Target,
-  Layers,
-  ArrowUpRight
+  ChevronDown
 } from 'lucide-react';
 
 // Logo path - production uses /assets/Logo uni.png
@@ -94,6 +88,7 @@ const EnhancedLandingPage = () => {
   const [scrollY, setScrollY] = useState(0);
   const [glitchActive, setGlitchActive] = useState(false);
   const [particles, setParticles] = useState([]);
+  const [expandedPhases, setExpandedPhases] = useState(new Set());
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
@@ -706,155 +701,181 @@ const EnhancedLandingPage = () => {
             </NeomorphicCard>
           </div>
 
-          {/* Phases */}
-          <div className="space-y-8 md:space-y-12">
-            {[
-              {
-                phaseNum: "I",
-                phase: "DECONDITIONING",
-                subtitle: "Reduce noise. Restore signal.",
-                desc: "You identify unconscious habits that distort perception.",
-                details: [
-                  "Mental overload, emotional loops, automatic narratives."
-                ],
-                conclusion: "This phase is about seeing clearly, not fixing yourself.",
-                color: "text-cyan-200",
-                bgColor: "bg-cyan-200/10",
-                borderColor: "border-cyan-200/30",
-                icon: Filter
-              },
-              {
-                phaseNum: "II",
-                phase: "REORIENTATION",
-                subtitle: "Realign perception and intention.",
-                desc: "Once noise is reduced, direction becomes visible.",
-                details: [
-                  "You learn to orient attention deliberately.",
-                  "Thoughts, emotions, and actions begin to align."
-                ],
-                conclusion: "This is where coherence starts.",
-                color: "text-blue-300",
-                bgColor: "bg-blue-300/10",
-                borderColor: "border-blue-300/30",
-                icon: Target
-              },
-              {
-                phaseNum: "III",
-                phase: "INTEGRATION",
-                subtitle: "Translate awareness into daily life.",
-                desc: "Understanding becomes behavior.",
-                details: [
-                  "Clarity is applied to work, relationships, and decisions."
-                ],
-                conclusion: "The system stops being something you \"use\". It becomes something you live.",
-                color: "text-violet-300",
-                bgColor: "bg-violet-300/10",
-                borderColor: "border-violet-300/30",
-                icon: Layers
-              },
-              {
-                phaseNum: "IV",
-                phase: "EXPANSION",
-                subtitle: "Stabilize and extend capacity.",
-                desc: "Growth is no longer accidental.",
-                details: [
-                  "You maintain clarity under pressure and complexity."
-                ],
-                expansionNote: "This phase prepares you to:",
-                expansionItems: [
-                  "handle more responsibility",
-                  "sustain long-term direction",
-                  "influence without force"
-                ],
-                color: "text-white",
-                bgColor: "bg-white/10",
-                borderColor: "border-white/30",
-                icon: ArrowUpRight
-              }
-            ].map((phase, i) => (
-              <NeomorphicCard 
-                key={i} 
-                className={`group hover:bg-[rgba(165,243,252,0.03)] transition-all duration-300 hover:scale-[1.01] ${phase.borderColor} border-2`} 
-                size="large"
-              >
-                <div className="flex flex-col md:flex-row md:items-start gap-6">
-                  {/* Left Side - Phase Badge & Icon */}
-                  <div className="flex-shrink-0">
-                    <div className={`inline-flex items-center justify-center w-20 h-20 rounded-2xl ${phase.bgColor} border ${phase.borderColor} mb-4 md:mb-0`}>
-                      <phase.icon className={`w-10 h-10 ${phase.color}`} />
-                    </div>
-                    <div className={`text-4xl font-bold font-cinzel ${phase.color} text-center md:text-left`}>
-                      {phase.phaseNum}
-                    </div>
-                  </div>
+          {/* Phases - Timeline Layout */}
+          <div className="relative max-w-4xl mx-auto">
+            {/* Vertical Timeline Line */}
+            <div className="absolute left-8 md:left-12 top-0 bottom-0 w-[2px] bg-gradient-to-b from-cyan-200/20 via-cyan-200/40 to-transparent hidden md:block" />
+            
+            {/* Mobile Timeline Line */}
+            <div className="absolute left-8 top-0 bottom-0 w-[1px] bg-gradient-to-b from-cyan-200/20 via-cyan-200/40 to-transparent md:hidden" />
 
-                  {/* Right Side - Content */}
-                  <div className="flex-1 space-y-4">
-                    {/* Phase Title */}
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <div className="text-xs font-cinzel tracking-[0.3em] text-gray-500 uppercase mb-2">
-                          PHASE {phase.phaseNum}
+            <div className="space-y-16 md:space-y-24">
+              {[
+                {
+                  phaseNum: "I",
+                  phase: "DECONDITIONING",
+                  shortDesc: "Reduce noise. Restore signal.",
+                  fullDesc: "You identify unconscious habits that distort perception.",
+                  details: [
+                    "Mental overload, emotional loops, automatic narratives."
+                  ],
+                  conclusion: "This phase is about seeing clearly, not fixing yourself.",
+                  color: "text-cyan-200",
+                  bgColor: "bg-cyan-200/10",
+                  borderColor: "border-cyan-200/30",
+                  dotColor: "bg-cyan-200"
+                },
+                {
+                  phaseNum: "II",
+                  phase: "REORIENTATION",
+                  shortDesc: "Realign perception and intention.",
+                  fullDesc: "Once noise is reduced, direction becomes visible.",
+                  details: [
+                    "You learn to orient attention deliberately.",
+                    "Thoughts, emotions, and actions begin to align."
+                  ],
+                  conclusion: "This is where coherence starts.",
+                  color: "text-blue-300",
+                  bgColor: "bg-blue-300/10",
+                  borderColor: "border-blue-300/30",
+                  dotColor: "bg-blue-300"
+                },
+                {
+                  phaseNum: "III",
+                  phase: "INTEGRATION",
+                  shortDesc: "Translate awareness into daily life.",
+                  fullDesc: "Understanding becomes behavior.",
+                  details: [
+                    "Clarity is applied to work, relationships, and decisions."
+                  ],
+                  conclusion: "The system stops being something you \"use\". It becomes something you live.",
+                  color: "text-violet-300",
+                  bgColor: "bg-violet-300/10",
+                  borderColor: "border-violet-300/30",
+                  dotColor: "bg-violet-300"
+                },
+                {
+                  phaseNum: "IV",
+                  phase: "EXPANSION",
+                  shortDesc: "Stabilize and extend capacity.",
+                  fullDesc: "Growth is no longer accidental.",
+                  details: [
+                    "You maintain clarity under pressure and complexity."
+                  ],
+                  expansionNote: "This phase prepares you to:",
+                  expansionItems: [
+                    "handle more responsibility",
+                    "sustain long-term direction",
+                    "influence without force"
+                  ],
+                  color: "text-white",
+                  bgColor: "bg-white/10",
+                  borderColor: "border-white/30",
+                  dotColor: "bg-white"
+                }
+              ].map((phase, i) => {
+                const isExpanded = expandedPhases.has(i);
+                const togglePhase = () => {
+                  const newExpanded = new Set(expandedPhases);
+                  if (isExpanded) {
+                    newExpanded.delete(i);
+                  } else {
+                    newExpanded.add(i);
+                  }
+                  setExpandedPhases(newExpanded);
+                };
+
+                return (
+                  <div key={i} className="relative flex gap-6 md:gap-8">
+                    {/* Timeline Node */}
+                    <div className="flex-shrink-0 relative z-10">
+                      <div className={`w-16 h-16 md:w-20 md:h-20 rounded-full ${phase.bgColor} border-2 ${phase.borderColor} flex items-center justify-center shadow-[0_0_20px_rgba(165,243,252,0.2)]`}>
+                        <div className={`text-3xl md:text-4xl font-bold font-cinzel ${phase.color}`}>
+                          {phase.phaseNum}
                         </div>
-                        <h3 className={`text-2xl md:text-3xl font-bold font-rajdhani tracking-wide mb-3 ${phase.color} text-shadow-glow`}>
-                          {phase.phase}
-                        </h3>
                       </div>
+                      {/* Glow dot */}
+                      <div className={`absolute inset-0 ${phase.dotColor} rounded-full opacity-30 blur-md animate-pulse`} />
                     </div>
 
-                    {/* Subtitle - Prominent */}
-                    <div className={`text-xl md:text-2xl font-semibold font-rajdhani ${phase.color} py-3 border-l-4 ${phase.borderColor} pl-4`}>
-                      {phase.subtitle}
-                    </div>
-
-                    {/* Description */}
-                    <p className="text-gray-300 font-rajdhani leading-relaxed text-base md:text-lg">
-                      {phase.desc}
-                    </p>
-
-                    {/* Details - More Scannable */}
-                    <div className="space-y-2.5">
-                      {phase.details.map((detail, idx) => (
-                        <div key={idx} className="flex items-start gap-3">
-                          <div className={`w-1.5 h-1.5 rounded-full ${phase.color.replace('text-', 'bg-')} mt-2 flex-shrink-0`} />
-                          <p className="text-gray-400 font-rajdhani leading-relaxed text-base flex-1">
-                            {detail}
+                    {/* Content Card */}
+                    <div className="flex-1 pt-2">
+                      <NeomorphicCard 
+                        className={`group transition-all duration-300 ${phase.borderColor} border`}
+                        size="medium"
+                      >
+                        {/* Always Visible Content */}
+                        <div className="space-y-3">
+                          <h3 className={`text-xl md:text-2xl font-bold font-rajdhani tracking-wide ${phase.color}`}>
+                            {phase.phase}
+                          </h3>
+                          <p className={`text-base md:text-lg font-rajdhani ${phase.color} font-medium`}>
+                            {phase.shortDesc}
                           </p>
                         </div>
-                      ))}
+
+                        {/* Expandable Content - Always visible on desktop, collapsible on mobile */}
+                        <div className={`mt-6 pt-6 border-t border-white/10 space-y-4 transition-all duration-300 ${isExpanded ? 'block' : 'hidden md:block'}`}>
+                            <p className="text-gray-300 font-rajdhani text-sm md:text-base leading-relaxed">
+                              {phase.fullDesc}
+                            </p>
+
+                            {phase.details && phase.details.length > 0 && (
+                              <div className="space-y-2">
+                                {phase.details.map((detail, idx) => (
+                                  <div key={idx} className="flex items-start gap-2">
+                                    <div className={`w-1 h-1 rounded-full ${phase.dotColor} mt-2 flex-shrink-0`} />
+                                    <p className="text-gray-400 font-rajdhani text-sm leading-relaxed flex-1">
+                                      {detail}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {phase.expansionNote && (
+                              <div className="pt-4 border-t border-white/5">
+                                <p className="text-gray-300 font-rajdhani text-sm mb-3 font-medium">
+                                  {phase.expansionNote}
+                                </p>
+                                <div className="space-y-2">
+                                  {phase.expansionItems.map((item, idx) => (
+                                    <div key={idx} className="flex items-center gap-2">
+                                      <Check className={`w-4 h-4 ${phase.color} flex-shrink-0`} />
+                                      <p className={`font-rajdhani text-sm ${phase.color}`}>
+                                        {item}
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {phase.conclusion && (
+                              <div className={`pt-4 border-t ${phase.borderColor} mt-4`}>
+                                <p className={`font-rajdhani text-sm leading-relaxed ${phase.color} italic`}>
+                                  {phase.conclusion}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+
+                        {/* Mobile Expand/Collapse Button */}
+                        <button
+                          onClick={togglePhase}
+                          className="md:hidden mt-4 flex items-center gap-2 text-gray-400 hover:text-cyan-200 transition-colors text-sm font-rajdhani w-full"
+                        >
+                          <span>{isExpanded ? 'Show less' : 'Show more'}</span>
+                          <ChevronDown 
+                            className={`w-4 h-4 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} 
+                          />
+                        </button>
+                      </NeomorphicCard>
                     </div>
-
-                    {/* Expansion Items */}
-                    {phase.expansionNote && (
-                      <div className="mt-6 pt-6 border-t border-white/10">
-                        <p className="text-gray-300 font-rajdhani text-base md:text-lg mb-4 font-semibold">
-                          {phase.expansionNote}
-                        </p>
-                        <div className="space-y-3">
-                          {phase.expansionItems.map((item, idx) => (
-                            <div key={idx} className="flex items-center gap-3">
-                              <Check className={`w-5 h-5 ${phase.color} flex-shrink-0`} />
-                              <p className={`font-rajdhani text-base ${phase.color} font-medium`}>
-                                {item}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Conclusion - Highlighted */}
-                    {phase.conclusion && (
-                      <div className={`mt-6 pt-6 border-t ${phase.borderColor} bg-gradient-to-r ${phase.bgColor} to-transparent p-4 rounded-lg`}>
-                        <p className={`font-rajdhani leading-relaxed text-base md:text-lg ${phase.color} font-medium italic`}>
-                          {phase.conclusion}
-                        </p>
-                      </div>
-                    )}
                   </div>
-                </div>
-              </NeomorphicCard>
-            ))}
+                );
+              })}
+            </div>
           </div>
 
           {/* Anchor Line */}
