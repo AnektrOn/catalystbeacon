@@ -92,130 +92,20 @@ const PricingPage = () => {
     setLoading(true)
 
     try {
-      // Get environment variables - use Vite format with fallback
-      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL
+      // Use API server as PRIMARY solution (most reliable)
       const API_URL = import.meta.env.VITE_API_URL || 
                       (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
                         ? 'http://localhost:3001' 
                         : window.location.origin)
       
-      // Debug: Log what we're getting
-      console.log('🔍 Payment Debug - Environment Check:', {
-        SUPABASE_URL: SUPABASE_URL || 'UNDEFINED',
-        API_URL: API_URL || 'UNDEFINED',
-        nodeEnv: import.meta.env.MODE || process.env.NODE_ENV
-      })
+      console.log('📞 Using API server as PRIMARY solution:', API_URL)
       
-      // Determine plan type from price ID (always student now)
-      const planType = 'student'
-      
-      // Prioritize Supabase Edge Function (if available)
-      if (SUPABASE_URL) {
-        try {
-          const { data: { session: authSession }, error: sessionError } = await supabase.auth.getSession()
-          
-          if (sessionError || !authSession) {
-            throw new Error('You must be logged in to subscribe')
-          }
-          
-          const supabaseEndpoint = `${SUPABASE_URL}/functions/v1/create-checkout-session`
-          
-          const accessToken = authSession.access_token
-          
-          console.log('Using Supabase Edge Function:', supabaseEndpoint)
-          console.log('Request payload:', { priceId, planType })
-          
-          // Add 5s timeout to prevent hanging
-          const controller = new AbortController()
-          const timeoutId = setTimeout(() => controller.abort(), 5000)
-          
-          const response = await fetch(supabaseEndpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${accessToken}`,
-            },
-            body: JSON.stringify({
-              priceId: priceId,
-              planType: planType
-            }),
-            signal: controller.signal
-          })
-          
-          clearTimeout(timeoutId)
-          
-          console.log('Response status:', response.status, response.statusText)
-          
-          if (!response.ok) {
-            // If 401, 404, 503, or other server errors, fall through to API server
-            if (response.status === 401 || response.status === 404 || response.status === 503 || response.status >= 500) {
-              const statusText = response.status === 404 ? 'Edge Function not deployed' : 
-                                response.status === 503 ? 'Service unavailable' : 
-                                `HTTP ${response.status}`
-              console.warn(`⚠️ Supabase Edge Function returned ${response.status} (${statusText}), falling back to API server`)
-              throw new Error('FALLBACK_TO_API_SERVER') // Special error to trigger fallback
-            }
-            
-            const errorData = await response.json().catch(() => ({ 
-              error: `HTTP ${response.status}: ${response.statusText}` 
-            }))
-            console.error('Supabase function error:', errorData)
-            throw new Error(errorData.error || `Server error: ${response.status}`)
-          }
-          
-          const sessionData = await response.json()
-          console.log('Checkout session created:', sessionData)
-          
-          if (sessionData.error) {
-            // Show detailed error message to user
-            const errorMsg = sessionData.details 
-              ? `${sessionData.error}: ${sessionData.details}`
-              : sessionData.error
-            console.error('Edge function returned error:', sessionData)
-            toast.error(errorMsg || 'Failed to create checkout session')
-            throw new Error(errorMsg || 'FALLBACK_TO_API_SERVER')
-          }
-          
-          // Handle both response formats: {id, url} or {sessionId, url}
-          const checkoutUrl = sessionData.url || sessionData.checkoutUrl
-          if (!checkoutUrl) {
-            console.error('No checkout URL in response:', sessionData)
-            throw new Error('FALLBACK_TO_API_SERVER') // Fall back to server API
-          }
-          
-          // Redirect to Stripe Checkout
-          console.log('✅ Redirecting to Stripe Checkout via Edge Function:', checkoutUrl)
-          window.location.href = checkoutUrl
-          return
-        } catch (supabaseError) {
-          console.error('Supabase Edge Function error:', supabaseError)
-          
-          // Always fall back to API server if Edge Function fails
-          // (401, 503, network errors, timeouts, etc.)
-          if (supabaseError.name === 'AbortError' || 
-              supabaseError.message === 'FALLBACK_TO_API_SERVER' || 
-              supabaseError.message?.includes('Failed to fetch') ||
-              supabaseError.message?.includes('401') ||
-              supabaseError.message?.includes('503') ||
-              supabaseError.message?.includes('Unauthorized') ||
-              supabaseError.message?.includes('NetworkError') ||
-              supabaseError.message?.includes('timeout')) {
-            console.log('Falling back to API server due to:', supabaseError.name || supabaseError.message)
-            // Continue to API server fallback below
-          } else {
-            // For other errors, still try API server as fallback
-            console.log('Supabase Edge Function failed, falling back to API server')
-          }
-        }
-      }
-      
-      // Fall back to API server if Supabase Edge Function failed or doesn't exist
-      // Optimized: Try server API with reduced retry logic
+      // Use API server directly (no Edge Function attempts)
       const apiBaseUrl = API_URL
       
-      console.log('Using API server (fallback):', `${apiBaseUrl}/api/create-checkout-session`)
+      console.log('📞 Creating checkout session via API server:', `${apiBaseUrl}/api/create-checkout-session`)
       
-      // Retry logic: Try up to 2 times with exponential backoff (reduced from 3)
+      // Retry logic: Try up to 2 times with exponential backoff
       let lastError = null
       for (let attempt = 1; attempt <= 2; attempt++) {
         try {
@@ -317,9 +207,8 @@ const PricingPage = () => {
         const apiUrl = import.meta.env.VITE_API_URL || window.location.origin
         errorMessage = `Cannot connect to server at ${apiUrl}. Please make sure the server is running.`
       } else if (error.message?.includes('FALLBACK_TO_API_SERVER')) {
-        // This is expected - fallback worked, don't show error
-        console.log('✅ Fallback to API server succeeded')
-        return
+        // This should not happen since we use API server directly
+        errorMessage = 'Unable to create checkout session. Please try again or contact support.'
       } else if (error.message) {
         errorMessage = error.message
       }

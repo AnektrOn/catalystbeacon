@@ -14,7 +14,11 @@ import {
   Users,
   Activity,
   Award,
-  Cpu
+  Cpu,
+  Filter,
+  Target,
+  Layers,
+  ArrowUpRight
 } from 'lucide-react';
 
 // Logo path - production uses /assets/Logo uni.png
@@ -48,10 +52,10 @@ const NeomorphicCard = ({
     elevated: elevated ? `shadow-[0_30px_60px_rgba(0,0,0,0.6),inset_0_0_90px_rgba(165,243,252,0.08)]` : ``,
     
     // Size variants matching your original sizes
-    small: 'p-6 rounded-[24px] min-h-[100px]',
-    medium: 'p-8 rounded-[24px] min-h-[180px]', 
-    large: 'p-10 rounded-[32px] min-h-[300px]',
-    xl: 'p-12 rounded-[32px] min-h-[400px]'
+    small: 'p-4 md:p-6 rounded-[24px] min-h-[100px]',
+    medium: 'p-6 md:p-8 rounded-[24px] min-h-[180px]', 
+    large: 'p-6 md:p-10 rounded-[24px] md:rounded-[32px] min-h-[280px] md:min-h-[300px]',
+    xl: 'p-8 md:p-12 rounded-[24px] md:rounded-[32px] min-h-[350px] md:min-h-[400px]'
   };
 
   return (
@@ -427,6 +431,87 @@ const EnhancedLandingPage = () => {
         </div>
       </section>
 
+      {/* --- WHAT THIS IS (AND IS NOT) --- */}
+      <section className="relative py-32 px-4">
+        <div className="container mx-auto max-w-4xl relative z-10">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold mb-8 font-cinzel text-white">
+              WHAT THIS IS <span className="text-cyan-200 drop-shadow-[0_0_10px_rgba(165,243,252,0.5)]">(AND IS NOT)</span>
+            </h2>
+          </div>
+
+          <NeomorphicCard className="mb-12" size="large">
+            <div className="space-y-8">
+              <div className="space-y-6">
+                <p className="text-xl md:text-2xl font-rajdhani text-gray-300 leading-relaxed">
+                  This is not another app.
+                </p>
+                <p className="text-lg md:text-xl font-rajdhani text-gray-400 leading-relaxed">
+                  Human Catalyst is not designed to make you feel better for a moment.
+                </p>
+                <p className="text-lg md:text-xl font-rajdhani text-cyan-200 leading-relaxed font-semibold">
+                  It is designed to change how you function.
+                </p>
+              </div>
+
+              <div className="space-y-4 pt-6 border-t border-white/10">
+                <p className="text-base md:text-lg font-rajdhani text-gray-400">
+                  Not content to consume.
+                </p>
+                <p className="text-base md:text-lg font-rajdhani text-gray-400">
+                  Not techniques to collect.
+                </p>
+                <p className="text-base md:text-lg font-rajdhani text-gray-400">
+                  Not beliefs to adopt.
+                </p>
+              </div>
+
+              <div className="pt-6 border-t border-white/10">
+                <p className="text-lg md:text-xl font-rajdhani text-white leading-relaxed">
+                  A system to reconfigure perception, behavior, and identity — over time.
+                </p>
+              </div>
+            </div>
+          </NeomorphicCard>
+
+          <div className="mb-12">
+            <h3 className="text-2xl md:text-3xl font-bold mb-8 font-cinzel text-white text-center">
+              What makes it different
+            </h3>
+            <div className="grid md:grid-cols-2 gap-6">
+              {[
+                "Structured progression, not random practices",
+                "Integration into daily life, not isolated experiences",
+                "Inner mechanics, not surface habits",
+                "Long-term coherence, not short-term relief"
+              ].map((item, i) => (
+                <NeomorphicCard key={i} className="flex items-start gap-4" size="small">
+                  <div className="w-2 h-2 rounded-full bg-cyan-200 mt-2 flex-shrink-0 shadow-[0_0_8px_rgba(165,243,252,0.5)]" />
+                  <p className="text-base font-rajdhani text-gray-300 leading-relaxed">{item}</p>
+                </NeomorphicCard>
+              ))}
+            </div>
+          </div>
+
+          <div className="text-center mb-8">
+            <p className="text-lg md:text-xl font-rajdhani text-gray-300 mb-6 italic">
+              You don't escape reality.
+            </p>
+            <p className="text-lg md:text-xl font-rajdhani text-cyan-200 font-semibold">
+              You learn to operate within it consciously.
+            </p>
+          </div>
+
+          <div className="text-center">
+            <Button asChild variant="ghost" className="btn-ethereal-text rounded-full px-8 py-4 text-base font-rajdhani">
+              <Link to="/courses">
+                → See how the system works
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* --- THE PROGRESSION (Timeline) --- */}
       <section className="relative py-32 px-4 bg-black/20">
         <div className="container mx-auto max-w-5xl relative z-10">
@@ -439,96 +524,358 @@ const EnhancedLandingPage = () => {
             </p>
           </div>
 
-          <div className="relative space-y-12">
+          <div className="relative space-y-8 md:space-y-12">
             {/* Vertical Line - Ethereal Beam */}
-            <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-cyan-200/30 to-transparent" />
+            <div className="absolute left-6 md:left-1/2 top-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-cyan-200/30 to-transparent" />
 
             {[
               {
                 stage: "01. INITIALIZE",
-                desc: "Establish baseline metrics. Understand the source code.",
+                subtitle: "Stabilize awareness. Interrupt autopilot.",
+                desc: "You begin by observing how your mind actually works.",
+                details: [
+                  "Where attention goes.",
+                  "How reactions arise.",
+                  "What runs automatically."
+                ],
+                conclusion: "This phase creates space. Without it, nothing changes.",
                 icon: Zap,
                 color: "text-cyan-200"
               },
               {
                 stage: "02. AWAKENING",
-                desc: "Energy awareness. Perception filters removed.",
+                subtitle: "Recognize patterns as they happen.",
+                desc: "You stop noticing patterns after the fact.",
+                details: [
+                  "You start noticing them in real time.",
+                  "Thoughts, emotions, decisions become visible.",
+                  "Choice becomes possible."
+                ],
+                conclusion: null,
                 icon: Eye,
                 color: "text-blue-300"
               },
               {
                 stage: "03. ASCENSION",
-                desc: "Quantum mechanics. Multidimensional thought.",
+                subtitle: "Act from clarity instead of habit.",
+                desc: "Understanding becomes applied.",
+                details: [
+                  "You respond instead of reacting.",
+                  "Decisions align with intention.",
+                  "This is where daily life begins to shift:"
+                ],
+                shiftAreas: [
+                  "relationships",
+                  "work",
+                  "direction",
+                  "energy"
+                ],
+                conclusion: null,
                 icon: TrendingUp,
                 color: "text-violet-300"
               },
               {
                 stage: "04. MASTERY",
-                desc: "Full integration. Architect status achieved.",
+                subtitle: "Sustain coherence over time.",
+                desc: "Awareness is no longer an effort.",
+                details: [
+                  "It becomes a stable mode of operation.",
+                  "You don't need constant tools or guidance.",
+                  "You operate with internal authority."
+                ],
+                conclusion: null,
                 icon: Infinity,
                 color: "text-white"
               }
             ].map((step, i) => (
-              <div key={i} className={`relative flex items-center gap-12 ${i % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} flex-row`}>
+              <div key={i} className={`relative flex items-start gap-4 md:gap-12 ${i % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} flex-row`}>
                 {/* Desktop layout shift */}
                 <div className="hidden md:block flex-1" />
                 
                 {/* Center Node */}
-                <div className="absolute left-4 md:left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-[#020202] border border-cyan-200/50 flex items-center justify-center z-10 shadow-[0_0_15px_rgba(165,243,252,0.3)]">
+                <div className="absolute left-6 md:left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-[#020202] border border-cyan-200/50 flex items-center justify-center z-10 shadow-[0_0_15px_rgba(165,243,252,0.3)] flex-shrink-0">
                   <div className={`w-1.5 h-1.5 rounded-full bg-current ${step.color}`} />
                 </div>
 
                 {/* Content Card */}
-                <div className="flex-1 ml-12 md:ml-0">
-                  <NeomorphicCard className="group hover:bg-[rgba(165,243,252,0.03)] transition-colors">
-                    <div className="flex items-start justify-between mb-4">
-                      <h3 className={`text-xl font-bold font-rajdhani tracking-widest ${step.color} text-shadow-glow`}>{step.stage}</h3>
-                      <step.icon className={`w-5 h-5 ${step.color} opacity-60 group-hover:opacity-100 transition-opacity`} />
+                <div className="flex-1 ml-14 md:ml-0 w-full">
+                  <NeomorphicCard className="group hover:bg-[rgba(165,243,252,0.03)] transition-colors flex flex-col" size="large">
+                    <div className="flex items-start justify-between mb-4 md:mb-6">
+                      <h3 className={`text-lg md:text-xl font-bold font-rajdhani tracking-widest ${step.color} text-shadow-glow flex-1`}>{step.stage}</h3>
+                      <step.icon className={`w-5 h-5 ${step.color} opacity-60 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2`} />
                     </div>
-                    <p className="text-gray-400 font-rajdhani leading-relaxed text-lg">{step.desc}</p>
+                    <p className={`text-base md:text-lg font-semibold font-rajdhani mb-3 md:mb-4 ${step.color}`}>{step.subtitle}</p>
+                    <p className="text-gray-300 font-rajdhani leading-relaxed text-sm md:text-base mb-3 md:mb-4">{step.desc}</p>
+                    <div className="space-y-1.5 md:space-y-2 mb-3 md:mb-4">
+                      {step.details.map((detail, idx) => (
+                        <p key={idx} className="text-gray-400 font-rajdhani leading-relaxed text-sm md:text-base">{detail}</p>
+                      ))}
+                    </div>
+                    {step.shiftAreas && (
+                      <div className="mt-auto pt-3 md:pt-4 border-t border-white/10">
+                        <div className="grid grid-cols-2 gap-2 md:gap-3">
+                          {step.shiftAreas.map((area, idx) => (
+                            <div key={idx} className="text-gray-300 font-rajdhani text-xs md:text-sm italic">
+                              {area}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {step.conclusion && (
+                      <p className="text-gray-300 font-rajdhani leading-relaxed text-sm md:text-base mt-auto pt-3 md:pt-4 border-t border-white/10 italic">
+                        {step.conclusion}
+                      </p>
+                    )}
                   </NeomorphicCard>
                 </div>
               </div>
             ))}
           </div>
+
+          {/* Transition Line */}
+          <div className="mt-20 text-center">
+            <NeomorphicCard className="max-w-3xl mx-auto">
+              <p className="text-xl md:text-2xl font-rajdhani text-gray-300 leading-relaxed mb-2">
+                This is not a quick fix.
+              </p>
+              <p className="text-xl md:text-2xl font-rajdhani text-cyan-200 font-semibold">
+                It is a change in how you function.
+              </p>
+            </NeomorphicCard>
+          </div>
+
+          {/* Micro-CTA */}
+          <div className="text-center mt-12">
+            <Button asChild variant="ghost" className="btn-ethereal-text rounded-full px-8 py-4 text-base font-rajdhani">
+              <Link to="/signup">
+                → Enter the System
+              </Link>
+            </Button>
+          </div>
         </div>
       </section>
 
-      {/* --- COMMUNITY (Revised for Genesis Hook) --- */}
+      {/* --- GENESIS PROTOCOL --- */}
       <section className="relative py-32 px-4">
         <div className="container mx-auto max-w-5xl relative z-10">
-          <div className="text-center mb-24">
+          <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-4 font-cinzel text-white">
               GENESIS <span className="text-cyan-200 drop-shadow-[0_0_10px_rgba(165,243,252,0.5)]">PROTOCOL</span>
             </h2>
-            <p className="font-rajdhani text-xl text-gray-400 max-w-3xl mx-auto">
-              The network is initializing. Secure your position as a Founding Architect. Shape the future of human potential.
+            <p className="text-xl md:text-2xl font-rajdhani text-gray-400 mb-6">
+              The core structure behind the system.
             </p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          {/* Intro Card */}
+          <NeomorphicCard className="mb-16 max-w-3xl mx-auto" size="medium">
+            <div className="text-center space-y-4">
+              <p className="text-lg md:text-xl font-rajdhani text-gray-400">
+                Not theory.
+              </p>
+              <p className="text-lg md:text-xl font-rajdhani text-gray-400">
+                Not motivation.
+              </p>
+              <p className="text-xl md:text-2xl font-rajdhani text-cyan-200 font-semibold">
+                A practical architecture for conscious change.
+              </p>
+            </div>
+          </NeomorphicCard>
+
+          {/* How the protocol works */}
+          <div className="mb-20">
+            <h3 className="text-2xl md:text-3xl font-bold mb-8 font-cinzel text-white text-center">
+              How the protocol works
+            </h3>
+            <NeomorphicCard className="max-w-3xl mx-auto" size="medium">
+              <p className="text-lg md:text-xl font-rajdhani text-gray-300 mb-4">
+                The system follows a simple principle:
+              </p>
+              <p className="text-xl md:text-2xl font-rajdhani text-cyan-200 font-semibold mb-6 italic">
+                real change requires sequence, integration, and time.
+              </p>
+              <div className="space-y-3 pt-4 border-t border-white/10">
+                <p className="text-base md:text-lg font-rajdhani text-gray-400">
+                  Each phase prepares the next.
+                </p>
+                <p className="text-base md:text-lg font-rajdhani text-gray-400">
+                  Skipping steps creates confusion, not growth.
+                </p>
+              </div>
+            </NeomorphicCard>
+          </div>
+
+          {/* Phases */}
+          <div className="space-y-8 md:space-y-12">
             {[
-              { label: "System Boot", val: "Phase 1", icon: Cpu },
-              { label: "Genesis Batch", val: "001", icon: Users },
-              { label: "Access Level", val: "Priority", icon: Award },
-              { label: "Potential", val: "Infinite", icon: Infinity },
-            ].map((stat, i) => (
-              <NeomorphicCard key={i} className="text-center py-10" interactive>
-                <div className="flex justify-center mb-4">
-                  <stat.icon className="w-8 h-8 text-cyan-200 opacity-80" />
+              {
+                phaseNum: "I",
+                phase: "DECONDITIONING",
+                subtitle: "Reduce noise. Restore signal.",
+                desc: "You identify unconscious habits that distort perception.",
+                details: [
+                  "Mental overload, emotional loops, automatic narratives."
+                ],
+                conclusion: "This phase is about seeing clearly, not fixing yourself.",
+                color: "text-cyan-200",
+                bgColor: "bg-cyan-200/10",
+                borderColor: "border-cyan-200/30",
+                icon: Filter
+              },
+              {
+                phaseNum: "II",
+                phase: "REORIENTATION",
+                subtitle: "Realign perception and intention.",
+                desc: "Once noise is reduced, direction becomes visible.",
+                details: [
+                  "You learn to orient attention deliberately.",
+                  "Thoughts, emotions, and actions begin to align."
+                ],
+                conclusion: "This is where coherence starts.",
+                color: "text-blue-300",
+                bgColor: "bg-blue-300/10",
+                borderColor: "border-blue-300/30",
+                icon: Target
+              },
+              {
+                phaseNum: "III",
+                phase: "INTEGRATION",
+                subtitle: "Translate awareness into daily life.",
+                desc: "Understanding becomes behavior.",
+                details: [
+                  "Clarity is applied to work, relationships, and decisions."
+                ],
+                conclusion: "The system stops being something you \"use\". It becomes something you live.",
+                color: "text-violet-300",
+                bgColor: "bg-violet-300/10",
+                borderColor: "border-violet-300/30",
+                icon: Layers
+              },
+              {
+                phaseNum: "IV",
+                phase: "EXPANSION",
+                subtitle: "Stabilize and extend capacity.",
+                desc: "Growth is no longer accidental.",
+                details: [
+                  "You maintain clarity under pressure and complexity."
+                ],
+                expansionNote: "This phase prepares you to:",
+                expansionItems: [
+                  "handle more responsibility",
+                  "sustain long-term direction",
+                  "influence without force"
+                ],
+                color: "text-white",
+                bgColor: "bg-white/10",
+                borderColor: "border-white/30",
+                icon: ArrowUpRight
+              }
+            ].map((phase, i) => (
+              <NeomorphicCard 
+                key={i} 
+                className={`group hover:bg-[rgba(165,243,252,0.03)] transition-all duration-300 hover:scale-[1.01] ${phase.borderColor} border-2`} 
+                size="large"
+              >
+                <div className="flex flex-col md:flex-row md:items-start gap-6">
+                  {/* Left Side - Phase Badge & Icon */}
+                  <div className="flex-shrink-0">
+                    <div className={`inline-flex items-center justify-center w-20 h-20 rounded-2xl ${phase.bgColor} border ${phase.borderColor} mb-4 md:mb-0`}>
+                      <phase.icon className={`w-10 h-10 ${phase.color}`} />
+                    </div>
+                    <div className={`text-4xl font-bold font-cinzel ${phase.color} text-center md:text-left`}>
+                      {phase.phaseNum}
+                    </div>
+                  </div>
+
+                  {/* Right Side - Content */}
+                  <div className="flex-1 space-y-4">
+                    {/* Phase Title */}
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="text-xs font-cinzel tracking-[0.3em] text-gray-500 uppercase mb-2">
+                          PHASE {phase.phaseNum}
+                        </div>
+                        <h3 className={`text-2xl md:text-3xl font-bold font-rajdhani tracking-wide mb-3 ${phase.color} text-shadow-glow`}>
+                          {phase.phase}
+                        </h3>
+                      </div>
+                    </div>
+
+                    {/* Subtitle - Prominent */}
+                    <div className={`text-xl md:text-2xl font-semibold font-rajdhani ${phase.color} py-3 border-l-4 ${phase.borderColor} pl-4`}>
+                      {phase.subtitle}
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-gray-300 font-rajdhani leading-relaxed text-base md:text-lg">
+                      {phase.desc}
+                    </p>
+
+                    {/* Details - More Scannable */}
+                    <div className="space-y-2.5">
+                      {phase.details.map((detail, idx) => (
+                        <div key={idx} className="flex items-start gap-3">
+                          <div className={`w-1.5 h-1.5 rounded-full ${phase.color.replace('text-', 'bg-')} mt-2 flex-shrink-0`} />
+                          <p className="text-gray-400 font-rajdhani leading-relaxed text-base flex-1">
+                            {detail}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Expansion Items */}
+                    {phase.expansionNote && (
+                      <div className="mt-6 pt-6 border-t border-white/10">
+                        <p className="text-gray-300 font-rajdhani text-base md:text-lg mb-4 font-semibold">
+                          {phase.expansionNote}
+                        </p>
+                        <div className="space-y-3">
+                          {phase.expansionItems.map((item, idx) => (
+                            <div key={idx} className="flex items-center gap-3">
+                              <Check className={`w-5 h-5 ${phase.color} flex-shrink-0`} />
+                              <p className={`font-rajdhani text-base ${phase.color} font-medium`}>
+                                {item}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Conclusion - Highlighted */}
+                    {phase.conclusion && (
+                      <div className={`mt-6 pt-6 border-t ${phase.borderColor} bg-gradient-to-r ${phase.bgColor} to-transparent p-4 rounded-lg`}>
+                        <p className={`font-rajdhani leading-relaxed text-base md:text-lg ${phase.color} font-medium italic`}>
+                          {phase.conclusion}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="text-3xl font-light font-rajdhani text-white mb-2">{stat.val}</div>
-                <div className="text-xs font-cinzel tracking-widest text-gray-500 uppercase">{stat.label}</div>
               </NeomorphicCard>
             ))}
           </div>
-          
+
+          {/* Anchor Line */}
+          <div className="mt-20 text-center">
+            <NeomorphicCard className="max-w-3xl mx-auto" size="medium">
+              <p className="text-xl md:text-2xl font-rajdhani text-gray-300 leading-relaxed">
+                The protocol doesn't add layers.
+              </p>
+              <p className="text-xl md:text-2xl font-rajdhani text-cyan-200 font-semibold mt-2">
+                It removes interference.
+              </p>
+            </NeomorphicCard>
+          </div>
+
+          {/* CTA */}
           <div className="text-center mt-12">
-             <Button asChild size="lg" className="btn-ethereal-primary rounded-full px-12 py-6 text-lg">
-               <Link to="/signup">
-                 INITIALIZE ACCESS
-               </Link>
-             </Button>
+            <Button asChild size="lg" className="btn-ethereal-primary rounded-full px-12 py-6 text-lg">
+              <Link to="/signup">
+                → Initialize Access
+              </Link>
+            </Button>
           </div>
         </div>
       </section>

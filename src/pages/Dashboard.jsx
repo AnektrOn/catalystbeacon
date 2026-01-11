@@ -34,7 +34,24 @@ const Dashboard = () => {
     const payment = new URLSearchParams(window.location.search).get('payment')
     const sessionId = new URLSearchParams(window.location.search).get('session_id')
     console.log('🚀 Dashboard mounted/updated:', { payment, sessionId, hasUser: !!user, userId: user?.id })
-  }, [user])
+    
+    // CRITICAL: If payment success, log immediately and trigger processing
+    if (payment === 'success' && sessionId) {
+      console.log('🚨🚨🚨 PAYMENT SUCCESS DETECTED IN DEBUG LOG! 🚨🚨🚨', { 
+        payment, 
+        sessionId, 
+        user: !!user,
+        userId: user?.id,
+        profile: !!profile,
+        profileRole: profile?.role
+      })
+      
+      // If user is loaded, trigger processing immediately
+      if (user && profile) {
+        console.log('🚨 User and profile loaded, payment processing should start...')
+      }
+    }
+  }, [user, profile])
   
   // Track navigation and state
   useEffect(() => {
@@ -769,15 +786,33 @@ const Dashboard = () => {
     const payment = searchParams.get('payment')
     const sessionId = searchParams.get('session_id')
 
-    console.log('🔍 Payment success check:', { payment, sessionId, hasUser: !!user, userId: user?.id, searchParams: searchParams.toString() })
+    // CRITICAL: Always log this to debug
+    console.log('🔍 Payment success check:', { 
+      payment, 
+      sessionId, 
+      hasUser: !!user, 
+      userId: user?.id, 
+      hasProfile: !!profile,
+      profileRole: profile?.role,
+      searchParams: searchParams.toString(),
+      windowLocation: window.location.href,
+      timestamp: new Date().toISOString()
+    })
 
-    // Si on a payment=success mais pas encore user, attendre un peu
+    // Si on a payment=success mais pas encore user, attendre un peu avec retry
     if (payment === 'success' && sessionId && !user) {
       console.log('⏳ Waiting for user to load before processing payment...')
-      return
+      // Retry après 1 seconde
+      const retryTimer = setTimeout(() => {
+        console.log('🔄 Retrying payment processing after user load delay...')
+        // Le useEffect se re-déclenchera quand user sera chargé
+      }, 1000)
+      return () => clearTimeout(retryTimer)
     }
 
+    // CRITICAL: Process payment immediately when conditions are met
     if (payment === 'success' && sessionId && user) {
+      console.log('🎯🎯🎯 PAYMENT SUCCESS DETECTED - STARTING PROCESSING 🎯🎯🎯')
       console.log('🎯 PAYMENT SUCCESS DETECTED:', { payment, sessionId, userId: user.id })
       console.log('🎯 Current profile role:', profile?.role)
       
@@ -791,147 +826,66 @@ const Dashboard = () => {
       console.log('🔄 Processing payment success for session:', sessionId)
       console.log('📍 API URL:', API_URL)
 
-      // DIRECT: Appel direct à Supabase (plus rapide et fiable, pas besoin de l'API)
+      // PRIMARY: Use API server directly (most reliable)
       const processPaymentSuccess = async () => {
         try {
-          console.log('🔄 Processing payment success via Supabase...', { sessionId, userId: user.id })
+          console.log('🔄 Processing payment success via API server...', { sessionId, userId: user.id })
           
-          let subscriptionId = null
-          let syncError = null
-          
-          // Méthode 1: Essayer la fonction SQL directe (si elle existe)
+          // PRIMARY METHOD: Call API server directly
           try {
-            console.log('📞 Attempting sync_subscription_from_session_id...')
-            const { data: syncResult, error: rpcError } = await supabase
-              .rpc('sync_subscription_from_session_id', {
-                p_session_id: sessionId
-              })
+            console.log('📞 Calling API server to update subscription...')
+            const API_URL = import.meta.env.VITE_API_URL || 
+                            (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
+                              ? 'http://localhost:3001' 
+                              : window.location.origin)
             
-            console.log('📥 RPC Response:', { syncResult, rpcError })
+            console.log('🌐 API server URL:', `${API_URL}/api/payment-success?session_id=${sessionId}`)
             
-            if (rpcError) {
-              console.error('❌ RPC Error:', rpcError)
-              // Si la fonction n'existe pas (code 42883), continuer vers la méthode 2
-              if (rpcError.code === '42883' || rpcError.message?.includes('does not exist')) {
-                console.log('⚠️ Function sync_subscription_from_session_id does not exist, trying alternative method...')
-              } else {
-                syncError = rpcError
-              }
-            } else if (syncResult && syncResult.length > 0) {
-              const result = syncResult[0]
-              console.log('📊 Sync result:', result)
-              if (result.success) {
-                console.log('✅ Subscription synced successfully via SQL function:', result)
-                toast.success('✅ Subscription activated!')
-                // Attendre un peu pour que la DB se mette à jour
-                await new Promise(resolve => setTimeout(resolve, 1000))
-                await fetchProfile(user.id)
-                return { success: true }
-              } else {
-                console.warn('⚠️ Sync returned false:', result.message)
-                subscriptionId = result.subscription_id // Peut-être qu'on a quand même le subscription_id
-              }
-            }
-          } catch (sqlError) {
-            console.log('⚠️ SQL function error (will try Edge Function):', sqlError)
-          }
-          
-          // Méthode 2: Récupérer subscription_id via Edge Function, puis sync
-          if (!subscriptionId) {
-            try {
-              console.log('📞 Attempting get-subscription-from-session Edge Function...')
-              const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
-              const { data: { session: authSession } } = await supabase.auth.getSession()
-              
-              if (SUPABASE_URL && authSession) {
-                const response = await fetch(`${SUPABASE_URL}/functions/v1/get-subscription-from-session`, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${authSession.access_token}`,
-                  },
-                  body: JSON.stringify({ session_id: sessionId }),
-                  signal: AbortSignal.timeout(5000)
-                })
-                
-                console.log('📥 Edge Function response status:', response.status)
-                
-                if (response.ok) {
-                  const data = await response.json()
-                  subscriptionId = data.subscription_id
-                  console.log('✅ Got subscription_id from Edge Function:', subscriptionId)
-                } else {
-                  const errorText = await response.text()
-                  console.error('❌ Edge Function error:', response.status, errorText)
-                }
-              } else {
-                console.warn('⚠️ Missing SUPABASE_URL or auth session')
-              }
-            } catch (edgeError) {
-              console.log('⚠️ Edge Function not available:', edgeError)
-            }
-          }
-          
-          // Méthode 3: Si on a le subscription_id, appeler directement la fonction de sync
-          if (subscriptionId) {
-            console.log('📞 Calling sync_single_subscription_from_stripe with subscription_id:', subscriptionId)
-            const { data: syncResult, error: rpcError } = await supabase
-              .rpc('sync_single_subscription_from_stripe', {
-                p_stripe_subscription_id: subscriptionId
-              })
+            const response = await fetch(`${API_URL}/api/payment-success?session_id=${sessionId}`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              signal: AbortSignal.timeout(20000) // 20 second timeout
+            })
             
-            console.log('📥 sync_single_subscription_from_stripe response:', { syncResult, rpcError })
+            console.log('📥 API server response status:', response.status)
             
-            if (rpcError) {
-              console.error('❌ sync_single_subscription_from_stripe error:', rpcError)
-              syncError = rpcError
-            } else if (syncResult && syncResult.length > 0) {
-              const result = syncResult[0]
-              if (result.success) {
-                console.log('✅ Subscription synced successfully:', result)
-                toast.success('✅ Subscription activated!')
-                // Attendre un peu pour que la DB se mette à jour
-                await new Promise(resolve => setTimeout(resolve, 1000))
-                await fetchProfile(user.id)
-                return { success: true }
-              } else {
-                console.warn('⚠️ Sync returned false:', result.message)
-                toast.warning('Payment successful! ' + (result.message || 'Subscription update may take a moment.'))
-                await fetchProfile(user.id)
-                return null
-              }
+            if (response.ok) {
+              const data = await response.json()
+              console.log('✅ API server updated subscription successfully:', data)
+              toast.success('✅ Subscription activated!')
+              // Wait a bit for DB to update
+              await new Promise(resolve => setTimeout(resolve, 1500))
+              await fetchProfile(user.id)
+              return { success: true }
             } else {
-              console.warn('⚠️ sync_single_subscription_from_stripe returned empty result')
+              const errorText = await response.text()
+              console.error('❌ API server error:', response.status, errorText)
+              throw new Error(`API server returned ${response.status}: ${errorText}`)
             }
+          } catch (apiError) {
+            console.error('❌ API server call failed:', apiError)
+            console.error('API Error details:', {
+              message: apiError.message,
+              name: apiError.name,
+              stack: apiError.stack
+            })
+            throw apiError
           }
-          
-          // Si on arrive ici, aucune méthode n'a fonctionné
-          console.error('❌ All sync methods failed', {
-            hasSubscriptionId: !!subscriptionId,
-            syncError,
-            sessionId
-          })
-          
-          // Fallback: Le webhook s'en chargera automatiquement
-          console.log('⚠️ Could not sync immediately, webhook will handle it')
-          toast.warning('Payment successful! Subscription update may take a moment. Please refresh the page in a few seconds.')
-          
-          // Attendre 2 secondes puis rafraîchir le profil (le webhook devrait avoir fait le travail)
-          await new Promise(resolve => setTimeout(resolve, 2000))
-          await fetchProfile(user.id)
-          
-          return null
           
         } catch (error) {
-          console.error('❌ Payment success error:', error)
+          console.error('❌ Payment success processing error:', error)
           console.error('Error details:', {
             message: error.message,
             stack: error.stack,
             name: error.name
           })
-          toast.warning('Payment successful! Subscription update may take a moment. Please refresh if needed.')
           
-          // Toujours rafraîchir le profil au cas où
+          // Show user-friendly message
+          toast.warning('Payment successful! Subscription update may take a moment. Please refresh the page in a few seconds.')
+          
+          // Always refresh profile in case update happened anyway
           await new Promise(resolve => setTimeout(resolve, 2000))
           await fetchProfile(user.id)
           
@@ -939,9 +893,11 @@ const Dashboard = () => {
         }
       }
       
-      // Start processing
+      // Start processing IMMEDIATELY
+      console.log('🚀 Starting payment processing function...')
       processPaymentSuccess()
-        .then(() => {
+        .then((result) => {
+          console.log('✅ Payment processing completed:', result)
           // Clean up URL
           const newParams = new URLSearchParams(searchParams)
           newParams.delete('payment')
@@ -950,12 +906,21 @@ const Dashboard = () => {
         })
         .catch(error => {
           console.error('❌ Error processing payment success:', error)
+          console.error('Error stack:', error.stack)
           // Clean up URL even on error
           const newParams = new URLSearchParams(searchParams)
           newParams.delete('payment')
           newParams.delete('session_id')
           navigate({ search: newParams.toString() }, { replace: true })
         })
+    } else {
+      // Log when conditions are not met
+      if (payment === 'success' && !sessionId) {
+        console.warn('⚠️ Payment=success but no session_id in URL')
+      }
+      if (payment === 'success' && sessionId && !user) {
+        console.log('⏳ Payment success detected but user not loaded yet')
+      }
     }
   }, [searchParams, user, profile, fetchProfile, navigate])
 
