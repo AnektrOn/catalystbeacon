@@ -76,27 +76,27 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
-// BULLETPROOF: Helper function to send email via Supabase Edge Function
+// N8N: Helper function to send email via N8N Cloud Webhook
 // This is called from webhooks and API endpoints
-async function sendEmailViaSupabase(emailType, emailData) {
+async function sendEmailViaN8N(emailType, emailData) {
   try {
-    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.warn('⚠️ Supabase configuration missing - cannot send email')
-      return { success: false, error: 'Supabase configuration missing' }
+    const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL
+    
+    if (!N8N_WEBHOOK_URL) {
+      console.warn('⚠️ N8N_WEBHOOK_URL not configured - cannot send email')
+      return { success: false, error: 'N8N webhook URL not configured' }
     }
 
-    // Add 5s timeout to prevent hanging
+    // Add 10s timeout to prevent hanging
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 5000)
+    const timeoutId = setTimeout(() => controller.abort(), 10000)
 
-    console.log(`📧 Calling send-email Edge Function for: ${emailType} to ${emailData.email}`)
+    console.log(`📧 Calling N8N webhook for: ${emailType} to ${emailData.email}`)
 
-    const response = await fetch(`${process.env.SUPABASE_URL}/functions/v1/send-email`, {
+    const response = await fetch(N8N_WEBHOOK_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-        'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
       },
       body: JSON.stringify({
         emailType,
@@ -113,24 +113,38 @@ async function sendEmailViaSupabase(emailType, emailData) {
       try {
         error = JSON.parse(errorText)
       } catch {
-        error = { error: errorText || 'Failed to send email' }
+        error = { error: errorText || `HTTP ${response.status}: ${response.statusText}` }
       }
-      console.error('❌ Supabase Edge Function error:', error)
-      throw new Error(error.error || 'Failed to send email')
+      console.error('❌ N8N webhook error:', error)
+      throw new Error(error.error || 'Failed to send email via N8N')
     }
 
     const result = await response.json()
-    console.log('✅ Email sent via Supabase Edge Function:', result)
+    console.log('✅ Email sent via N8N:', result)
     return { success: true, ...result }
   } catch (error) {
     // Handle timeout gracefully
     if (error.name === 'AbortError' || error.message?.includes('timeout')) {
-      console.warn('⚠️ Email send timeout via Supabase Edge Function')
+      console.warn('⚠️ Email send timeout via N8N webhook')
       return { success: false, error: 'Email service timeout' }
     }
-    console.error('❌ Error sending email via Supabase:', error)
+    
+    // Handle network errors
+    if (error.message?.includes('ECONNREFUSED') || error.message?.includes('fetch failed')) {
+      console.error('❌ N8N webhook unavailable (service down?)')
+      return { success: false, error: 'Email service unavailable' }
+    }
+    
+    console.error('❌ Error sending email via N8N:', error)
     return { success: false, error: error.message }
   }
+}
+
+// Legacy function name for backward compatibility (deprecated)
+// TODO: Remove after full migration to N8N
+async function sendEmailViaSupabase(emailType, emailData) {
+  console.warn('⚠️ sendEmailViaSupabase is deprecated, using N8N instead')
+  return sendEmailViaN8N(emailType, emailData)
 }
 
 // Rate limiting middleware (trust proxy is already set above)
@@ -1085,18 +1099,26 @@ async function handleSubscriptionUpdate(subscription) {
       throw new Error('Failed to update profile in handleSubscriptionUpdate')
     }
 
-    // Send email if role changed
-    if (oldRole !== newRole && profile.email) {
+    // Send email if role actually changed in DB
+    // Get the actual role after update (may be different from newRole if user is Admin)
+    const updatedRole = updateResult?.[0]?.role || oldRole
+
+    // Only send email if role actually changed in the database
+    // This prevents sending emails when Admin role is preserved
+    if (updatedRole !== oldRole && profile.email) {
       try {
+        console.log(`📧 Sending role change email: ${oldRole} → ${updatedRole}`)
         await sendEmailViaSupabase('role-change', {
           email: profile.email,
           userName: profile.full_name || 'there',
           oldRole: oldRole,
-          newRole: newRole
+          newRole: updatedRole  // Use actual updated role from DB
         })
       } catch (emailError) {
         console.error('Error sending role change email:', emailError)
       }
+    } else if (oldRole !== newRole && oldRole === 'Admin') {
+      console.log('⚠️ Skipping role change email: Admin role preserved (no actual change in DB)')
     }
   }
 }

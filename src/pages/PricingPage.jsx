@@ -123,8 +123,8 @@ const PricingPage = () => {
               userId: user.id,
               userEmail: user.email
             }),
-            // Reduced timeout from 10s to 8s
-            signal: AbortSignal.timeout(8000) // 8 second timeout
+            // Increased timeout to 15s for better reliability
+            signal: AbortSignal.timeout(15000) // 15 second timeout
           })
 
           console.log(`API server response (attempt ${attempt}):`, response.status, response.statusText)
@@ -146,14 +146,17 @@ const PricingPage = () => {
               console.error('❌ Client error (no retry):', errorMessage)
               if (response.status === 503) {
                 errorMessage = 'Payment service is not available. Please contact support or try again later.'
-                toast.error('Payment service unavailable. Please try again in a moment.')
+                toast.error('Payment service unavailable. Please check your server configuration or try again in a moment.')
+              } else if (response.status === 400) {
+                errorMessage = errorMessage || 'Invalid request. Please check your payment details.'
+                toast.error(errorMessage)
               }
               throw new Error(errorMessage)
             }
             
             // Retry on 5xx errors (server errors)
             lastError = new Error(errorMessage)
-            if (attempt < 3) continue // Retry
+            if (attempt < 2) continue // Retry once
             throw lastError
           }
 
@@ -179,14 +182,21 @@ const PricingPage = () => {
           
         } catch (error) {
           lastError = error
-          if (error.name === 'AbortError') {
+          if (error.name === 'AbortError' || error.message?.includes('timeout')) {
             console.warn(`⚠️ Request timeout (attempt ${attempt}/2)`)
             if (attempt < 2) continue
+            toast.error('Request timeout. Please check your connection and try again.')
+          } else if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
+            console.warn(`⚠️ Network error (attempt ${attempt}/2):`, error.message)
+            if (attempt < 2) continue
+            toast.error('Network error. Please check your connection and try again.')
           }
           if (attempt === 2) {
             // Final attempt failed
             console.error('❌ All checkout attempts failed:', error)
-            toast.error('Unable to create checkout session. Please try again or contact support.')
+            if (!error.message?.includes('timeout') && !error.message?.includes('NetworkError')) {
+              toast.error('Unable to create checkout session. Please try again or contact support.')
+            }
             throw error
           }
         }

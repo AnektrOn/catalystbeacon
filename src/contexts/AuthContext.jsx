@@ -410,20 +410,29 @@ export const AuthProvider = ({ children }) => {
                 emailType: 'sign-up',
                 email,
                 userName: userName || 'there'
-              })
+              }),
+              // Add timeout to prevent hanging
+              signal: AbortSignal.timeout(10000) // 10 second timeout
             })
             
             if (response.ok) {
               const result = await response.json()
               console.log('✅ Sign-up confirmation email sent via Supabase Edge Function')
-              return // Success, exit early
+              // Don't return here - continue to return signup data
             } else if (response.status === 404) {
               console.warn('⚠️ send-email Edge Function not deployed (404). Trying server API...')
             } else {
               console.warn('⚠️ Supabase Edge Function error:', response.status)
             }
           } catch (supabaseError) {
-            console.warn('⚠️ Supabase Edge Function unavailable:', supabaseError.message)
+            // Handle timeout and network errors gracefully
+            if (supabaseError.name === 'AbortError' || supabaseError.message?.includes('timeout')) {
+              console.warn('⚠️ Supabase Edge Function timeout (non-critical):', supabaseError.message)
+            } else if (supabaseError.message?.includes('Failed to fetch') || supabaseError.message?.includes('NetworkError')) {
+              console.warn('⚠️ Supabase Edge Function network error (non-critical):', supabaseError.message)
+            } else {
+              console.warn('⚠️ Supabase Edge Function unavailable:', supabaseError.message)
+            }
           }
         }
         
@@ -447,7 +456,9 @@ export const AuthProvider = ({ children }) => {
           body: JSON.stringify({
             email,
             userName
-          })
+          }),
+          // Add timeout to prevent hanging
+          signal: AbortSignal.timeout(10000) // 10 second timeout
         })
         
         if (!response.ok) {
@@ -465,7 +476,14 @@ export const AuthProvider = ({ children }) => {
           }
         }
       } catch (emailError) {
-        console.warn('⚠️ Sign-up email error (non-critical):', emailError.message)
+        // Handle timeout and network errors gracefully
+        if (emailError.name === 'AbortError' || emailError.message?.includes('timeout')) {
+          console.warn('⚠️ Sign-up email request timeout (non-critical):', emailError.message)
+        } else if (emailError.message?.includes('Failed to fetch') || emailError.message?.includes('NetworkError')) {
+          console.warn('⚠️ Sign-up email network error (non-critical):', emailError.message)
+        } else {
+          console.warn('⚠️ Sign-up email error (non-critical):', emailError.message)
+        }
         // Don't fail signup if email fails - this is non-critical
       }
 
