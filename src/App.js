@@ -12,6 +12,7 @@ import CosmicLoader from './components/ui/CosmicLoader'
 import './styles/glassmorphism.css'
 import './styles/mobile-responsive.css'
 
+
 // Lazy load pages for code splitting
 const LoginPage = React.lazy(() => import('./pages/LoginPage'))
 const SignupPage = React.lazy(() => import('./pages/SignupPage'))
@@ -121,6 +122,7 @@ const AppRoutes = () => {
           } />
         </>
       )}
+     
 
       {/* Protected Routes (With AppShell) */}
       <Route element={
@@ -214,9 +216,14 @@ const AppRoutes = () => {
         } />
 
         {/* Roadmap Routes - Protected */}
-        <Route path="/roadmap/ignition" element={
+        {/* Remplace cette ligne : */}
+        {/* <Route path="/roadmap/ignition" element={<ErrorBoundary><React.Suspense...><RoadmapIgnition /></React.Suspense></ErrorBoundary>} /> */}
+
+        {/* Par celle-ci (Note le :masterschool) : */}
+        <Route path="/roadmap/:masterschool" element={
           <ErrorBoundary>
             <React.Suspense fallback={<LoadingScreen />}>
+              {/* On affiche toujours le même composant pour l'instant */}
               <RoadmapIgnition />
             </React.Suspense>
           </ErrorBoundary>

@@ -1,15 +1,33 @@
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;500;600;700&display=swap');
 
+/* --- BRIDGE SYSTEM: Connexion Sécurisée --- */
 :root {
-  --neon-blue: #00f3ff;
-  --neon-red: #ff003c;
-  --neon-gold: #ffd700;
+  /* CORRECTION CRITIQUE : 
+     On utilise 'color-mix' pour gérer la compatibilité Hex/HSL automatiquement.
+     Si ça échoue, on a un fallback visible (Cyan/Or).
+  */
+  
+  /* Neon Blue -> Primary (ou Cyan par défaut) */
+  --neon-blue: color-mix(in srgb, var(--primary), #00f3ff);
+  
+  /* Neon Gold -> Secondary (ou Or par défaut) */
+  --neon-gold: color-mix(in srgb, var(--secondary), #ffd700);
+  
+  /* Neon Red -> Destructive (ou Rouge par défaut) */
+  --neon-red: color-mix(in srgb, var(--destructive), #ff003c);
 }
 
 .neural-path-container {
   margin: 0;
-  background-color: #020202;
-  color: #e0e0e0;
+  /* FORCE LE FOND SOMBRE (ESPACE) pour la visibilité des néons */
+  background-color: #050505; 
+  
+  /* Dégradé d'ambiance subtil utilisant les couleurs du thème */
+  background-image: 
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--primary), transparent 90%), transparent 70%),
+    radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--secondary), transparent 90%), transparent 70%);
+    
+  color: #e0e0e0; /* Texte clair forcé */
   font-family: 'Rajdhani', sans-serif;
   overflow-x: hidden;
   touch-action: pan-y;
@@ -25,7 +43,7 @@
 }
 
 .neural-path-container::-webkit-scrollbar-track {
-  background: #050505;
+  background: #020202;
 }
 
 .neural-path-container::-webkit-scrollbar-thumb {
@@ -45,19 +63,31 @@
   min-height: 100vh;
   padding-bottom: 120px;
   z-index: 1;
+  /* 🔴 FIX: S'assurer que le contenu du canvas n'est pas masqué */
+  overflow: visible;
+  /* 🔴 FIX: Pas de clip qui pourrait masquer */
+  clip: none;
+  clip-path: none;
 }
 
 .neuron-canvas {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
+  /* 🔴 DEBUG: Commenté temporairement pour tester avec les dimensions exactes */
+  /* width: 100%; */
+  /* height: 100%; */
+  z-index: 0; /* Derrière les nœuds (z-index: 10) */
   pointer-events: none;
+  opacity: 1;
+  /* 🔴 FIX: S'assurer que le canvas n'est pas masqué */
+  overflow: visible;
+  clip: none;
+  clip-path: none;
+  /* Pas de mix-blend-mode pour garantir la visibilité sur fond sombre */
 }
 
-/* HUD */
+/* HUD - Style Glass Sombre */
 .neural-hud {
   position: fixed;
   top: 0;
@@ -70,6 +100,11 @@
   pointer-events: none;
 }
 
+/* Réactive les clics sur les boutons du HUD */
+.neural-hud > * {
+  pointer-events: auto;
+}
+
 .hud-item {
   font-size: 14px;
   color: #888;
@@ -77,17 +112,27 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
 }
 
+.hud-item svg,
 .hud-item i {
-  font-size: 12px;
-  color: #ffd700;
+  font-size: 14px;
+  color: var(--neon-blue);
+  filter: drop-shadow(0 0 5px var(--neon-blue));
+}
+
+.hud-item.xp svg,
+.hud-item.xp i {
+  color: var(--neon-gold);
+  filter: drop-shadow(0 0 5px var(--neon-gold));
 }
 
 .hud-val {
   color: #fff;
   font-weight: 700;
-  text-shadow: 0 0 8px rgba(255,255,255,0.3);
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
 }
 
 /* Recenter Button */
@@ -98,9 +143,11 @@
   width: 50px;
   height: 50px;
   border-radius: 50%;
+  
   background: rgba(20, 20, 25, 0.9);
   border: 1px solid #444;
-  color: #fff;
+  color: var(--neon-blue);
+  
   display: flex;
   align-items: center;
   justify-content: center;
@@ -122,7 +169,11 @@
   transform: scale(0.9);
 }
 
-/* Navigation removed - no bottom menu */
+.recenter-btn:hover {
+  border-color: var(--neon-blue);
+  box-shadow: 0 0 15px var(--neon-blue);
+  color: #fff;
+}
 
 /* Loading */
 .neural-path-loading {
@@ -142,6 +193,7 @@
   border-top-color: var(--neon-blue);
   border-radius: 50%;
   animation: spin 1s linear infinite;
+  box-shadow: 0 0 15px var(--neon-blue);
 }
 
 @keyframes spin {
