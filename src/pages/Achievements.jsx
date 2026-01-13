@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { usePageTransition } from '../contexts/PageTransitionContext';
 import { Trophy, Star, Zap, BookOpen, Clock, Award } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
 const Achievements = () => {
     const { user, profile } = useAuth();
+    const { startTransition, endTransition } = usePageTransition();
     const [loading, setLoading] = useState(true);
     const [achievements, setAchievements] = useState([]);
 
@@ -118,13 +120,14 @@ const Achievements = () => {
         loadAchievements();
     }, [user, profile, getBadgeIcon]);
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#B4833D]"></div>
-            </div>
-        );
-    }
+    // Use global loader instead of local loading state
+    useEffect(() => {
+        if (loading) {
+            startTransition();
+        } else {
+            endTransition();
+        }
+    }, [loading, startTransition, endTransition]);
 
     return (
         <div className="min-h-screen pb-20 pt-6 px-4 lg:px-8">

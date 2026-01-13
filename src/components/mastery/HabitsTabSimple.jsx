@@ -388,7 +388,7 @@ const HabitsTabSimple = () => {
             {habits.map((habit) => {
               const Icon = habit.Icon;
               return (
-                <div key={habit.id} className="bg-white rounded-lg shadow-sm border p-6">
+                <div key={habit.id} className="bg-ethereal-glass rounded-ethereal shadow-ethereal-base border border-ethereal p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center">
                       <div 
@@ -398,8 +398,8 @@ const HabitsTabSimple = () => {
                         <Icon className="w-5 h-5" style={{ color: habit.color }} />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900">{habit.title}</h3>
-                        <p className="text-sm text-gray-600">{habit.description}</p>
+                        <h3 className="text-lg font-semibold text-ethereal-white">{habit.title}</h3>
+                        <p className="text-sm text-ethereal-text">{habit.description}</p>
                       </div>
                     </div>
                     <button
@@ -414,13 +414,13 @@ const HabitsTabSimple = () => {
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center">
                         <Flame className="w-4 h-4 text-orange-500 mr-1" />
-                        <span className="text-sm font-medium text-gray-900">{habit.currentStreak}</span>
-                        <span className="text-sm text-gray-600 ml-1">day streak</span>
+                        <span className="text-sm font-medium text-ethereal-white">{habit.currentStreak}</span>
+                        <span className="text-sm text-ethereal-text ml-1">day streak</span>
                       </div>
                       <div className="flex items-center">
                         <Star className="w-4 h-4 text-yellow-500 mr-1" />
-                        <span className="text-sm font-medium text-gray-900">{habit.xp_reward}</span>
-                        <span className="text-sm text-gray-600 ml-1">XP</span>
+                        <span className="text-sm font-medium text-ethereal-white">{habit.xp_reward}</span>
+                        <span className="text-sm text-ethereal-text ml-1">XP</span>
                       </div>
                     </div>
                   </div>
@@ -456,7 +456,7 @@ const HabitsTabSimple = () => {
       {/* Create Habit Modal */}
       {showAddHabit && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+          <div className="bg-ethereal-glass rounded-ethereal border border-ethereal p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold mb-4">Create New Habit</h3>
             <div className="space-y-4">
               <div>
@@ -465,7 +465,7 @@ const HabitsTabSimple = () => {
                   type="text"
                   value={newHabit.title}
                   onChange={(e) => setNewHabit({ ...newHabit, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-ethereal rounded-ethereal-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-ethereal-glass text-ethereal-text"
                   placeholder="e.g., Read for 30 minutes"
                 />
               </div>
@@ -474,7 +474,7 @@ const HabitsTabSimple = () => {
                 <textarea
                   value={newHabit.description}
                   onChange={(e) => setNewHabit({ ...newHabit, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-ethereal rounded-ethereal-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-ethereal-glass text-ethereal-text"
                   rows="3"
                   placeholder="Describe your habit..."
                 />
@@ -485,7 +485,7 @@ const HabitsTabSimple = () => {
                   type="number"
                   value={newHabit.xp_reward}
                   onChange={(e) => setNewHabit({ ...newHabit, xp_reward: parseInt(e.target.value) || 10 })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-ethereal rounded-ethereal-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-ethereal-glass text-ethereal-text"
                   min="1"
                   max="100"
                 />

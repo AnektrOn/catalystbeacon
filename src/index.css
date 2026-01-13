@@ -1,12 +1,11 @@
+/* Import Google Fonts - must be at the top */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Import Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
-/* Ethereal Design System Fonts (from XPCircleWidget) */
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Rajdhani:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
@@ -112,27 +111,73 @@
     --font-family-heading: 'Space Grotesk', sans-serif;
     --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
     
-    /* Ethereal Design System Fonts (from XPCircleWidget) */
-    --font-ethereal-body: 'Rajdhani', sans-serif;
+    /* Ethereal Design System Fonts - Serif for elegant typography */
+    --font-ethereal-body: 'Cinzel', serif;
     --font-ethereal-heading: 'Cinzel', serif;
     
-    /* === ETHEREAL CARD DESIGN SYSTEM (from XPCircleWidget) === */
-    /* Colors */
-    --ethereal-cyan: #a5f3fc;
-    --ethereal-white: #ffffff;
-    --ethereal-violet: #a78bfa;
-    --ethereal-text: #e0e0e0;
-    --ethereal-bg-glass: rgba(8, 8, 12, 0.4);
-    --ethereal-border: rgba(255, 255, 255, 0.08);
-    --ethereal-border-hover: rgba(255, 255, 255, 0.15);
-    --ethereal-bg-hover: rgba(20, 20, 25, 0.6);
+    /* === ETHEREAL CARD DESIGN SYSTEM (Dynamic Theming Engine) === */
+    /* Colors - Dynamically inherited from active color palette */
+    --ethereal-cyan: hsl(var(--primary));
+    --ethereal-white: hsl(var(--card-foreground));
+    --ethereal-violet: hsl(var(--secondary));
+    --ethereal-text: hsl(var(--foreground));
     
-    /* Card Shadows */
-    --ethereal-shadow-base: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 0 80px rgba(165, 243, 252, 0.05);
-    --ethereal-shadow-hover: 0 20px 60px rgba(0, 0, 0, 0.6), inset 0 0 100px rgba(165, 243, 252, 0.08);
-    --ethereal-shadow-elevated: 0 30px 70px rgba(0, 0, 0, 0.6), inset 0 0 100px rgba(165, 243, 252, 0.08);
+    /* Glass Backgrounds - Derived from palette card color with opacity */
+    --ethereal-bg-glass: hsl(var(--card) / 0.4);
+    --ethereal-bg-hover: hsl(var(--card) / 0.6);
     
-    /* Card Sizing */
+    /* Borders - Derived from palette border color with opacity */
+    /* Base opacity - will be overridden for light mode below */
+    --ethereal-border: hsl(var(--border) / 0.3);
+    --ethereal-border-hover: hsl(var(--border) / 0.5);
+    
+    /* Card Shadows - Inner glow uses primary color from active palette */
+    /* Base shadows - will be enhanced for light mode below */
+    --ethereal-shadow-base: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 0 80px hsl(var(--primary) / 0.05);
+    --ethereal-shadow-hover: 0 20px 60px rgba(0, 0, 0, 0.6), inset 0 0 100px hsl(var(--primary) / 0.08);
+    --ethereal-shadow-elevated: 0 30px 70px rgba(0, 0, 0, 0.6), inset 0 0 100px hsl(var(--primary) / 0.08);
+    
+    /* Card Sizing - Shared across all modes */
+    --ethereal-card-padding-small: 24px;
+    --ethereal-card-padding-medium: 32px;
+    --ethereal-card-padding-large: 40px;
+    --ethereal-card-radius: 24px;
+    --ethereal-card-radius-small: 20px;
+    --ethereal-card-radius-large: 28px;
+    
+    /* Card Blur - Shared across all modes */
+    --ethereal-card-blur: 20px;
+    
+    /* Ambient Light - Uses primary color from active palette */
+    --ethereal-light-color: hsl(var(--primary) / 0.08);
+  }
+
+  /* Light Mode Overrides - Stronger borders and deeper shadows for visibility */
+  :root:not(.dark) {
+    /* Colored borders in light mode to separate glass cards from white background */
+    /* Uses primary color for a crisp, visible rim that matches the palette */
+    --ethereal-border: hsl(var(--primary) / 0.2);
+    --ethereal-border-hover: hsl(var(--primary) / 0.3);
+    
+    /* Enhanced shadows in light mode for better depth perception */
+    --ethereal-shadow-base: 0 20px 50px rgba(0, 0, 0, 0.15), 0 8px 20px rgba(0, 0, 0, 0.1), inset 0 0 80px hsl(var(--primary) / 0.08);
+    --ethereal-shadow-hover: 0 20px 60px rgba(0, 0, 0, 0.2), 0 10px 25px rgba(0, 0, 0, 0.12), inset 0 0 100px hsl(var(--primary) / 0.12);
+    --ethereal-shadow-elevated: 0 30px 70px rgba(0, 0, 0, 0.25), 0 15px 35px rgba(0, 0, 0, 0.15), inset 0 0 100px hsl(var(--primary) / 0.12);
+  }
+
+  /* Dark Mode - Keep original subtle borders and shadows */
+  :root.dark {
+    --ethereal-border: hsl(var(--border) / 0.3);
+    --ethereal-border-hover: hsl(var(--border) / 0.5);
+    
+    /* Keep original subtle shadows for dark mode */
+    --ethereal-shadow-base: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 0 80px hsl(var(--primary) / 0.05);
+    --ethereal-shadow-hover: 0 20px 60px rgba(0, 0, 0, 0.6), inset 0 0 100px hsl(var(--primary) / 0.08);
+    --ethereal-shadow-elevated: 0 30px 70px rgba(0, 0, 0, 0.6), inset 0 0 100px hsl(var(--primary) / 0.08);
+  }
+  
+  /* Card Sizing - Shared across all modes */
+  :root {
     --ethereal-card-padding-small: 24px;
     --ethereal-card-padding-medium: 32px;
     --ethereal-card-padding-large: 40px;
@@ -143,8 +188,8 @@
     /* Card Blur */
     --ethereal-card-blur: 20px;
     
-    /* Ambient Light */
-    --ethereal-light-color: rgba(165, 243, 252, 0.08);
+    /* Ambient Light - Uses primary color from active palette */
+    --ethereal-light-color: hsl(var(--primary) / 0.08);
   }
 
   /* Dark mode variables are now set by colorPaletteSwitcher */
@@ -159,29 +204,72 @@
   body {
     background-color: transparent;
     color: var(--text-primary);
-    font-family: var(--font-ethereal-body);
+    font-family: 'Cinzel', serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    -webkit-font-feature-settings: "kern" 1;
+    font-feature-settings: "kern" 1;
+    position: relative;
   }
   
-  /* Apply ethereal fonts globally - override defaults */
+  /* Ethereal Noise Texture Overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.4'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 200px 200px;
+  }
+  
+  /* Apply serif font globally - override defaults */
   * {
-    font-family: var(--font-ethereal-body) !important;
+    font-family: 'Cinzel', serif !important;
+    text-rendering: optimizeLegibility;
+    -webkit-font-feature-settings: "kern" 1;
+    font-feature-settings: "kern" 1;
   }
   
+  /* All headings use serif for consistency */
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-ethereal-heading) !important;
+    font-family: 'Cinzel', serif !important;
+    text-rendering: optimizeLegibility;
+  }
+  
+  /* Fix for button text rendering - prevent letter spacing issues */
+  button, .btn, [role="button"], a.button {
+    text-rendering: optimizeLegibility;
+    -webkit-font-feature-settings: "kern" 1;
+    font-feature-settings: "kern" 1;
+    letter-spacing: normal !important;
+    word-spacing: normal !important;
+    font-kerning: normal;
+  }
+  
+  /* Ensure proper text rendering for links and interactive elements */
+  a, button, input, select, textarea {
+    text-rendering: optimizeLegibility;
+    -webkit-font-feature-settings: "kern" 1;
+    font-feature-settings: "kern" 1;
   }
 
   /* Dark mode text colors are now set by colorPaletteSwitcher */
 
+  /* Headings already set above with !important - this is redundant but kept for compatibility */
   h1,
   h2,
   h3,
   h4,
   h5,
   h6 {
-    font-family: var(--font-family-heading);
+    font-family: 'Cinzel', serif;
   }
 
   code {
@@ -192,6 +280,21 @@
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+  
+  /* Ethereal Noise Texture Utility Class */
+  .ethereal-noise {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.4'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 200px 200px;
   }
   
   /* Animations */
@@ -224,9 +327,54 @@
   }
 }
 
-/* Smooth transitions */
+/* Smooth transitions for theme color palette changes */
 * {
-  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-timing-function: ease-in-out;
+  transition-duration: 500ms;
+}
+
+/* Custom Scrollbars - Ethereal Theme */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Force Serif Font on ALL Elements */
+* {
+  font-family: 'Cinzel', serif !important;
+}
+
+/* Ensure buttons, inputs, and form elements use serif */
+button, input, select, textarea, label, legend {
+  font-family: 'Cinzel', serif !important;
+}
+
+/* Chart elements - ensure Recharts and SVG text use serif */
+svg text, .recharts-legend-item, .recharts-tooltip-label, .recharts-cartesian-axis-tick-value,
+.recharts-legend-item-text, .recharts-tooltip-item-label, .recharts-tooltip-item-value {
+  font-family: 'Cinzel', serif !important;
+}
+
+/* Code elements should still use monospace */
+code, pre, kbd, samp {
+  font-family: var(--font-family-mono) !important;
 }

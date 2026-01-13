@@ -1,24 +1,66 @@
 // Load environment variables from server.env file FIRST
 const path = require('path')
 const fs = require('fs')
-require('dotenv').config({ path: path.join(__dirname, 'server.env') })
+
+// Try to load server.env
+const serverEnvPath = path.join(__dirname, 'server.env')
+console.log('📁 Looking for server.env at:', serverEnvPath)
+console.log('📁 server.env exists:', fs.existsSync(serverEnvPath))
+
+if (fs.existsSync(serverEnvPath)) {
+  const result = require('dotenv').config({ path: serverEnvPath })
+  if (result.error) {
+    console.error('❌ Error loading server.env:', result.error)
+  } else {
+    console.log('✅ server.env loaded successfully')
+  }
+} else {
+  console.warn('⚠️ server.env file not found at:', serverEnvPath)
+  console.warn('⚠️ Trying to load from process.env (may be set by PM2/system)')
+}
+
+// Also try loading from .env as fallback
+if (!process.env.STRIPE_SECRET_KEY) {
+  require('dotenv').config({ path: path.join(__dirname, '.env') })
+}
 
 // Debug: Check what Stripe vars are loaded
-console.log('STRIPE_SECRET_KEY loaded:', process.env.STRIPE_SECRET_KEY ? 'YES (' + process.env.STRIPE_SECRET_KEY.substring(0, 10) + '...)' : 'NO')
-console.log('All STRIPE vars:', Object.keys(process.env).filter(k => k.includes('STRIPE')))
+const stripeKey = process.env.STRIPE_SECRET_KEY
+console.log('🔑 STRIPE_SECRET_KEY loaded:', stripeKey ? `YES (${stripeKey.substring(0, 7)}...${stripeKey.substring(stripeKey.length - 4)})` : 'NO')
+console.log('🔑 STRIPE_SECRET_KEY length:', stripeKey ? stripeKey.length : 0)
+console.log('🔑 All STRIPE vars:', Object.keys(process.env).filter(k => k.includes('STRIPE')))
+console.log('🔑 All env files checked:', {
+  serverEnvExists: fs.existsSync(serverEnvPath),
+  dotEnvExists: fs.existsSync(path.join(__dirname, '.env'))
+})
 
 // Verify Stripe key is loaded and not a placeholder
+// WARNING: Don't exit in production - allow server to start but return 503 for payment endpoints
 if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes('your_stripe_secret_key')) {
-  console.error('ERROR: STRIPE_SECRET_KEY is not set correctly in server.env!')
-  console.error('Please check server.env file and add your actual Stripe secret key')
+  console.error('⚠️ WARNING: STRIPE_SECRET_KEY is not set correctly in server.env!')
+  console.error('Payment endpoints will return 503 until STRIPE_SECRET_KEY is configured')
   console.error('Get your key from: https://dashboard.stripe.com/test/apikeys')
   console.error('Current value:', process.env.STRIPE_SECRET_KEY ? process.env.STRIPE_SECRET_KEY.substring(0, 20) + '...' : 'NOT SET')
-  process.exit(1)
+  // Don't exit - allow server to start for other endpoints
 }
 
 const express = require('express')
 const cors = require('cors')
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
+
+// Initialize Stripe - handle case where key might not be loaded yet
+let stripe
+try {
+  if (process.env.STRIPE_SECRET_KEY && !process.env.STRIPE_SECRET_KEY.includes('your_stripe_secret_key') && !process.env.STRIPE_SECRET_KEY.includes('YOUR_STRIPE_SECRET_KEY')) {
+    stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
+    console.log('✅ Stripe initialized successfully')
+  } else {
+    console.warn('⚠️ Stripe not initialized - STRIPE_SECRET_KEY not configured')
+    stripe = null
+  }
+} catch (error) {
+  console.error('❌ Error initializing Stripe:', error)
+  stripe = null
+}
 const { createClient } = require('@supabase/supabase-js')
 const rateLimit = require('express-rate-limit')
 
@@ -235,7 +277,7 @@ app.post('/api/create-customer', async (req, res) => {
   }
 })
 
-// Send sign-up confirmation email via Supabase Edge Function
+// Send sign-up confirmation email via N8N
 app.post('/api/send-signup-email', async (req, res) => {
   try {
     const { email, userName } = req.body
@@ -244,25 +286,26 @@ app.post('/api/send-signup-email', async (req, res) => {
       return res.status(400).json({ error: 'Email is required' })
     }
 
-    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.warn('⚠️ Supabase configuration missing - cannot send email')
+    // Check if N8N is configured
+    if (!process.env.N8N_WEBHOOK_URL) {
+      console.warn('⚠️ N8N webhook URL not configured - cannot send email')
       return res.json({ 
         success: false, 
         message: 'Email service not configured. Account created but no email sent.',
-        warning: 'Supabase configuration missing'
+        warning: 'N8N webhook URL not configured'
       })
     }
 
-    console.log('📧 Sending sign-up confirmation email via Supabase to:', email)
+    console.log('📧 Sending sign-up confirmation email via N8N to:', email)
 
-    // Use Supabase Edge Function for email
-    const result = await sendEmailViaSupabase('sign-up', {
+    // Use N8N for email
+    const result = await sendEmailViaN8N('sign-up', {
       email,
       userName: userName || 'there'
     })
 
     if (result.success) {
-      console.log('✅ Sign-up email sent successfully via Supabase')
+      console.log('✅ Sign-up email sent successfully via N8N')
       return res.json({ success: true, message: 'Email sent successfully' })
     } else {
       console.error('❌ Failed to send sign-up email:', result.error)
@@ -275,16 +318,33 @@ app.post('/api/send-signup-email', async (req, res) => {
     }
   } catch (error) {
     console.error('❌ Error sending sign-up email:', error)
-    return res.status(500).json({ error: error.message || 'Internal server error' })
+    // Return 200 with success: false instead of 500 - email is non-critical
+    return res.json({ 
+      success: false, 
+      message: 'Email service error, but account was created successfully',
+      error: error.message 
+    })
   }
 })
 
 // Create checkout session
 app.post('/api/create-checkout-session', paymentLimiter, async (req, res) => {
-  console.log('=== CREATE CHECKOUT SESSION REQUEST ===')
-  console.log('Body:', req.body)
-  console.log('Origin:', req.headers.origin)
-  console.log('Headers:', req.headers)
+  const requestId = Date.now().toString(36) + Math.random().toString(36).substr(2)
+  console.log(`=== CREATE CHECKOUT SESSION REQUEST [${requestId}] ===`)
+  console.log(`[${requestId}] Body:`, req.body)
+  console.log(`[${requestId}] Origin:`, req.headers.origin)
+  console.log(`[${requestId}] Host:`, req.headers.host)
+  console.log(`[${requestId}] IP:`, req.ip)
+  console.log(`[${requestId}] Headers:`, JSON.stringify(req.headers, null, 2))
+  
+  // Log environment check
+  console.log(`[${requestId}] Environment check:`, {
+    hasStripeKey: !!process.env.STRIPE_SECRET_KEY,
+    stripeKeyPrefix: process.env.STRIPE_SECRET_KEY ? process.env.STRIPE_SECRET_KEY.substring(0, 10) + '...' : 'NOT SET',
+    hasSupabaseUrl: !!process.env.SUPABASE_URL,
+    hasSupabaseServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    nodeEnv: process.env.NODE_ENV
+  })
   
   try {
     const { priceId, userId, userEmail } = req.body
@@ -294,75 +354,193 @@ app.post('/api/create-checkout-session', paymentLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields: priceId, userId, and userEmail are required' })
     }
 
-    // Validate Stripe key
-    if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes('your_stripe_secret_key')) {
-      console.error('❌ ERROR: STRIPE_SECRET_KEY is not configured')
-      console.error('Please set STRIPE_SECRET_KEY in server.env file')
+    // Validate Stripe key - with detailed logging
+    // CRITICAL: Reload env vars in case PM2 didn't load them
+    const serverEnvPath = path.join(__dirname, 'server.env')
+    if (fs.existsSync(serverEnvPath) && !process.env.STRIPE_SECRET_KEY) {
+      console.warn(`[${requestId}] ⚠️ STRIPE_SECRET_KEY not in process.env, trying to reload from server.env`)
+      require('dotenv').config({ path: serverEnvPath })
+    }
+    
+    const stripeKey = process.env.STRIPE_SECRET_KEY
+    const hasStripeKey = !!stripeKey
+    const isPlaceholder = stripeKey && (
+      stripeKey.includes('your_stripe_secret_key') || 
+      stripeKey.includes('YOUR_STRIPE_SECRET_KEY') ||
+      stripeKey.includes('YOUR_STRIPE_SECRET_KEY_HERE') ||
+      stripeKey.includes('sk_test_placeholder') ||
+      stripeKey.length < 20
+    )
+    
+    console.log(`[${requestId}] 🔍 Stripe key validation:`, {
+      hasKey: hasStripeKey,
+      isPlaceholder: isPlaceholder,
+      keyLength: stripeKey ? stripeKey.length : 0,
+      keyPrefix: stripeKey ? stripeKey.substring(0, 7) : 'N/A',
+      keySuffix: stripeKey ? '...' + stripeKey.substring(stripeKey.length - 4) : 'N/A',
+      serverEnvExists: fs.existsSync(serverEnvPath),
+      cwd: process.cwd(),
+      __dirname: __dirname
+    })
+    
+    if (!hasStripeKey || isPlaceholder) {
+      console.error(`[${requestId}] ❌ ERROR: STRIPE_SECRET_KEY is not configured properly`)
+      console.error(`[${requestId}] hasKey: ${hasStripeKey}, isPlaceholder: ${isPlaceholder}`)
+      console.error(`[${requestId}] Please set STRIPE_SECRET_KEY in server.env file`)
+      console.error(`[${requestId}] Request from:`, req.headers.origin || req.headers.host)
+      console.error(`[${requestId}] All env vars with STRIPE:`, Object.keys(process.env).filter(k => k.includes('STRIPE')))
+      console.error(`[${requestId}] Current working directory:`, process.cwd())
+      console.error(`[${requestId}] Server file location:`, __dirname)
+      console.error(`[${requestId}] server.env path:`, serverEnvPath)
+      console.error(`[${requestId}] server.env exists:`, fs.existsSync(serverEnvPath))
+      
       return res.status(503).json({ 
         error: 'Payment service is not configured. Please contact support.',
-        details: process.env.NODE_ENV === 'development' ? 'STRIPE_SECRET_KEY is missing or invalid in server.env' : undefined
+        details: process.env.NODE_ENV === 'development' 
+          ? `STRIPE_SECRET_KEY validation failed. hasKey: ${hasStripeKey}, isPlaceholder: ${isPlaceholder}. Please check your server.env file and restart the server with PM2.` 
+          : 'Payment service unavailable. Please contact support.',
+        code: 'STRIPE_NOT_CONFIGURED',
+        debug: process.env.NODE_ENV === 'development' ? {
+          hasKey,
+          isPlaceholder,
+          keyLength: stripeKey?.length || 0,
+          serverEnvPath,
+          serverEnvExists: fs.existsSync(serverEnvPath),
+          cwd: process.cwd()
+        } : undefined
       })
     }
+    
+    console.log(`[${requestId}] ✅ Stripe key validated successfully`)
 
     // Get or create Stripe customer
     let customerId
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('stripe_customer_id')
-      .eq('id', userId)
-      .single()
-
-    if (profile?.stripe_customer_id) {
-      customerId = profile.stripe_customer_id
-    } else {
-      const customer = await stripe.customers.create({
-        email: userEmail,
-        metadata: { userId }
-      })
-      customerId = customer.id
-
-      await supabase
+    try {
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .update({ stripe_customer_id: customerId })
+        .select('stripe_customer_id')
         .eq('id', userId)
+        .single()
+
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('❌ Error fetching profile from Supabase:', profileError)
+        return res.status(503).json({ 
+          error: 'Database service unavailable. Please try again later.',
+          details: process.env.NODE_ENV === 'development' ? profileError.message : undefined,
+          code: 'DATABASE_ERROR'
+        })
+      }
+
+      if (profile?.stripe_customer_id) {
+        customerId = profile.stripe_customer_id
+        console.log('✅ Using existing Stripe customer:', customerId)
+      } else {
+        console.log('🔄 Creating new Stripe customer for user:', userId)
+        try {
+          if (!stripe) {
+            throw new Error('Stripe is not initialized - STRIPE_SECRET_KEY not configured')
+          }
+          const customer = await stripe.customers.create({
+            email: userEmail,
+            metadata: { userId }
+          })
+          customerId = customer.id
+          console.log('✅ Created Stripe customer:', customerId)
+
+          // Update profile with customer ID (non-blocking)
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ stripe_customer_id: customerId })
+            .eq('id', userId)
+
+          if (updateError) {
+            console.warn('⚠️ Warning: Failed to update profile with customer ID:', updateError)
+            // Don't fail - we can still proceed with checkout
+          }
+        } catch (stripeError) {
+          console.error('❌ Error creating Stripe customer:', stripeError)
+          return res.status(503).json({ 
+            error: 'Payment service error. Please try again later.',
+            details: process.env.NODE_ENV === 'development' ? stripeError.message : undefined,
+            code: 'STRIPE_ERROR'
+          })
+        }
+      }
+    } catch (error) {
+      console.error('❌ Unexpected error in customer creation/retrieval:', error)
+      return res.status(503).json({ 
+        error: 'Service unavailable. Please try again later.',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        code: 'SERVICE_ERROR'
+      })
     }
 
     console.log('Creating Stripe checkout session with customer:', customerId)
     
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
-      mode: 'subscription',
-      success_url: `${req.headers.origin || 'http://localhost:3000'}/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.origin || 'http://localhost:3000'}/pricing?payment=cancelled`,
-      metadata: {
-        userId: userId
+    try {
+      if (!stripe) {
+        throw new Error('Stripe is not initialized - STRIPE_SECRET_KEY not configured')
       }
-    })
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price: priceId,
+            quantity: 1,
+          },
+        ],
+        mode: 'subscription',
+        success_url: `${req.headers.origin || 'http://localhost:3000'}/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${req.headers.origin || 'http://localhost:3000'}/pricing?payment=cancelled`,
+        metadata: {
+          userId: userId
+        }
+      })
 
-    console.log('Checkout session created successfully:', { id: session.id, url: session.url ? 'YES' : 'NO' })
-    
-    res.json({ id: session.id, url: session.url })
+      console.log('✅ Checkout session created successfully:', { id: session.id, url: session.url ? 'YES' : 'NO' })
+      
+      if (!session.url) {
+        console.error('❌ Checkout session created but no URL returned')
+        return res.status(503).json({ 
+          error: 'Payment service error. Please try again later.',
+          code: 'STRIPE_SESSION_ERROR'
+        })
+      }
+      
+      res.json({ id: session.id, url: session.url })
+    } catch (stripeSessionError) {
+      console.error('❌ Error creating Stripe checkout session:', stripeSessionError)
+      console.error('Stripe error details:', {
+        type: stripeSessionError.type,
+        code: stripeSessionError.code,
+        statusCode: stripeSessionError.statusCode,
+        message: stripeSessionError.message
+      })
+      
+      // Return 503 for Stripe API errors
+      return res.status(503).json({ 
+        error: 'Payment service error. Please try again later.',
+        details: process.env.NODE_ENV === 'development' ? stripeSessionError.message : undefined,
+        code: 'STRIPE_SESSION_ERROR',
+        stripeCode: stripeSessionError.code
+      })
+    }
   } catch (error) {
-    console.error('Error creating checkout session:', error)
+    console.error('❌ Unexpected error in create-checkout-session endpoint:', error)
     console.error('Error details:', {
       message: error.message,
       type: error.type,
       code: error.code,
-      statusCode: error.statusCode
+      statusCode: error.statusCode,
+      stack: error.stack
     })
     
-    // Return appropriate status code
-    const statusCode = error.statusCode || 500
-    res.status(statusCode).json({ 
-      error: error.message || 'Failed to create checkout session',
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    // Return 503 for unexpected errors (service unavailable)
+    res.status(503).json({ 
+      error: 'Service unavailable. Please try again later.',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      code: 'UNEXPECTED_ERROR'
     })
   }
 })
@@ -1747,6 +1925,30 @@ if (!fs.existsSync(buildPath)) {
   }
 }
 
+// Health check endpoint (MUST be before static files and catch-all)
+app.get('/health', (req, res) => {
+  const stripeKey = process.env.STRIPE_SECRET_KEY
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    server: 'Node.js Express',
+    env: {
+      hasStripeKey: !!stripeKey,
+      stripeKeyLength: stripeKey ? stripeKey.length : 0,
+      stripeKeyPrefix: stripeKey ? stripeKey.substring(0, 7) : 'N/A',
+      hasSupabaseUrl: !!process.env.SUPABASE_URL,
+      hasSupabaseServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      nodeEnv: process.env.NODE_ENV,
+      port: process.env.PORT || 3001
+    },
+    files: {
+      serverEnvExists: fs.existsSync(path.join(__dirname, 'server.env')),
+      dotEnvExists: fs.existsSync(path.join(__dirname, '.env'))
+    }
+  })
+})
+
 // Serve static files (CSS, JS, images, etc.) - this must come before catch-all
 app.use(express.static(buildPath, {
   // Don't serve index.html for static file requests
@@ -1779,7 +1981,53 @@ app.use((req, res, next) => {
 // Listen on all interfaces (0.0.0.0) to be accessible via reverse proxy
 // This is required for production deployments behind nginx/apache
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`)
-  console.log(`Server listening on 0.0.0.0:${PORT} (accessible from all interfaces)`)
-  console.log(`Serving React app from: ${buildPath}`)
+  console.log(`✅ Server running on port ${PORT}`)
+  console.log(`✅ Server listening on 0.0.0.0:${PORT} (accessible from all interfaces)`)
+  console.log(`✅ Serving React app from: ${buildPath}`)
+  console.log(`✅ Health check available at: http://0.0.0.0:${PORT}/health`)
+  console.log(`✅ API endpoints available at: http://0.0.0.0:${PORT}/api/*`)
+  
+  // Final check: Try to reload server.env one more time if Stripe key is missing
+  const finalStripeKey = process.env.STRIPE_SECRET_KEY
+  if (!finalStripeKey || finalStripeKey.includes('your_stripe_secret_key') || finalStripeKey.includes('YOUR_STRIPE_SECRET_KEY')) {
+    console.warn('\n⚠️  WARNING: STRIPE_SECRET_KEY still not loaded after startup!')
+    console.warn('   Attempting to reload from server.env...')
+    const finalServerEnvPath = path.join(__dirname, 'server.env')
+    if (fs.existsSync(finalServerEnvPath)) {
+      const reloadResult = require('dotenv').config({ path: finalServerEnvPath })
+      if (reloadResult.error) {
+        console.error('   ❌ Failed to reload:', reloadResult.error)
+      } else {
+        console.log('   ✅ Reloaded server.env')
+        const reloadedKey = process.env.STRIPE_SECRET_KEY
+        if (reloadedKey && !reloadedKey.includes('your_stripe_secret_key') && !reloadedKey.includes('YOUR_STRIPE_SECRET_KEY')) {
+          console.log('   ✅ STRIPE_SECRET_KEY now loaded! Reinitializing Stripe...')
+          stripe = require('stripe')(reloadedKey)
+          console.log('   ✅ Stripe reinitialized successfully')
+        } else {
+          console.error('   ❌ STRIPE_SECRET_KEY still invalid after reload')
+        }
+      }
+    } else {
+      console.error(`   ❌ server.env not found at: ${finalServerEnvPath}`)
+      console.error(`   Current working directory: ${process.cwd()}`)
+      console.error(`   Server file directory: ${__dirname}`)
+    }
+  }
+  
+  // Log configuration status
+  console.log('\n📋 Final Configuration Status:')
+  const currentStripeKey = process.env.STRIPE_SECRET_KEY
+  console.log(`  - STRIPE_SECRET_KEY: ${currentStripeKey && !currentStripeKey.includes('your_stripe_secret_key') && !currentStripeKey.includes('YOUR_STRIPE_SECRET_KEY') ? '✅ SET' : '❌ NOT SET'}`)
+  if (currentStripeKey) {
+    console.log(`    Length: ${currentStripeKey.length}, Prefix: ${currentStripeKey.substring(0, 7)}...`)
+  }
+  console.log(`  - SUPABASE_URL: ${process.env.SUPABASE_URL ? '✅ SET' : '❌ NOT SET'}`)
+  console.log(`  - SUPABASE_SERVICE_ROLE_KEY: ${process.env.SUPABASE_SERVICE_ROLE_KEY ? '✅ SET' : '❌ NOT SET'}`)
+  console.log(`  - N8N_WEBHOOK_URL: ${process.env.N8N_WEBHOOK_URL ? '✅ SET' : '⚠️ NOT SET (optional)'}`)
+  console.log(`  - Current working directory: ${process.cwd()}`)
+  console.log(`  - Server file directory: ${__dirname}`)
+  console.log(`  - server.env path: ${path.join(__dirname, 'server.env')}`)
+  console.log(`  - server.env exists: ${fs.existsSync(path.join(__dirname, 'server.env'))}`)
+  console.log('')
 })

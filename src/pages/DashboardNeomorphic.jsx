@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { usePageTransition } from '../contexts/PageTransitionContext'
 import { supabase } from '../lib/supabaseClient'
 import SEOHead from '../components/SEOHead'
 import levelsService from '../services/levelsService'
@@ -29,6 +30,7 @@ import './DashboardNeomorphic.css'
 const DashboardNeomorphic = () => {
   const { user, profile, fetchProfile } = useAuth()
   const { isFreeUser, isAdmin } = useSubscription()
+  const { startTransition, endTransition } = usePageTransition()
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [showOnboardingModal, setShowOnboardingModal] = useState(false)
   const navigate = useNavigate()
@@ -259,7 +261,7 @@ const DashboardNeomorphic = () => {
 
   // Load level data
   const loadLevelData = useCallback(async () => {
-    if (!profile) return
+    if (!profile || !user) return
 
     try {
       const currentXP = profile.current_xp || 0
@@ -298,8 +300,9 @@ const DashboardNeomorphic = () => {
       })
     } catch (error) {
       console.error('Error loading level data:', error)
+      // Don't show error toast - just log it
     }
-  }, [profile])
+  }, [profile, user])
 
 
   // Load daily ritual data (habits completion streak)
@@ -395,9 +398,9 @@ const DashboardNeomorphic = () => {
               return null;
             }
             const { data: progress, error: progressError } = await courseService.getUserCourseProgress(user.id, course.course_id)
+            // Progress errors are non-critical - just continue without progress data
             if (progressError) {
-              console.warn('Error loading course progress:', progressError)
-              return null
+              console.warn('Error loading course progress (non-critical):', progressError)
             }
             const isCompleted = progress?.status === 'completed'
             const isCurrent = index === 0 && progress?.status === 'in_progress'
@@ -472,11 +475,20 @@ const DashboardNeomorphic = () => {
       const oneWeekAgo = new Date()
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
       
-      const { data: xpLogs, error: xpError } = await supabase
-        .from('xp_logs')
-        .select('xp_earned, created_at')
-        .eq('user_id', user.id)
-        .gte('created_at', oneWeekAgo.toISOString())
+      let xpLogs = []
+      let xpError = null
+      try {
+        const result = await supabase
+          .from('xp_logs')
+          .select('xp_earned, created_at')
+          .eq('user_id', user.id)
+          .gte('created_at', oneWeekAgo.toISOString())
+        xpLogs = result.data || []
+        xpError = result.error
+      } catch (err) {
+        console.warn('Error loading XP logs (table may not exist):', err)
+        xpError = err
+      }
 
       if (xpError && xpError.code !== 'PGRST116') {
         console.warn('Error loading XP logs:', xpError)
@@ -485,11 +497,20 @@ const DashboardNeomorphic = () => {
       const totalXP = xpLogs?.reduce((sum, log) => sum + (log.xp_earned || 0), 0) || 0
       const learningTime = Math.floor(totalXP / 50)
 
-      const { count: lessonsCount, error: lessonsError } = await supabase
-        .from('user_lesson_progress')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('is_completed', true)
+      let lessonsCount = 0
+      let lessonsError = null
+      try {
+        const result = await supabase
+          .from('user_lesson_progress')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('is_completed', true)
+        lessonsCount = result.count || 0
+        lessonsError = result.error
+      } catch (err) {
+        console.warn('Error loading lessons completed:', err)
+        lessonsError = err
+      }
 
       if (lessonsError && lessonsError.code !== 'PGRST116') {
         console.warn('Error loading lessons completed:', lessonsError)
@@ -519,6 +540,9 @@ const DashboardNeomorphic = () => {
           if (scores.length > 0) {
             averageScore = scores.reduce((sum, score) => sum + score, 0) / scores.length
           }
+        } else if (progressError) {
+          // 400 error might be due to column name or syntax - just log and continue
+          console.warn('Error loading lesson progress for average score:', progressError)
         }
       } catch (err) {
         console.warn('Error calculating average score:', err)
@@ -540,33 +564,46 @@ const DashboardNeomorphic = () => {
     }
   }, [user, profile])
 
-  // Load all data
+  // Load all data - only when both user and profile are ready
   useEffect(() => {
     const loadAllData = async () => {
+      if (!user || !profile) {
+        setLoading(false)
+        return
+      }
+      
       setLoading(true)
-      await Promise.all([
-        loadLevelData(),
-        loadRitualData(),
-        loadConstellationData(),
-        loadTeacherFeed(),
-        loadStatsData()
-      ])
+      try {
+        await Promise.all([
+          loadLevelData(),
+          loadRitualData(),
+          loadConstellationData(),
+          loadTeacherFeed(),
+          loadStatsData()
+        ])
+      } catch (error) {
+        console.error('Error loading dashboard data:', error)
+        // Don't show error toast - just log it
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (user && profile) {
+      loadAllData()
+    } else {
       setLoading(false)
     }
+  }, [user, profile, loadLevelData, loadRitualData, loadConstellationData, loadTeacherFeed, loadStatsData])
 
-    if (profile) {
-      loadAllData()
+  // Use global loader instead of local loading state
+  useEffect(() => {
+    if (loading) {
+      startTransition()
+    } else {
+      endTransition()
     }
-  }, [profile, loadLevelData, loadRitualData, loadConstellationData, loadTeacherFeed, loadStatsData])
-
-  if (loading) {
-    return (
-      <div className="dashboard-loading">
-        <div className="loading-spinner"></div>
-        <p>Loading your dashboard...</p>
-      </div>
-    )
-  }
+  }, [loading, startTransition, endTransition])
 
   return (
     <div className="dashboard-neomorphic">

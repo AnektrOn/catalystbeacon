@@ -28,6 +28,7 @@
   font-size: 14px;
   font-weight: 600;
   color: hsl(var(--foreground));
+  font-family: 'Cinzel', serif;
 }
 
 .xp-chart-title svg {
@@ -39,6 +40,7 @@
   font-weight: 700;
   color: hsl(var(--primary));
   font-variant-numeric: tabular-nums;
+  font-family: 'Cinzel', serif;
 }
 
 .xp-chart-container {
@@ -120,18 +122,20 @@
 }
 
 .xp-chart-label-day {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   color: hsl(var(--muted-foreground));
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  font-family: 'Cinzel', serif;
 }
 
 .xp-chart-label-value {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: hsl(var(--foreground));
   font-variant-numeric: tabular-nums;
+  font-family: 'Cinzel', serif;
 }
 
 /* Responsive */

@@ -49,8 +49,16 @@ const XPCircleWidgetV2 = ({
       }
       
       .gauge-container {
-        width: 240px;
-        height: 240px;
+        width: 200px;
+        height: 200px;
+      }
+      
+      .header-content {
+        margin-bottom: 8px;
+      }
+      
+      .footer-info {
+        margin-top: 8px;
       }
       
       .level-value {
@@ -58,7 +66,7 @@ const XPCircleWidgetV2 = ({
       }
       
       .xp-value {
-        font-size: 36px;
+        font-size: 32px;
       }
       
       .level-label {
@@ -74,7 +82,7 @@ const XPCircleWidgetV2 = ({
       -webkit-backdrop-filter: blur(var(--ethereal-card-blur));
       border: 1px solid var(--ethereal-border);
       border-radius: var(--ethereal-card-radius);
-      padding: var(--ethereal-card-padding-medium);
+      padding: 20px;
       box-shadow: var(--ethereal-shadow-base);
       position: relative;
       overflow: hidden;
@@ -139,14 +147,15 @@ const XPCircleWidgetV2 = ({
       text-align: center;
       position: relative;
       z-index: 2;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
     }
 
     .level-label {
       font-family: var(--font-ethereal-heading);
       font-size: 12px;
       letter-spacing: 4px;
-      color: rgba(255, 255, 255, 0.6);
+      color: var(--ethereal-text);
+      opacity: 0.7;
       text-transform: uppercase;
       margin-bottom: 4px;
     }
@@ -163,8 +172,8 @@ const XPCircleWidgetV2 = ({
     /* --- GAUGE --- */
     .gauge-container {
       position: relative;
-      width: 280px;
-      height: 280px;
+      width: 240px;
+      height: 240px;
       margin: 0 auto;
       display: flex;
       justify-content: center;
@@ -174,12 +183,14 @@ const XPCircleWidgetV2 = ({
 
     .gauge-center {
       position: absolute;
-      top: 50%; left: 50%;
+      top: 50%; 
+      left: 50%;
       transform: translate(-50%, -50%);
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       animation: float-center 6s ease-in-out infinite;
     }
 
@@ -189,7 +200,7 @@ const XPCircleWidgetV2 = ({
     }
 
     .xp-value {
-      font-size: 48px;
+      font-size: 40px;
       font-weight: 200;
       color: var(--ethereal-white);
       line-height: 1;
@@ -200,7 +211,8 @@ const XPCircleWidgetV2 = ({
     .xp-unit {
       font-size: 12px;
       letter-spacing: 2px;
-      color: rgba(255, 255, 255, 0.7);
+      color: var(--ethereal-text);
+      opacity: 0.7;
       margin-top: 4px;
     }
 
@@ -223,8 +235,8 @@ const XPCircleWidgetV2 = ({
       justify-content: center;
       align-items: center;
       gap: 8px;
-      margin-top: 10px;
-      color: rgba(255, 255, 255, 0.4);
+      margin-top: 12px;
+      color: var(--ethereal-text);
       font-size: 11px;
       letter-spacing: 1px;
       position: relative;
@@ -240,6 +252,14 @@ const XPCircleWidgetV2 = ({
       align-items: center;
       gap: 6px;
       backdrop-filter: blur(4px);
+      color: var(--ethereal-text);
+      opacity: 1;
+    }
+    
+    .next-pill span {
+      color: var(--ethereal-text);
+      opacity: 1;
+      font-weight: 500;
     }
 
   `
@@ -265,12 +285,12 @@ const XPCircleWidgetV2 = ({
 
         {/* Ethereal Gauge */}
         <div className="gauge-container">
-          <svg width="280" height="280" viewBox="0 0 256 256">
+          <svg width="240" height="240" viewBox="0 0 256 256">
             <defs>
               <linearGradient id="etherealGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#a5f3fc" stopOpacity="0" />
-                <stop offset="50%" stopColor="#ffffff" stopOpacity="0.8" />
-                <stop offset="100%" stopColor="#a5f3fc" stopOpacity="0" />
+                <stop offset="0%" stopColor="var(--ethereal-cyan)" stopOpacity="0" />
+                <stop offset="50%" stopColor="var(--ethereal-white)" stopOpacity="0.8" />
+                <stop offset="100%" stopColor="var(--ethereal-cyan)" stopOpacity="0" />
               </linearGradient>
               
               <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
@@ -284,25 +304,25 @@ const XPCircleWidgetV2 = ({
 
             {/* 1. Delicate Orbital Rings */}
             <g className="orbit-1">
-               <circle cx="128" cy="128" r="120" stroke="rgba(255,255,255,0.5)" strokeWidth="0.5" fill="none" strokeDasharray="1 10" />
+               <circle cx="128" cy="128" r="120" stroke="var(--ethereal-border)" strokeWidth="0.5" fill="none" strokeDasharray="1 10" />
             </g>
             <g className="orbit-2">
-               <circle cx="128" cy="128" r="105" stroke="rgba(165, 243, 252, 0.5)" strokeWidth="0.5" fill="none" />
-               <circle cx="128" cy="128" r="105" stroke="white" strokeWidth="1.5" fill="none" strokeDasharray="0.5 30" />
+               <circle cx="128" cy="128" r="105" stroke="var(--ethereal-cyan)" strokeWidth="0.5" fill="none" opacity="0.5" />
+               <circle cx="128" cy="128" r="105" stroke="var(--ethereal-cyan)" strokeWidth="1.5" fill="none" strokeDasharray="0.5 30" opacity="0.6" />
             </g>
             <g className="orbit-3">
-               <circle cx="128" cy="128" r="95" stroke="rgba(167, 139, 250, 0.4)" strokeWidth="0.5" fill="none" strokeDasharray="4 4" />
+               <circle cx="128" cy="128" r="95" stroke="var(--ethereal-violet)" strokeWidth="0.5" fill="none" strokeDasharray="4 4" opacity="0.4" />
             </g>
 
             {/* 2. Main Progress Track (Barely visible) */}
-            <circle cx="128" cy="128" r={radius} stroke="rgba(255, 255, 255, 0.03)" strokeWidth="2" fill="none" />
+            <circle cx="128" cy="128" r={radius} stroke="var(--ethereal-border)" strokeWidth="2" fill="none" opacity="0.1" />
 
             {/* 3. Ethereal Progress Arc */}
             <circle
               cx="128"
               cy="128"
               r={radius}
-              stroke="url(#etherealGradient)"
+              stroke="var(--ethereal-cyan)"
               strokeWidth="4"
               fill="none"
               strokeDasharray={circumference}
@@ -315,7 +335,7 @@ const XPCircleWidgetV2 = ({
             
             {/* 4. Trailing Light Point */}
              <g style={{ transform: `rotate(${(progress * 360) - 90}deg)`, transformOrigin: '128px 128px', transition: 'transform 1.5s cubic-bezier(0.2, 0.8, 0.2, 1)' }}>
-               <circle cx={128 + radius} cy="128" r="3" fill="white" style={{ filter: 'drop-shadow(0 0 10px white)' }} />
+               <circle cx={128 + radius} cy="128" r="3" fill="var(--ethereal-cyan)" style={{ filter: 'drop-shadow(0 0 10px var(--ethereal-cyan))' }} />
              </g>
           </svg>
 
@@ -329,7 +349,7 @@ const XPCircleWidgetV2 = ({
         {/* Footer */}
         <div className="footer-info">
           <div className="next-pill">
-            <Sparkles size={10} style={{ color: '#a5f3fc' }} />
+            <Sparkles size={10} style={{ color: 'var(--ethereal-cyan)' }} />
             <span>Target: {nextXpText}</span>
           </div>
         </div>

@@ -201,17 +201,17 @@ const SchoolProgressAreaChartDesktop = ({ userId }) => {
               <XAxis
                 dataKey="Period"
                 stroke="rgba(255, 255, 255, 0.6)"
-                style={{ fontSize: '12px' }}
+                style={{ fontSize: '12px', fontFamily: "'Cinzel', serif" }}
                 angle={period === 'day' ? -45 : 0}
                 textAnchor={period === 'day' ? 'end' : 'middle'}
                 height={period === 'day' ? 60 : 30}
-                tick={{ fill: 'rgba(255, 255, 255, 0.8)', fontSize: 12 }}
+                tick={{ fill: 'rgba(255, 255, 255, 0.8)', fontSize: 12, fontFamily: "'Cinzel', serif" }}
               />
               <YAxis
                 stroke="rgba(255, 255, 255, 0.6)"
-                style={{ fontSize: '12px' }}
+                style={{ fontSize: '12px', fontFamily: "'Cinzel', serif" }}
                 width={40}
-                tick={{ fill: 'rgba(255, 255, 255, 0.8)', fontSize: 12 }}
+                tick={{ fill: 'rgba(255, 255, 255, 0.8)', fontSize: 12, fontFamily: "'Cinzel', serif" }}
               />
               <Tooltip content={<CustomTooltip />} />
               {categories.map((schoolName, index) => {

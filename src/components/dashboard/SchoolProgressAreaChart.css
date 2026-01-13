@@ -23,6 +23,7 @@
   color: hsl(var(--foreground));
   margin: 0;
   letter-spacing: -0.02em;
+  font-family: 'Cinzel', serif;
 }
 
 .school-chart-period-selector {
@@ -40,6 +41,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-family: 'Cinzel', serif;
 }
 
 .period-btn:hover {
@@ -132,12 +134,23 @@
   margin-bottom: 8px;
   color: hsl(var(--foreground));
   font-size: 14px;
+  font-family: 'Cinzel', serif;
 }
 
 .school-chart-tooltip p {
   margin: 4px 0;
   font-size: 12px;
   color: hsl(var(--foreground));
+  font-family: 'Cinzel', serif;
+}
+
+/* Recharts Font Enforcement */
+.recharts-cartesian-axis-tick-value,
+.recharts-legend-item-text,
+.recharts-tooltip-label,
+.recharts-tooltip-item-label,
+.recharts-tooltip-item-value {
+  font-family: 'Cinzel', serif !important;
 }
 
 /* Responsive */

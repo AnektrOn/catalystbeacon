@@ -439,7 +439,7 @@ const ToolboxTabCompact = () => {
           onClick={() => setActiveTab('library')}
           className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
             activeTab === 'library'
-              ? 'bg-white text-blue-600 shadow-sm'
+              ? 'bg-ethereal-glass text-blue-600 shadow-ethereal-base'
               : 'text-gray-600 hover:text-gray-900'
           }`}
         >
@@ -449,7 +449,7 @@ const ToolboxTabCompact = () => {
           onClick={() => setActiveTab('my-tools')}
           className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
             activeTab === 'my-tools'
-              ? 'bg-white text-blue-600 shadow-sm'
+              ? 'bg-ethereal-glass text-blue-600 shadow-ethereal-base'
               : 'text-gray-600 hover:text-gray-900'
           }`}
         >
@@ -472,7 +472,7 @@ const ToolboxTabCompact = () => {
               const isInUserToolbox = userToolbox.some(ut => ut.toolbox_item_id === tool.id);
               
               return (
-                <div key={tool.id} className="bg-white rounded-lg shadow-sm border p-4">
+                <div key={tool.id} className="bg-ethereal-glass rounded-ethereal shadow-ethereal-base border border-ethereal p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <div 
@@ -547,7 +547,7 @@ const ToolboxTabCompact = () => {
               const isUsedToday = tool.completedDates.includes(new Date().toISOString().split('T')[0]);
               
               return (
-                <div key={tool.id} className="bg-white rounded-lg shadow-sm border p-4">
+                <div key={tool.id} className="bg-ethereal-glass rounded-ethereal shadow-ethereal-base border border-ethereal p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center">
                       <div 

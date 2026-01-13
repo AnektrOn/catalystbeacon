@@ -9,7 +9,7 @@ const AchievementsWidget = memo(({ recentAchievements = [], totalCount = 0, next
         <div className="glass-card-premium p-6 hover:scale-[1.02] transition-transform duration-300">
             <div className="flex items-start justify-between mb-4">
                 <div 
-                    className="p-3 rounded-xl"
+                    className="p-3 rounded-ethereal"
                     style={{
                         backgroundColor: 'color-mix(in srgb, var(--color-warning) 10%, transparent)',
                         color: 'var(--color-warning)'
@@ -18,7 +18,7 @@ const AchievementsWidget = memo(({ recentAchievements = [], totalCount = 0, next
                     <Trophy size={20} />
                 </div>
                 <div className="flex items-center gap-2">
-                    <div className="text-xs font-medium text-gray-400 bg-white/5 px-2 py-1 rounded-lg border border-white/10 uppercase tracking-wider">
+                    <div className="text-xs font-medium text-ethereal-text bg-ethereal-glass/50 px-2 py-1 rounded-ethereal-sm border border-ethereal uppercase tracking-wider">
                         Achievements
                     </div>
                     <button
@@ -34,10 +34,10 @@ const AchievementsWidget = memo(({ recentAchievements = [], totalCount = 0, next
             </div>
 
             <div className="mb-4">
-                <div className="text-3xl font-semibold text-gray-900 dark:text-white mb-1">
+                <div className="text-3xl font-semibold text-ethereal-white mb-1">
                     {totalCount}
                 </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">
+                <div className="text-sm text-ethereal-text">
                     unlocked
                 </div>
             </div>
@@ -48,7 +48,7 @@ const AchievementsWidget = memo(({ recentAchievements = [], totalCount = 0, next
                     {recentAchievements.slice(0, 3).map((achievement, index) => (
                         <div
                             key={index}
-                            className="w-10 h-10 rounded-full flex items-center justify-center text-white shadow-lg"
+                            className="w-10 h-10 rounded-full flex items-center justify-center text-ethereal-white shadow-ethereal-base"
                             style={{
                                 background: 'var(--gradient-primary)',
                                 backgroundColor: 'var(--color-warning)'
@@ -63,12 +63,12 @@ const AchievementsWidget = memo(({ recentAchievements = [], totalCount = 0, next
 
             {/* Next Unlock */}
             {nextUnlock && (
-                <div className="mt-3 pt-3 border-t border-gray-200 dark:border-white/10">
+                <div className="mt-3 pt-3 border-t border-ethereal">
                     <div className="flex items-center gap-2 mb-2">
-                        <Lock size={12} className="text-gray-400" />
-                        <span className="text-xs text-gray-500 dark:text-gray-400">Next unlock</span>
+                        <Lock size={12} className="text-ethereal-text" />
+                        <span className="text-xs text-ethereal-text">Next unlock</span>
                     </div>
-                    <div className="w-full h-1.5 bg-gray-200 dark:bg-gray-700/50 rounded-full overflow-hidden">
+                    <div className="w-full h-1.5 bg-ethereal-glass/50 rounded-full overflow-hidden">
                         <div
                             className="h-full rounded-full transition-all duration-500"
                             style={{ 
@@ -78,7 +78,7 @@ const AchievementsWidget = memo(({ recentAchievements = [], totalCount = 0, next
                             }}
                         />
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <div className="text-xs text-ethereal-text mt-1">
                         {nextUnlock.progress}/{nextUnlock.total}
                     </div>
                 </div>

@@ -47,9 +47,10 @@ const StellarMapControls = ({
       <button
         ref={burgerRef}
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed top-4 left-4 z-50 w-11 h-11 rounded-md bg-black/55 text-white shadow-lg hover:bg-white/18 transition-all duration-250 flex items-center justify-center"
+        className="fixed top-4 left-4 z-[100] w-11 h-11 rounded-md bg-black/55 text-white shadow-lg hover:bg-white/18 transition-all duration-250 flex items-center justify-center"
         aria-label="Toggle menu"
         aria-expanded={isOpen}
+        style={{ pointerEvents: 'auto' }}
       >
         {isOpen ? (
           <X className="w-6 h-6" />
@@ -62,11 +63,12 @@ const StellarMapControls = ({
       <div
         id="stellar-map-controls-panel"
         ref={panelRef}
-        className={`fixed top-4 left-12 z-40 bg-black/60 p-2 rounded-md shadow-lg transition-all duration-350 ${
+        className={`fixed top-4 left-12 z-[90] bg-black/60 p-2 rounded-md shadow-lg transition-all duration-350 ${
           isOpen ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-full pointer-events-none'
         }`}
         style={{
-          transform: isOpen ? 'translateX(0)' : 'translateX(-120%)'
+          transform: isOpen ? 'translateX(0)' : 'translateX(-120%)',
+          pointerEvents: isOpen ? 'auto' : 'none'
         }}
       >
         {/* Core Selector Buttons */}

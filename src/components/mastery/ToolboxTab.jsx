@@ -458,7 +458,7 @@ const ToolboxTab = () => {
           <div className="text-sm text-gray-600">{error}</div>
           <button 
             onClick={() => window.location.reload()} 
-            className="mt-4 px-4 py-2 text-white rounded transition-colors"
+            className="mt-4 px-4 py-2 text-ethereal-white rounded-ethereal-sm transition-colors"
             style={{ background: 'var(--gradient-primary)' }}
             onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
             onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
@@ -586,12 +586,12 @@ const ToolboxTab = () => {
               const progressGrid = generateProgressGrid(completedDates, tool.color || '#3B82F6');
               
               return (
-                <div key={tool.id} className="w-80 rounded-lg p-4 text-white glass-effect" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 80%, transparent)' }}>
+                <div key={tool.id} className="w-80 rounded-ethereal p-4 text-ethereal-text glass-effect" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 80%, transparent)' }}>
                   {/* Header with icon and title */}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-2">
-                      <Wrench size={20} className="text-white" strokeWidth={1.5}  aria-hidden="true"/>
-                      <h3 className="text-lg font-semibold text-white truncate">
+                      <Wrench size={20} className="text-ethereal-white" strokeWidth={1.5}  aria-hidden="true"/>
+                      <h3 className="text-lg font-semibold text-ethereal-white truncate">
                         {tool.title}
                       </h3>
                     </div>
@@ -615,10 +615,10 @@ const ToolboxTab = () => {
                         e.preventDefault();
                         handleUseTool(tool.id);
                       }}
-                      className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                      className={`flex items-center space-x-2 px-3 py-1.5 rounded-ethereal-sm text-sm font-medium transition-colors ${
                         isUsedToday
-                          ? 'text-white'
-                          : 'border border-white text-white hover:bg-white hover:text-gray-900'
+                          ? 'text-ethereal-white'
+                          : 'border border-ethereal text-ethereal-text hover:bg-ethereal-glass-hover hover:text-ethereal-white'
                       }`}
                       style={isUsedToday ? { background: 'var(--gradient-primary)' } : {}}
                     >
@@ -638,7 +638,7 @@ const ToolboxTab = () => {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-2">
                       <span className="text-sm text-gray-300">Streak:</span>
-                      <span className="text-sm font-semibold text-white">
+                      <span className="text-sm font-semibold text-ethereal-white">
                         {streak} days
                       </span>
                     </div>

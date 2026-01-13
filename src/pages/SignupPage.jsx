@@ -1,9 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { usePageTransition } from '../contexts/PageTransitionContext'
 import toast from 'react-hot-toast'
 import { Eye, EyeOff, ArrowLeft, ArrowRight } from 'lucide-react'
-import CosmicLoader from '../components/ui/CosmicLoader'
 
 const SignupPage = () => {
   const [formData, setFormData] = useState({
@@ -19,6 +19,7 @@ const SignupPage = () => {
   const [loading, setLoading] = useState(false)
   
   const { signUp } = useAuth()
+  const { startTransition, endTransition } = usePageTransition()
   const navigate = useNavigate()
 
   const validateForm = () => {
@@ -153,10 +154,14 @@ const SignupPage = () => {
     }
   }
 
-  // Show cosmic loader while loading
-  if (loading) {
-    return <CosmicLoader message="Creating your account..." />
-  }
+  // Use global loader instead of local loading state
+  useEffect(() => {
+    if (loading) {
+      startTransition();
+    } else {
+      endTransition();
+    }
+  }, [loading, startTransition, endTransition]);
 
   return (
     <div className="min-h-screen flex bg-[#0a0a0a]">
@@ -180,9 +185,13 @@ const SignupPage = () => {
           <div className="mb-12">
             <div className="flex items-center space-x-3">
               <img 
-                src="/assets/Logo uni.png" 
+                src="/hc-logo.svg" 
                 alt="HC University" 
                 className="w-12 h-12 object-contain"
+                onError={(e) => {
+                  // Fallback to default logo
+                  e.target.style.display = 'none'
+                }}
               />
               <span className="text-white text-xl font-semibold tracking-wide">Human Catalyst University</span>
             </div>
@@ -221,9 +230,9 @@ const SignupPage = () => {
                 type="email"
                 autoComplete="email"
                 required
-                className={`w-full px-4 py-3.5 bg-white/5 border ${
-                  errors.email ? 'border-red-500' : 'border-white/10'
-                } rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent transition-all`}
+                className={`w-full px-4 py-3.5 bg-ethereal-glass border ${
+                  errors.email ? 'border-red-500' : 'border-ethereal'
+                } rounded-ethereal text-ethereal-text placeholder-ethereal-text/40 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent transition-all`}
                 placeholder="Your Email"
                 value={formData.email}
                 onChange={handleChange}
@@ -240,9 +249,9 @@ const SignupPage = () => {
                 name="fullName"
                 type="text"
                 required
-                className={`w-full px-4 py-3.5 bg-white/5 border ${
-                  errors.fullName ? 'border-red-500' : 'border-white/10'
-                } rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent transition-all`}
+                className={`w-full px-4 py-3.5 bg-ethereal-glass border ${
+                  errors.fullName ? 'border-red-500' : 'border-ethereal'
+                } rounded-ethereal text-ethereal-text placeholder-ethereal-text/40 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent transition-all`}
                 placeholder="Full Name"
                 value={formData.fullName}
                 onChange={handleChange}
@@ -260,9 +269,9 @@ const SignupPage = () => {
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="new-password"
                 required
-                className={`w-full px-4 py-3.5 bg-white/5 border ${
-                  errors.password ? 'border-red-500' : 'border-white/10'
-                } rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent transition-all pr-12`}
+                className={`w-full px-4 py-3.5 bg-ethereal-glass border ${
+                  errors.password ? 'border-red-500' : 'border-ethereal'
+                } rounded-ethereal text-ethereal-text placeholder-ethereal-text/40 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent transition-all pr-12`}
                 placeholder="Password"
                 value={formData.password}
                 onChange={handleChange}
@@ -291,9 +300,9 @@ const SignupPage = () => {
                 type={showConfirmPassword ? 'text' : 'password'}
                 autoComplete="new-password"
                 required
-                className={`w-full px-4 py-3.5 bg-white/5 border ${
-                  errors.confirmPassword ? 'border-red-500' : 'border-white/10'
-                } rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent transition-all pr-12`}
+                className={`w-full px-4 py-3.5 bg-ethereal-glass border ${
+                  errors.confirmPassword ? 'border-red-500' : 'border-ethereal'
+                } rounded-ethereal text-ethereal-text placeholder-ethereal-text/40 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent transition-all pr-12`}
                 placeholder="Confirm Password"
                 value={formData.confirmPassword}
                 onChange={handleChange}

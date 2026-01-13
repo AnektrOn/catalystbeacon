@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useXPVisibility } from './hooks/useXPVisibility';
 import stellarMapService from '../../services/stellarMapService';
@@ -14,6 +16,7 @@ const StellarMapScene = lazy(() => import('./r3f/StellarMapScene').then(module =
 const DEBUG = process.env.NODE_ENV === 'development';
 
 const StellarMap = () => {
+  const navigate = useNavigate();
   const [currentCore, setCurrentCore] = useState('Ignition');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -65,6 +68,19 @@ const StellarMap = () => {
             sum + Object.values(constellations).reduce((s, nodes) => s + (nodes?.length || 0), 0), 0
           );
           console.log('[StellarMap] Total nodes in data:', totalNodes);
+          
+          // Detailed breakdown
+          if (data && Object.keys(data).length > 0) {
+            Object.entries(data).forEach(([familyName, constellations]) => {
+              const familyNodeCount = Object.values(constellations).reduce((sum, nodes) => sum + (nodes?.length || 0), 0);
+              console.log(`[StellarMap] Family "${familyName}": ${familyNodeCount} nodes across ${Object.keys(constellations).length} constellations`);
+              Object.entries(constellations).forEach(([constName, nodes]) => {
+                console.log(`[StellarMap]   - Constellation "${constName}": ${nodes?.length || 0} nodes`);
+              });
+            });
+          } else {
+            console.warn('[StellarMap] WARNING: No data returned from service. Check database for nodes in level:', currentCore);
+          }
         }
 
         setHierarchyData(data || {});
@@ -223,12 +239,27 @@ const StellarMap = () => {
       role="main"
       aria-label="Stellar Map - 3D visualization of learning content"
     >
+      {/* Back Button - High z-index to be above everything */}
+      <button
+        onClick={() => navigate('/dashboard')}
+        className="fixed top-4 right-4 z-[100] w-11 h-11 rounded-md bg-black/55 text-white shadow-lg hover:bg-white/18 transition-all duration-250 flex items-center justify-center"
+        aria-label="Retour au dashboard"
+        style={{ pointerEvents: 'auto' }}
+      >
+        <ArrowLeft className="w-6 h-6" />
+      </button>
+
       {/* Starfield Background */}
       <StarfieldBackground />
 
 
       {/* 3D Scene - Transparent so starfield shows through */}
-      <div className="absolute inset-0 w-full h-full z-10">
+      <div 
+        className="absolute inset-0 w-full h-full z-[5]"
+        style={{ 
+          pointerEvents: 'auto'
+        }}
+      >
         <Suspense fallback={
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
@@ -272,6 +303,22 @@ const StellarMap = () => {
             >
               Reload Page
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* No Data Warning */}
+      {!loading && !error && Object.keys(hierarchyData).length === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
+          <div className="text-center max-w-md bg-background/90 p-6 rounded-lg">
+            <p className="text-yellow-500 mb-2">Aucun nœud trouvé pour le niveau "{currentCore}"</p>
+            <p className="text-muted-foreground text-sm mb-4">
+              Vérifiez que des nœuds existent dans la base de données pour ce niveau.
+            </p>
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p>XP actuel: {visibilityData.userXP}</p>
+              <p>Niveau: {currentCore}</p>
+            </div>
           </div>
         </div>
       )}

@@ -281,8 +281,8 @@ class RoadmapService {
         return { canComplete: false };
       }
 
-      // Check if minimum requirements are met (3 minutes = 180 seconds, 100% scroll)
-      const minimumTimeMet = timeSpent >= 180;
+      // Check if minimum requirements are met (2 minutes = 120 seconds, 100% scroll)
+      const minimumTimeMet = timeSpent >= 120;
       const canComplete = minimumTimeMet && scrollPercentage >= 100;
 
       // Upsert lesson progress
@@ -364,7 +364,7 @@ class RoadmapService {
       if (!progressData?.can_complete) {
         return {
           success: false,
-          message: 'Requirements not met. Please spend at least 5 minutes and scroll to the end of the lesson.'
+          message: 'Requirements not met. Please spend at least 2 minutes and scroll to the end of the lesson.'
         };
       }
 

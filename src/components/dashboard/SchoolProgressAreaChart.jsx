@@ -206,19 +206,21 @@ const SchoolProgressAreaChart = ({ userId }) => {
             <XAxis
               dataKey="Period"
               stroke="hsl(var(--muted-foreground))"
-              style={{ fontSize: '12px' }}
+              style={{ fontSize: '12px', fontFamily: "'Cinzel', serif" }}
               angle={-45}
               textAnchor="end"
               height={60}
+              tick={{ style: { fontFamily: "'Cinzel', serif", fontSize: '12px' } }}
             />
             <YAxis
               stroke="hsl(var(--muted-foreground))"
-              style={{ fontSize: '12px' }}
+              style={{ fontSize: '12px', fontFamily: "'Cinzel', serif" }}
               width={40}
+              tick={{ style: { fontFamily: "'Cinzel', serif", fontSize: '12px' } }}
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend
-              wrapperStyle={{ paddingTop: '20px' }}
+              wrapperStyle={{ paddingTop: '20px', fontFamily: "'Cinzel', serif" }}
               iconType="circle"
               verticalAlign="top"
               height={36}

@@ -20,23 +20,23 @@ const CurrentLessonWidget = memo(({
     };
 
     return (
-        <div className="glass-panel-floating p-6 hover:shadow-xl transition-all duration-300">
+        <div className="glass-panel-floating p-6 hover:shadow-ethereal-hover transition-all duration-300">
             <div className="flex items-start justify-between mb-4">
                 <div>
-                    <div className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
+                    <div className="text-xs font-medium text-ethereal-text uppercase tracking-wider mb-2">
                         Current Lesson
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">
+                    <h3 className="text-xl font-semibold text-ethereal-white mb-1">
                         {lessonTitle}
                     </h3>
                     {courseTitle && (
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                        <p className="text-sm text-ethereal-text">
                             {courseTitle}
                         </p>
                     )}
                 </div>
                 <div 
-                    className="p-3 rounded-xl"
+                    className="p-3 rounded-ethereal"
                     style={{
                         backgroundColor: 'color-mix(in srgb, var(--color-info) 10%, transparent)',
                         color: 'var(--color-info)'
@@ -54,8 +54,8 @@ const CurrentLessonWidget = memo(({
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                        <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center group-hover:scale-110 transition-transform">
-                            <Play size={20} className="text-gray-900 ml-1" />
+                        <div className="w-12 h-12 rounded-full bg-ethereal-glass flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Play size={20} className="text-ethereal-white ml-1" />
                         </div>
                     </div>
                 </div>
@@ -66,10 +66,10 @@ const CurrentLessonWidget = memo(({
                     {/* Progress Bar */}
                     <div className="mb-4">
                         <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Progress</span>
+                            <span className="text-xs font-medium text-ethereal-text">Progress</span>
                             <span className="text-xs font-medium" style={{ color: 'var(--color-info)' }}>{progressPercentage}%</span>
                         </div>
-                        <div className="w-full h-2 bg-gray-200 dark:bg-gray-700/50 rounded-full overflow-hidden">
+                        <div className="w-full h-2 bg-ethereal-glass/50 rounded-full overflow-hidden">
                             <div
                                 className="h-full rounded-full transition-all duration-500"
                                 style={{ 
@@ -83,7 +83,7 @@ const CurrentLessonWidget = memo(({
 
                     {/* Time Remaining */}
                     {timeRemaining > 0 && (
-                        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-4">
+                        <div className="flex items-center gap-2 text-sm text-ethereal-text mb-4">
                             <Clock size={14} />
                             <span>{timeRemaining} min remaining</span>
                         </div>
@@ -92,7 +92,7 @@ const CurrentLessonWidget = memo(({
                     {/* Resume Button */}
                     <button
                         onClick={handleResume}
-                        className="w-full py-3 px-4 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                        className="w-full py-3 px-4 rounded-ethereal-sm bg-gradient-to-r from-blue-500 to-blue-600 text-ethereal-white font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-300 shadow-ethereal-base hover:shadow-ethereal-hover flex items-center justify-center gap-2"
                         aria-label={`Resume lesson: ${lessonTitle}`}
                     >
                         <Play size={16} aria-hidden="true" />
@@ -104,7 +104,7 @@ const CurrentLessonWidget = memo(({
             {!lessonId && (
                 <button
                     onClick={() => navigate('/courses')}
-                    className="w-full py-3 px-4 rounded-lg border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium transition-all duration-300"
+                    className="w-full py-3 px-4 rounded-ethereal-sm border-2 border-ethereal text-ethereal-text font-medium transition-all duration-300"
                     style={{
                         borderColor: 'var(--color-info)',
                         color: 'var(--color-info)'

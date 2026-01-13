@@ -1,5 +1,6 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { ThemeProvider } from './contexts/ThemeContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { DataCacheProvider } from './contexts/DataCacheContext'
 import { PageTransitionProvider } from './contexts/PageTransitionContext'
@@ -33,8 +34,14 @@ const AwakeningLandingPage = React.lazy(() => import('./pages/AwakeningLandingPa
 const RoadmapIgnition = React.lazy(() => import('./pages/RoadmapIgnition'))
 
 // Loading component - Now using Cosmic Loader
+// Désactivé: Ne plus montrer de loader pour éviter l'impression de rechargement
+// Les composants lazy-loaded sont mis en cache par React, donc pas besoin de loader à chaque navigation
 const LoadingScreen = () => {
-  return <CosmicLoader message="Loading your experience..." />
+  // Retourner null pour éviter l'affichage du loader
+  // Les composants se chargeront en arrière-plan sans bloquer l'UI
+  return null
+  // Alternative: Si vous voulez garder un loader très discret:
+  // return <div style={{ minHeight: '200px' }} /> // Placeholder invisible
 }
 
 // Protected Route component
@@ -300,38 +307,40 @@ function App() {
   const isMobile = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 767px)').matches
 
   return (
-    <DataCacheProvider>
-      <AuthProvider>
-        <Router
-          future={{
-            v7_startTransition: true,
-            v7_relativeSplatPath: true
-          }}
-        >
-          <PageTransitionProvider>
-            <div 
-              className="App font-sans antialiased min-h-screen"
-              style={{
-                color: 'var(--text-primary)',
-                backgroundColor: 'transparent'
-              }}
-            >
-              <AppRoutes />
-              <Toaster
-                position={isMobile ? 'top-center' : 'top-right'}
-                toastOptions={{
-                  style: isMobile ? { marginTop: '64px', zIndex: 10000 } : { zIndex: 10000 },
+    <ThemeProvider>
+      <DataCacheProvider>
+        <AuthProvider>
+          <Router
+            future={{
+              v7_startTransition: true,
+              v7_relativeSplatPath: true
+            }}
+          >
+            <PageTransitionProvider>
+              <div 
+                className="App font-sans antialiased min-h-screen"
+                style={{
+                  color: 'var(--text-primary)',
+                  backgroundColor: 'transparent'
                 }}
-                containerStyle={{
-                  zIndex: 10000,
-                  position: 'fixed',
-                }}
-              />
-            </div>
-          </PageTransitionProvider>
-        </Router>
-      </AuthProvider>
-    </DataCacheProvider>
+              >
+                <AppRoutes />
+                <Toaster
+                  position={isMobile ? 'top-center' : 'top-right'}
+                  toastOptions={{
+                    style: isMobile ? { marginTop: '64px', zIndex: 10000 } : { zIndex: 10000 },
+                  }}
+                  containerStyle={{
+                    zIndex: 10000,
+                    position: 'fixed',
+                  }}
+                />
+              </div>
+            </PageTransitionProvider>
+          </Router>
+        </AuthProvider>
+      </DataCacheProvider>
+    </ThemeProvider>
   )
 }
 

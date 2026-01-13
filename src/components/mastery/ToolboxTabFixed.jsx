@@ -348,7 +348,7 @@ const ToolboxTabFixed = () => {
           onClick={() => setActiveTab('library')}
           className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
             activeTab === 'library'
-              ? 'bg-white text-blue-600 shadow-sm'
+              ? 'bg-ethereal-glass text-blue-600 shadow-ethereal-base'
               : 'text-gray-600 hover:text-gray-900'
           }`}
         >
@@ -358,7 +358,7 @@ const ToolboxTabFixed = () => {
           onClick={() => setActiveTab('my-tools')}
           className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
             activeTab === 'my-tools'
-              ? 'bg-white text-blue-600 shadow-sm'
+              ? 'bg-ethereal-glass text-blue-600 shadow-ethereal-base'
               : 'text-gray-600 hover:text-gray-900'
           }`}
         >
@@ -510,7 +510,7 @@ const ToolboxTabFixed = () => {
       {/* Convert to Habit Modal */}
       {showConvertModal && selectedTool && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+          <div className="bg-ethereal-glass rounded-ethereal border border-ethereal p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold mb-4">Convert to Habit</h3>
             <p className="text-gray-600 mb-4">
               Convert "{selectedTool.title}" into a trackable habit?

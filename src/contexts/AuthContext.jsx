@@ -259,7 +259,13 @@ export const AuthProvider = ({ children }) => {
     withTimeout(supabase.auth.getSession())
       .then(({ data: { session }, error: sessionError }) => {
         logDebug('👤 AuthContext: Initial session check:', session?.user ? 'User found' : 'No user')
-        setUser(session?.user ?? null)
+        // Use functional update to prevent unnecessary re-renders when user ID hasn't changed
+        setUser(prevUser => {
+          const newUser = session?.user ?? null;
+          // If IDs match, return the OLD reference to prevent re-renders
+          if (prevUser?.id === newUser?.id) return prevUser;
+          return newUser;
+        })
         if (session?.user) {
           logDebug('📥 AuthContext: Fetching profile for user:', session.user.id)
           // Fetch profile with its own timeout, but ensure loading is cleared ONLY after profile is loaded
@@ -331,7 +337,13 @@ export const AuthProvider = ({ children }) => {
         }
         
         // For INITIAL_SESSION with session, SIGNED_IN, or TOKEN_REFRESHED with session
-        setUser(session?.user ?? null)
+        // Use functional update to prevent unnecessary re-renders when user ID hasn't changed
+        setUser(prevUser => {
+          const newUser = session?.user ?? null;
+          // If IDs match, return the OLD reference to prevent re-renders
+          if (prevUser?.id === newUser?.id) return prevUser;
+          return newUser;
+        })
         
         if (session?.user) {
           // Only fetch profile if we don't already have it for this user
@@ -339,8 +351,20 @@ export const AuthProvider = ({ children }) => {
           if (!profile || profile.id !== session.user.id) {
             logDebug('📥 AuthContext: Fetching profile after auth change for user:', session.user.id)
             await fetchProfile(session.user.id)
+          } else {
+            // Si on a déjà le profile, on ne fait rien - pas besoin de recharger
+            logDebug('✅ AuthContext: Profile already loaded, skipping fetch')
           }
           isInitializedRef.current = true
+        }
+        
+        // IMPORTANT: Ne jamais remettre loading à true si on a déjà un profile
+        // Cela évite l'impression de rechargement lors des événements TOKEN_REFRESHED
+        // qui se déclenchent quand on change de fenêtre
+        if (isInitializedRef.current && profile && user) {
+          logDebug('✅ AuthContext: Already initialized with profile, keeping loading false')
+          // Ne pas toucher à loading - on garde l'état actuel
+          return
         }
         
         logDebug('✅ AuthContext: Auth state change completed, setting loading to false')
@@ -394,49 +418,11 @@ export const AuthProvider = ({ children }) => {
         
         console.log('📧 Attempting to send sign-up confirmation email to:', email)
         
-        // Try Supabase Edge Function first
-        const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL
-        const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY
+        // Skip Supabase Edge Function - it doesn't exist (404 error)
+        // Go directly to server API
+        console.log('📧 Skipping Supabase Edge Function (not deployed), using server API directly')
         
-        if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-          try {
-            const response = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-              },
-              body: JSON.stringify({
-                emailType: 'sign-up',
-                email,
-                userName: userName || 'there'
-              }),
-              // Add timeout to prevent hanging
-              signal: AbortSignal.timeout(10000) // 10 second timeout
-            })
-            
-            if (response.ok) {
-              const result = await response.json()
-              console.log('✅ Sign-up confirmation email sent via Supabase Edge Function')
-              // Don't return here - continue to return signup data
-            } else if (response.status === 404) {
-              console.warn('⚠️ send-email Edge Function not deployed (404). Trying server API...')
-            } else {
-              console.warn('⚠️ Supabase Edge Function error:', response.status)
-            }
-          } catch (supabaseError) {
-            // Handle timeout and network errors gracefully
-            if (supabaseError.name === 'AbortError' || supabaseError.message?.includes('timeout')) {
-              console.warn('⚠️ Supabase Edge Function timeout (non-critical):', supabaseError.message)
-            } else if (supabaseError.message?.includes('Failed to fetch') || supabaseError.message?.includes('NetworkError')) {
-              console.warn('⚠️ Supabase Edge Function network error (non-critical):', supabaseError.message)
-            } else {
-              console.warn('⚠️ Supabase Edge Function unavailable:', supabaseError.message)
-            }
-          }
-        }
-        
-        // Fall back to server API
+        // Use server API directly
         let API_URL = process.env.REACT_APP_API_URL
         if (!API_URL) {
           if (process.env.NODE_ENV === 'development') {
@@ -446,33 +432,49 @@ export const AuthProvider = ({ children }) => {
           }
         }
         
-        console.log('📧 Falling back to server API:', API_URL)
+        console.log('📧 Using server API:', API_URL)
         
-        const response = await fetch(`${API_URL}/api/send-signup-email`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email,
-            userName
-          }),
-          // Add timeout to prevent hanging
-          signal: AbortSignal.timeout(10000) // 10 second timeout
-        })
-        
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ error: 'Failed to send email' }))
-          console.warn('⚠️ Sign-up email send failed:', errorData.error || errorData.message)
-          if (errorData.warning) {
-            console.warn('Email service warning:', errorData.warning)
-          }
-        } else {
-          const result = await response.json()
-          if (result.success) {
-            console.log('✅ Sign-up confirmation email sent via server API')
+        try {
+          const response = await fetch(`${API_URL}/api/send-signup-email`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              email,
+              userName
+            }),
+            // Add timeout to prevent hanging
+            signal: AbortSignal.timeout(10000) // 10 second timeout
+          })
+          
+          if (!response.ok) {
+            // If 503, server is not available - this is OK, email is non-critical
+            if (response.status === 503) {
+              console.warn('⚠️ Server unavailable (503) - email service not accessible. Account created successfully.')
+            } else {
+              const errorData = await response.json().catch(() => ({ error: 'Failed to send email' }))
+              console.warn('⚠️ Sign-up email send failed:', errorData.error || errorData.message)
+              if (errorData.warning) {
+                console.warn('Email service warning:', errorData.warning)
+              }
+            }
           } else {
-            console.warn('⚠️ Sign-up email not sent:', result.message || 'Unknown error')
+            const result = await response.json()
+            if (result.success) {
+              console.log('✅ Sign-up confirmation email sent via server API')
+            } else {
+              console.warn('⚠️ Sign-up email not sent:', result.message || 'Unknown error')
+            }
+          }
+        } catch (fetchError) {
+          // Network errors are OK - email is non-critical
+          if (fetchError.name === 'AbortError' || fetchError.message?.includes('timeout')) {
+            console.warn('⚠️ Sign-up email request timeout (non-critical):', fetchError.message)
+          } else if (fetchError.message?.includes('Failed to fetch') || fetchError.message?.includes('NetworkError')) {
+            console.warn('⚠️ Sign-up email network error (non-critical):', fetchError.message)
+          } else {
+            console.warn('⚠️ Sign-up email error (non-critical):', fetchError.message)
           }
         }
       } catch (emailError) {

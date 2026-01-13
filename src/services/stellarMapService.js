@@ -237,7 +237,17 @@ class StellarMapService {
       }
 
       if (!families || families.length === 0) {
-        console.warn(`[StellarMapService] No families found for level "${level}" (normalized: "${finalLevel}")`);
+        const warning = `[StellarMapService] No families found for level "${level}" (normalized: "${finalLevel}")`;
+        console.warn(warning);
+        if (isDevelopment) {
+          // Check if level exists at all in database
+          const { data: allLevels } = await supabase
+            .from('constellation_families')
+            .select('level')
+            .order('level');
+          const uniqueLevels = [...new Set((allLevels || []).map(f => f.level))];
+          console.warn(`[StellarMapService] Available levels in database:`, uniqueLevels);
+        }
         return { data: {}, error: null };
       }
 
@@ -348,6 +358,18 @@ class StellarMapService {
             `[StellarMapService] WARNING: No nodes exist in database for level "${level}" (normalized: "${finalLevel}"). ` +
             `Check if nodes have been imported for this level.`
           );
+          // Check what levels have nodes
+          const { data: levelsWithNodes } = await supabase
+            .from('stellar_map_nodes')
+            .select(`
+              constellations!inner (level)
+            `);
+          if (levelsWithNodes && levelsWithNodes.length > 0) {
+            const availableLevels = [...new Set(levelsWithNodes.map(n => n.constellations?.level).filter(Boolean))];
+            console.warn(`[StellarMapService] Available levels with nodes:`, availableLevels);
+          } else {
+            console.warn(`[StellarMapService] No nodes found in database at all. Database may be empty.`);
+          }
         }
       }
 

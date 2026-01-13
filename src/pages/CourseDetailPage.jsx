@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { usePageTransition } from '../contexts/PageTransitionContext';
 import courseService from '../services/courseService';
 import { supabase } from '../lib/supabaseClient';
 import {
@@ -19,6 +20,7 @@ const CourseDetailPage = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { startTransition, endTransition } = usePageTransition();
   const [course, setCourse] = useState(null);
   const [courseStructure, setCourseStructure] = useState(null);
   const [userProgress, setUserProgress] = useState(null);
@@ -154,16 +156,14 @@ const CourseDetailPage = () => {
     return colors[school] || { backgroundColor: 'rgba(107, 114, 128, 0.2)', color: '#9CA3AF', borderColor: 'rgba(107, 114, 128, 0.3)' };
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: 'var(--color-primary)' }}></div>
-          <p className="text-gray-400 font-medium">Loading course...</p>
-        </div>
-      </div>
-    );
-  }
+  // Use global loader instead of local loading state
+  useEffect(() => {
+    if (loading) {
+      startTransition();
+    } else {
+      endTransition();
+    }
+  }, [loading, startTransition, endTransition]);
 
   if (error || !course) {
     return (

@@ -40,7 +40,7 @@ const QuickActionsWidget = memo(({ actions = [] }) => {
 
     return (
         <div className="glass-card-premium p-6">
-            <div className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-4">
+            <div className="text-xs font-medium text-ethereal-text uppercase tracking-wider mb-4">
                 Quick Actions
             </div>
 
@@ -69,7 +69,7 @@ const QuickActionsWidget = memo(({ actions = [] }) => {
                             >
                                 <Icon size={20} style={{ color: action.color }} />
                             </div>
-                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <span className="text-sm font-medium text-ethereal-text">
                                 {action.label}
                             </span>
                         </button>

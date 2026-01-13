@@ -238,9 +238,9 @@ export const useRoadmapLessonTracking = (
     };
   }, [enabled, handleScroll]);
 
-  // Check if requirements are met (3 minutes = 180 seconds)
+  // Check if requirements are met (2 minutes = 120 seconds)
   useEffect(() => {
-    const minimumTimeMet = timeSpent >= 180; // 3 minutes
+    const minimumTimeMet = timeSpent >= 120; // 2 minutes
     const scrollComplete = scrollPercentage >= 100;
     const shouldBeComplete = minimumTimeMet && scrollComplete;
 
@@ -262,11 +262,11 @@ export const useRoadmapLessonTracking = (
     isTracking,
     error,
     forceUpdate,
-    minimumTimeMet: timeSpent >= 180, // 3 minutes
+    minimumTimeMet: timeSpent >= 120, // 2 minutes
     scrollComplete: scrollPercentage >= 100,
-    timeRemaining: Math.max(0, 180 - timeSpent),
+    timeRemaining: Math.max(0, 120 - timeSpent),
     progressPercentage: Math.min(100, Math.round(
-      ((timeSpent / 180) * 50) + ((scrollPercentage / 100) * 50)
+      ((timeSpent / 120) * 50) + ((scrollPercentage / 100) * 50)
     ))
   };
 };

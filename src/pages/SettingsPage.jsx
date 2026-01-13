@@ -7,6 +7,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Separator } from '../components/ui/separator';
 import { useAuth } from '../contexts/AuthContext';
+import { usePageTransition } from '../contexts/PageTransitionContext';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from 'react-hot-toast';
 
@@ -706,6 +707,7 @@ const SubscriptionSection = ({ profile }) => {
 
 const SettingsPage = () => {
     const { user, profile, updateProfile, loading } = useAuth();
+    const { startTransition, endTransition } = usePageTransition();
     const navigate = useNavigate();
     const [activeSection, setActiveSection] = useState('account');
     const [displayName, setDisplayName] = useState('');
@@ -719,17 +721,14 @@ const SettingsPage = () => {
         }
     }, [profile]);
 
-    // Show loading state while auth is being checked
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">Loading settings...</p>
-                </div>
-            </div>
-        );
-    }
+    // Use global loader instead of local loading state
+    useEffect(() => {
+        if (loading) {
+            startTransition();
+        } else {
+            endTransition();
+        }
+    }, [loading, startTransition, endTransition]);
 
     // Show message if user is not logged in
     if (!user || !profile) {

@@ -1,4 +1,15 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+  Dot
+} from 'recharts'
 import ModernCard from './ModernCard'
 import { Heart, Moon, AlertCircle, Plus } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
@@ -7,11 +18,11 @@ import { getLocalDateString, getFirstDayOfMonth, getLastDayOfMonth, isToday } fr
 import './MoodTracker.css'
 
 /**
- * Mood Tracker - Bullet journal style chart
- * Tracks mood, sleep, and stress (1-10 scale) daily
+ * Daily Tracker - Premium Ethereal Chart
+ * Tracks mood, sleep, and stress (1-10 scale) daily using Recharts
  */
 const MoodTracker = ({ userId }) => {
-  const [entries, setEntries] = useState([])
+  const [entries, setEntries] = useState({})
   const [loading, setLoading] = useState(true)
   const [showInputModal, setShowInputModal] = useState(false)
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 })
@@ -49,6 +60,19 @@ const MoodTracker = ({ userId }) => {
   }
 
   const days = getCurrentMonthDays()
+
+  // Transform data for Recharts
+  const chartData = days.map(day => {
+    const entry = entries[day.date]
+    return {
+      day: day.day,
+      dayLabel: day.dayLabel,
+      date: day.date,
+      mood: entry?.mood ?? null,
+      sleep: entry?.sleep ?? null,
+      stress: entry?.stress ?? null
+    }
+  })
 
   const loadEntries = useCallback(async () => {
     try {
@@ -226,248 +250,162 @@ const MoodTracker = ({ userId }) => {
     return getLocalDateString()
   }
 
-  const chartHeight = 120
-  const chartTopPadding = 10
-
-  const getYPosition = (value) => {
-    if (!value) return null
-    return chartHeight - chartTopPadding - ((value / 10) * (chartHeight - chartTopPadding * 2))
-  }
-
-  const getPathD = (metric, days) => {
-    const points = days
-      .map((day, i) => {
-        const entry = entries[day.date]
-        // If entry exists, use the metric value or default to 5
-        const value = entry ? (entry[metric] !== null && entry[metric] !== undefined ? entry[metric] : 5) : null
-        if (value === null || value === undefined) return null
-        const x = (i / (days.length - 1)) * 100
-        const y = getYPosition(value)
-        return y !== null ? { x, y } : null
-      })
-      .filter(p => p !== null)
-
-    if (points.length === 0) return ''
-    if (points.length === 1) return `M ${points[0].x},${points[0].y}`
+  // Custom dot component - only show for entries with data
+  const CustomDot = (props) => {
+    const { cx, cy, payload, dataKey } = props
+    const value = payload[dataKey]
     
-    // Create smooth curve using cubic bezier curves
-    let pathD = `M ${points[0].x},${points[0].y}`
-    
-    for (let i = 0; i < points.length - 1; i++) {
-      const current = points[i]
-      const next = points[i + 1]
-      
-      // Calculate control points for smooth curve
-      // Control point 1: extends from current point in the direction of the curve
-      // Control point 2: extends toward next point
-      const dx = next.x - current.x
-      const dy = next.y - current.y
-      
-      // For the first point, use next point's direction
-      // For intermediate points, use average direction
-      let cp1x, cp1y, cp2x, cp2y
-      
-      if (i === 0) {
-        // First segment: control point extends forward
-        const tension = 0.3 // Controls curve smoothness (0-1)
-        cp1x = current.x + dx * tension
-        cp1y = current.y + dy * tension
-        cp2x = next.x - dx * (1 - tension)
-        cp2y = next.y - dy * (1 - tension)
-      } else if (i === points.length - 2) {
-        // Last segment: control point extends backward
-        const prev = points[i - 1]
-        const prevDx = current.x - prev.x
-        const prevDy = current.y - prev.y
-        const tension = 0.2
-        cp1x = current.x + prevDx * tension
-        cp1y = current.y + prevDy * tension
-        cp2x = next.x - dx * (1 - tension)
-        cp2y = next.y - dy * (1 - tension)
-      } else {
-        // Intermediate segments: use average direction for smoothness
-        const prev = points[i - 1]
-        const prevDx = current.x - prev.x
-        const prevDy = current.y - prev.y
-        const nextDx = next.x - current.x
-        const nextDy = next.y - current.y
-        
-        // Average the directions
-        const avgDx = (prevDx + nextDx) / 2
-        const avgDy = (prevDy + nextDy) / 2
-        const tension = 0.3
-        
-        cp1x = current.x + avgDx * tension
-        cp1y = current.y + avgDy * tension
-        cp2x = next.x - avgDx * tension
-        cp2y = next.y - avgDy * tension
-      }
-      
-      // Use cubic bezier curve (C command)
-      pathD += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${next.x},${next.y}`
+    // Only show dot if value exists
+    if (value === null || value === undefined) {
+      return null
     }
     
-    return pathD
+    return (
+      <circle
+        cx={cx}
+        cy={cy}
+        r={4}
+        fill={props.stroke}
+        stroke="#fff"
+        strokeWidth={2}
+      />
+    )
+  }
+
+  // Custom tooltip
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="mood-tracker-tooltip">
+          <p className="mood-tracker-tooltip-label">Day {label}</p>
+          {payload.map((entry, index) => {
+            if (entry.value === null || entry.value === undefined) return null
+            return (
+              <p key={index} style={{ color: entry.color }}>
+                {entry.name}: {entry.value}
+              </p>
+            )
+          })}
+        </div>
+      )
+    }
+    return null
   }
 
   if (loading) {
     return (
       <ModernCard className="mood-tracker-card">
-        <div className="mood-tracker-loading">Loading mood tracker...</div>
+        <div className="mood-tracker-loading" style={{ color: 'var(--ethereal-text)' }}>Loading mood tracker...</div>
       </ModernCard>
     )
   }
 
   return (
     <>
-      <div ref={cardRef}>
+      <div ref={cardRef} className="mood-tracker-wrapper">
         <ModernCard className="mood-tracker-card">
-        <div className="mood-tracker-header">
-          <h3 className="mood-tracker-title">
-            Daily Tracker - {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-          </h3>
-          <button
-            className="mood-tracker-add-btn"
-            onClick={() => handleDayClick({ date: getTodayDate() })}
-            aria-label="Add today's entry"
-          >
-            <Plus size={18} />
-          </button>
-        </div>
-
-        {/* Legend */}
-        <div className="mood-tracker-legend">
-          <div className="mood-tracker-legend-item">
-            <div className="mood-tracker-legend-line mood-tracker-line-mood"></div>
-            <Heart size={14} />
-            <span>Mood</span>
+          {/* Header */}
+          <div className="mood-tracker-header">
+            <h3 className="mood-tracker-title">
+              DAILY TRACKER
+            </h3>
+            <div className="mood-tracker-legend">
+              <div className="mood-tracker-legend-item">
+                <div className="mood-tracker-legend-line mood-tracker-line-mood"></div>
+                <Heart size={12} />
+                <span>Mood</span>
+              </div>
+              <div className="mood-tracker-legend-item">
+                <div className="mood-tracker-legend-line mood-tracker-line-sleep"></div>
+                <Moon size={12} />
+                <span>Sleep</span>
+              </div>
+              <div className="mood-tracker-legend-item">
+                <div className="mood-tracker-legend-line mood-tracker-line-stress"></div>
+                <AlertCircle size={12} />
+                <span>Stress</span>
+              </div>
+            </div>
+            <button
+              className="mood-tracker-add-btn"
+              onClick={() => handleDayClick({ date: getTodayDate() })}
+              aria-label="Add today's entry"
+            >
+              <Plus size={18} />
+            </button>
           </div>
-          <div className="mood-tracker-legend-item">
-            <div className="mood-tracker-legend-line mood-tracker-line-sleep"></div>
-            <Moon size={14} />
-            <span>Sleep</span>
-          </div>
-          <div className="mood-tracker-legend-item">
-            <div className="mood-tracker-legend-line mood-tracker-line-stress"></div>
-            <AlertCircle size={14} />
-            <span>Stress</span>
-          </div>
-        </div>
 
-        {/* Chart */}
-        <div className="mood-tracker-chart-container">
-          <svg className="mood-tracker-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
-            {/* Grid lines */}
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(level => {
-              const y = getYPosition(level)
-              if (y === null) return null
-              return (
-                <line
-                  key={level}
-                  x1="0"
-                  y1={y}
-                  x2="100"
-                  y2={y}
-                  className="mood-tracker-grid-line"
-                />
-              )
-            })}
-
-            {/* Mood line (dotted) */}
-            <path
-              d={getPathD('mood', days)}
-              className="mood-tracker-line mood-tracker-line-mood"
-              fill="none"
-              strokeWidth="0.1"
-            />
-
-            {/* Sleep line (solid) */}
-            <path
-              d={getPathD('sleep', days)}
-              className="mood-tracker-line mood-tracker-line-sleep"
-              fill="none"
-              strokeWidth="0.1"
-            />
-
-            {/* Stress line (dashed) */}
-            <path
-              d={getPathD('stress', days)}
-              className="mood-tracker-line mood-tracker-line-stress"
-              fill="none"
-              strokeWidth="0.5"
-            />
-
-            {/* Data points - always show all 3 dots if entry exists */}
-            {days.map((day, i) => {
-              const entry = entries[day.date]
-              if (!entry) return null
-
-              const x = (i / (days.length - 1)) * 100
-
-              return (
-                <g key={day.date}>
-                  {/* Mood dot - always show if entry exists */}
-                  <circle
-                    cx={x}
-                    cy={getYPosition(entry.mood || 5)}
-                    r="2"
-                    className="mood-tracker-dot mood-tracker-dot-mood"
-                  />
-                  {/* Sleep dot - always show if entry exists */}
-                  <circle
-                    cx={x}
-                    cy={getYPosition(entry.sleep || 5)}
-                    r="2"
-                    className="mood-tracker-dot mood-tracker-dot-sleep"
-                  />
-                  {/* Stress dot - always show if entry exists */}
-                  <circle
-                    cx={x}
-                    cy={getYPosition(entry.stress || 5)}
-                    r="2"
-                    className="mood-tracker-dot mood-tracker-dot-stress"
-                  />
-                </g>
-              )
-            })}
-          </svg>
-        </div>
-
-        {/* Day labels */}
-        <div className="mood-tracker-days">
-          {days.map((day, i) => {
-            const entry = entries[day.date]
-            const hasEntry = entry && (entry.mood || entry.sleep || entry.stress)
-            const today = isToday(day.date)
-            // Calculate position to match chart x-coordinates exactly
-            const positionPercent = days.length > 1 ? (i / (days.length - 1)) * 100 : 50
-
-            return (
-              <button
-                key={day.date}
-                className={`mood-tracker-day ${today ? 'mood-tracker-day-today' : ''} ${hasEntry ? 'mood-tracker-day-has-entry' : ''}`}
-                onClick={() => handleDayClick(day)}
-                aria-label={`${day.dayLabel} ${day.day}`}
-                style={{
-                  position: 'absolute',
-                  left: `${positionPercent}%`,
-                  transform: 'translateX(-50%)'
-                }}
+          {/* Chart Area */}
+          <div className="mood-tracker-chart-wrapper">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={chartData}
+                margin={{ top: 10, right: 10, left: 10, bottom: 10 }}
               >
-                <span className="mood-tracker-day-number">{day.day}</span>
-                {hasEntry && <span className="mood-tracker-day-dot"></span>}
-              </button>
-            )
-          })}
-        </div>
-
-        {/* Scale labels */}
-        <div className="mood-tracker-scale">
-          <span>1</span>
-          <span>5</span>
-          <span>10</span>
-        </div>
-      </ModernCard>
+                <CartesianGrid 
+                  vertical={false} 
+                  stroke="var(--ethereal-border)" 
+                  strokeOpacity={0.2} 
+                />
+                <XAxis
+                  dataKey="day"
+                  stroke="var(--ethereal-text)"
+                  tick={{ 
+                    fontSize: 12, 
+                    fontFamily: "'Cinzel', serif", 
+                    fill: 'var(--ethereal-text)',
+                    opacity: 0.7
+                  }}
+                  style={{ 
+                    fontSize: '12px', 
+                    fontFamily: "'Cinzel', serif" 
+                  }}
+                />
+                <YAxis
+                  domain={[0, 10]}
+                  stroke="var(--ethereal-text)"
+                  tick={{ 
+                    fontSize: 12, 
+                    fontFamily: "'Cinzel', serif", 
+                    fill: 'var(--ethereal-text)',
+                    opacity: 0.7
+                  }}
+                  style={{ 
+                    fontSize: '12px', 
+                    fontFamily: "'Cinzel', serif" 
+                  }}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Line
+                  type="monotone"
+                  dataKey="mood"
+                  stroke="#10B981"
+                  strokeWidth={2}
+                  dot={<CustomDot />}
+                  strokeDasharray="2 2"
+                  connectNulls={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="sleep"
+                  stroke="#3B82F6"
+                  strokeWidth={2}
+                  dot={<CustomDot />}
+                  connectNulls={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="stress"
+                  stroke="#EF4444"
+                  strokeWidth={2}
+                  dot={<CustomDot />}
+                  strokeDasharray="4 2"
+                  connectNulls={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </ModernCard>
       </div>
 
       {/* Input Modal */}
@@ -572,4 +510,3 @@ const MoodTracker = ({ userId }) => {
 }
 
 export default MoodTracker
-

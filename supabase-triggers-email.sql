@@ -105,25 +105,27 @@ RETURNS TRIGGER AS $$
 DECLARE
   user_email TEXT;
   user_name TEXT;
-  lesson_data RECORD;
-  course_data RECORD;
+  lesson_title TEXT;
+  course_title TEXT;
   xp_earned INT;
   total_xp INT;
   n8n_webhook_url TEXT := 'https://noteautomation.app.n8n.cloud/webhook/48997b66-68a2-49a3-ac02-3bd42b9bba5b';
 BEGIN
   -- Only trigger when lesson is marked as completed
   IF NEW.is_completed = TRUE AND (OLD.is_completed IS NULL OR OLD.is_completed = FALSE) THEN
-    -- Get lesson information
-    SELECT title INTO lesson_data
-    FROM lessons
+    -- Get lesson information from course_content table
+    SELECT lesson_title INTO lesson_title
+    FROM course_content
     WHERE course_id = NEW.course_id
       AND chapter_number = NEW.chapter_number
-      AND lesson_number = NEW.lesson_number;
+      AND lesson_number = NEW.lesson_number
+    LIMIT 1;
     
-    -- Get course information
-    SELECT title INTO course_data
-    FROM courses
-    WHERE id = NEW.course_id;
+    -- Get course information from course_metadata table
+    SELECT course_title INTO course_title
+    FROM course_metadata
+    WHERE course_id = NEW.course_id
+    LIMIT 1;
     
     -- Get XP earned from xp_logs (most recent for this lesson)
     SELECT xp_earned INTO xp_earned
@@ -152,8 +154,8 @@ BEGIN
         'emailType', 'lesson-completed',
         'email', user_email,
         'userName', COALESCE(user_name, 'there'),
-        'lessonTitle', COALESCE(lesson_data.title, 'Lesson'),
-        'courseName', COALESCE(course_data.title, 'Course'),
+        'lessonTitle', COALESCE(lesson_title, 'Lesson'),
+        'courseName', COALESCE(course_title, 'Course'),
         'xpEarned', COALESCE(xp_earned, 0),
         'totalXP', COALESCE(total_xp, 0)
       )

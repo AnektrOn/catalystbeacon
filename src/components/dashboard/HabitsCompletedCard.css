@@ -23,6 +23,7 @@
   color: hsl(var(--foreground));
   margin: 0;
   letter-spacing: -0.02em;
+  font-family: 'Cinzel', serif;
 }
 
 .habits-completed-period-selector {
@@ -38,6 +39,7 @@
   background: hsl(var(--background));
   color: hsl(var(--foreground));
   font-size: 12px;
+  font-family: 'Cinzel', serif;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -74,6 +76,7 @@
   font-weight: 700;
   color: hsl(var(--primary));
   line-height: 1;
+  font-family: 'Cinzel', serif;
 }
 
 .habits-completed-label {

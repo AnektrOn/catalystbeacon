@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { usePageTransition } from '../../contexts/PageTransitionContext';
 import { supabase } from '../../lib/supabaseClient';
 import roadmapService from '../../services/roadmapService';
+import useSubscription from '../../hooks/useSubscription';
 import NeuralNode from './NeuralNode';
 import NeuralCanvas from './NeuralCanvas';
 import MissionModal from './MissionModal';
@@ -22,6 +24,8 @@ const CONFIG = {
 
 const NeuralPathRoadmap = ({ masterschool = 'Ignition' }) => {
   const { user } = useAuth();
+  const { isFreeUser } = useSubscription();
+  const { endTransition } = usePageTransition();
   const navigate = useNavigate();
   const mapContainerRef = useRef(null);
   const canvasRef = useRef(null);
@@ -92,6 +96,33 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition' }) => {
       loadRoadmap();
     }
   }, [user, masterschool]);
+
+  // End transition when roadmap is loaded (with safety timeout)
+  useEffect(() => {
+    // Safety timeout: always end transition after max 5 seconds to prevent infinite loading
+    const safetyTimeout = setTimeout(() => {
+      console.warn('⚠️ NeuralPathRoadmap: Safety timeout reached, forcing endTransition');
+      endTransition();
+    }, 5000);
+
+    if (!loading && lessons.length > 0 && nodes.length > 0) {
+      // Roadmap is fully loaded, end the global transition
+      clearTimeout(safetyTimeout);
+      setTimeout(() => {
+        endTransition();
+      }, 300); // Small delay to ensure smooth transition
+    } else if (!loading && lessons.length === 0) {
+      // Even if no lessons, end transition after a short delay
+      clearTimeout(safetyTimeout);
+      setTimeout(() => {
+        endTransition();
+      }, 500);
+    }
+
+    return () => {
+      clearTimeout(safetyTimeout);
+    };
+  }, [loading, lessons, nodes, endTransition]);
 
   // Load roadmap data
   const loadRoadmap = async () => {
@@ -167,6 +198,10 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition' }) => {
 
     } catch (err) {
       console.error('Error loading roadmap:', err);
+      // Even on error, end transition to prevent infinite loading
+      setTimeout(() => {
+        endTransition();
+      }, 500);
     } finally {
       setLoading(false);
     }
@@ -236,8 +271,12 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition' }) => {
     if (!selectedNode) return;
     
     const { lesson } = selectedNode;
-    // Add return URL for completion detection and fromRoadmap flag
+    // Add return URL for completion detection
     const returnUrl = encodeURIComponent(`/roadmap/ignition?completed=true&lessonId=${lesson.course_id}-${lesson.chapter_number}-${lesson.lesson_number}&xp=${lesson.lesson_xp_reward || 0}`);
+    
+    // Always add fromRoadmap=true when coming from roadmap (for both free and paid users)
+    // This allows the modal to redirect back to roadmap after completion
+    // Free users will have restricted access, paid users will have full access
     navigate(`/courses/${lesson.course_id}/chapters/${lesson.chapter_number}/lessons/${lesson.lesson_number}?return=${returnUrl}&fromRoadmap=true`);
     setIsModalOpen(false);
   };

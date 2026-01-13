@@ -1,9 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { usePageTransition } from '../contexts/PageTransitionContext'
 import toast from 'react-hot-toast'
 import { Eye, EyeOff, ArrowLeft, ArrowRight } from 'lucide-react'
-import CosmicLoader from '../components/ui/CosmicLoader'
 
 const LoginPage = () => {
   const [email, setEmail] = useState('')
@@ -12,6 +12,7 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false)
   
   const { signIn } = useAuth()
+  const { startTransition, endTransition } = usePageTransition()
   const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
@@ -67,10 +68,14 @@ const LoginPage = () => {
     }
   }
 
-  // Show cosmic loader while loading
-  if (loading) {
-    return <CosmicLoader message="Signing you in..." />
-  }
+  // Use global loader instead of local loading state
+  useEffect(() => {
+    if (loading) {
+      startTransition();
+    } else {
+      endTransition();
+    }
+  }, [loading, startTransition, endTransition]);
 
   return (
     <div className="min-h-screen flex bg-[#0a0a0a]">
@@ -94,9 +99,12 @@ const LoginPage = () => {
           <div className="mb-12">
             <div className="flex items-center space-x-3">
               <img 
-                src="/Logo uni.png" 
+                src="/hc-logo.svg" 
                 alt="HC University" 
                 className="w-12 h-12 object-contain"
+                onError={(e) => {
+                  e.target.style.display = 'none'
+                }}
               />
               <span className="text-white text-xl font-semibold tracking-wide">Human Catalyst University</span>
             </div>
@@ -135,7 +143,7 @@ const LoginPage = () => {
                 type="email"
                 autoComplete="email"
                 required
-                className="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent transition-all"
+                className="w-full px-4 py-3.5 bg-ethereal-glass border border-ethereal rounded-ethereal text-ethereal-text placeholder-ethereal-text/40 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent transition-all"
                 placeholder="Your Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}

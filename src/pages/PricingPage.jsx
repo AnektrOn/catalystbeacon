@@ -90,18 +90,52 @@ const PricingPage = () => {
     }
 
     setLoading(true)
+    
+    console.log('🔄 Starting checkout process:', { priceId, userId: user.id, userEmail: user.email })
 
     try {
       // Use API server as PRIMARY solution (most reliable)
-      const API_URL = process.env.REACT_APP_API_URL || 
-                      (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
-                        ? 'http://localhost:3001' 
-                        : window.location.origin)
+      // CRITICAL: On mobile, window.location.origin might not work correctly
+      // Use explicit protocol detection
+      let API_URL = process.env.REACT_APP_API_URL
+      if (!API_URL) {
+        if (typeof window !== 'undefined') {
+          if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            API_URL = 'http://localhost:3001'
+          } else {
+            // Use current origin for production
+            API_URL = `${window.location.protocol}//${window.location.host}`
+          }
+        } else {
+          API_URL = window.location.origin
+        }
+      }
       
       console.log('📞 Using API server as PRIMARY solution:', API_URL)
       
       // Use API server directly (no Edge Function attempts)
       const apiBaseUrl = API_URL
+      
+      // Test server connectivity first
+      try {
+        console.log('🔍 Testing server connectivity...')
+        const healthResponse = await fetch(`${apiBaseUrl}/health`, {
+          method: 'GET',
+          signal: AbortSignal.timeout(5000) // 5 second timeout
+        })
+        
+        if (healthResponse.ok) {
+          const healthData = await healthResponse.json()
+          console.log('✅ Server is accessible:', healthData)
+        } else {
+          console.warn('⚠️ Server health check failed:', healthResponse.status)
+        }
+      } catch (healthError) {
+        console.error('❌ Server is not accessible:', healthError.message)
+        toast.error('Server is not accessible. Please check if the server is running.')
+        setLoading(false)
+        return
+      }
       
       console.log('📞 Creating checkout session via API server:', `${apiBaseUrl}/api/create-checkout-session`)
       
@@ -132,10 +166,13 @@ const PricingPage = () => {
           if (!response.ok) {
             let errorMessage = `HTTP ${response.status}: ${response.statusText}`
             let errorDetails = null
+            let errorCode = null
+            let errorData = null
             try {
-              const errorData = await response.json()
+              errorData = await response.json()
               errorMessage = errorData.error || errorMessage
               errorDetails = errorData.details
+              errorCode = errorData.code
             } catch (e) {
               const text = await response.text().catch(() => '')
               if (text) errorMessage = text
@@ -145,11 +182,30 @@ const PricingPage = () => {
             if (response.status >= 400 && response.status < 500) {
               console.error('❌ Client error (no retry):', errorMessage)
               if (response.status === 503) {
-                errorMessage = 'Payment service is not available. Please contact support or try again later.'
-                toast.error('Payment service unavailable. Please check your server configuration or try again in a moment.')
+                // 503 means service unavailable - could be server not running or Stripe not configured
+                const detailedError = errorDetails || errorMessage
+                
+                if (errorCode === 'STRIPE_NOT_CONFIGURED' || detailedError?.includes('STRIPE_SECRET_KEY') || detailedError?.includes('not configured')) {
+                  errorMessage = 'Payment service is not configured on the server. Please contact support to enable payments.'
+                  toast.error('Payment service is not configured. Please contact support.', {
+                    duration: 5000
+                  })
+                } else if (detailedError?.includes('server.env')) {
+                  errorMessage = 'Server configuration error. Please contact support.'
+                  toast.error('Server configuration error. Please contact support.', {
+                    duration: 5000
+                  })
+                } else {
+                  errorMessage = 'Payment service is temporarily unavailable. The server may not be running or there is a configuration issue.'
+                  toast.error('Payment service unavailable. Please contact support if this persists.', {
+                    duration: 5000
+                  })
+                }
               } else if (response.status === 400) {
                 errorMessage = errorMessage || 'Invalid request. Please check your payment details.'
                 toast.error(errorMessage)
+              } else {
+                toast.error(errorMessage || 'An error occurred. Please try again.')
               }
               throw new Error(errorMessage)
             }

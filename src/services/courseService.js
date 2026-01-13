@@ -552,13 +552,25 @@ class CourseService {
         .select('*')
         .eq('user_id', userId)
         .eq('course_id', parsedCourseId)
-        .single();
+        .maybeSingle(); // Use maybeSingle instead of single to avoid 406 errors
 
-      if (error && error.code !== 'PGRST116') throw error; // PGRST116 = not found, which is OK
+      // PGRST116 = not found, which is OK - return null data
+      if (error && error.code === 'PGRST116') {
+        return { data: null, error: null };
+      }
+      
+      // 406 errors (Not Acceptable) usually mean table doesn't exist or RLS issue
+      // Return null data instead of error to prevent blocking
+      if (error) {
+        logWarn('Error fetching user course progress (non-critical):', error);
+        return { data: null, error: null }; // Don't block on progress errors
+      }
+      
       return { data: data || null, error: null };
     } catch (error) {
-      logError('Error fetching user course progress:', error);
-      return { data: null, error };
+      logWarn('Exception fetching user course progress (non-critical):', error);
+      // Don't block on progress errors - return null data
+      return { data: null, error: null };
     }
   }
 

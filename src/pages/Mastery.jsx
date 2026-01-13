@@ -2,6 +2,7 @@ import React, { useState, createContext, useContext, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Calendar, Target, Wrench, Clock, Trophy, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { usePageTransition } from '../contexts/PageTransitionContext';
 import useSubscription from '../hooks/useSubscription';
 
 // Import components
@@ -27,6 +28,7 @@ const Mastery = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { profile, loading: authLoading } = useAuth();
+  const { startTransition, endTransition } = usePageTransition();
   const { isFreeUser, isAdmin } = useSubscription();
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -45,17 +47,14 @@ const Mastery = () => {
     }
   }, [location.pathname, navigate]);
 
-  // Wait for auth to finish loading before rendering
-  if (authLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: 'var(--color-primary)' }}></div>
-          <p className="text-gray-400">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+  // Use global loader instead of local loading state
+  useEffect(() => {
+    if (authLoading) {
+      startTransition();
+    } else {
+      endTransition();
+    }
+  }, [authLoading, startTransition, endTransition]);
 
   // Only show Calendar, Habits, and Toolbox tabs
   const allTabs = [

@@ -229,17 +229,17 @@ const SchoolProgressAreaChartMobile = ({ userId }) => {
               <XAxis
                 dataKey="Period"
                 stroke="rgba(255, 255, 255, 0.6)"
-                style={{ fontSize: '10px' }}
+                style={{ fontSize: '12px', fontFamily: "'Cinzel', serif" }}
                 angle={-45}
                 textAnchor="end"
                 height={50}
-                tick={{ fill: 'rgba(255, 255, 255, 0.8)', fontSize: 10 }}
+                tick={{ fill: 'rgba(255, 255, 255, 0.8)', fontSize: 12, fontFamily: "'Cinzel', serif" }}
               />
               <YAxis
                 stroke="rgba(255, 255, 255, 0.6)"
-                style={{ fontSize: '10px' }}
+                style={{ fontSize: '12px', fontFamily: "'Cinzel', serif" }}
                 width={30}
-                tick={{ fill: 'rgba(255, 255, 255, 0.8)', fontSize: 10 }}
+                tick={{ fill: 'rgba(255, 255, 255, 0.8)', fontSize: 12, fontFamily: "'Cinzel', serif" }}
                 domain={[0, 'auto']}
               />
               <Tooltip content={<CustomTooltip />} />

@@ -136,7 +136,7 @@ const CosmicLoader = ({ fullScreen = true, message = "Loading your journey..." }
           
           {/* Logo */}
           <img 
-            src="/Logo uni.png" 
+            src="/hc-logo.svg" 
             alt="HC University" 
             className="relative w-32 h-32 object-contain"
             style={{

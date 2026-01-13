@@ -121,7 +121,7 @@ const CommunityPage = () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div className="flex-1 min-w-0">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white font-heading">
+          <h1 className="text-3xl font-bold text-ethereal-white font-heading">
             Community
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">Connect, learn, and grow together</p>
@@ -156,7 +156,7 @@ const CommunityPage = () => {
             placeholder="Search posts, users, or topics..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none backdrop-blur-sm"
+            className="w-full pl-10 pr-4 py-3 bg-ethereal-glass border border-ethereal rounded-ethereal text-ethereal-text placeholder-ethereal-text/60 focus:outline-none backdrop-blur-ethereal"
             style={{ '--focus-ring': 'color-mix(in srgb, var(--color-primary) 50%, transparent)', '--focus-border': 'color-mix(in srgb, var(--color-primary) 50%, transparent)' }}
             onFocus={(e) => {
               e.currentTarget.style.outline = 'none';
@@ -172,7 +172,7 @@ const CommunityPage = () => {
         <select
           value={filterType}
           onChange={(e) => setFilterType(e.target.value)}
-          className="w-full sm:w-auto px-4 py-3 bg-white/50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white focus:outline-none backdrop-blur-sm"
+          className="w-full sm:w-auto px-4 py-3 bg-ethereal-glass border border-ethereal rounded-ethereal text-ethereal-text focus:outline-none backdrop-blur-ethereal"
           onFocus={(e) => {
             e.currentTarget.style.outline = 'none';
             e.currentTarget.style.boxShadow = '0 0 0 2px color-mix(in srgb, var(--color-primary) 50%, transparent)';
@@ -214,7 +214,7 @@ const CommunityPage = () => {
         {/* Left Sidebar - Navigation */}
         <div className="hidden xl:block xl:col-span-1">
           <div className="glass-panel-floating p-6 sticky top-24">
-            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Navigation</h3>
+            <h3 className="text-lg font-semibold mb-4 text-ethereal-white">Navigation</h3>
             <nav className="space-y-2">
               {tabs.map((tab) => (
                 <button
@@ -255,7 +255,7 @@ const CommunityPage = () => {
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
-                          <h4 className="font-bold text-gray-900 dark:text-white text-base truncate">
+                          <h4 className="font-bold text-ethereal-white text-base truncate">
                             {post.profiles?.full_name || post.user?.name || 'User'}
                           </h4>
                           <span className="text-xs px-2 py-0.5 rounded-full inline-block w-fit mt-1 sm:mt-0 font-medium" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 10%, transparent)', color: 'var(--color-primary)', borderColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', borderWidth: '1px', borderStyle: 'solid' }}>
@@ -329,7 +329,7 @@ const CommunityPage = () => {
 
           {activeTab === 'leaderboard' && (
             <div className="glass-panel-floating p-6">
-              <h3 className="text-xl font-bold mb-8 text-gray-900 dark:text-white text-center">Top Performers</h3>
+              <h3 className="text-xl font-bold mb-8 text-ethereal-white text-center">Top Performers</h3>
 
               {/* Podium for Top 3 */}
               {leaderboard.length >= 3 ? (
@@ -354,7 +354,7 @@ const CommunityPage = () => {
                         </div>
                       </div>
                       <div className="text-center mb-2">
-                        <p className="text-gray-900 dark:text-white font-bold text-sm">{leaderboard[1]?.full_name || 'User'}</p>
+                        <p className="text-ethereal-white font-bold text-sm">{leaderboard[1]?.full_name || 'User'}</p>
                         <p className="text-xs font-medium" style={{ color: 'var(--color-primary)' }}>
                           {leaderboard[1]?.current_xp?.toLocaleString() || 0} XP
                         </p>
@@ -378,7 +378,7 @@ const CommunityPage = () => {
                         </div>
                       </div>
                       <div className="text-center mb-2">
-                        <p className="text-gray-900 dark:text-white font-bold text-base">{leaderboard[0]?.full_name || 'User'}</p>
+                        <p className="text-ethereal-white font-bold text-base">{leaderboard[0]?.full_name || 'User'}</p>
                         <p className="text-sm font-bold" style={{ color: 'var(--color-primary)' }}>
                           {leaderboard[0]?.current_xp?.toLocaleString() || 0} XP
                         </p>
@@ -402,7 +402,7 @@ const CommunityPage = () => {
                         </div>
                       </div>
                       <div className="text-center mb-2">
-                        <p className="text-gray-900 dark:text-white font-bold text-sm">{leaderboard[2]?.full_name || 'User'}</p>
+                        <p className="text-ethereal-white font-bold text-sm">{leaderboard[2]?.full_name || 'User'}</p>
                         <p className="text-xs font-medium" style={{ color: 'var(--color-primary)' }}>
                           {leaderboard[2]?.current_xp?.toLocaleString() || 0} XP
                         </p>
@@ -432,7 +432,7 @@ const CommunityPage = () => {
                       className="w-10 h-10 rounded-full"
                     />
                     <div className="flex-1">
-                      <h4 className="font-bold text-gray-900 dark:text-white">{user.full_name}</h4>
+                      <h4 className="font-bold text-ethereal-white">{user.full_name}</h4>
                       <p className="text-sm flex items-center" style={{ color: 'var(--color-primary)' }}>
                         <Star className="w-3 h-3 mr-1" />
                         {user.current_xp?.toLocaleString() || 0} XP
@@ -450,7 +450,7 @@ const CommunityPage = () => {
                 <div key={challenge.id} className="glass-card-premium p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{challenge.title}</h3>
+                      <h3 className="text-xl font-bold text-ethereal-white mb-2">{challenge.title}</h3>
                       <p className="text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">{challenge.description}</p>
                       <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                         <div className="flex items-center space-x-1 bg-gray-100 dark:bg-white/5 px-2 py-1 rounded-lg">
@@ -490,7 +490,7 @@ const CommunityPage = () => {
               <div className="w-20 h-20 bg-gray-100 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Search className="w-10 h-10 text-gray-400" />
               </div>
-              <h3 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">Discover Content</h3>
+              <h3 className="text-2xl font-bold mb-2 text-ethereal-white">Discover Content</h3>
               <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
                 Explore trending topics, find new connections, and discover inspiring content. Coming soon!
               </p>
@@ -503,7 +503,7 @@ const CommunityPage = () => {
           <div className="space-y-6 sticky top-24">
             {/* Your Stats */}
             <div className="glass-panel-floating p-6">
-              <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Your Stats</h3>
+              <h3 className="text-lg font-bold mb-4 text-ethereal-white">Your Stats</h3>
               <div className="space-y-4">
                 <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-white/5 rounded-xl">
                   <span className="text-gray-600 dark:text-gray-400 text-sm">Level</span>
@@ -515,18 +515,18 @@ const CommunityPage = () => {
                 </div>
                 <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-white/5 rounded-xl">
                   <span className="text-gray-600 dark:text-gray-400 text-sm">Posts</span>
-                  <span className="text-gray-900 dark:text-white font-bold">12</span>
+                  <span className="text-ethereal-white font-bold">12</span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-white/5 rounded-xl">
                   <span className="text-gray-600 dark:text-gray-400 text-sm">Followers</span>
-                  <span className="text-gray-900 dark:text-white font-bold">89</span>
+                  <span className="text-ethereal-white font-bold">89</span>
                 </div>
               </div>
             </div>
 
             {/* Trending Topics */}
             <div className="glass-panel-floating p-6">
-              <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+              <h3 className="text-lg font-bold mb-4 text-ethereal-white flex items-center gap-2">
                 <TrendingUp className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
                 Trending
               </h3>

@@ -10,6 +10,7 @@ import AppShellMobile from './AppShellMobile';
 import useSubscription from '../hooks/useSubscription';
 import UpgradeModal from './UpgradeModal';
 import { getCurrentPalette, switchTo } from '../utils/colorPaletteSwitcher';
+import GlobalBackground from './ui/GlobalBackground';
 import {
   Grid3X3,
   User,
@@ -223,11 +224,6 @@ const AppShell = () => {
     loadXPAndAchievement();
   }, [user, profile]);
 
-  // Debug: Log background image state
-  useEffect(() => {
-    // Background image is handled via inline styles in the render
-  }, [profile, isMobile]);
-
   // #region agent log
   useEffect(() => {
     const root = document.documentElement;
@@ -297,101 +293,12 @@ const AppShell = () => {
 
   return (
     <div className="min-h-screen" style={{ position: 'relative' }}>
-      {/* Background - User's custom background or earth-tone gradient */}
-      {profile?.background_image ? (
-        <div
-          key={`bg-img-${profile.id}-${profile.background_image.substring(0, 50)}`}
-          className="fixed inset-0 transition-all duration-500"
-          style={{
-            backgroundImage: `url("${profile.background_image}")`,
-            backgroundSize: (() => {
-              const fit = profile.background_fit || 'cover';
-              const zoom = profile.background_zoom || 100;
-              
-              if (fit === 'cover') {
-                // For cover, use zoom percentage
-                return `${zoom}%`;
-              } else if (fit === 'contain') {
-                // For contain, use zoom percentage
-                return `${zoom}%`;
-              } else if (fit === 'auto') {
-                return 'auto';
-              } else if (fit === '100% 100%') {
-                return '100% 100%';
-              }
-              return 'cover';
-            })(),
-            backgroundPosition: profile.background_position || 'center',
-            backgroundRepeat: 'no-repeat',
-            backgroundAttachment: 'fixed',
-            zIndex: -1,
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            pointerEvents: 'none'
-          }}
-        >
-          <div 
-            className="absolute inset-0 backdrop-blur-[1px]"
-            style={{
-              backgroundColor: isDarkMode 
-                ? 'color-mix(in srgb, var(--bg-secondary) 10%, transparent)'
-                : 'color-mix(in srgb, var(--bg-primary) 3%, transparent)'
-            }}
-          ></div>
-        </div>
-      ) : (
-        <div
-          key={`bg-default-${profile?.id || 'no-user'}`}
-          className="fixed inset-0 -z-10 transition-all duration-500"
-          style={{
-            backgroundColor: isDarkMode ? 'var(--bg-secondary)' : 'var(--bg-primary)'
-          }}
-        >
-          <div 
-            className="absolute inset-0"
-            style={{
-              background: isDarkMode 
-                ? `linear-gradient(to bottom right, var(--bg-secondary, #1F2937), var(--color-earth-green, #3F3F2C), var(--bg-secondary, #1F2937))`
-                : `linear-gradient(to bottom right, var(--color-old-lace, #F7F1E1), var(--color-bone, #E3D8C1), var(--color-primary, #B4833D))`
-            }}
-          >
-            {/* Abstract shapes for visual interest */}
-            <div 
-              className="absolute top-0 left-0 w-full h-full overflow-hidden"
-              style={{ opacity: isDarkMode ? 0.1 : 0.2 }}
-            >
-              <div 
-                className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full blur-3xl"
-                style={{ backgroundColor: isDarkMode 
-                  ? 'color-mix(in srgb, var(--color-primary) 15%, transparent)'
-                  : 'color-mix(in srgb, var(--color-primary) 20%, transparent)'
-                }}
-              ></div>
-              <div 
-                className="absolute top-[40%] right-[10%] w-[40%] h-[40%] rounded-full blur-3xl"
-                style={{ backgroundColor: isDarkMode
-                  ? 'color-mix(in srgb, var(--color-secondary) 15%, transparent)'
-                  : 'color-mix(in srgb, var(--color-secondary) 20%, transparent)'
-                }}
-              ></div>
-              <div 
-                className="absolute -bottom-[10%] left-[20%] w-[30%] h-[30%] rounded-full blur-3xl"
-                style={{ backgroundColor: isDarkMode
-                  ? 'color-mix(in srgb, var(--color-primary) 10%, transparent)'
-                  : 'color-mix(in srgb, var(--color-kobicha) 20%, transparent)'
-                }}
-              ></div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Global Background - Consolidated system */}
+      <GlobalBackground />
 
       {/* Header - 60% width */}
       <header className="fixed top-0 left-0 right-0 z-50 p-4">
-        <div className="glass-header-browser flex items-center justify-between">
+        <div className="bg-ethereal-glass backdrop-blur-ethereal border border-ethereal shadow-ethereal-base flex items-center justify-between px-6 py-2 h-[60px] w-[95%] lg:w-[70%] mx-auto rounded-full">
           {/* Left side - Empty or logo */}
           <div className="flex items-center space-x-2 flex-shrink-0">
             {/* Intentionally empty - no navigation icons */}
@@ -401,7 +308,7 @@ const AppShell = () => {
           {user && (
             <div className="flex items-center gap-3 flex-1 justify-center px-4">
               {/* Total XP */}
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg glass-effect border border-white/10">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-ethereal-sm bg-ethereal-glass/50 backdrop-blur-ethereal border border-ethereal">
                 <Zap size={16} style={{ color: 'var(--color-primary)' }} />
                 <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
                   {totalXP.toLocaleString()}
@@ -410,7 +317,7 @@ const AppShell = () => {
 
               {/* Last Achievement */}
               {lastAchievement && (
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg glass-effect border border-white/10 max-w-[200px]">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-ethereal-sm bg-ethereal-glass/50 backdrop-blur-ethereal border border-ethereal max-w-[200px]">
                   {lastAchievement.iconUrl ? (
                     <img 
                       src={lastAchievement.iconUrl} 
@@ -452,7 +359,7 @@ const AppShell = () => {
                 />
               ) : (
                 <div
-                  className="glass-user-avatar flex items-center justify-center text-white font-semibold text-sm"
+                  className="glass-user-avatar flex items-center justify-center text-ethereal-white font-semibold text-sm"
                   style={{ background: 'var(--gradient-primary)' }}
                   onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
                 >
@@ -474,7 +381,11 @@ const AppShell = () => {
         style={{ width: isSidebarExpanded ? 'var(--sidebar-width-expanded)' : 'var(--sidebar-width-collapsed)' }}
       >
         <div 
-          className={`glass-sidebar-panel-v2 glass-panel-floating ${isSidebarExpanded ? 'expanded' : 'collapsed'}`}
+          className={`bg-ethereal-glass border-r border-ethereal backdrop-blur-ethereal rounded-ethereal shadow-ethereal-base flex flex-col h-full py-4 px-3 m-4 ${isSidebarExpanded ? 'expanded' : 'collapsed'} transition-all duration-300`}
+          style={{
+            width: isSidebarExpanded ? 'var(--sidebar-width-expanded)' : 'var(--sidebar-width-collapsed)',
+            alignItems: isSidebarExpanded ? 'flex-start' : 'center'
+          }}
         >
           {/* Top section - Toggle button */}
           <div className={`flex ${isSidebarExpanded ? 'justify-between items-center' : 'justify-center'} mb-6`}>
@@ -543,7 +454,7 @@ const AppShell = () => {
           boxSizing: 'border-box'
         }}
       >
-        <div className="glass-main-panel">
+        <div className="bg-ethereal-glass backdrop-blur-ethereal border border-ethereal rounded-2xl shadow-ethereal-base h-full overflow-auto m-4 p-0">
           <div className="p-4" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
             <Outlet />
           </div>

@@ -539,7 +539,7 @@ const CalendarTab = () => {
         </div>
 
         {/* View Switcher - Mobile Optimized */}
-        <div className="flex bg-slate-800/60 backdrop-blur-sm rounded-2xl p-1.5 shadow-xl">
+        <div className="flex bg-ethereal-glass backdrop-blur-ethereal rounded-ethereal p-1.5 shadow-ethereal-base">
           <button
             onClick={() => setView('month')}
             className={`flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all min-h-[44px] ${
@@ -615,10 +615,10 @@ const CalendarTab = () => {
 
           {/* Calendar Content */}
           {view === 'month' ? (
-        <div className="bg-slate-800/40 backdrop-blur-sm rounded-2xl border border-slate-700/50 overflow-hidden shadow-xl">
+        <div className="bg-ethereal-glass backdrop-blur-ethereal rounded-ethereal border border-ethereal overflow-hidden shadow-ethereal-base">
           <div className="grid grid-cols-7 border-b border-slate-700/50 bg-slate-900/50">
             {dayNames.map(day => (
-              <div key={day} className="p-2 sm:p-4 text-center text-xs sm:text-sm font-medium text-slate-400 border-r border-slate-700/50 last:border-r-0">
+              <div key={day} className="p-2 sm:p-4 text-center text-xs sm:text-sm font-medium text-ethereal-text border-r border-ethereal last:border-r-0">
                 {day}
               </div>
             ))}
@@ -633,9 +633,9 @@ const CalendarTab = () => {
               return (
                 <div
                   key={index}
-                  className={`min-h-[80px] sm:min-h-[120px] p-1 sm:p-2 border-r border-b border-slate-700/50 last:border-r-0 cursor-pointer ${
-                    !isCurrentMonth ? 'bg-slate-900/40 text-slate-500' : ''
-                  } hover:bg-slate-700/30 transition-colors`}
+                  className={`min-h-[80px] sm:min-h-[120px] p-1 sm:p-2 border-r border-b border-ethereal last:border-r-0 cursor-pointer ${
+                    !isCurrentMonth ? 'bg-ethereal-glass/30 text-ethereal-text' : ''
+                  } hover:bg-ethereal-glass-hover transition-colors`}
                   style={isToday ? { backgroundColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', borderColor: 'var(--color-primary)' } : {}}
                   onClick={() => day && handleDayClick(day)}
                 >
@@ -678,10 +678,10 @@ const CalendarTab = () => {
           </div>
         </div>
       ) : view === 'week' ? (
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div className="grid grid-cols-7 border-b border-gray-200 dark:border-gray-700">
+        <div className="bg-ethereal-glass rounded-ethereal border border-ethereal overflow-hidden">
+          <div className="grid grid-cols-7 border-b border-ethereal">
             {getWeekDays(currentDate).map((day, index) => (
-              <div key={index} className="p-4 text-center border-r border-gray-200 dark:border-gray-700 last:border-r-0">
+              <div key={index} className="p-4 text-center border-r border-ethereal last:border-r-0">
                 <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                   {dayNames[index]}
                 </div>
@@ -707,7 +707,7 @@ const CalendarTab = () => {
               return (
                 <div
                   key={index}
-                  className="p-2 border-r border-gray-200 dark:border-gray-700 last:border-r-0"
+                  className="p-2 border-r border-ethereal last:border-r-0"
                   style={isToday ? { backgroundColor: 'color-mix(in srgb, var(--color-primary) 10%, transparent)' } : {}}
                 >
                   <div className="space-y-1">
@@ -799,7 +799,7 @@ const CalendarTab = () => {
           </div>
         </div>
       ) : (
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="bg-ethereal-glass rounded-ethereal border border-ethereal overflow-hidden">
           {/* Header with date navigation */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-2">
@@ -903,7 +903,7 @@ const CalendarTab = () => {
                 return (
                   <div
                     key={event.id}
-                    className={`rounded-xl p-4 transition-all duration-200 hover:shadow-md ${getEventColor(event)}`}
+                    className={`rounded-ethereal p-4 transition-all duration-200 hover:shadow-ethereal-base ${getEventColor(event)}`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start space-x-3 flex-1">

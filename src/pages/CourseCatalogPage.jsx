@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { usePageTransition } from '../contexts/PageTransitionContext';
 import { supabase } from '../lib/supabaseClient';
 import SEOHead from '../components/SEOHead';
 import courseService from '../services/courseService';
@@ -9,6 +10,7 @@ import { BookOpen, Lock, Play, Clock, Search, Grid, List, ChevronLeft, ChevronRi
 
 const CourseCatalogPage = () => {
   const { user, loading: authLoading } = useAuth();
+  const { startTransition, endTransition } = usePageTransition();
   const navigate = useNavigate();
   const [coursesBySchool, setCoursesBySchool] = useState({});
   const [schools, setSchools] = useState([]);
@@ -476,17 +478,14 @@ const CourseCatalogPage = () => {
     }
   };
 
-  // Show loading if auth is still loading or if data is loading
-  if (authLoading || loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: 'var(--color-primary)' }}></div>
-          <p className="text-gray-400">{authLoading ? 'Loading...' : 'Loading courses...'}</p>
-        </div>
-      </div>
-    );
-  }
+  // Use global loader instead of local loading state
+  useEffect(() => {
+    if (authLoading || loading) {
+      startTransition();
+    } else {
+      endTransition();
+    }
+  }, [authLoading, loading, startTransition, endTransition]);
 
   if (error) {
     return (

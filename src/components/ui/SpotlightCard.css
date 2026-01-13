@@ -1,0 +1,189 @@
+/**
+ * SpotlightCard - Mouse-Following Spotlight Border Effect
+ * Extends Ethereal Card with dynamic radial gradient border that follows cursor
+ */
+
+.spotlight-card {
+  /* Inherit all Ethereal Card base styles */
+  background: var(--ethereal-bg-glass);
+  backdrop-filter: blur(var(--ethereal-card-blur));
+  -webkit-backdrop-filter: blur(var(--ethereal-card-blur));
+  border: 1px solid var(--ethereal-border);
+  border-radius: var(--ethereal-card-radius);
+  
+  /* Typography */
+  color: var(--ethereal-text);
+  font-family: var(--font-ethereal-body);
+  
+  /* Layout */
+  padding: var(--ethereal-card-padding-medium);
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  
+  /* Transitions */
+  transition: all 0.5s ease;
+  
+  /* Shadows */
+  box-shadow: var(--ethereal-shadow-base);
+  
+  /* Centering */
+  margin-left: auto;
+  margin-right: auto;
+
+  /* Mouse position variables (set via inline style) */
+  --mouse-x: 50%;
+  --mouse-y: 50%;
+}
+
+/* Spotlight border effect using ::before pseudo-element */
+.spotlight-card::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: var(--ethereal-card-radius);
+  background: radial-gradient(
+    circle 200px at var(--mouse-x) var(--mouse-y),
+    var(--ethereal-border-hover) 0%,
+    var(--ethereal-cyan) 15%,
+    transparent 50%
+  );
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* Show spotlight on hover */
+.spotlight-card:hover::before {
+  opacity: 1;
+}
+
+/* Enhanced border glow effect using ::after for the actual border */
+.spotlight-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: var(--ethereal-card-radius);
+  border: 1px solid transparent;
+  background: 
+    /* Base border */
+    linear-gradient(var(--ethereal-bg-glass), var(--ethereal-bg-glass)) padding-box,
+    /* Spotlight border gradient */
+    radial-gradient(
+      circle 250px at var(--mouse-x) var(--mouse-y),
+      var(--ethereal-cyan) 0%,
+      var(--ethereal-border-hover) 20%,
+      var(--ethereal-border) 40%,
+      transparent 60%
+    ) border-box;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* Show border glow on hover */
+.spotlight-card:hover::after {
+  opacity: 1;
+}
+
+/* Content wrapper - ensure content is above the spotlight effects */
+.spotlight-card > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Hover State - enhance existing Ethereal hover */
+.spotlight-card:hover {
+  box-shadow: var(--ethereal-shadow-hover);
+  background: var(--ethereal-bg-hover);
+}
+
+/* Elevated Variant */
+.spotlight-card.elevated {
+  box-shadow: var(--ethereal-shadow-elevated);
+}
+
+/* Interactive Variant */
+.spotlight-card.interactive {
+  cursor: pointer;
+}
+
+.spotlight-card.interactive:hover {
+  transform: translateY(-2px);
+}
+
+/* Size Variants */
+.spotlight-card.size-small {
+  padding: var(--ethereal-card-padding-small);
+  border-radius: var(--ethereal-card-radius-small);
+}
+
+.spotlight-card.size-small::before,
+.spotlight-card.size-small::after {
+  border-radius: var(--ethereal-card-radius-small);
+}
+
+.spotlight-card.size-large {
+  padding: var(--ethereal-card-padding-large);
+  border-radius: var(--ethereal-card-radius-large);
+}
+
+.spotlight-card.size-large::before,
+.spotlight-card.size-large::after {
+  border-radius: var(--ethereal-card-radius-large);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .spotlight-card {
+    padding: var(--ethereal-card-padding-small);
+    border-radius: var(--ethereal-card-radius-small);
+  }
+
+  .spotlight-card::before,
+  .spotlight-card::after {
+    border-radius: var(--ethereal-card-radius-small);
+  }
+}
+
+/* Sub-component styles matching Card component */
+.spotlight-card-header {
+  display: flex;
+  flex-direction: column;
+  space-y: 0.375rem;
+  padding: 1.5rem;
+}
+
+.spotlight-card-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.025em;
+}
+
+.spotlight-card-description {
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.spotlight-card-content {
+  padding: 1.5rem;
+  padding-top: 0;
+}
+
+.spotlight-card-footer {
+  display: flex;
+  align-items: center;
+  padding: 1.5rem;
+  padding-top: 0;
+}

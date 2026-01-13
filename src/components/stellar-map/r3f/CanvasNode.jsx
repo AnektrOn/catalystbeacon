@@ -188,8 +188,24 @@ const CanvasNodeComponent = ({
     const nodeBaseRadius = 5 + (difficulty * 1.5);
     const maxRadius = nodeBaseRadius * 1.15; // Account for pulse (15% max)
     // Convert pixel size to 3D units (approximately 0.01 units per pixel at distanceFactor 12)
-    return (maxRadius * 2) / 1000;
+    // Ensure minimum size for visibility
+    return Math.max((maxRadius * 2) / 1000, 0.1);
   }, [difficulty]);
+  
+  // Debug: Log node creation
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[CanvasNode] Node rendered:', {
+        id: userData?.id,
+        title: userData?.title,
+        position,
+        difficulty,
+        canvasSize,
+        interactionSize,
+        style: style.color
+      });
+    }
+  }, [userData?.id, position, difficulty, canvasSize, interactionSize, style.color]);
 
   return (
     <group ref={groupRef} position={position}>
@@ -217,6 +233,7 @@ const CanvasNodeComponent = ({
             transition: "all 0.3s ease",
             transform: isActiveHovered ? "scale(1.15)" : "scale(1)",
             pointerEvents: "none",
+            opacity: 1, // Ensure visibility
           }}
         >
           <div

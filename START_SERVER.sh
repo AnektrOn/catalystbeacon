@@ -32,13 +32,46 @@ fi
 if [ -f "server.env" ]; then
     export $(grep -v '^#' server.env | xargs)
     echo "✅ Environment variables loaded"
+    
+    # Create PM2 ecosystem file to pass env vars
+    cat > ecosystem.config.js << 'ECOSYSTEM'
+module.exports = {
+  apps: [{
+    name: 'hcuniversity-app',
+    script: 'server.js',
+    env_file: './server.env',
+    env: {
+      NODE_ENV: 'production'
+    }
+  }]
+}
+ECOSYSTEM
+    echo "✅ PM2 ecosystem.config.js created"
+else
+    echo "⚠️  server.env not found, PM2 will use process.env"
 fi
 
-# Start PM2
+# Start PM2 with environment file
 echo ""
 echo "Starting PM2 server..."
-pm2 start server.js --name hcuniversity-app
+
+# Delete existing process if it exists
+pm2 delete hcuniversity-app 2>/dev/null || true
+
+# Load env vars into current shell
+if [ -f "server.env" ]; then
+    export $(grep -v '^#' server.env | xargs)
+    echo "✅ Environment variables exported to shell"
+    echo "   STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:0:7}... (length: ${#STRIPE_SECRET_KEY})"
+fi
+
+# Start PM2 - it will inherit env vars from shell, and server.js will also load from server.env
+pm2 start server.js --name hcuniversity-app --update-env
 pm2 save
+
+echo ""
+echo "📋 Verifying PM2 process..."
+pm2 describe hcuniversity-app | grep -E "(status|pid|pm2 env|exec cwd)" || true
 
 echo ""
 echo "✅ Server started!"

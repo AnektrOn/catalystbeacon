@@ -276,10 +276,10 @@ const CalendarTabMobile = () => {
               setCurrentDate(d);
             }
           }}
-          className="p-3 hover:bg-slate-700/50 rounded-xl transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+          className="p-3 hover:bg-ethereal-glass-hover rounded-ethereal transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
           aria-label="Previous"
         >
-          <ChevronLeft size={20} className="text-slate-300" />
+          <ChevronLeft size={20} className="text-ethereal-text" />
         </button>
 
         <div className="text-center">
@@ -288,22 +288,22 @@ const CalendarTabMobile = () => {
               <h2 className="text-2xl font-bold text-white">
                 {monthNames[currentDate.getMonth()]}
               </h2>
-              <p className="text-sm text-slate-400">{currentDate.getFullYear()}</p>
+              <p className="text-sm text-ethereal-text">{currentDate.getFullYear()}</p>
             </>
           ) : view === 'week' ? (
             <>
-              <h2 className="text-xl font-bold text-white">
+              <h2 className="text-xl font-bold text-ethereal-white">
                 {weekDays[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} –{' '}
                 {weekDays[6].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </h2>
-              <p className="text-sm text-slate-400">{weekDays[0].getFullYear()}</p>
+              <p className="text-sm text-ethereal-text">{weekDays[0].getFullYear()}</p>
             </>
           ) : (
             <>
-              <h2 className="text-xl font-bold text-white">
+              <h2 className="text-xl font-bold text-ethereal-white">
                 {selectedDay.toLocaleDateString('en-US', { weekday: 'long' })}
               </h2>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-ethereal-text">
                 {selectedDay.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
               </p>
             </>
@@ -326,22 +326,22 @@ const CalendarTabMobile = () => {
               setCurrentDate(d);
             }
           }}
-          className="p-3 hover:bg-slate-700/50 rounded-xl transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+          className="p-3 hover:bg-ethereal-glass-hover rounded-ethereal transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
           aria-label="Next"
         >
-          <ChevronRight size={20} className="text-slate-300" />
+          <ChevronRight size={20} className="text-ethereal-text" />
         </button>
       </div>
 
       {/* View Switcher */}
-      <div className="flex glass-effect rounded-2xl p-1.5 mb-6 shadow-lg border border-white/15">
+      <div className="flex bg-ethereal-glass backdrop-blur-ethereal rounded-ethereal p-1.5 mb-6 shadow-ethereal-base border border-ethereal">
         <button
           onClick={() => {
             setView('month');
             setSelectedDay(new Date());
           }}
-          className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all min-h-[44px] ${
-            view === 'month' ? 'text-white shadow-lg' : 'text-slate-400'
+          className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-ethereal text-sm font-semibold transition-all min-h-[44px] ${
+            view === 'month' ? 'text-ethereal-white shadow-ethereal-base' : 'text-ethereal-text'
           }`}
           style={view === 'month' ? { background: 'var(--gradient-primary)' } : {}}
         >
@@ -354,8 +354,8 @@ const CalendarTabMobile = () => {
             // Keep selection anchored to currentDate when switching views
             setSelectedDay(currentDate);
           }}
-          className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all min-h-[44px] ${
-            view === 'week' ? 'text-white shadow-lg' : 'text-slate-400'
+          className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-ethereal text-sm font-semibold transition-all min-h-[44px] ${
+            view === 'week' ? 'text-ethereal-white shadow-ethereal-base' : 'text-ethereal-text'
           }`}
           style={view === 'week' ? { background: 'var(--gradient-primary)' } : {}}
         >
@@ -367,8 +367,8 @@ const CalendarTabMobile = () => {
             setView('day');
             setSelectedDay(currentDate);
           }}
-          className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all min-h-[44px] ${
-            view === 'day' ? 'text-white shadow-lg' : 'text-slate-400'
+          className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-ethereal text-sm font-semibold transition-all min-h-[44px] ${
+            view === 'day' ? 'text-ethereal-white shadow-ethereal-base' : 'text-ethereal-text'
           }`}
           style={view === 'day' ? { background: 'var(--gradient-primary)' } : {}}
         >
@@ -379,9 +379,9 @@ const CalendarTabMobile = () => {
 
       {/* Calendar Body (changes based on view) */}
       {view === 'month' ? (
-        <div className="glass-effect rounded-3xl border border-white/15 overflow-hidden mb-6 shadow-2xl">
+        <div className="bg-ethereal-glass backdrop-blur-ethereal rounded-ethereal-lg border border-ethereal overflow-hidden mb-6 shadow-ethereal-elevated">
           {/* Day Headers */}
-          <div className="grid grid-cols-7 border-b border-white/10">
+          <div className="grid grid-cols-7 border-b border-ethereal">
             {dayNames.map(day => (
               <div key={day} className="p-2 text-center text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
                 {day}
@@ -407,8 +407,8 @@ const CalendarTabMobile = () => {
                     setModalDay(day);
                     setShowDayModal(true);
                   }}
-                  className={`aspect-square rounded-2xl p-1 flex flex-col items-center justify-start transition-all min-h-[44px] ${
-                    isToday ? 'text-white' : 'hover:bg-white/10'
+                  className={`aspect-square rounded-ethereal p-1 flex flex-col items-center justify-start transition-all min-h-[44px] ${
+                    isToday ? 'text-ethereal-white' : 'hover:bg-ethereal-glass-hover'
                   } ${isSelected && !isToday ? 'ring-2 ring-white/20' : ''}`}
                   style={isToday ? { background: 'var(--gradient-primary)' } : {}}
                 >
@@ -428,7 +428,7 @@ const CalendarTabMobile = () => {
           </div>
         </div>
       ) : view === 'week' ? (
-        <div className="glass-effect rounded-3xl border border-white/15 overflow-hidden mb-6 shadow-2xl">
+        <div className="bg-ethereal-glass backdrop-blur-ethereal rounded-ethereal-lg border border-ethereal overflow-hidden mb-6 shadow-ethereal-elevated">
           <div className="p-3 space-y-2">
             {weekDays.map((day) => {
               const dayEvents = getEventsForDate(day);
@@ -442,12 +442,12 @@ const CalendarTabMobile = () => {
                     setModalDay(day);
                     setShowDayModal(true);
                   }}
-                  className={`w-full flex items-center justify-between rounded-2xl px-4 py-3 transition-colors min-h-[56px] ${
+                  className={`w-full flex items-center justify-between rounded-ethereal px-4 py-3 transition-colors min-h-[56px] ${
                     isToday
-                      ? 'text-white'
+                      ? 'text-ethereal-white'
                       : isSelected
-                        ? 'bg-white/10 text-white'
-                        : 'hover:bg-white/10'
+                        ? 'bg-ethereal-glass-hover text-ethereal-white'
+                        : 'hover:bg-ethereal-glass-hover'
                   }`}
                   style={isToday ? { background: 'var(--gradient-primary)' } : {}}
                 >
@@ -469,7 +469,7 @@ const CalendarTabMobile = () => {
                         style={{ backgroundColor: event.completed ? 'var(--color-success, #10B981)' : event.color }}
                       />
                     ))}
-                    <span className="text-xs text-slate-300 min-w-[28px] text-right">
+                    <span className="text-xs text-ethereal-text min-w-[28px] text-right">
                       {dayEvents.length}
                     </span>
                   </div>
@@ -479,7 +479,7 @@ const CalendarTabMobile = () => {
           </div>
         </div>
       ) : (
-        <div className="glass-effect rounded-3xl border border-white/15 overflow-hidden mb-6 shadow-2xl">
+        <div className="bg-ethereal-glass backdrop-blur-ethereal rounded-ethereal-lg border border-ethereal overflow-hidden mb-6 shadow-ethereal-elevated">
           <div className="p-4">
             {selectedDayEvents.length === 0 ? (
               <div className="text-center py-10">
@@ -492,7 +492,7 @@ const CalendarTabMobile = () => {
                 {selectedDayEvents.map(event => (
                   <div
                     key={event.id}
-                    className="glass-effect rounded-2xl p-4 border border-white/10"
+                    className="bg-ethereal-glass backdrop-blur-ethereal rounded-ethereal p-4 border border-ethereal"
                   >
                     <div className="flex items-start gap-3">
                       <div
@@ -503,7 +503,7 @@ const CalendarTabMobile = () => {
                         <div className={`font-semibold text-white ${event.completed ? 'line-through opacity-60' : ''}`}>
                           {event.title}
                         </div>
-                        <div className="text-xs text-slate-400 mt-1">
+                        <div className="text-xs text-ethereal-text mt-1">
                           {event.type === 'habit' ? 'Habit' : 'Task'}
                         </div>
                       </div>
@@ -524,10 +524,10 @@ const CalendarTabMobile = () => {
         >
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <div 
-            className="relative w-full max-w-md glass-effect rounded-t-3xl shadow-2xl border-t border-white/15 max-h-[80vh] overflow-y-auto safe-area-bottom"
+            className="relative w-full max-w-md bg-ethereal-glass backdrop-blur-ethereal rounded-t-ethereal-lg shadow-ethereal-elevated border-t border-ethereal max-h-[80vh] overflow-y-auto safe-area-bottom"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="sticky top-0 border-b border-white/10 p-4 flex items-center justify-between">
+            <div className="sticky top-0 border-b border-ethereal p-4 flex items-center justify-between">
               <h3 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
                 {modalDay.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
               </h3>
@@ -550,7 +550,7 @@ const CalendarTabMobile = () => {
                   {getEventsForDate(modalDay).map(event => (
                     <div
                       key={event.id}
-                      className="glass-effect rounded-2xl p-4 border border-white/10"
+                      className="bg-ethereal-glass backdrop-blur-ethereal rounded-ethereal p-4 border border-ethereal"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -563,7 +563,7 @@ const CalendarTabMobile = () => {
                               {event.title}
                             </span>
                           </div>
-                          <div className="flex items-center space-x-4 text-xs text-slate-400">
+                          <div className="flex items-center space-x-4 text-xs text-ethereal-text">
                             <span className="text-yellow-400 font-semibold">+{event.xp_reward} XP</span>
                           </div>
                         </div>
@@ -572,7 +572,7 @@ const CalendarTabMobile = () => {
                             toggleCompletion(event.id);
                             setShowDayModal(false);
                           }}
-                          className={`ml-3 px-4 py-2 rounded-xl text-xs font-semibold transition-all min-h-[44px] ${
+                          className={`ml-3 px-4 py-2 rounded-ethereal text-xs font-semibold transition-all min-h-[44px] ${
                             event.completed
                               ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30'
                               : 'text-white'

@@ -31,13 +31,13 @@ const ConstellationNavigatorWidget = memo(({
     );
 
     return (
-        <div className="glass-panel-floating p-6 hover:shadow-xl transition-all duration-300">
+        <div className="glass-panel-floating p-6 hover:shadow-ethereal-hover transition-all duration-300">
             <div className="flex items-start justify-between mb-6">
                 <div>
-                    <div className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
+                    <div className="text-xs font-medium text-ethereal-text uppercase tracking-wider mb-2">
                         Constellation
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">
+                    <h3 className="text-xl font-semibold text-ethereal-white mb-1">
                         {currentConstellation.name}
                     </h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -45,7 +45,7 @@ const ConstellationNavigatorWidget = memo(({
                     </p>
                 </div>
                 <div 
-                    className="p-3 rounded-xl"
+                    className="p-3 rounded-ethereal"
                     style={{
                         backgroundColor: 'color-mix(in srgb, var(--color-secondary) 10%, transparent)',
                         color: 'var(--color-secondary)'
@@ -148,7 +148,7 @@ const ConstellationNavigatorWidget = memo(({
                     })}
                 </svg>
                 ) : (
-                    <div className="text-center text-gray-400 text-sm">
+                    <div className="text-center text-ethereal-text text-sm">
                         No courses available
                     </div>
                 )}
@@ -157,14 +157,14 @@ const ConstellationNavigatorWidget = memo(({
             {/* Progress */}
             <div className="mb-4">
                 <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                    <span className="text-xs font-medium text-ethereal-text">
                         {completedCount} of {totalCount} nodes completed
                     </span>
                     <span className="text-xs font-medium text-purple-500">
                         {progressPercentage.toFixed(0)}%
                     </span>
                 </div>
-                <div className="w-full h-2 bg-gray-200 dark:bg-gray-700/50 rounded-full overflow-hidden">
+                <div className="w-full h-2 bg-ethereal-glass/50 rounded-full overflow-hidden">
                     <div
                         className="h-full bg-gradient-to-r from-purple-400 to-purple-600 rounded-full transition-all duration-500"
                         style={{ width: `${progressPercentage}%` }}
@@ -175,7 +175,7 @@ const ConstellationNavigatorWidget = memo(({
             {/* Current Node */}
             {currentConstellation.nodes && currentConstellation.nodes.find(n => n.isCurrent) && (
                 <div 
-                    className="flex items-center justify-between p-3 rounded-lg border transition-all duration-300"
+                    className="flex items-center justify-between p-3 rounded-ethereal-sm border border-ethereal transition-all duration-300"
                     style={{
                         backgroundColor: 'color-mix(in srgb, var(--color-secondary) 10%, transparent)',
                         borderColor: 'color-mix(in srgb, var(--color-secondary) 20%, transparent)'
@@ -185,7 +185,7 @@ const ConstellationNavigatorWidget = memo(({
                         <div className="text-xs font-medium mb-1" style={{ color: 'var(--color-secondary)' }}>
                             Current Node
                         </div>
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        <div className="text-sm font-medium text-ethereal-white">
                             {currentConstellation.nodes.find(n => n.isCurrent).name}
                         </div>
                     </div>

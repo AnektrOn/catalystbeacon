@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import useSubscription from '../../hooks/useSubscription';
 import useRoadmapLessonTracking from '../../hooks/useRoadmapLessonTracking';
 import CompleteLessonModal from './CompleteLessonModal';
 import './LessonTracker.css';
@@ -16,9 +17,12 @@ const LessonTracker = ({
   lessonId,
   lessonTitle,
   masterschool,
-  enabled = true
+  enabled = true,
+  fromRoadmap = false,
+  returnUrl = null
 }) => {
   const { user } = useAuth();
+  const { isFreeUser } = useSubscription();
   const [showModal, setShowModal] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -61,6 +65,12 @@ const LessonTracker = ({
 
   const handleCompleteClick = () => {
     if (canComplete) {
+      console.log('🎓 LessonTracker: Opening modal with props:', {
+        fromRoadmap,
+        returnUrl,
+        masterschool,
+        lessonId
+      });
       setShowModal(true);
     }
   };
@@ -69,9 +79,11 @@ const LessonTracker = ({
     setShowModal(false);
   };
 
-  const handleLessonComplete = () => {
-    // Refresh page or update state as needed
-    window.location.reload();
+  const handleLessonComplete = (result) => {
+    // Update state after lesson completion
+    // Don't reload immediately - let the modal handle navigation
+    // The page will update naturally when user navigates
+    console.log('✅ LessonTracker: Lesson completed successfully', result);
   };
 
   if (!enabled || !user) return null;
@@ -136,7 +148,7 @@ const LessonTracker = ({
                 <div className="requirement__content">
                   <div className="requirement__label">Time Spent</div>
                   <div className="requirement__value">
-                    {formatTime(timeSpent)} / 3:00
+                    {formatTime(timeSpent)} / 2:00
                   </div>
                   {!minimumTimeMet && (
                     <div className="requirement__remaining">
@@ -182,7 +194,7 @@ const LessonTracker = ({
             {/* Hint */}
             {!canComplete && (
               <p className="lesson-tracker-panel__hint">
-                {!minimumTimeMet && !scrollComplete && '⏱️ Spend 3 minutes and scroll to the bottom'}
+                {!minimumTimeMet && !scrollComplete && '⏱️ Spend 2 minutes and scroll to the bottom'}
                 {!minimumTimeMet && scrollComplete && `⏱️ ${formatTime(timeRemaining)} remaining`}
                 {minimumTimeMet && !scrollComplete && '📜 Scroll to the bottom'}
               </p>
@@ -202,7 +214,17 @@ const LessonTracker = ({
         masterschool={masterschool}
         lessonTitle={lessonTitle}
         onComplete={handleLessonComplete}
+        fromRoadmap={fromRoadmap}
+        returnUrl={returnUrl}
+        isFreeUser={isFreeUser}
       />
+      {/* Debug: Log props passed to modal */}
+      {showModal && console.log('🎓 LessonTracker: Passing props to CompleteLessonModal', {
+        fromRoadmap,
+        returnUrl,
+        masterschool,
+        lessonId
+      })}
     </>
   );
 };

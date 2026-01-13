@@ -527,7 +527,7 @@ const HabitsTabCompact = () => {
           onClick={() => setActiveTab('personal')}
           className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
             activeTab === 'personal'
-              ? 'bg-white text-blue-600 shadow-sm'
+              ? 'bg-ethereal-glass text-blue-600 shadow-ethereal-base'
               : 'text-gray-600 hover:text-gray-900'
           }`}
         >
@@ -537,7 +537,7 @@ const HabitsTabCompact = () => {
           onClick={() => setActiveTab('library')}
           className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
             activeTab === 'library'
-              ? 'bg-white text-blue-600 shadow-sm'
+              ? 'bg-ethereal-glass text-blue-600 shadow-ethereal-base'
               : 'text-gray-600 hover:text-gray-900'
           }`}
         >
@@ -585,7 +585,7 @@ const HabitsTabCompact = () => {
                 const isCompletedToday = habit.completedDates.includes(new Date().toISOString().split('T')[0]);
                 
                 return (
-                  <div key={habit.id} className="bg-white rounded-lg shadow-sm border p-4">
+                  <div key={habit.id} className="bg-ethereal-glass rounded-ethereal shadow-ethereal-base border border-ethereal p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center">
                         <div 

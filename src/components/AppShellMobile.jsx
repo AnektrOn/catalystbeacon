@@ -332,6 +332,7 @@ const AppShellMobile = () => {
   const allBottomNavItems = [
     { icon: Home, label: 'Home', path: '/dashboard', restricted: false },
     { icon: Target, label: 'Mastery', path: '/mastery', restricted: false },
+    { icon: Map, label: 'Roadmap', path: '/roadmap/ignition', restricted: false },
     { icon: BookOpen, label: 'Courses', path: '/courses', restricted: true },
     { icon: Sparkles, label: 'Stellar', path: '/stellar-map', restricted: true },
     { icon: User, label: 'Profile', path: '/profile', restricted: true }
@@ -427,7 +428,7 @@ const AppShellMobile = () => {
 
       {/* Mobile Header */}
       <header className="fixed top-0 left-0 right-0 z-50 safe-area-top">
-        <div className="glass-header-browser flex items-center justify-between">
+        <div className="bg-ethereal-glass backdrop-blur-ethereal border-b border-ethereal flex items-center justify-between w-full rounded-none m-0 px-4 py-3 h-[56px] lg:w-[70%] lg:mx-auto lg:rounded-full lg:px-6 lg:py-2 lg:h-[60px]">
           {/* Left side - Menu button */}
           <button
             className="glass-icon-btn lg:hidden min-w-[44px] min-h-[44px]"
@@ -493,7 +494,7 @@ const AppShellMobile = () => {
                     onClick={() => setIsActionsMenuOpen(false)}
                   />
                   <div
-                    className="fixed glass-effect rounded-xl shadow-2xl border border-white/20 z-[100] overflow-visible"
+                    className="fixed bg-ethereal-glass backdrop-blur-ethereal rounded-ethereal shadow-ethereal-elevated border border-ethereal z-[100] overflow-visible"
                     style={{
                       top: `${actionsMenuPos.top}px`,
                       left: `${actionsMenuPos.left}px`,
@@ -513,7 +514,7 @@ const AppShellMobile = () => {
                           setIsActionsMenuOpen(false);
                           // TODO: Navigate to notifications
                         }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-900 dark:text-white hover:bg-white/10 transition-colors min-h-[44px]"
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-ethereal-text hover:bg-ethereal-glass-hover transition-colors min-h-[44px]"
                         aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ''}`}
                       >
                         <div className="relative">
@@ -534,7 +535,7 @@ const AppShellMobile = () => {
                           toggleTheme();
                           setIsActionsMenuOpen(false);
                         }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-900 dark:text-white hover:bg-white/10 transition-colors min-h-[44px]"
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-ethereal-text hover:bg-ethereal-glass-hover transition-colors min-h-[44px]"
                         aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
                       >
                         {isDarkMode ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
@@ -575,7 +576,7 @@ const AppShellMobile = () => {
 
       {/* Desktop Sidebar - Only show on large screens */}
       <aside className="hidden lg:block fixed left-4 top-20 bottom-4 z-40 w-24">
-        <div className="glass-sidebar-panel">
+        <div className="bg-ethereal-glass border-r border-ethereal backdrop-blur-ethereal rounded-ethereal shadow-ethereal-base h-full flex flex-col py-4 px-3 m-4">
           {/* Top section - Toggle and active indicator */}
           <div className="flex flex-col items-center pt-6 pb-4">
             {/* Toggle button */}
@@ -650,13 +651,13 @@ const AppShellMobile = () => {
           className="fixed inset-0 z-50 lg:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         >
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
           <div
-            className="absolute top-0 left-0 bottom-0 w-80 max-w-[80vw] glass-effect border border-white/20 shadow-2xl flex flex-col"
+            className="absolute top-0 left-0 bottom-0 w-80 max-w-[80vw] bg-ethereal-glass backdrop-blur-ethereal border-r border-ethereal shadow-ethereal-elevated flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Menu Header */}
-            <div className="p-6 border-b border-white/15">
+            <div className="p-6 border-b border-ethereal">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Menu</h2>
                 <button
@@ -671,7 +672,7 @@ const AppShellMobile = () => {
               {/* User info */}
               {profile && (
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3 p-3 glass-effect rounded-xl border border-white/15">
+                  <div className="flex items-center gap-3 p-3 bg-ethereal-glass backdrop-blur-ethereal rounded-ethereal-sm border border-ethereal">
                     {profile.avatar_url ? (
                       <img
                         src={profile.avatar_url}
@@ -679,7 +680,7 @@ const AppShellMobile = () => {
                         className="w-10 h-10 rounded-full"
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm" style={{ background: 'var(--gradient-primary)' }}>
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-ethereal-white font-semibold text-sm" style={{ background: 'var(--gradient-primary)' }}>
                         {profile?.full_name ? profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : <User size={20} />}
                       </div>
                     )}
@@ -693,7 +694,7 @@ const AppShellMobile = () => {
                     </div>
                   </div>
                   {/* XP Display */}
-                  <div className="flex items-center gap-2 px-3 py-2 glass-effect rounded-xl border border-white/15">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-ethereal-glass backdrop-blur-ethereal rounded-ethereal-sm border border-ethereal">
                     <Zap size={16} style={{ color: 'var(--color-primary)' }} />
                     <div className="flex-1">
                       <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Experience Points</p>
@@ -719,9 +720,9 @@ const AppShellMobile = () => {
                   <button
                     key={item.path}
                     onClick={() => handleNavigation(item.path)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 min-h-[44px] ${isActive
-                      ? 'text-white shadow-lg'
-                      : 'hover:bg-white/10'
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-ethereal-sm text-sm font-medium transition-all duration-200 min-h-[44px] ${isActive
+                      ? 'text-ethereal-white shadow-ethereal-base bg-ethereal-violet/20'
+                      : 'hover:bg-ethereal-glass-hover text-ethereal-text'
                       }`}
                     style={isActive ? { background: 'var(--gradient-primary)' } : {}}
                     aria-label={`Navigate to ${item.label}`}
@@ -735,7 +736,7 @@ const AppShellMobile = () => {
             </nav>
 
             {/* Menu Footer - Profile, Settings, Sign Out */}
-            <div className="p-4 border-t border-white/15 space-y-2">
+            <div className="p-4 border-t border-ethereal space-y-2">
               {sidebarItems.filter(item => item.path === '/profile' || item.path === '/settings').map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.path;
@@ -744,9 +745,9 @@ const AppShellMobile = () => {
                   <button
                     key={item.path}
                     onClick={() => handleNavigation(item.path)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 min-h-[44px] ${isActive
-                      ? 'text-white shadow-lg'
-                      : 'hover:bg-white/10'
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-ethereal-sm text-sm font-medium transition-all duration-200 min-h-[44px] ${isActive
+                      ? 'text-ethereal-white shadow-ethereal-base bg-ethereal-violet/20'
+                      : 'hover:bg-ethereal-glass-hover text-ethereal-text'
                       }`}
                     style={isActive ? { background: 'var(--gradient-primary)' } : {}}
                     aria-label={`Navigate to ${item.label}`}
@@ -759,7 +760,7 @@ const AppShellMobile = () => {
               })}
               <button
                 onClick={handleSignOut}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-all duration-200 min-h-[44px]"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-ethereal-sm text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-all duration-200 min-h-[44px]"
                 aria-label="Sign out of your account"
               >
                 <LogOut size={20} aria-hidden="true" className="flex-shrink-0" />
@@ -773,28 +774,29 @@ const AppShellMobile = () => {
       {/* Main Content Area */}
       <main className="fixed lg:left-32 left-0 top-[52px] lg:top-20 right-0 bottom-[70px] lg:bottom-4 z-30 lg:right-4"
         style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
-        <div className="glass-main-panel h-full overflow-auto">
+        <div className="bg-ethereal-glass backdrop-blur-ethereal border border-ethereal rounded-2xl shadow-ethereal-base h-full overflow-auto m-0 lg:m-4 p-0">
           <Outlet />
         </div>
       </main>
 
       {/* Mobile Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden safe-area-bottom mobile-bottom-nav">
-        <div className="glass-effect mx-4 mb-4 rounded-2xl border border-white/20 shadow-2xl backdrop-blur-xl">
+        <div className="bg-ethereal-glass backdrop-blur-ethereal mx-4 mb-4 rounded-2xl border border-ethereal shadow-ethereal-elevated">
           <div className="flex items-center justify-around px-2 py-3">
             {bottomNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path ||
                 (item.path === '/mastery' && location.pathname.startsWith('/mastery')) ||
-                (item.path === '/courses' && location.pathname.startsWith('/courses'));
+                (item.path === '/courses' && location.pathname.startsWith('/courses')) ||
+                (item.path === '/roadmap/ignition' && location.pathname.startsWith('/roadmap'));
 
               return (
                 <button
                   key={item.path}
                   onClick={() => handleNavigation(item.path)}
-                  className={`mobile-nav-item flex flex-col items-center justify-center px-3 py-2 rounded-xl min-w-[60px] min-h-[60px] transition-all duration-200 ${isActive
-                    ? 'scale-110'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                  className={`mobile-nav-item flex flex-col items-center justify-center px-3 py-2 rounded-ethereal-sm min-w-[60px] min-h-[60px] transition-all duration-200 ${isActive
+                    ? 'scale-110 text-ethereal-cyan'
+                    : 'text-ethereal-text hover:text-ethereal-white'
                     }`}
                   style={isActive ? { color: 'var(--color-primary)' } : {}}
                   aria-label={item.label}

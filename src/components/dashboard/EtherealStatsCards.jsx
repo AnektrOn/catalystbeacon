@@ -25,7 +25,7 @@ const EtherealStatsCards = ({
       value: streakDisplay,
       subtext: 'Harmonic Streak',
       icon: Flame,
-      color: '#fb923c', // Orange/Gold
+      color: 'var(--ethereal-violet)', // Use Ethereal Violet
       delay: '0s'
     },
     {
@@ -34,7 +34,7 @@ const EtherealStatsCards = ({
       value: lessonsDisplay,
       subtext: 'Modules Integrated',
       icon: Brain,
-      color: '#38bdf8', // Sky Blue
+      color: 'var(--ethereal-cyan)', // Use Ethereal Cyan
       delay: '0.1s'
     },
     {
@@ -43,7 +43,7 @@ const EtherealStatsCards = ({
       value: learningTimeDisplay,
       subtext: 'Neural Precision',
       icon: Activity,
-      color: '#34d399', // Emerald
+      color: 'var(--ethereal-cyan)', // Use Ethereal Cyan
       delay: '0.2s'
     },
     {
@@ -52,7 +52,7 @@ const EtherealStatsCards = ({
       value: achievementsDisplay,
       subtext: 'Current Plane',
       icon: Crown,
-      color: '#a78bfa', // Violet
+      color: 'var(--ethereal-violet)', // Use Ethereal Violet
       delay: '0.3s'
     }
   ]
@@ -63,8 +63,13 @@ const EtherealStatsCards = ({
     .ethereal-stats-wrapper {
       width: 100%;
       box-sizing: border-box;
-      margin-top: 16px;
+      margin-top: 0;
       display: block;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
     }
 
     /* Desktop: Grid Layout */
@@ -74,26 +79,34 @@ const EtherealStatsCards = ({
       gap: 12px;
       width: 100%;
       font-family: 'Rajdhani', sans-serif;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      padding: 0;
+      margin: 0;
     }
 
     .stat-card {
       position: relative;
-      background: rgba(8, 8, 12, 0.6);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 16px;
-      padding: 16px;
+      background: var(--ethereal-bg-glass);
+      backdrop-filter: blur(var(--ethereal-card-blur));
+      -webkit-backdrop-filter: blur(var(--ethereal-card-blur));
+      border: 1px solid var(--ethereal-border);
+      border-radius: var(--ethereal-card-radius-small);
+      padding: 24px;
       overflow: hidden;
       transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      justify-content: center;
-      gap: 10px;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 12px;
+      align-items: center;
+      height: 100%;
       min-height: 120px;
       width: 100%;
       box-sizing: border-box;
+      box-shadow: var(--ethereal-shadow-base);
     }
 
     /* Inner Glow Gradient */
@@ -109,18 +122,23 @@ const EtherealStatsCards = ({
 
     /* Icon Container */
     .icon-box {
-      width: 32px;
-      height: 32px;
+      width: 36px;
+      height: 36px;
       border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: var(--ethereal-bg-glass);
+      border: 1px solid var(--ethereal-border);
       color: var(--card-color);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       transition: all 0.3s ease;
       flex-shrink: 0; /* Prevent icon squishing */
+    }
+    
+    .icon-box svg {
+      width: 18px;
+      height: 18px;
     }
 
     /* Text */
@@ -129,14 +147,17 @@ const EtherealStatsCards = ({
       flex-direction: column;
       width: 100%;
       min-width: 0; /* Important for flex child truncation */
+      gap: 6px;
+      align-items: flex-start;
     }
 
     .stat-label {
       font-size: 10px;
       letter-spacing: 1px;
       text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.5);
-      margin-bottom: 2px;
+      color: var(--ethereal-text);
+      opacity: 0.7;
+      margin-bottom: 0;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -144,20 +165,24 @@ const EtherealStatsCards = ({
     }
 
     .stat-value {
-      font-size: 20px;
-      font-weight: 700;
-      color: #ffffff;
-      line-height: 1.1;
+      font-size: 42px;
+      font-weight: 800;
+      color: var(--ethereal-white);
+      line-height: 1;
       text-shadow: 0 0 15px rgba(0,0,0,0.5);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      letter-spacing: -0.02em;
+      margin: 0;
+      font-family: 'Cinzel', serif;
     }
 
     .stat-subtext {
-      font-size: 10px;
-      color: rgba(255, 255, 255, 0.3);
-      margin-top: 2px;
+      font-size: 11px;
+      color: var(--ethereal-text);
+      opacity: 0.6;
+      margin-top: 0;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -177,33 +202,35 @@ const EtherealStatsCards = ({
       .stat-card {
         width: 100%;
         min-width: 0; /* Crucial: allows grid item to shrink smaller than its content */
-        padding: 10px 2px;
+        padding: 14px;
         min-height: auto; 
-        display: flex;
-        flex-direction: column;
-        align-items: center; 
-        justify-content: center;
-        text-align: center;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 8px;
+        align-items: center;
+        text-align: left;
         border-radius: 12px;
-        gap: 4px;
+        height: 100%;
       }
 
       .icon-box {
-        width: 24px;
-        height: 24px;
+        width: 28px;
+        height: 28px;
         border-radius: 6px;
         margin-bottom: 0;
+        flex-shrink: 0;
       }
       
       .icon-box svg {
-        width: 12px;
-        height: 12px;
+        width: 14px;
+        height: 14px;
       }
 
       .stat-info {
-        align-items: center; 
+        align-items: flex-start; 
         width: 100%;
-        gap: 1px;
+        gap: 4px;
+        min-width: 0;
       }
 
       .stat-label {
@@ -216,10 +243,12 @@ const EtherealStatsCards = ({
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        
       }
 
       .stat-value {
-        font-size: 13px; /* Slightly smaller to fit */
+        font-size: 28px;
+        font-weight: 800;
         width: 100%;
         text-align: center;
         white-space: nowrap;
@@ -236,9 +265,9 @@ const EtherealStatsCards = ({
     @media (min-width: 769px) {
       .stat-card:hover {
         transform: translateY(-4px);
-        background: rgba(20, 20, 25, 0.8);
-        border-color: rgba(255, 255, 255, 0.2);
-        box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
+        background: var(--ethereal-bg-hover);
+        border-color: var(--ethereal-border-hover);
+        box-shadow: var(--ethereal-shadow-hover);
       }
       .stat-card:hover .icon-box {
         background: var(--card-color);

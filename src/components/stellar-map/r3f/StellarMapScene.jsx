@@ -16,6 +16,7 @@ import {
   calculateFamilyPlacementRadius,
   getAngularDirection
 } from '../../../utils/stellarMapPositioning';
+// XP filtering removed - all nodes are always visible
 
 const FAMILY_HALO_COLORS = {
   "Veil Piercers": 0x301934,
@@ -101,17 +102,22 @@ function SceneContent({
     }
   });
 
+  // XP filtering removed - all nodes are always visible
+
   const sceneElements = useMemo(() => {
     if (!hierarchyData || Object.keys(hierarchyData).length === 0) {
       if (process.env.NODE_ENV === 'development') {
         console.warn('[StellarMapScene] No hierarchyData or empty hierarchyData');
       }
-      return null;
+      return [];
     }
 
     if (process.env.NODE_ENV === 'development') {
       console.log('[StellarMapScene] Rendering nodes, hierarchyData keys:', Object.keys(hierarchyData));
-      console.log('[StellarMapScene] hierarchyData:', hierarchyData);
+      const totalNodesInData = Object.values(hierarchyData).reduce((sum, constellations) => 
+        sum + Object.values(constellations).reduce((s, nodes) => s + (nodes?.length || 0), 0), 0
+      );
+      console.log('[StellarMapScene] Total nodes in hierarchyData:', totalNodesInData);
     }
 
     const elements = [];
@@ -196,7 +202,7 @@ function SceneContent({
         //   );
         // }
 
-        // Render subnodes - All nodes visible
+        // Render subnodes - All nodes visible (no XP filtering)
         const nodePositions = [];
         nodes.forEach((node, nodeIndex) => {
           const nodePos = positionSubnodeMetatron(
@@ -209,7 +215,7 @@ function SceneContent({
           const nodePosArray = [nodePos.x, nodePos.y, nodePos.z];
           nodePositions.push(nodePosArray);
           
-          // Store node position and difficulty for fog overlay
+          // Store node position and difficulty
           nodePositionsRef.current[node.id] = nodePosArray;
           nodeDifficultiesRef.current[node.id] = node.difficulty || 0;
 
@@ -304,6 +310,21 @@ function SceneContent({
     
     return elements;
   }, [hierarchyData, showWhiteLines, onNodeHover, onNodeClick, hoveredNodeId, onConstellationCentersReady, onNodePositionsReady]);
+
+  // Debug: Log when sceneElements changes
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      if (sceneElements === null) {
+        console.warn('[StellarMapScene] sceneElements is null - no data to render');
+      } else if (Array.isArray(sceneElements)) {
+        console.log('[StellarMapScene] sceneElements is array with length:', sceneElements.length);
+        const nodeCount = sceneElements.filter(el => el?.key?.startsWith('node-')).length;
+        console.log('[StellarMapScene] Number of node elements:', nodeCount);
+      } else {
+        console.warn('[StellarMapScene] sceneElements is not null or array:', typeof sceneElements, sceneElements);
+      }
+    }
+  }, [sceneElements]);
 
   return (
     <>
@@ -424,11 +445,21 @@ export function StellarMapScene({
       dpr={[0.5, 1.0]}
       performance={{ min: 0.3 }}
       frameloop="always"
-      style={{ background: 'transparent' }}
+      style={{ 
+        background: 'transparent',
+        pointerEvents: 'auto',
+        position: 'relative',
+        zIndex: 1
+      }}
       onCreated={({ gl }) => {
+        // Only capture pointer events on the canvas itself, not the entire container
         gl.domElement.style.pointerEvents = "auto"
         // Aggressive optimization
         gl.setPixelRatio(Math.min(window.devicePixelRatio, 1.0))
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[StellarMapScene] Canvas created, gl.domElement:', gl.domElement);
+        }
       }}
     >
       <OrbitControls

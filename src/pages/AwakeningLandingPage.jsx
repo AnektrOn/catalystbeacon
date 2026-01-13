@@ -17,7 +17,7 @@ import {
 
 // Logo path - production uses /assets/Logo uni.png
 // For local development, we'll try the production path first, then fallback to hc-logo.svg
-const LogoUni = '/assets/Logo uni.png';
+const LogoUni = '/hc-logo.svg';
 
 /* --- INTERNAL COMPONENT: ETHEREAL CARD (Matching XPCircleWidget V4) --- */
 const NeomorphicCard = ({ 

@@ -343,7 +343,7 @@ const ToolboxTabRobust = () => {
           onClick={() => setActiveTab('library')}
           className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
             activeTab === 'library'
-              ? 'bg-white text-blue-600 shadow-sm'
+              ? 'bg-ethereal-glass text-blue-600 shadow-ethereal-base'
               : 'text-gray-600 hover:text-gray-900'
           }`}
         >
@@ -353,7 +353,7 @@ const ToolboxTabRobust = () => {
           onClick={() => setActiveTab('my-tools')}
           className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
             activeTab === 'my-tools'
-              ? 'bg-white text-blue-600 shadow-sm'
+              ? 'bg-ethereal-glass text-blue-600 shadow-ethereal-base'
               : 'text-gray-600 hover:text-gray-900'
           }`}
         >
@@ -376,7 +376,7 @@ const ToolboxTabRobust = () => {
               const isInUserToolbox = userToolbox.some(ut => ut.toolbox_item_id === tool.id);
               
               return (
-                <div key={tool.id} className="bg-white rounded-lg shadow-sm border p-6">
+                <div key={tool.id} className="bg-ethereal-glass rounded-ethereal shadow-ethereal-base border border-ethereal p-6">
                   <div className="flex items-start justify-between">
                     <div className="flex items-start">
                       <div 
@@ -434,7 +434,7 @@ const ToolboxTabRobust = () => {
           ) : (
             <div className="grid gap-4">
               {userToolbox.map((tool) => (
-                <div key={tool.id} className="bg-white rounded-lg shadow-sm border p-6">
+                <div key={tool.id} className="bg-ethereal-glass rounded-ethereal shadow-ethereal-base border border-ethereal p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-start">
                       <div 
@@ -504,7 +504,7 @@ const ToolboxTabRobust = () => {
       {/* Convert to Habit Modal */}
       {showConvertModal && selectedTool && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+          <div className="bg-ethereal-glass rounded-ethereal border border-ethereal p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold mb-4">Convert to Habit</h3>
             <p className="text-gray-600 mb-4">
               Convert "{selectedTool.title}" into a trackable habit?

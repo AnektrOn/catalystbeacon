@@ -330,11 +330,11 @@ const HabitsTabMobile = () => {
   return (
     <div className="pb-8">
       {/* Tab Switcher */}
-      <div className="flex bg-slate-800/60 backdrop-blur-md rounded-2xl p-1.5 mb-6 shadow-xl">
+      <div className="flex bg-ethereal-glass backdrop-blur-ethereal rounded-ethereal p-1.5 mb-6 shadow-ethereal-base">
         <button
           onClick={() => setActiveTab('my-habits')}
           className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all min-h-[48px] ${
-            activeTab === 'my-habits' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400'
+            activeTab === 'my-habits' ? 'bg-indigo-600 text-ethereal-white shadow-ethereal-base' : 'text-ethereal-text'
           }`}
         >
           <Target size={18}  aria-hidden="true"/>
@@ -343,7 +343,7 @@ const HabitsTabMobile = () => {
         <button
           onClick={() => setActiveTab('library')}
           className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all min-h-[48px] ${
-            activeTab === 'library' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400'
+            activeTab === 'library' ? 'bg-indigo-600 text-ethereal-white shadow-ethereal-base' : 'text-ethereal-text'
           }`}
         >
           <Plus size={18}  aria-hidden="true"/>
@@ -355,15 +355,15 @@ const HabitsTabMobile = () => {
       {activeTab === 'my-habits' ? (
         <div className="space-y-4">
           {!calendarVisibilitySupported && (
-            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-4 text-sm text-yellow-100">
+            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-ethereal p-4 text-sm text-yellow-100">
               <strong>Calendar visibility toggle is disabled:</strong> your database is missing
               <code> show_on_calendar</code>. Run <code>ADD_CALENDAR_VISIBILITY_COLUMN.sql</code> in Supabase, then refresh.
             </div>
           )}
           {personalHabits.length === 0 ? (
             <div className="text-center py-12">
-              <Target size={48} className="mx-auto mb-4 text-slate-600"  aria-hidden="true"/>
-              <p className="text-slate-400 mb-4">No habits yet</p>
+              <Target size={48} className="mx-auto mb-4 text-ethereal-text"  aria-hidden="true"/>
+              <p className="text-ethereal-text mb-4">No habits yet</p>
               <button
                 onClick={() => setActiveTab('library')}
                 className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-indigo-500 transition-all min-h-[48px]"
@@ -375,13 +375,13 @@ const HabitsTabMobile = () => {
             personalHabits.map(habit => (
               <div
                 key={habit.id}
-                className="bg-slate-800/50 backdrop-blur-md rounded-2xl p-5 border border-slate-700/30 shadow-xl"
+                className="bg-ethereal-glass backdrop-blur-ethereal rounded-ethereal p-5 border border-ethereal shadow-ethereal-base"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
-                    <h3 className="text-lg font-bold text-white mb-1">{habit.title}</h3>
+                    <h3 className="text-lg font-bold text-ethereal-white mb-1">{habit.title}</h3>
                     {habit.description && (
-                      <p className="text-sm text-slate-400">{habit.description}</p>
+                      <p className="text-sm text-ethereal-text">{habit.description}</p>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
@@ -397,7 +397,7 @@ const HabitsTabMobile = () => {
                       className={`p-2 rounded-lg transition-all min-w-[44px] min-h-[44px] flex items-center justify-center ${
                         habit.show_on_calendar !== false
                           ? 'bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30'
-                          : 'bg-slate-700/50 text-slate-400 hover:bg-slate-700/70'
+                            : 'bg-ethereal-glass/50 text-ethereal-text hover:bg-ethereal-glass-hover'
                       } ${!calendarVisibilitySupported ? 'opacity-50 cursor-not-allowed' : ''}`}
                       title={habit.show_on_calendar !== false ? 'Hide from calendar' : 'Show on calendar'}
                     >
@@ -414,7 +414,7 @@ const HabitsTabMobile = () => {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <div className="text-sm text-slate-400">
+                  <div className="text-sm text-ethereal-text">
                     <span className="text-yellow-400 font-semibold">+{habit.xp_reward} XP</span>
                     <span className="mx-2">•</span>
                     <span>{habit.frequency_type}</span>
@@ -439,21 +439,21 @@ const HabitsTabMobile = () => {
         <div className="space-y-4">
           {habitsLibrary.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-slate-400">No habits in library</p>
+              <p className="text-ethereal-text">No habits in library</p>
             </div>
           ) : (
             habitsLibrary.map(habit => (
               <div
                 key={habit.id}
-                className="bg-slate-800/50 backdrop-blur-md rounded-2xl p-5 border border-slate-700/30 shadow-xl"
+                className="bg-ethereal-glass backdrop-blur-ethereal rounded-ethereal p-5 border border-ethereal shadow-ethereal-base"
               >
-                <h3 className="text-lg font-bold text-white mb-2">{habit.title}</h3>
-                {habit.description && (
-                  <p className="text-sm text-slate-400 mb-4">{habit.description}</p>
-                )}
+                <h3 className="text-lg font-bold text-ethereal-white mb-2">{habit.title}</h3>
+                  {habit.description && (
+                    <p className="text-sm text-ethereal-text mb-4">{habit.description}</p>
+                  )}
                 
                 <div className="flex items-center justify-between">
-                  <div className="text-sm text-slate-400">
+                  <div className="text-sm text-ethereal-text">
                     <span className="text-yellow-400 font-semibold">+{habit.xp_reward} XP</span>
                   </div>
                   

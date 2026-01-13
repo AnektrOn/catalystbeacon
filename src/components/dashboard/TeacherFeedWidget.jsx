@@ -32,10 +32,10 @@ const TeacherFeedWidget = memo(({ posts = [] }) => {
         <div className="glass-panel-floating p-6">
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">
+                    <h3 className="text-xl font-semibold text-ethereal-white mb-1">
                         The Wayless Path
                     </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-ethereal-text">
                         Wisdom from the teachers
                     </p>
                 </div>
@@ -59,7 +59,7 @@ const TeacherFeedWidget = memo(({ posts = [] }) => {
             {/* Posts List */}
             <div className="space-y-4 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
                 {displayPosts.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    <div className="text-center py-8 text-ethereal-text">
                         <BookOpen size={32} className="mx-auto mb-3 opacity-50" />
                         <p className="text-sm">No teacher posts yet.</p>
                         <p className="text-xs mt-1 opacity-75">Check back soon for wisdom from the teachers!</p>
@@ -68,7 +68,7 @@ const TeacherFeedWidget = memo(({ posts = [] }) => {
                     displayPosts.map((post) => (
                         <div
                             key={post.id}
-                            className="p-4 rounded-lg bg-white/50 dark:bg-black/20 border border-gray-200 dark:border-white/10 hover:bg-white/70 dark:hover:bg-black/30 transition-all duration-300 cursor-pointer group"
+                            className="p-4 rounded-ethereal bg-ethereal-glass border border-ethereal hover:bg-ethereal-glass-hover hover:border-ethereal-hover transition-all duration-300 cursor-pointer group"
                         >
                             <div className="flex items-start gap-3">
                                 <div 
@@ -83,7 +83,7 @@ const TeacherFeedWidget = memo(({ posts = [] }) => {
 
                                 <div className="flex-1 min-w-0">
                                     <h4 
-                                        className="text-base font-medium text-gray-900 dark:text-white mb-1 transition-colors"
+                                        className="text-base font-medium text-ethereal-white mb-1 transition-colors"
                                         style={{
                                             color: 'inherit'
                                         }}
@@ -96,7 +96,7 @@ const TeacherFeedWidget = memo(({ posts = [] }) => {
                                     >
                                         "{post.title}"
                                     </h4>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">
+                                    <p className="text-sm text-ethereal-text mb-2 line-clamp-2">
                                         {post.excerpt}
                                     </p>
                                     <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">

@@ -377,7 +377,7 @@ const HabitsTab = () => {
           <div className="text-sm text-gray-600">{error}</div>
           <button 
             onClick={() => window.location.reload()} 
-            className="mt-4 px-4 py-2 text-white rounded transition-colors"
+            className="mt-4 px-4 py-2 text-ethereal-white rounded-ethereal-sm transition-colors"
             style={{ background: 'var(--gradient-primary)' }}
             onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
             onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
@@ -518,20 +518,20 @@ const HabitsTab = () => {
             {personalHabits.map(habit => {
               const IconComponent = habit.icon;
               return (
-                <div key={habit.id} className="rounded-lg p-4 shadow-sm w-80 glass-effect" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 80%, transparent)' }}>
+                <div key={habit.id} className="rounded-ethereal p-4 shadow-ethereal-base w-80 glass-effect" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 80%, transparent)' }}>
                   <div className="flex items-center justify-between">
                     {/* Left Section - Icon, Title, and Completion Button */}
                     <div className="flex items-center space-x-3">
-                      <IconComponent size={16} className="text-white" strokeWidth={1.5} />
-                      <h3 className="text-sm font-semibold text-white">
+                      <IconComponent size={16} className="text-ethereal-white" strokeWidth={1.5} />
+                      <h3 className="text-sm font-semibold text-ethereal-white">
                         {habit.title}
                       </h3>
                       <button
                         onClick={() => completeHabit(habit.id)}
                         className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
                           habit.completed_today
-                            ? 'text-white'
-                            : 'border-2 border-white text-white hover:bg-white'
+                            ? 'text-ethereal-white'
+                            : 'border-2 border-ethereal text-ethereal-text hover:bg-ethereal-glass-hover hover:text-ethereal-white'
                         }`}
                         style={habit.completed_today ? { background: 'var(--gradient-primary)' } : {}}
                         onMouseEnter={!habit.completed_today ? (e) => e.currentTarget.style.color = 'var(--color-primary)' : undefined}
@@ -547,8 +547,8 @@ const HabitsTab = () => {
                     <div className="flex items-center space-x-3">
                       {/* Streak Counter */}
                       <div className="flex items-center space-x-1">
-                        <Flame size={14} className="text-white" strokeWidth={1.5} />
-                        <span className="text-sm font-medium text-white">
+                        <Flame size={14} className="text-ethereal-white" strokeWidth={1.5} />
+                        <span className="text-sm font-medium text-ethereal-white">
                           {habit.streak}
                         </span>
                       </div>

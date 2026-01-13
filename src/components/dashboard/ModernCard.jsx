@@ -69,7 +69,7 @@ const ModernCard = ({
       font-family: var(--font-ethereal-body);
       
       /* Layout & Box Model */
-      padding: var(--ethereal-card-padding-medium);
+      padding: 24px;
       position: relative;
       width: 100%;
       max-width: 100%;
@@ -136,7 +136,7 @@ const ModernCard = ({
     /* Responsive - Uses global variables */
     @media (max-width: 768px) {
       .modern-card {
-        padding: var(--ethereal-card-padding-small);
+        padding: 24px;
         border-radius: var(--ethereal-card-radius-small);
       }
     }

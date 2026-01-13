@@ -41,8 +41,9 @@ const ProtectedSubscriptionRoute = ({ children, requiredFeature = null }) => {
     return children
   }
 
-  // Show loading while checking auth (but only if not admin)
-  if (loading && !isAdminUser) {
+  // Show loading while checking auth (but only if not admin and pas de profile)
+  // Ne pas bloquer si on a déjà un profile (évite rechargement lors de TOKEN_REFRESHED)
+  if (loading && !isAdminUser && !profile) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
@@ -68,8 +69,10 @@ const ProtectedSubscriptionRoute = ({ children, requiredFeature = null }) => {
     return <Navigate to={redirectUrl} replace />
   }
   
-  // If still loading, show loading state
-  if (loading || !profile) {
+  // If still loading AND no profile, show loading state
+  // Si on a déjà un profile, on ignore le loading (évite rechargement lors de TOKEN_REFRESHED)
+  if (!profile) {
+    // Seulement bloquer si vraiment pas de profile
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">

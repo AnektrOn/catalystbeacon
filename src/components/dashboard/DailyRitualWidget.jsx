@@ -6,7 +6,7 @@ const DailyRitualWidget = memo(({ completed = false, streak = 0, xpReward = 50 }
         <div className="glass-card-premium p-6 hover:scale-[1.02] transition-transform duration-300">
             <div className="flex items-start justify-between mb-4">
                 <div 
-                    className="p-3 rounded-xl transition-colors"
+                    className="p-3 rounded-ethereal transition-colors"
                     style={completed ? {
                         backgroundColor: 'color-mix(in srgb, var(--color-success) 10%, transparent)',
                         color: 'var(--color-success)'
@@ -40,7 +40,7 @@ const DailyRitualWidget = memo(({ completed = false, streak = 0, xpReward = 50 }
 
             {!completed ? (
                 <button 
-                    className="w-full py-2 px-4 rounded-lg text-white font-medium text-sm transition-all duration-300 shadow-md hover:shadow-lg"
+                    className="w-full py-2 px-4 rounded-ethereal-sm text-ethereal-white font-medium text-sm transition-all duration-300 shadow-ethereal-base hover:shadow-ethereal-hover"
                     style={{ 
                         background: 'var(--gradient-primary)',
                         backgroundColor: 'var(--color-success)'
@@ -57,7 +57,7 @@ const DailyRitualWidget = memo(({ completed = false, streak = 0, xpReward = 50 }
                 </button>
             ) : (
                 <div 
-                    className="w-full py-2 px-4 rounded-lg font-medium text-sm text-center border transition-all duration-300"
+                    className="w-full py-2 px-4 rounded-ethereal-sm font-medium text-sm text-center border border-ethereal transition-all duration-300"
                     style={{
                         backgroundColor: 'color-mix(in srgb, var(--color-success) 10%, transparent)',
                         color: 'var(--color-success)',

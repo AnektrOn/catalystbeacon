@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { usePageTransition } from '../contexts/PageTransitionContext';
+import useSubscription from '../hooks/useSubscription';
 import courseService from '../services/courseService';
 import roadmapService from '../services/roadmapService';
 import { supabase } from '../lib/supabaseClient';
 import QuizComponent from '../components/QuizComponent';
 import LessonTracker from '../components/Roadmap/LessonTracker';
+import CompleteLessonModal from '../components/Roadmap/CompleteLessonModal';
 import { useRoadmapLessonTracking } from '../hooks/useRoadmapLessonTracking';
 import {
   ArrowLeft,
@@ -25,6 +28,8 @@ const CoursePlayerPage = () => {
   const { courseId, chapterNumber, lessonNumber } = useParams();
   const navigate = useNavigate();
   const { user, fetchProfile } = useAuth();
+  const { startTransition, endTransition } = usePageTransition();
+  const { isFreeUser } = useSubscription();
   const [course, setCourse] = useState(null);
   const [courseStructure, setCourseStructure] = useState(null);
   const [currentLesson, setCurrentLesson] = useState(null);
@@ -41,6 +46,7 @@ const CoursePlayerPage = () => {
   const [quizData, setQuizData] = useState(null);
   const [showQuiz, setShowQuiz] = useState(false);
   const [completedLessons, setCompletedLessons] = useState(new Set()); // Store completed lessons as Set for O(1) lookup
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
 
   const chapterNum = parseInt(chapterNumber);
   const lessonNum = parseInt(lessonNumber);
@@ -55,19 +61,48 @@ const CoursePlayerPage = () => {
     const fromRoadmapParam = params.get('fromRoadmap');
     const returnParam = params.get('return');
     
-    if (fromRoadmapParam === 'true') {
+    console.log('📍 CoursePlayerPage: URL params:', { fromRoadmapParam, returnParam, fullUrl: window.location.href });
+    
+    // If fromRoadmap=true OR if return param contains roadmap path, consider it as from roadmap
+    const isFromRoadmap = fromRoadmapParam === 'true' || (returnParam && (returnParam.includes('roadmap') || returnParam.includes('/roadmap/')));
+    
+    console.log('📍 CoursePlayerPage: Detecting roadmap mode:', { 
+      fromRoadmapParam, 
+      returnParam, 
+      isFromRoadmap,
+      returnParamContainsRoadmap: returnParam?.includes('roadmap')
+    });
+    
+    if (isFromRoadmap) {
       setFromRoadmap(true);
       // Store the allowed lesson (current lesson when accessed from roadmap)
       setAllowedLesson(`${courseId}-${chapterNum}-${lessonNum}`);
       if (returnParam) {
-        setReturnUrl(decodeURIComponent(returnParam));
+        try {
+          const decoded = returnParam.includes('%') ? decodeURIComponent(returnParam) : returnParam;
+          console.log('📍 CoursePlayerPage: Setting returnUrl from param:', { original: returnParam, decoded });
+          setReturnUrl(decoded);
+        } catch (e) {
+          console.warn('⚠️ CoursePlayerPage: Error decoding returnUrl, using as-is:', returnParam);
+          setReturnUrl(returnParam);
+        }
+      } else {
+        // Default return URL if not provided
+        console.log('📍 CoursePlayerPage: No return param, using default roadmap URL');
+        setReturnUrl('/roadmap/ignition');
       }
+    } else {
+      // Reset if not from roadmap
+      console.log('📍 CoursePlayerPage: Not from roadmap, resetting flags');
+      setFromRoadmap(false);
+      setReturnUrl(null);
     }
   }, [courseId, chapterNum, lessonNum]);
   
-  // Validate lesson access when in roadmap mode
+  // Validate lesson access when in roadmap mode (only for free users)
   useEffect(() => {
-    if (fromRoadmap && allowedLesson) {
+    // Only apply restrictions for free users - paid users have full access
+    if (fromRoadmap && allowedLesson && isFreeUser) {
       const currentLessonKey = `${courseId}-${chapterNum}-${lessonNum}`;
       if (currentLessonKey !== allowedLesson) {
         // User tried to access a different lesson - redirect back
@@ -79,7 +114,7 @@ const CoursePlayerPage = () => {
         }
       }
     }
-  }, [courseId, chapterNum, lessonNum, fromRoadmap, allowedLesson, returnUrl, navigate]);
+  }, [courseId, chapterNum, lessonNum, fromRoadmap, allowedLesson, returnUrl, navigate, isFreeUser]);
 
   useEffect(() => {
     if (courseId && chapterNum && lessonNum) {
@@ -242,140 +277,92 @@ const CoursePlayerPage = () => {
   const handleCompleteLesson = async (xpBonus = 0) => {
     if (!user || !course?.course_id || !currentLesson) return;
 
+    // If course has masterschool, open the modal instead of completing directly
+    if (course.masterschool && currentLesson.lesson_id) {
+      setShowCompleteModal(true);
+      return;
+    }
+
+    // For non-roadmap courses, complete directly (legacy behavior)
     try {
       setIsCompleting(true);
+      
+      // For non-roadmap courses, use courseService
+      const { data, error: completeError } = await courseService.completeLesson(
+        user.id,
+        course.course_id,
+        chapterNum,
+        lessonNum,
+        50 + xpBonus
+      );
 
-      // If course has masterschool, use roadmapService which updates roadmap_progress
-      if (course.masterschool && currentLesson.lesson_id) {
-        const result = await roadmapService.completeLesson(
-          user.id,
-          currentLesson.lesson_id,
-          course.course_id,
-          chapterNum,
-          lessonNum,
-          course.masterschool,
-          currentLesson.lesson_title
-        );
+      if (completeError) throw completeError;
 
-        if (!result.success) {
-          throw new Error(result.message || 'Failed to complete lesson');
-        }
+      // Verify DB change
+      const { data: progressCheck } = await supabase
+        .from('user_lesson_progress')
+        .select('is_completed')
+        .eq('user_id', user.id)
+        .eq('course_id', course.course_id)
+        .eq('chapter_number', chapterNum)
+        .eq('lesson_number', lessonNum)
+        .single();
 
-        // Verify DB change by checking roadmap_progress
-        const { data: roadmapProgress } = await supabase
-          .from('roadmap_progress')
-          .select('lessons_completed')
-          .eq('user_id', user.id)
-          .eq('masterschool', course.masterschool)
-          .single();
-
-        // Verify lesson is in completed list
-        const lessonKey = `${course.course_id}-${chapterNum}-${lessonNum}`;
-        const isInCompleted = roadmapProgress?.lessons_completed?.some(
-          (l) => `${l.course_id}-${l.chapter_number}-${l.lesson_number}` === lessonKey
-        );
-
-        if (!isInCompleted) {
-          throw new Error('Lesson completion not confirmed in database');
-        }
-
-        // Update local state only after DB confirmation
-        setUserLessonProgress(prev => ({ ...prev, is_completed: true }));
-        const lessonKeyLocal = `${chapterNum}_${lessonNum}`;
-        setCompletedLessons(prev => new Set([...prev, lessonKeyLocal]));
-
-        // Refresh profile to update XP
-        if (user.id) {
-          await fetchProfile(user.id);
-        }
-
-        // Navigate back to roadmap if accessed from roadmap
-        if (fromRoadmap && returnUrl) {
-          setTimeout(() => {
-            navigate(returnUrl);
-          }, 1500);
-        }
-
-        toast.success(`Lesson completed! +${result.rewards?.xp_earned || 0} XP earned`, {
-          duration: 4000,
-          style: {
-            background: 'rgba(30, 41, 59, 0.95)',
-            color: '#fff',
-            border: '1px solid rgba(16, 185, 129, 0.3)',
-            borderRadius: '12px',
-            padding: '16px 20px',
-            fontSize: '14px',
-            fontWeight: '500',
-            zIndex: 9999,
-          },
-          iconTheme: {
-            primary: '#10B981',
-            secondary: '#fff',
-          },
-        });
-      } else {
-        // For non-roadmap courses, use courseService
-        const { data, error: completeError } = await courseService.completeLesson(
-          user.id,
-          course.course_id,
-          chapterNum,
-          lessonNum,
-          50 + xpBonus
-        );
-
-        if (completeError) throw completeError;
-
-        // Verify DB change
-        const { data: progressCheck } = await supabase
-          .from('user_lesson_progress')
-          .select('is_completed')
-          .eq('user_id', user.id)
-          .eq('course_id', course.course_id)
-          .eq('chapter_number', chapterNum)
-          .eq('lesson_number', lessonNum)
-          .single();
-
-        if (!progressCheck?.is_completed) {
-          throw new Error('Lesson completion not confirmed in database');
-        }
-
-        // Update local state only after DB confirmation
-        setUserLessonProgress({ ...data.lessonProgress, is_completed: true });
-        const lessonKey = `${chapterNum}_${lessonNum}`;
-        setCompletedLessons(prev => new Set([...prev, lessonKey]));
-
-        // Recalculate course progress
-        await courseService.calculateCourseProgress(user.id, course.course_id);
-
-        // Refresh profile to update XP
-        if (user.id) {
-          await fetchProfile(user.id);
-        }
-
-        toast.success(`Lesson completed! +${data.xpAwarded} XP earned`, {
-          duration: 4000,
-          style: {
-            background: 'rgba(30, 41, 59, 0.95)',
-            color: '#fff',
-            border: '1px solid rgba(16, 185, 129, 0.3)',
-            borderRadius: '12px',
-            padding: '16px 20px',
-            fontSize: '14px',
-            fontWeight: '500',
-            zIndex: 9999,
-          },
-          iconTheme: {
-            primary: '#10B981',
-            secondary: '#fff',
-          },
-        });
+      if (!progressCheck?.is_completed) {
+        throw new Error('Lesson completion not confirmed in database');
       }
+
+      // Update local state only after DB confirmation
+      setUserLessonProgress({ ...data.lessonProgress, is_completed: true });
+      const lessonKey = `${chapterNum}_${lessonNum}`;
+      setCompletedLessons(prev => new Set([...prev, lessonKey]));
+
+      // Recalculate course progress
+      await courseService.calculateCourseProgress(user.id, course.course_id);
+
+      // Refresh profile to update XP
+      if (user.id) {
+        await fetchProfile(user.id);
+      }
+
+      toast.success(`Lesson completed! +${data.xpAwarded} XP earned`, {
+        duration: 4000,
+        style: {
+          background: 'rgba(30, 41, 59, 0.95)',
+          color: '#fff',
+          border: '1px solid rgba(16, 185, 129, 0.3)',
+          borderRadius: '12px',
+          padding: '16px 20px',
+          fontSize: '14px',
+          fontWeight: '500',
+          zIndex: 9999,
+        },
+        iconTheme: {
+          primary: '#10B981',
+          secondary: '#fff',
+        },
+      });
     } catch (err) {
       console.error('Error completing lesson:', err);
       toast.error(err.message || 'Failed to complete lesson. Please try again.');
     } finally {
       setIsCompleting(false);
     }
+  };
+
+  const handleLessonCompleteFromModal = (result) => {
+    // Update local state after lesson completion from modal
+    if (course?.course_id && currentLesson) {
+      setUserLessonProgress(prev => ({ ...prev, is_completed: true }));
+      const lessonKeyLocal = `${chapterNum}_${lessonNum}`;
+      setCompletedLessons(prev => new Set([...prev, lessonKeyLocal]));
+      
+      // Refresh profile to update XP
+      if (user?.id) {
+        fetchProfile(user.id);
+      }
+    }
+    setShowCompleteModal(false);
   };
 
   const handleQuizComplete = ({ passed, xpEarned }) => {
@@ -417,8 +404,9 @@ const CoursePlayerPage = () => {
   };
 
   const handleNavigateLesson = (targetChapterNum, targetLessonNum) => {
-    // Block navigation if accessed from roadmap (free access mode)
-    if (fromRoadmap) {
+    // Block navigation if accessed from roadmap (only for free users)
+    // Paid users can navigate freely
+    if (fromRoadmap && isFreeUser) {
       toast.error('Access restricted. This lesson is only available through the roadmap.');
       return;
     }
@@ -438,16 +426,14 @@ const CoursePlayerPage = () => {
     !!course?.masterschool && !!user // Only enable if course has masterschool and user is logged in
   );
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: 'var(--color-primary)' }}></div>
-          <p className="text-gray-400 font-medium">Loading lesson...</p>
-        </div>
-      </div>
-    );
-  }
+  // Use global loader instead of local loading state
+  useEffect(() => {
+    if (loading) {
+      startTransition();
+    } else {
+      endTransition();
+    }
+  }, [loading, startTransition, endTransition]);
 
   if (error || !currentLesson) {
     return (
@@ -471,8 +457,8 @@ const CoursePlayerPage = () => {
   return (
     <div className={`flex h-[calc(100vh-80px)] overflow-hidden transition-all duration-500 ${cinemaMode ? 'fixed inset-0 z-50' : ''}`} style={cinemaMode ? { backgroundColor: 'var(--bg-secondary, #0f0f0f)' } : {}}>
 
-      {/* Mobile Menu Overlay - Disabled in roadmap mode */}
-      {showMobileMenu && !fromRoadmap && (
+      {/* Mobile Menu Overlay - Disabled in roadmap mode only for free users */}
+      {showMobileMenu && (!fromRoadmap || !isFreeUser) && (
         <div 
           className="fixed inset-0 z-40 lg:hidden"
           onClick={() => setShowMobileMenu(false)}
@@ -532,8 +518,8 @@ const CoursePlayerPage = () => {
         </div>
       )}
 
-      {/* Sidebar - Course Structure (Desktop) - Hidden in roadmap mode */}
-      {!fromRoadmap && (
+      {/* Sidebar - Course Structure (Desktop) - Hidden in roadmap mode only for free users */}
+      {(!fromRoadmap || !isFreeUser) && (
       <div
         className={`glass-effect border-r border-white/10 transition-all duration-300 flex-col
           ${cinemaMode ? (showSidebar ? 'w-80 flex' : 'w-0 opacity-0 overflow-hidden hidden') : 'hidden lg:flex lg:w-80'}
@@ -585,8 +571,8 @@ const CoursePlayerPage = () => {
       </div>
       )}
 
-      {/* Roadmap Mode Notice */}
-      {fromRoadmap && (
+      {/* Roadmap Mode Notice - Only for free users */}
+      {fromRoadmap && isFreeUser && (
         <div className="hidden lg:flex lg:w-80 flex-col items-center justify-center p-6 text-center border-r border-white/10">
           <div className="glass-panel-floating p-6 max-w-xs">
             <div className="text-4xl mb-4">🔒</div>
@@ -611,8 +597,8 @@ const CoursePlayerPage = () => {
         {/* Top Bar - Mobile Optimized */}
         <div className={`flex items-center justify-between px-3 sm:px-6 py-3 ${cinemaMode ? 'backdrop-blur-md' : ''}`} style={cinemaMode ? { backgroundColor: 'color-mix(in srgb, var(--bg-secondary, #0f0f0f) 80%, transparent)' } : {}}>
           <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
-            {/* Mobile Menu Button - Disabled in roadmap mode */}
-            {!fromRoadmap && (
+            {/* Mobile Menu Button - Disabled in roadmap mode for free users only */}
+            {(!fromRoadmap || !isFreeUser) && (
             <button
               onClick={() => setShowMobileMenu(true)}
               className="lg:hidden p-2 hover:bg-white/10 rounded-lg text-gray-500 dark:text-gray-400 dark:hover:text-white transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
@@ -687,7 +673,7 @@ const CoursePlayerPage = () => {
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 10%, transparent)', color: 'var(--color-primary)', borderColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', borderWidth: '1px', borderStyle: 'solid' }}>
                 Chapter {chapterNum} • Lesson {lessonNum}
               </div>
-              {fromRoadmap && (
+              {fromRoadmap && isFreeUser && (
                 <div className="mb-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
                   <span>🔓</span>
                   <span>Free Preview Mode - Roadmap Access</span>
@@ -910,8 +896,8 @@ const CoursePlayerPage = () => {
                         </div>
                       </button>
                     )}
-                    {/* Roadmap mode - return to roadmap after completion */}
-                    {fromRoadmap && isCompleted && (
+                    {/* Roadmap mode - return to roadmap after completion (free users only) */}
+                    {fromRoadmap && isCompleted && isFreeUser && (
                       <button
                         onClick={() => returnUrl ? navigate(returnUrl) : navigate('/roadmap/ignition')}
                         className="group relative px-8 py-4 text-white rounded-full font-bold text-lg shadow-lg transition-all transform hover:scale-105 active:scale-95 overflow-hidden"
@@ -968,8 +954,8 @@ const CoursePlayerPage = () => {
                   </div>
                 )}
 
-                {/* Navigation Buttons - Disabled in roadmap mode */}
-                {!fromRoadmap && (
+                {/* Navigation Buttons - Disabled in roadmap mode for free users only */}
+                {(!fromRoadmap || !isFreeUser) && (
                 <div className="flex items-center gap-4 mt-8 w-full max-w-md justify-between">
                   {previousLesson ? (
                     <button
@@ -1016,6 +1002,27 @@ const CoursePlayerPage = () => {
           lessonTitle={currentLesson.lesson_title}
           masterschool={course.masterschool}
           enabled={true}
+          fromRoadmap={fromRoadmap}
+          returnUrl={returnUrl}
+        />
+      )}
+
+      {/* Complete Lesson Modal - For courses with masterschool when clicking the main complete button */}
+      {course?.masterschool && currentLesson && currentLesson.lesson_id && (
+        <CompleteLessonModal
+          isOpen={showCompleteModal}
+          onClose={() => setShowCompleteModal(false)}
+          userId={user?.id}
+          lessonId={currentLesson.lesson_id}
+          courseId={parseInt(courseId)}
+          chapterNumber={chapterNum}
+          lessonNumber={lessonNum}
+          masterschool={course.masterschool}
+          lessonTitle={currentLesson.lesson_title}
+          onComplete={handleLessonCompleteFromModal}
+          fromRoadmap={fromRoadmap}
+          returnUrl={returnUrl}
+          isFreeUser={isFreeUser}
         />
       )}
     </div>
