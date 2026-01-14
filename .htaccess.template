@@ -1,0 +1,46 @@
+RewriteEngine On
+RewriteBase /
+
+# Set proper MIME types
+<IfModule mod_mime.c>
+    AddType application/javascript js
+    AddType text/css css
+    AddType image/svg+xml svg
+    AddType application/json json
+    AddType font/woff woff
+    AddType font/woff2 woff2
+</IfModule>
+
+# Directory index
+DirectoryIndex build/index.html index.php index.html
+
+# Allow access to build folder
+<Directory "build">
+    Options -Indexes +FollowSymLinks
+    AllowOverride All
+    Require all granted
+</Directory>
+
+# Redirect /health to /api/health (for backward compatibility)
+RewriteRule ^health$ /api/health [R=301,L]
+
+# Proxy API requests to Node.js server
+RewriteCond %{REQUEST_URI} ^/api/
+RewriteRule ^api/(.*)$ http://localhost:3001/api/$1 [P,L]
+
+# Serve static files from build folder
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} ^/static/
+RewriteRule ^static/(.*)$ build/static/$1 [L]
+
+# Serve other static assets
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|json|map|webp)$
+RewriteRule ^(.*)$ build/$1 [L]
+
+# Serve React app
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ build/index.html [L]

@@ -155,8 +155,18 @@ chmod 755 deploy.sh # On garde le script exécutable
 
 # Création du .htaccess pour gérer React Router sur LiteSpeed
 cat <<EOT > .htaccess
-Options -MultiViews
 RewriteEngine On
+RewriteBase /
+
+# Redirect /health to /api/health (for backward compatibility)
+RewriteRule ^health$ /api/health [R=301,L]
+
+# Proxy API requests to Node.js server
+RewriteCond %{REQUEST_URI} ^/api/
+RewriteRule ^api/(.*)$ http://localhost:3001/api/$1 [P,L]
+
+# Serve React app (catch-all for SPA routing)
+Options -MultiViews
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.html [L]
