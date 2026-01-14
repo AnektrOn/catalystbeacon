@@ -32,17 +32,111 @@ export const useRoadmapLessonTracking = (
   const isMountedRef = useRef(true);
 
   /**
-   * Calculate scroll percentage - for AppShell main panel
+   * Find the scroll container - works for both desktop and mobile
+   */
+  const findScrollContainer = useCallback(() => {
+    // Try multiple selectors to find the scroll container
+    // 1. Desktop: .glass-main-panel
+    let scrollContainer = document.querySelector('.glass-main-panel');
+    
+    // 2. Mobile: AppShellMobile main > div (the overflow-auto container)
+    if (!scrollContainer) {
+      const main = document.querySelector('main');
+      if (main) {
+        // Find the first child div with overflow-auto or overflow-y-auto
+        // Check direct children first (most common case)
+        const directChild = Array.from(main.children).find(child => {
+          const style = getComputedStyle(child);
+          return style.overflowY === 'auto' || style.overflowY === 'scroll' ||
+                 child.classList.contains('overflow-auto') || 
+                 child.classList.contains('overflow-y-auto');
+        });
+        
+        if (directChild) {
+          scrollContainer = directChild;
+        } else {
+          // Fallback: search deeper
+          const mobileContainer = main.querySelector('div[class*="overflow"]');
+          if (mobileContainer) {
+            const style = getComputedStyle(mobileContainer);
+            if (style.overflowY === 'auto' || style.overflowY === 'scroll' ||
+                mobileContainer.classList.contains('overflow-auto') || 
+                mobileContainer.classList.contains('overflow-y-auto')) {
+              scrollContainer = mobileContainer;
+            }
+          }
+        }
+      }
+    }
+    
+    // 3. Try to find any scrollable container in the lesson content area
+    if (!scrollContainer) {
+      const lessonContent = document.querySelector('[class*="overflow-y-auto"]');
+      if (lessonContent) {
+        const style = getComputedStyle(lessonContent);
+        if (style.overflowY === 'auto' || style.overflowY === 'scroll') {
+          scrollContainer = lessonContent;
+        }
+      }
+    }
+    
+    // 4. Verify the container is actually scrollable
+    if (scrollContainer && scrollContainer !== 'window') {
+      const isScrollable = scrollContainer.scrollHeight > scrollContainer.clientHeight;
+      if (!isScrollable) {
+        // Container found but not scrollable, try window
+        scrollContainer = null;
+      }
+    }
+    
+    // 5. Fallback: use window/document for mobile if no container found
+    // On mobile, sometimes the entire page scrolls
+    if (!scrollContainer) {
+      // Check if window/document is scrollable
+      const body = document.body;
+      const html = document.documentElement;
+      if (body.scrollHeight > body.clientHeight || html.scrollHeight > window.innerHeight) {
+        // Return a special marker to indicate window scrolling
+        return 'window';
+      }
+    }
+    
+    return scrollContainer;
+  }, []);
+
+  /**
+   * Calculate scroll percentage - for AppShell main panel (desktop) or mobile containers
    */
   const calculateScrollPercentage = useCallback(() => {
-    // Find the scrolling container (AppShell main panel)
-    const scrollContainer = document.querySelector('.glass-main-panel');
+    const scrollContainer = findScrollContainer();
     
     if (!scrollContainer) {
-      console.warn('Scroll container (.glass-main-panel) not found');
+      console.warn('Scroll container not found');
       return 0;
     }
     
+    // Handle window scrolling (mobile fallback)
+    if (scrollContainer === 'window') {
+      const windowHeight = window.innerHeight;
+      const documentHeight = Math.max(
+        document.body.scrollHeight,
+        document.body.offsetHeight,
+        document.documentElement.clientHeight,
+        document.documentElement.scrollHeight,
+        document.documentElement.offsetHeight
+      );
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const scrollableHeight = documentHeight - windowHeight;
+      
+      if (scrollableHeight <= 10) {
+        return 0;
+      }
+      
+      const percentage = Math.min(100, Math.max(0, Math.round((scrollTop / scrollableHeight) * 100)));
+      return percentage;
+    }
+    
+    // Handle element scrolling
     const containerHeight = scrollContainer.clientHeight;
     const contentHeight = scrollContainer.scrollHeight;
     const scrollTop = scrollContainer.scrollTop;
@@ -59,7 +153,7 @@ export const useRoadmapLessonTracking = (
     const percentage = Math.min(100, Math.max(0, Math.round((scrollTop / scrollableHeight) * 100)));
     
     return percentage;
-  }, []);
+  }, [findScrollContainer]);
 
   /**
    * Handle scroll events
@@ -203,40 +297,93 @@ export const useRoadmapLessonTracking = (
     };
   }, [enabled, userId, courseId, chapterNumber, lessonNumber, calculateScrollPercentage, updateProgress]);
 
-  // Add scroll listener to AppShell main panel
+  // Add scroll listener - works for both desktop and mobile
   useEffect(() => {
     if (!enabled) {
       console.log('Scroll listener not added - tracking disabled');
       return;
     }
 
-    // Find the scrolling container
-    const scrollContainer = document.querySelector('.glass-main-panel');
-    
-    if (!scrollContainer) {
-      console.warn('⚠️ Scroll container (.glass-main-panel) not found, retrying in 1s...');
-      const timeout = setTimeout(() => {
-        const retryContainer = document.querySelector('.glass-main-panel');
-        if (retryContainer) {
-          console.log('✅ Found scroll container on retry');
-          retryContainer.addEventListener('scroll', handleScroll, { passive: true });
-        } else {
-          console.error('❌ Scroll container still not found');
-        }
-      }, 1000);
-      
-      return () => clearTimeout(timeout);
-    }
+    let scrollContainer = null;
+    let cleanupFunctions = [];
+    let isListenerSetup = false;
 
-    console.log('📜 Adding scroll listener to .glass-main-panel...');
-    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
-    console.log('✅ Scroll listener added');
+    const setupListenerForContainer = (container) => {
+      // Don't setup duplicate listeners
+      if (isListenerSetup) {
+        console.log('⚠️ Listener already setup, skipping...');
+        return;
+      }
+
+      if (container === 'window') {
+        // Handle window scrolling (mobile fallback)
+        console.log('📜 Adding scroll listener to window (mobile fallback)...');
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        // Also listen to touchmove for better mobile detection
+        window.addEventListener('touchmove', handleScroll, { passive: true });
+        cleanupFunctions.push(() => {
+          window.removeEventListener('scroll', handleScroll);
+          window.removeEventListener('touchmove', handleScroll);
+        });
+      } else {
+        // Handle element scrolling
+        console.log('📜 Adding scroll listener to container:', container.className || container.tagName || 'unnamed');
+        container.addEventListener('scroll', handleScroll, { passive: true });
+        // Also listen to touchmove for better mobile detection
+        container.addEventListener('touchmove', handleScroll, { passive: true });
+        cleanupFunctions.push(() => {
+          container.removeEventListener('scroll', handleScroll);
+          container.removeEventListener('touchmove', handleScroll);
+        });
+      }
+      isListenerSetup = true;
+      console.log('✅ Scroll listener added');
+    };
+
+    const setupScrollListener = () => {
+      scrollContainer = findScrollContainer();
+      
+      if (!scrollContainer) {
+        console.warn('⚠️ Scroll container not found, retrying in 1s...');
+        const timeout = setTimeout(() => {
+          const retryContainer = findScrollContainer();
+          if (retryContainer) {
+            console.log('✅ Found scroll container on retry');
+            setupListenerForContainer(retryContainer);
+          } else {
+            console.error('❌ Scroll container still not found');
+          }
+        }, 1000);
+        
+        cleanupFunctions.push(() => clearTimeout(timeout));
+        return;
+      }
+
+      setupListenerForContainer(scrollContainer);
+    };
+
+    // Initial setup
+    setupScrollListener();
+
+    // Retry setup if container not found initially (for dynamic content)
+    const retryTimeout = setTimeout(() => {
+      if (!isListenerSetup) {
+        const newContainer = findScrollContainer();
+        if (newContainer) {
+          console.log('🔄 Retrying scroll container setup...');
+          setupListenerForContainer(newContainer);
+        }
+      }
+    }, 2000);
+
+    cleanupFunctions.push(() => clearTimeout(retryTimeout));
 
     return () => {
-      console.log('Removing scroll listener from .glass-main-panel');
-      scrollContainer.removeEventListener('scroll', handleScroll);
+      console.log('Removing scroll listener');
+      cleanupFunctions.forEach(cleanup => cleanup());
+      isListenerSetup = false;
     };
-  }, [enabled, handleScroll]);
+  }, [enabled, handleScroll, findScrollContainer]);
 
   // Check if requirements are met (2 minutes = 120 seconds)
   useEffect(() => {
