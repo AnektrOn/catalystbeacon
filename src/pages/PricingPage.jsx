@@ -89,11 +89,11 @@ const PricingPage = () => {
     setLoading(true);
     
     try {
-      // ON CHANGE LE NOM ICI POUR ÉVITER LE CONFLIT
-      const requestUrl = API_ENDPOINTS.CREATE_CHECKOUT_SESSION;
-      console.log('🔵 Appel API vers :', requestUrl);
+      // 1. On utilise directement la valeur pour éviter tout conflit de variable
+      const finalEndpoint = '/api/create-checkout-session';
+      console.log('🔵 Tentative d\'appel vers:', finalEndpoint);
       
-      const response = await fetch(requestUrl, {
+      const response = await fetch(finalEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -104,20 +104,29 @@ const PricingPage = () => {
         signal: AbortSignal.timeout(15000)
       });
 
-      if (!response.ok) {
-        throw new Error(`Erreur serveur: ${response.status}`);
+      // 2. On vérifie si c'est du HTML au lieu de JSON (le problème LiteSpeed)
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('text/html')) {
+        throw new Error('Le serveur a renvoyé du HTML au lieu de JSON. Vérifiez le proxy .htaccess.');
       }
 
-      const session = await response.json();
-      if (session.url) {
-        window.location.href = session.url;
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || `Erreur serveur ${response.status}`);
+      }
+
+      if (data.url) {
+        console.log('🚀 Redirection vers Stripe...');
+        window.location.href = data.url;
       } else {
-        throw new Error('Pas d\'URL de redirection reçue');
+        throw new Error('URL de checkout Stripe manquante dans la réponse');
       }
 
     } catch (error) {
-      console.error('Erreur Checkout:', error);
-      toast.error(error.message || 'Erreur lors de la création de la session');
+      console.error('❌ Erreur détaillée:', error);
+      // ICI : On n'utilise PLUS 'checkoutUrl' dans le message d'erreur pour éviter le crash lexical
+      toast.error(`Erreur: ${error.message}`);
     } finally {
       setLoading(false);
     }
