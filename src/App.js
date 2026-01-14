@@ -328,7 +328,7 @@ function App() {
                 className="App font-sans antialiased min-h-screen"
                 style={{
                   color: 'var(--text-primary)',
-                  backgroundColor: 'transparent'
+                  backgroundColor: 'hsl(var(--background))'
                 }}
               >
                 <AppRoutes />

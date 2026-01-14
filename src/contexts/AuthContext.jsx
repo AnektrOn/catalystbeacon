@@ -131,7 +131,8 @@ export const AuthProvider = ({ children }) => {
           const result = await dataCache.fetchWithCache(
             cacheKey,
             async () => {
-              const withTimeout = (promise, ms = 5000) => {
+              // Increase timeout to 10 seconds for slow connections
+              const withTimeout = (promise, ms = 10000) => {
                 return Promise.race([
                   promise,
                   new Promise((_, reject) => setTimeout(() => reject(new Error('PROFILE_FETCH_TIMEOUT')), ms))
@@ -163,7 +164,8 @@ export const AuthProvider = ({ children }) => {
       }
       
       // Direct fetch (no cache or cache failed)
-      const withTimeout = (promise, ms = 5000) => {
+      // Increase timeout to 10 seconds for slow connections
+      const withTimeout = (promise, ms = 10000) => {
         return Promise.race([
           promise,
           new Promise((_, reject) => setTimeout(() => reject(new Error('PROFILE_FETCH_TIMEOUT')), ms))

@@ -15,9 +15,9 @@ git pull origin main
 echo "📦 Installing dependencies..."
 npm install
 
-# Build for production
+# Build for production (disable source maps for better performance and to avoid 500 errors)
 echo "🔨 Building for production..."
-npm run build
+GENERATE_SOURCEMAP=false npm run build
 
 # Restart the application
 echo "🔄 Restarting application..."

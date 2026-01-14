@@ -1950,9 +1950,32 @@ app.get('/health', (req, res) => {
 })
 
 // Serve static files (CSS, JS, images, etc.) - this must come before catch-all
+// Handle source maps specifically to return 404 instead of 500
+app.use((req, res, next) => {
+  // Handle source map requests specifically
+  if (req.path.endsWith('.map')) {
+    const filePath = path.join(buildPath, req.path)
+    if (!fs.existsSync(filePath)) {
+      // Source map doesn't exist, return 404 (this prevents 500 errors)
+      // Set proper headers before sending response
+      res.status(404)
+      res.setHeader('Content-Type', 'text/plain')
+      return res.end('Source map not found')
+    }
+  }
+  next()
+})
+
+// Serve static files normally
 app.use(express.static(buildPath, {
   // Don't serve index.html for static file requests
-  index: false
+  index: false,
+  // Set proper headers for source maps
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.map')) {
+      res.setHeader('Content-Type', 'application/json')
+    }
+  }
 }))
 
 // Catch-all handler: send back React's index.html file for any non-API routes
