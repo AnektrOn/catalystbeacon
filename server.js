@@ -1963,24 +1963,23 @@ app.use(express.static(buildPath, {
 // Catch-all handler: send back React's index.html file for any non-API routes
 // This is necessary for React Router to work properly in production
 // IMPORTANT: This must be LAST, after all API routes and static file serving
+// Add CSP header that allows Stripe scripts
 app.use((req, res, next) => {
-  // Skip API routes
-  if (req.path.startsWith('/api/')) {
-    return next()
+  // Only add CSP for HTML pages
+  if (!req.path.startsWith('/api/') && !req.path.startsWith('/static/') && req.path !== '/favicon.ico') {
+    res.setHeader(
+      'Content-Security-Policy',
+      "default-src 'self'; " +
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://maps.googleapis.com https://*.stripe.com; " +
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+      "font-src 'self' https://fonts.gstatic.com; " +
+      "img-src 'self' data: https: blob:; " +
+      "connect-src 'self' https://*.stripe.com https://*.supabase.co https://api.stripe.com https://maps.googleapis.com; " +
+      "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com https://*.stripe.network; " +
+      "frame-ancestors 'self';"
+    )
   }
-  
-  // Skip static file requests (already handled by express.static)
-  if (req.path.startsWith('/static/') || req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|json|map|webp)$/)) {
-    return next()
-  }
-  
-  // Serve index.html for all other routes (React Router will handle routing)
-  res.sendFile(path.join(buildPath, 'index.html'), (err) => {
-    if (err) {
-      console.error('Error serving index.html:', err)
-      res.status(500).send('Error loading application')
-    }
-  })
+  next()
 })
 
 // Listen on all interfaces (0.0.0.0) to be accessible via reverse proxy
