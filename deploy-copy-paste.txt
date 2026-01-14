@@ -157,15 +157,20 @@ cat <<EOT > .htaccess
 RewriteEngine On
 RewriteBase /
 
+# IMPORTANT: Health redirect MUST be first, before any other rules
 # Redirect /health to /api/health (for backward compatibility)
+RewriteCond %{REQUEST_URI} ^/health$
 RewriteRule ^health$ /api/health [R=301,L]
 
-# Proxy API requests to Node.js server
+# Proxy API requests to Node.js server (including /api/health)
 RewriteCond %{REQUEST_URI} ^/api/
 RewriteRule ^api/(.*)$ http://localhost:3001/api/$1 [P,L]
 
 # Serve React app (catch-all for SPA routing)
+# Exclude /health and /api/* from catch-all
 Options -MultiViews
+RewriteCond %{REQUEST_URI} !^/health$
+RewriteCond %{REQUEST_URI} !^/api/
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.html [L]
