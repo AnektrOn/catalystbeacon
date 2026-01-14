@@ -71,6 +71,9 @@ const PricingPage = () => {
   ]
 
   const handleSubscribe = async (priceId, paymentLink) => {
+    // Define targetPayloadUrl at the very beginning of the function to avoid initialization errors
+    const targetPayloadUrl = API_ENDPOINTS.CREATE_CHECKOUT_SESSION
+    
     if (!user) {
       navigate('/login')
       return
@@ -87,9 +90,7 @@ const PricingPage = () => {
       return
     }
 
-    // Define endpoint at the very beginning of the function
-    const endpoint = API_ENDPOINTS.CREATE_CHECKOUT_SESSION
-    console.log('🔵 Target endpoint:', endpoint)
+    console.log('🔵 Target payload URL:', targetPayloadUrl)
 
     setLoading(true)
 
@@ -106,7 +107,7 @@ const PricingPage = () => {
             await new Promise(resolve => setTimeout(resolve, 1000))
           }
           
-          const response = await fetch(endpoint, {
+          const response = await fetch(targetPayloadUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
