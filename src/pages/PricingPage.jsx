@@ -112,21 +112,29 @@ const PricingPage = () => {
       // Use API server directly (no Edge Function attempts)
       const apiBaseUrl = API_URL
       
-      // Test server connectivity first
+      // Optional health check (skip if it fails - server might be behind reverse proxy)
+      // We'll try the actual checkout endpoint anyway
       try {
         const healthResponse = await fetch(`${apiBaseUrl}/health`, {
           method: 'GET',
-          signal: AbortSignal.timeout(5000) // 5 second timeout
+          signal: AbortSignal.timeout(3000) // 3 second timeout
         })
         
         if (healthResponse.ok) {
-          const healthData = await healthResponse.json()
-        } else {
+          const contentType = healthResponse.headers.get('content-type') || ''
+          if (contentType.includes('application/json')) {
+            try {
+              await healthResponse.json()
+              // Health check passed
+            } catch (jsonError) {
+              // Not JSON, but that's OK - continue to checkout endpoint
+              console.warn('Health check returned non-JSON, continuing...')
+            }
+          }
         }
       } catch (healthError) {
-        toast.error('Server is not accessible. Please check if the server is running.')
-        setLoading(false)
-        return
+        // Health check failed, but continue anyway - server might be behind reverse proxy
+        console.warn('Health check skipped:', healthError.message)
       }
       
       
@@ -151,20 +159,37 @@ const PricingPage = () => {
             signal: AbortSignal.timeout(15000) // 15 second timeout
           })
 
+          // Check content type before parsing
+          const contentType = response.headers.get('content-type') || ''
+          const isJSON = contentType.includes('application/json')
 
           if (!response.ok) {
             let errorMessage = `HTTP ${response.status}: ${response.statusText}`
             let errorDetails = null
             let errorCode = null
             let errorData = null
-            try {
-              errorData = await response.json()
-              errorMessage = errorData.error || errorMessage
-              errorDetails = errorData.details
-              errorCode = errorData.code
-            } catch (e) {
+            
+            if (isJSON) {
+              try {
+                errorData = await response.json()
+                errorMessage = errorData.error || errorMessage
+                errorDetails = errorData.details
+                errorCode = errorData.code
+              } catch (e) {
+                // Failed to parse JSON even though content-type says JSON
+                const text = await response.text().catch(() => '')
+                console.error('Failed to parse JSON error response:', text.substring(0, 200))
+                if (text) errorMessage = `Server error: ${text.substring(0, 100)}`
+              }
+            } else {
+              // Response is not JSON (might be HTML error page)
               const text = await response.text().catch(() => '')
-              if (text) errorMessage = text
+              console.error('Server returned non-JSON error:', text.substring(0, 200))
+              if (text.includes('<html>') || text.includes('<!DOCTYPE')) {
+                errorMessage = 'Server returned an error page. Please check server configuration.'
+              } else if (text) {
+                errorMessage = text.substring(0, 100)
+              }
             }
             
             // Don't retry on 4xx errors (client errors)
@@ -204,7 +229,23 @@ const PricingPage = () => {
             throw lastError
           }
 
-          const session = await response.json()
+          // Parse response - check if it's JSON first
+          let session
+          if (isJSON) {
+            try {
+              session = await response.json()
+            } catch (jsonError) {
+              // Response claims to be JSON but isn't valid
+              const text = await response.text().catch(() => '')
+              console.error('Invalid JSON response:', text.substring(0, 200))
+              throw new Error('Server returned invalid JSON response')
+            }
+          } else {
+            // Response is not JSON - this shouldn't happen for a successful response
+            const text = await response.text().catch(() => '')
+            console.error('Non-JSON response from checkout endpoint:', text.substring(0, 200))
+            throw new Error('Server returned non-JSON response')
+          }
 
           if (session.error) {
             const errorMsg = session.details 
@@ -390,7 +431,7 @@ const PricingPage = () => {
             </div>
           )}
           <p className="text-sm text-gray-500">
-            All plans include a 14-day free trial. Cancel anytime.
+           Mail me at : contact@app.humancatalystbeacon.com to Cancel anytime.
           </p>
         </div>
       </div>
