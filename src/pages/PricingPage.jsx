@@ -71,29 +71,21 @@ const PricingPage = () => {
   ]
 
   const handleSubscribe = async (priceId, paymentLink) => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-
-    if (paymentLink) {
-      window.location.href = paymentLink;
-      return;
-    }
-
-    if (!priceId) {
-      toast.error('Invalid price ID.');
-      return;
-    }
+    // 1. Définitions de sécurité
+    if (!user) { navigate('/login'); return; }
+    if (paymentLink) { window.location.href = paymentLink; return; }
+    if (!priceId) { toast.error('Invalid price ID'); return; }
 
     setLoading(true);
-    
+
     try {
-      // 1. On utilise directement la valeur pour éviter tout conflit de variable
-      const finalEndpoint = '/api/create-checkout-session';
-      console.log('🔵 Tentative d\'appel vers:', finalEndpoint);
+      // 2. UTILISE UN NOM UNIQUE : 'finalStripeRequestUrl'
+      // N'utilise plus jamais 'checkoutUrl' ici car il y a un conflit d'import
+      const finalStripeRequestUrl = '/api/create-checkout-session'; 
       
-      const response = await fetch(finalEndpoint, {
+      console.log('🔵 Appel vers :', finalStripeRequestUrl);
+      
+      const response = await fetch(finalStripeRequestUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
