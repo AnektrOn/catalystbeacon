@@ -1,5 +1,5 @@
 import { loadStripe } from '@stripe/stripe-js'
-import { API_ENDPOINTS } from './config'
+import { API_ENDPOINTS } from '../config'
 
 // Get Stripe publishable key from environment variables
 // Create React App uses REACT_APP_ prefix
