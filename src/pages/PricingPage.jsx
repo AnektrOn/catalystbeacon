@@ -71,187 +71,55 @@ const PricingPage = () => {
   ]
 
   const handleSubscribe = async (priceId, paymentLink) => {
-    // Define targetPayloadUrl at the very beginning of the function to avoid initialization errors
-    const targetPayloadUrl = API_ENDPOINTS.CREATE_CHECKOUT_SESSION
-    
     if (!user) {
-      navigate('/login')
-      return
+      navigate('/login');
+      return;
     }
 
-    // If there's a payment link, use it directly (simplest method)
     if (paymentLink) {
-      window.location.href = paymentLink
-      return
+      window.location.href = paymentLink;
+      return;
     }
 
     if (!priceId) {
-      toast.error('Invalid price ID. Please contact support.')
-      return
+      toast.error('Invalid price ID.');
+      return;
     }
 
-    console.log('🔵 Target payload URL:', targetPayloadUrl)
-
-    setLoading(true)
-
+    setLoading(true);
+    
     try {
-      // Use relative URL - backend is proxied through the same domain
-      // This works for both development (Vite proxy) and production
+      // ON CHANGE LE NOM ICI POUR ÉVITER LE CONFLIT
+      const requestUrl = API_ENDPOINTS.CREATE_CHECKOUT_SESSION;
+      console.log('🔵 Appel API vers :', requestUrl);
       
-      // Retry logic: Try up to 2 times with exponential backoff
-      let lastError = null
-      for (let attempt = 1; attempt <= 2; attempt++) {
-        try {
-          if (attempt > 1) {
-            // Wait before retry: 1s
-            await new Promise(resolve => setTimeout(resolve, 1000))
-          }
-          
-          const response = await fetch(targetPayloadUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              priceId: priceId,
-              userId: user.id,
-              userEmail: user.email
-            }),
-            // Increased timeout to 15s for better reliability
-            signal: AbortSignal.timeout(15000) // 15 second timeout
-          })
+      const response = await fetch(requestUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          priceId: priceId,
+          userId: user.id,
+          userEmail: user.email
+        }),
+        signal: AbortSignal.timeout(15000)
+      });
 
-          // Check if response is HTML (SPA redirect) instead of JSON
-          const contentType = response.headers.get('content-type')
-          if (contentType && !contentType.includes('application/json')) {
-            const text = await response.text().catch(() => '')
-            if (text.includes('<!doctype html>') || text.includes('<html')) {
-              console.error('Non-JSON response from checkout endpoint: Received HTML instead of JSON. API_URL may be pointing to frontend.')
-              throw new Error('Checkout endpoint returned HTML instead of JSON. Please verify API_URL configuration points to the backend server.')
-            }
-          }
-
-          if (!response.ok) {
-            let errorMessage = `HTTP ${response.status}: ${response.statusText}`
-            let errorDetails = null
-            let errorCode = null
-            let errorData = null
-            try {
-              errorData = await response.json()
-              errorMessage = errorData.error || errorMessage
-              errorDetails = errorData.details
-              errorCode = errorData.code
-            } catch (e) {
-              const text = await response.text().catch(() => '')
-              if (text) {
-                // Check if it's HTML (SPA redirect)
-                if (text.includes('<!doctype html>') || text.includes('<html')) {
-                  errorMessage = 'Checkout endpoint returned HTML instead of JSON. API_URL may be misconfigured.'
-                  console.error('Non-JSON response from checkout endpoint:', text.substring(0, 200))
-                } else {
-                  errorMessage = text
-                }
-              }
-            }
-            
-            // Don't retry on 4xx errors (client errors)
-            if (response.status >= 400 && response.status < 500) {
-              if (response.status === 503) {
-                // 503 means service unavailable - could be server not running or Stripe not configured
-                const detailedError = errorDetails || errorMessage
-                
-                if (errorCode === 'STRIPE_NOT_CONFIGURED' || detailedError?.includes('STRIPE_SECRET_KEY') || detailedError?.includes('not configured')) {
-                  errorMessage = 'Payment service is not configured on the server. Please contact support to enable payments.'
-                  toast.error('Payment service is not configured. Please contact support.', {
-                    duration: 5000
-                  })
-                } else if (detailedError?.includes('server.env')) {
-                  errorMessage = 'Server configuration error. Please contact support.'
-                  toast.error('Server configuration error. Please contact support.', {
-                    duration: 5000
-                  })
-                } else {
-                  errorMessage = 'Payment service is temporarily unavailable. The server may not be running or there is a configuration issue.'
-                  toast.error('Payment service unavailable. Please contact support if this persists.', {
-                    duration: 5000
-                  })
-                }
-              } else if (response.status === 400) {
-                errorMessage = errorMessage || 'Invalid request. Please check your payment details.'
-                toast.error(errorMessage)
-              } else {
-                toast.error(errorMessage || 'An error occurred. Please try again.')
-              }
-              throw new Error(errorMessage)
-            }
-            
-            // Retry on 5xx errors (server errors)
-            lastError = new Error(errorMessage)
-            if (attempt < 2) continue // Retry once
-            throw lastError
-          }
-
-          // Ensure response is JSON before parsing (reuse contentType from earlier check)
-          if (!contentType || !contentType.includes('application/json')) {
-            const text = await response.text().catch(() => '')
-            console.error('Non-JSON response from checkout endpoint:', text.substring(0, 200))
-            throw new Error('Checkout endpoint returned non-JSON response. Please verify API_URL configuration.')
-          }
-
-          const session = await response.json()
-
-          if (session.error) {
-            const errorMsg = session.details 
-              ? `${session.error}: ${session.details}`
-              : session.error
-            throw new Error(errorMsg)
-          }
-
-          const checkoutSessionUrl = session.url || session.checkoutUrl
-          if (!checkoutSessionUrl) {
-            throw new Error('No checkout URL received from server')
-          }
-
-          // Success! Redirect to Stripe Checkout
-          window.location.href = checkoutSessionUrl
-          return // Success, exit
-          
-        } catch (error) {
-          lastError = error
-          if (error.name === 'AbortError' || error.message?.includes('timeout')) {
-            if (attempt < 2) continue
-            toast.error('Request timeout. Please check your connection and try again.')
-          } else if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
-            if (attempt < 2) continue
-            toast.error('Network error. Please check your connection and try again.')
-          }
-          if (attempt === 2) {
-            // Final attempt failed
-            if (!error.message?.includes('timeout') && !error.message?.includes('NetworkError')) {
-              toast.error('Unable to create checkout session. Please try again or contact support.')
-            }
-            throw error
-          }
-        }
+      if (!response.ok) {
+        throw new Error(`Erreur serveur: ${response.status}`);
       }
-      
-      // Should never reach here, but just in case
-      throw lastError || new Error('Failed to create checkout session after all retries')
+
+      const session = await response.json();
+      if (session.url) {
+        window.location.href = session.url;
+      } else {
+        throw new Error('Pas d\'URL de redirection reçue');
+      }
+
     } catch (error) {
-      
-      // Provide more helpful error messages
-      let errorMessage = 'Something went wrong. Please try again.'
-      
-      if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
-        errorMessage = 'Cannot connect to server. Please make sure the server is running.'
-      } else if (error.message?.includes('FALLBACK_TO_API_SERVER')) {
-        // This should not happen since we use API server directly
-        errorMessage = 'Unable to create checkout session. Please try again or contact support.'
-      } else if (error.message) {
-        errorMessage = error.message
-      }
-      
-      toast.error(errorMessage)
+      console.error('Erreur Checkout:', error);
+      toast.error(error.message || 'Erreur lors de la création de la session');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
