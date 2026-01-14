@@ -21,6 +21,27 @@ module.exports = function override(config, env) {
             minimizer.options.terserOptions = minimizer.options.terserOptions || {};
             minimizer.options.terserOptions.sourceMap = false;
           }
+          // Also handle CssMinimizerPlugin
+          if (minimizer.constructor.name === 'CssMinimizerPlugin') {
+            minimizer.options = minimizer.options || {};
+            minimizer.options.sourceMap = false;
+          }
+        });
+      }
+      
+      // Disable source maps for all loaders
+      if (config.module && config.module.rules) {
+        config.module.rules.forEach((rule) => {
+          if (rule.use) {
+            rule.use.forEach((use) => {
+              if (use.loader && typeof use.options === 'object') {
+                use.options.sourceMap = false;
+              }
+            });
+          }
+          if (rule.loader && typeof rule.options === 'object') {
+            rule.options.sourceMap = false;
+          }
         });
       }
     }
