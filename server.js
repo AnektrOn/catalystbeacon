@@ -1926,7 +1926,8 @@ if (!fs.existsSync(buildPath)) {
 }
 
 // Health check endpoint (MUST be before static files and catch-all)
-app.get('/health', (req, res) => {
+// Moved to /api/health to match proxy configuration
+app.get('/api/health', (req, res) => {
   const stripeKey = process.env.STRIPE_SECRET_KEY
   res.json({ 
     status: 'ok', 
@@ -1984,7 +1985,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Server running on port ${PORT}`)
   console.log(`✅ Server listening on 0.0.0.0:${PORT} (accessible from all interfaces)`)
   console.log(`✅ Serving React app from: ${buildPath}`)
-  console.log(`✅ Health check available at: http://0.0.0.0:${PORT}/health`)
+  console.log(`✅ Health check available at: http://0.0.0.0:${PORT}/api/health`)
   console.log(`✅ API endpoints available at: http://0.0.0.0:${PORT}/api/*`)
   
   // Final check: Try to reload server.env one more time if Stripe key is missing
