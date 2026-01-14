@@ -1,4 +1,5 @@
 import { loadStripe } from '@stripe/stripe-js'
+import { API_ENDPOINTS } from './config'
 
 // Get Stripe publishable key from environment variables
 // Create React App uses REACT_APP_ prefix
@@ -16,14 +17,15 @@ export const PRICE_IDS = {
   TEACHER_YEARLY: process.env.REACT_APP_STRIPE_TEACHER_YEARLY_PRICE_ID
 }
 
-// Use relative URL - backend is proxied through the same domain
-// This works for both development (Vite proxy) and production
-
 // Modern Stripe Checkout approach - create session on backend first
 export const createCheckoutSession = async (priceId, userEmail) => {
   try {
+    // Use centralized API endpoint configuration
+    const checkoutUrl = API_ENDPOINTS.CREATE_CHECKOUT_SESSION
+    console.log('🔵 Stripe checkout request sent to:', checkoutUrl)
+    
     // Call our backend to create the checkout session using relative URL
-    const response = await fetch('/api/create-checkout-session', {
+    const response = await fetch(checkoutUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

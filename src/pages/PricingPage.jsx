@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { PRICE_IDS } from '../lib/stripe'
+import { API_ENDPOINTS } from '../config'
 
 const PricingPage = () => {
   const { user, profile } = useAuth()
@@ -93,6 +94,10 @@ const PricingPage = () => {
       // Use relative URL - backend is proxied through the same domain
       // This works for both development (Vite proxy) and production
       
+      // Use centralized API endpoint configuration
+      const checkoutUrl = API_ENDPOINTS.CREATE_CHECKOUT_SESSION
+      console.log('🔵 Stripe checkout request sent to:', checkoutUrl)
+      
       // Retry logic: Try up to 2 times with exponential backoff
       let lastError = null
       for (let attempt = 1; attempt <= 2; attempt++) {
@@ -102,7 +107,7 @@ const PricingPage = () => {
             await new Promise(resolve => setTimeout(resolve, 1000))
           }
           
-          const response = await fetch('/api/create-checkout-session', {
+          const response = await fetch(checkoutUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
