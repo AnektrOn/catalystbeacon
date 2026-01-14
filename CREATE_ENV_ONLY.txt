@@ -1,0 +1,70 @@
+# ============================================================
+# SCRIPT POUR CRÉER UNIQUEMENT LE FICHIER .env
+# ============================================================
+# Copiez TOUT le bloc ci-dessous et collez-le dans votre terminal
+# ============================================================
+
+bash << 'CREATE_ENV_EOF'
+cd ~/domains/humancatalystbeacon.com/public_html/app
+
+echo "🚀 Création du fichier .env (Frontend)"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+# Demander les valeurs
+echo "🔵 === SUPABASE ==="
+echo -n "Supabase URL (ex: https://xxxxx.supabase.co): "
+read SUPABASE_URL
+echo -n "Supabase Anon Key (commence par eyJ...): "
+read SUPABASE_ANON_KEY
+echo ""
+
+echo "💳 === STRIPE ==="
+echo -n "Stripe Publishable Key (pk_live_... ou pk_test_...): "
+read STRIPE_PUBLISHABLE_KEY
+echo ""
+
+echo "💰 === STRIPE PRICE IDs ==="
+echo -n "Student Monthly Price ID (price_...): "
+read STUDENT_MONTHLY_PRICE_ID
+echo -n "Student Yearly Price ID (price_...): "
+read STUDENT_YEARLY_PRICE_ID
+echo -n "Teacher Monthly Price ID (price_...): "
+read TEACHER_MONTHLY_PRICE_ID
+echo -n "Teacher Yearly Price ID (price_...): "
+read TEACHER_YEARLY_PRICE_ID
+echo ""
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "📝 Création du fichier .env..."
+echo ""
+
+# Créer le fichier .env
+{
+  echo "# Supabase Configuration"
+  echo "REACT_APP_SUPABASE_URL=$SUPABASE_URL"
+  echo "REACT_APP_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY"
+  echo ""
+  echo "# Stripe Configuration (Publishable Key - Public)"
+  echo "REACT_APP_STRIPE_PUBLISHABLE_KEY=$STRIPE_PUBLISHABLE_KEY"
+  echo ""
+  echo "# Stripe Price IDs"
+  echo "REACT_APP_STRIPE_STUDENT_MONTHLY_PRICE_ID=$STUDENT_MONTHLY_PRICE_ID"
+  echo "REACT_APP_STRIPE_STUDENT_YEARLY_PRICE_ID=$STUDENT_YEARLY_PRICE_ID"
+  echo "REACT_APP_STRIPE_TEACHER_MONTHLY_PRICE_ID=$TEACHER_MONTHLY_PRICE_ID"
+  echo "REACT_APP_STRIPE_TEACHER_YEARLY_PRICE_ID=$TEACHER_YEARLY_PRICE_ID"
+  echo ""
+  echo "# API URL"
+  echo "REACT_APP_API_URL=https://app.humancatalystbeacon.com"
+  echo ""
+  echo "# Optional: Logging Level"
+  echo "# REACT_APP_LOG_LEVEL=production"
+} > .env
+
+echo "✅ Fichier .env créé avec succès!"
+echo ""
+echo "🔍 Vérification:"
+cat .env | grep REACT_APP_SUPABASE_URL
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+CREATE_ENV_EOF

@@ -218,7 +218,7 @@ const paymentLimiter = rateLimit({
 // CORS configuration - restrict origins in production
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? (process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['https://humancatalystbeacon.com'])
+    ? (process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['https://app.humancatalystbeacon.com', 'https://humancatalystbeacon.com'])
     : true, // Allow all origins in development
   credentials: true,
   optionsSuccessStatus: 200

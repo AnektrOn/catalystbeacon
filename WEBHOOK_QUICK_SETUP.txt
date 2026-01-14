@@ -1,0 +1,39 @@
+# ============================================================
+# SETUP RAPIDE WEBHOOK STRIPE - RÉSUMÉ
+# ============================================================
+
+# 1. ALLER DANS STRIPE DASHBOARD
+#    https://dashboard.stripe.com → Developers → Webhooks → Add endpoint
+
+# 2. CONFIGURER L'ENDPOINT
+#    URL: https://app.humancatalystbeacon.com/api/webhook
+#    Événements à sélectionner:
+#      ✅ checkout.session.completed
+#      ✅ customer.subscription.created
+#      ✅ customer.subscription.updated
+#      ✅ customer.subscription.deleted
+#      ✅ invoice.payment_succeeded
+#      ✅ invoice.payment_failed
+#      ✅ invoice.upcoming
+
+# 3. COPIER LE SIGNING SECRET
+#    Dans Stripe Dashboard → Votre webhook → Signing secret → Reveal
+#    Copiez le secret (commence par whsec_...)
+
+# 4. AJOUTER DANS server.env
+cd ~/domains/humancatalystbeacon.com/public_html/app
+echo -n "Collez votre Stripe Webhook Secret (whsec_...): "
+read WEBHOOK_SECRET
+echo "STRIPE_WEBHOOK_SECRET=$WEBHOOK_SECRET" >> server.env
+
+# 5. REDÉMARRER PM2
+pm2 restart hcuniversity-app --update-env
+pm2 save
+
+# 6. TESTER
+#    Dans Stripe Dashboard → Votre webhook → Send test webhook
+#    Vérifiez les logs: pm2 logs hcuniversity-app
+
+echo ""
+echo "✅ Configuration terminée!"
+echo "🔍 Vérifiez les logs: pm2 logs hcuniversity-app"

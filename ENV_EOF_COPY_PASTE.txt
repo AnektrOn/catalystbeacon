@@ -1,0 +1,162 @@
+# ============================================================
+# SCRIPT INTERACTIF - COPY AND PASTE DIRECTEMENT DANS LE TERMINAL
+# ============================================================
+# Copiez TOUT le bloc ci-dessous et collez-le dans votre terminal
+# Le script vous demandera interactivement de rentrer vos identifiants
+# ============================================================
+
+bash << 'ENV_SETUP_EOF'
+cd ~/domains/humancatalystbeacon.com/public_html/app
+
+echo "🚀 Configuration des fichiers d'environnement"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "📋 Veuillez entrer vos identifiants (appuyez sur Entrée après chaque valeur)"
+echo ""
+
+# Collecte des informations Supabase
+echo "🔵 === SUPABASE ==="
+echo -n "Supabase URL (ex: https://xxxxx.supabase.co): "
+read SUPABASE_URL
+echo -n "Supabase Anon Key (commence par eyJ...): "
+read SUPABASE_ANON_KEY
+echo -n "Supabase Service Role Key (commence par eyJ...): "
+read SUPABASE_SERVICE_ROLE_KEY
+echo ""
+
+# Collecte des informations Stripe
+echo "💳 === STRIPE ==="
+echo -n "Stripe Publishable Key (pk_live_... ou pk_test_...): "
+read STRIPE_PUBLISHABLE_KEY
+echo -n "Stripe Secret Key (sk_live_... ou sk_test_...): "
+read STRIPE_SECRET_KEY
+echo -n "Stripe Webhook Secret (whsec_...): "
+read STRIPE_WEBHOOK_SECRET
+echo ""
+
+# Collecte des Price IDs
+echo "💰 === STRIPE PRICE IDs ==="
+echo -n "Student Monthly Price ID (price_...): "
+read STUDENT_MONTHLY_PRICE_ID
+echo -n "Student Yearly Price ID (price_...): "
+read STUDENT_YEARLY_PRICE_ID
+echo -n "Teacher Monthly Price ID (price_...): "
+read TEACHER_MONTHLY_PRICE_ID
+echo -n "Teacher Yearly Price ID (price_...): "
+read TEACHER_YEARLY_PRICE_ID
+echo ""
+
+# N8N (optionnel)
+echo "📧 === N8N (Optionnel) ==="
+echo -n "N8N Webhook URL (appuyez sur Entrée pour ignorer): "
+read N8N_WEBHOOK_URL
+echo ""
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "📝 Création des fichiers..."
+echo ""
+
+# ============================================================
+# CRÉATION DU FICHIER .env (Frontend)
+# ============================================================
+
+cat > .env << 'ENV_EOF'
+# Supabase Configuration
+REACT_APP_SUPABASE_URL=
+ENV_EOF
+
+# Ajouter les valeurs avec echo pour éviter les problèmes de heredoc
+echo "REACT_APP_SUPABASE_URL=$SUPABASE_URL" > .env
+echo "REACT_APP_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY" >> .env
+echo "" >> .env
+echo "# Stripe Configuration (Publishable Key - Public)" >> .env
+echo "REACT_APP_STRIPE_PUBLISHABLE_KEY=$STRIPE_PUBLISHABLE_KEY" >> .env
+echo "" >> .env
+echo "# Stripe Price IDs" >> .env
+echo "REACT_APP_STRIPE_STUDENT_MONTHLY_PRICE_ID=$STUDENT_MONTHLY_PRICE_ID" >> .env
+echo "REACT_APP_STRIPE_STUDENT_YEARLY_PRICE_ID=$STUDENT_YEARLY_PRICE_ID" >> .env
+echo "REACT_APP_STRIPE_TEACHER_MONTHLY_PRICE_ID=$TEACHER_MONTHLY_PRICE_ID" >> .env
+echo "REACT_APP_STRIPE_TEACHER_YEARLY_PRICE_ID=$TEACHER_YEARLY_PRICE_ID" >> .env
+echo "" >> .env
+echo "# API URL" >> .env
+echo "REACT_APP_API_URL=https://app.humancatalystbeacon.com" >> .env
+
+echo "✅ Fichier .env créé"
+
+# ============================================================
+# CRÉATION DU FICHIER server.env (Backend)
+# ============================================================
+
+# Créer server.env avec echo pour éviter les problèmes de heredoc
+echo "# Supabase Configuration (Backend - Service Role Key)" > server.env
+echo "SUPABASE_URL=$SUPABASE_URL" >> server.env
+echo "SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY" >> server.env
+echo "" >> server.env
+echo "# Stripe Configuration (Secret Key - Private)" >> server.env
+echo "STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY" >> server.env
+echo "STRIPE_WEBHOOK_SECRET=$STRIPE_WEBHOOK_SECRET" >> server.env
+echo "" >> server.env
+echo "# Stripe Price IDs (Backend - same as frontend)" >> server.env
+echo "STRIPE_STUDENT_MONTHLY_PRICE_ID=$STUDENT_MONTHLY_PRICE_ID" >> server.env
+echo "STRIPE_STUDENT_YEARLY_PRICE_ID=$STUDENT_YEARLY_PRICE_ID" >> server.env
+echo "STRIPE_TEACHER_MONTHLY_PRICE_ID=$TEACHER_MONTHLY_PRICE_ID" >> server.env
+echo "STRIPE_TEACHER_YEARLY_PRICE_ID=$TEACHER_YEARLY_PRICE_ID" >> server.env
+echo "" >> server.env
+echo "# Server Configuration" >> server.env
+echo "NODE_ENV=production" >> server.env
+echo "PORT=3001" >> server.env
+echo "" >> server.env
+echo "# CORS Configuration" >> server.env
+echo "ALLOWED_ORIGINS=https://app.humancatalystbeacon.com,https://humancatalystbeacon.com" >> server.env
+echo "" >> server.env
+echo "# Email Configuration (N8N Webhook)" >> server.env
+echo "N8N_WEBHOOK_URL=$N8N_WEBHOOK_URL" >> server.env
+echo "" >> server.env
+echo "# Site Configuration" >> server.env
+echo "SITE_URL=https://app.humancatalystbeacon.com" >> server.env
+echo "FROM_EMAIL=noreply@humancatalystbeacon.com" >> server.env
+
+echo "✅ Fichier server.env créé"
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "✅ Configuration terminée!"
+echo ""
+echo "📋 Fichiers créés:"
+echo "   - .env (Frontend)"
+echo "   - server.env (Backend)"
+echo ""
+echo "🔍 Vérification rapide:"
+echo "   cat .env | grep REACT_APP_SUPABASE_URL"
+echo "   cat server.env | grep SUPABASE_URL"
+echo ""
+echo "🔒 Important: Ces fichiers sont sensibles, ne les partagez jamais!"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+ENV_SETUP_EOF
+
+# ============================================================
+# INSTRUCTIONS:
+# ============================================================
+# 1. Copiez TOUT le bloc ci-dessus (de "bash << 'ENV_SETUP_EOF'" 
+#    jusqu'à "ENV_SETUP_EOF" inclus)
+# 
+# 2. Collez dans votre terminal SSH sur Hostinger
+#
+# 3. Le script vous demandera interactivement de rentrer:
+#    - Supabase URL
+#    - Supabase Anon Key
+#    - Supabase Service Role Key
+#    - Stripe Publishable Key
+#    - Stripe Secret Key
+#    - Stripe Webhook Secret
+#    - Student Monthly Price ID
+#    - Student Yearly Price ID
+#    - Teacher Monthly Price ID
+#    - Teacher Yearly Price ID
+#    - N8N Webhook URL (optionnel)
+#
+# 4. Répondez à chaque question en tapant votre valeur et appuyez sur Entrée
+#
+# 5. Les fichiers .env et server.env seront créés automatiquement
+#
+# ============================================================

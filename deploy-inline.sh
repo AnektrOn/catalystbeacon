@@ -1,7 +1,9 @@
 #!/bin/bash
 # Robust Deployment Script - Hostinger Optimized
-# Usage: bash deploy.sh
+# Usage: Copy and paste the entire content below into your terminal
+# Or run: bash deploy-inline.sh
 
+bash << 'DEPLOY_EOF'
 set -e
 
 APP_DIR=~/domains/humancatalystbeacon.com/public_html/app
@@ -151,7 +153,7 @@ echo ""
 echo "🔧 Step 6: Setting permissions and routing..."
 chmod -R 755 .
 find . -type f -exec chmod 644 {} \;
-chmod 755 deploy.sh # On garde le script exécutable
+chmod 755 deploy.sh 2>/dev/null || true # On garde le script exécutable si il existe
 
 # Création du .htaccess pour gérer React Router sur LiteSpeed
 cat <<EOT > .htaccess
@@ -184,4 +186,4 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "✅ DEPLOYMENT COMPLETE!"
 echo "🌐 URL: https://app.humancatalystbeacon.com"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
+DEPLOY_EOF

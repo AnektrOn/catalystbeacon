@@ -1,0 +1,70 @@
+# ============================================================
+# SCRIPT SIMPLE POUR CRÉER LE FICHIER .env
+# ============================================================
+# Copiez et exécutez ces commandes UNE PAR UNE dans votre terminal
+# ============================================================
+
+cd ~/domains/humancatalystbeacon.com/public_html/app
+
+echo "🚀 Création du fichier .env (Frontend)"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# Demander les valeurs
+echo ""
+echo "🔵 === SUPABASE ==="
+read -p "Supabase URL (ex: https://xxxxx.supabase.co): " SUPABASE_URL
+read -p "Supabase Anon Key (commence par eyJ...): " SUPABASE_ANON_KEY
+
+echo ""
+echo "💳 === STRIPE ==="
+read -p "Stripe Publishable Key (pk_live_... ou pk_test_...): " STRIPE_PUBLISHABLE_KEY
+
+echo ""
+echo "💰 === STRIPE PRICE IDs ==="
+read -p "Student Monthly Price ID (price_...): " STUDENT_MONTHLY_PRICE_ID
+read -p "Student Yearly Price ID (price_...): " STUDENT_YEARLY_PRICE_ID
+read -p "Teacher Monthly Price ID (price_...): " TEACHER_MONTHLY_PRICE_ID
+read -p "Teacher Yearly Price ID (price_...): " TEACHER_YEARLY_PRICE_ID
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "📝 Création du fichier .env..."
+echo ""
+
+# Créer le fichier .env
+cat > .env << EOF
+# Supabase Configuration
+REACT_APP_SUPABASE_URL=$SUPABASE_URL
+REACT_APP_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+
+# Stripe Configuration (Publishable Key - Public)
+REACT_APP_STRIPE_PUBLISHABLE_KEY=$STRIPE_PUBLISHABLE_KEY
+
+# Stripe Price IDs
+REACT_APP_STRIPE_STUDENT_MONTHLY_PRICE_ID=$STUDENT_MONTHLY_PRICE_ID
+REACT_APP_STRIPE_STUDENT_YEARLY_PRICE_ID=$STUDENT_YEARLY_PRICE_ID
+REACT_APP_STRIPE_TEACHER_MONTHLY_PRICE_ID=$TEACHER_MONTHLY_PRICE_ID
+REACT_APP_STRIPE_TEACHER_YEARLY_PRICE_ID=$TEACHER_YEARLY_PRICE_ID
+
+# API URL
+REACT_APP_API_URL=https://app.humancatalystbeacon.com
+
+# Optional: Logging Level
+# REACT_APP_LOG_LEVEL=production
+EOF
+
+echo "✅ Fichier .env créé avec succès!"
+echo ""
+echo "🔍 Vérification:"
+cat .env | grep REACT_APP_SUPABASE_URL
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# ============================================================
+# INSTRUCTIONS:
+# ============================================================
+# 1. Copiez TOUT le bloc ci-dessus (de "cd ~/domains..." jusqu'à la fin)
+# 2. Collez dans votre terminal SSH
+# 3. Appuyez sur Entrée
+# 4. Répondez aux questions qui apparaissent
+# ============================================================

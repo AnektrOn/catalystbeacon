@@ -1,0 +1,46 @@
+# ============================================================
+# CRÉER .env ÉTAPE PAR ÉTAPE
+# ============================================================
+# Copiez et exécutez chaque bloc UNE FOIS, attendez la question, répondez, puis passez au suivant
+# ============================================================
+
+# ÉTAPE 1: Aller dans le répertoire
+cd ~/domains/humancatalystbeacon.com/public_html/app
+
+# ÉTAPE 2: Créer le fichier et demander Supabase URL
+echo "# Supabase Configuration" > .env
+read -p "Supabase URL: " SUPABASE_URL
+echo "REACT_APP_SUPABASE_URL=$SUPABASE_URL" >> .env
+
+# ÉTAPE 3: Demander Supabase Anon Key
+read -p "Supabase Anon Key: " SUPABASE_ANON_KEY
+echo "REACT_APP_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY" >> .env
+echo "" >> .env
+
+# ÉTAPE 4: Demander Stripe Publishable Key
+echo "# Stripe Configuration" >> .env
+read -p "Stripe Publishable Key: " STRIPE_PUBLISHABLE_KEY
+echo "REACT_APP_STRIPE_PUBLISHABLE_KEY=$STRIPE_PUBLISHABLE_KEY" >> .env
+echo "" >> .env
+
+# ÉTAPE 5: Demander les Price IDs
+echo "# Stripe Price IDs" >> .env
+read -p "Student Monthly Price ID: " STUDENT_MONTHLY_PRICE_ID
+echo "REACT_APP_STRIPE_STUDENT_MONTHLY_PRICE_ID=$STUDENT_MONTHLY_PRICE_ID" >> .env
+
+read -p "Student Yearly Price ID: " STUDENT_YEARLY_PRICE_ID
+echo "REACT_APP_STRIPE_STUDENT_YEARLY_PRICE_ID=$STUDENT_YEARLY_PRICE_ID" >> .env
+
+read -p "Teacher Monthly Price ID: " TEACHER_MONTHLY_PRICE_ID
+echo "REACT_APP_STRIPE_TEACHER_MONTHLY_PRICE_ID=$TEACHER_MONTHLY_PRICE_ID" >> .env
+
+read -p "Teacher Yearly Price ID: " TEACHER_YEARLY_PRICE_ID
+echo "REACT_APP_STRIPE_TEACHER_YEARLY_PRICE_ID=$TEACHER_YEARLY_PRICE_ID" >> .env
+echo "" >> .env
+
+# ÉTAPE 6: Ajouter l'API URL
+echo "REACT_APP_API_URL=https://app.humancatalystbeacon.com" >> .env
+
+# ÉTAPE 7: Vérifier
+echo "✅ Fichier .env créé!"
+cat .env

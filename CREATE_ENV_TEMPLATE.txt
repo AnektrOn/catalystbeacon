@@ -1,0 +1,31 @@
+# ============================================================
+# MÉTHODE LA PLUS SIMPLE - Créer un template et l'éditer
+# ============================================================
+# Copiez et collez ces commandes :
+
+cd ~/domains/humancatalystbeacon.com/public_html/app
+
+cat > .env << 'TEMPLATE_EOF'
+# Supabase Configuration
+REACT_APP_SUPABASE_URL=VOTRE_SUPABASE_URL_ICI
+REACT_APP_SUPABASE_ANON_KEY=VOTRE_SUPABASE_ANON_KEY_ICI
+
+# Stripe Configuration
+REACT_APP_STRIPE_PUBLISHABLE_KEY=VOTRE_STRIPE_PUBLISHABLE_KEY_ICI
+
+# Stripe Price IDs
+REACT_APP_STRIPE_STUDENT_MONTHLY_PRICE_ID=VOTRE_STUDENT_MONTHLY_PRICE_ID_ICI
+REACT_APP_STRIPE_STUDENT_YEARLY_PRICE_ID=VOTRE_STUDENT_YEARLY_PRICE_ID_ICI
+REACT_APP_STRIPE_TEACHER_MONTHLY_PRICE_ID=VOTRE_TEACHER_MONTHLY_PRICE_ID_ICI
+REACT_APP_STRIPE_TEACHER_YEARLY_PRICE_ID=VOTRE_TEACHER_YEARLY_PRICE_ID_ICI
+
+# API URL
+REACT_APP_API_URL=https://app.humancatalystbeacon.com
+TEMPLATE_EOF
+
+echo "✅ Template .env créé!"
+echo ""
+echo "Maintenant éditez le fichier avec: nano .env"
+echo "Remplacez tous les VOTRE_XXX_ICI par vos vraies valeurs"
+echo ""
+echo "Pour ouvrir: nano .env"

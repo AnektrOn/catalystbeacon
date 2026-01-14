@@ -1,0 +1,123 @@
+# ============================================================
+# TEMPLATE ENVIRONNEMENT - COPY AND PASTE
+# ============================================================
+# Copiez le contenu ci-dessous et remplacez les valeurs entre <>
+# ============================================================
+
+# ============================================================
+# FICHIER .env (Frontend - à placer dans le répertoire racine)
+# ============================================================
+
+cat << 'ENV_EOF' > .env
+# Supabase Configuration
+REACT_APP_SUPABASE_URL=<VOTRE_SUPABASE_URL>
+REACT_APP_SUPABASE_ANON_KEY=<VOTRE_SUPABASE_ANON_KEY>
+
+# Stripe Configuration (Publishable Key - Public)
+REACT_APP_STRIPE_PUBLISHABLE_KEY=<VOTRE_STRIPE_PUBLISHABLE_KEY>
+
+# Stripe Price IDs
+REACT_APP_STRIPE_STUDENT_MONTHLY_PRICE_ID=<VOTRE_STUDENT_MONTHLY_PRICE_ID>
+REACT_APP_STRIPE_STUDENT_YEARLY_PRICE_ID=<VOTRE_STUDENT_YEARLY_PRICE_ID>
+REACT_APP_STRIPE_TEACHER_MONTHLY_PRICE_ID=<VOTRE_TEACHER_MONTHLY_PRICE_ID>
+REACT_APP_STRIPE_TEACHER_YEARLY_PRICE_ID=<VOTRE_TEACHER_YEARLY_PRICE_ID>
+
+# API URL
+REACT_APP_API_URL=https://app.humancatalystbeacon.com
+
+# Optional: Payment Links (if using Stripe Payment Links)
+# REACT_APP_STRIPE_PAYMENT_LINK_MONTHLY=<VOTRE_PAYMENT_LINK_MONTHLY>
+# REACT_APP_STRIPE_PAYMENT_LINK_YEARLY=<VOTRE_PAYMENT_LINK_YEARLY>
+
+# Optional: Logging Level (production, development, debug)
+# REACT_APP_LOG_LEVEL=production
+ENV_EOF
+
+echo "✅ Fichier .env créé"
+
+# ============================================================
+# FICHIER server.env (Backend - à placer dans le répertoire racine)
+# ============================================================
+
+cat << 'SERVER_ENV_EOF' > server.env
+# Supabase Configuration (Backend - Service Role Key)
+SUPABASE_URL=<VOTRE_SUPABASE_URL>
+SUPABASE_SERVICE_ROLE_KEY=<VOTRE_SUPABASE_SERVICE_ROLE_KEY>
+
+# Stripe Configuration (Secret Key - Private)
+STRIPE_SECRET_KEY=<VOTRE_STRIPE_SECRET_KEY>
+STRIPE_WEBHOOK_SECRET=<VOTRE_STRIPE_WEBHOOK_SECRET>
+
+# Stripe Price IDs (Backend - same as frontend)
+STRIPE_STUDENT_MONTHLY_PRICE_ID=<VOTRE_STUDENT_MONTHLY_PRICE_ID>
+STRIPE_STUDENT_YEARLY_PRICE_ID=<VOTRE_STUDENT_YEARLY_PRICE_ID>
+STRIPE_TEACHER_MONTHLY_PRICE_ID=<VOTRE_TEACHER_MONTHLY_PRICE_ID>
+STRIPE_TEACHER_YEARLY_PRICE_ID=<VOTRE_TEACHER_YEARLY_PRICE_ID>
+
+# Server Configuration
+NODE_ENV=production
+PORT=3001
+
+# CORS Configuration (optional - defaults are set in server.js)
+ALLOWED_ORIGINS=https://app.humancatalystbeacon.com,https://humancatalystbeacon.com
+
+# Email Configuration (N8N Webhook)
+N8N_WEBHOOK_URL=<VOTRE_N8N_WEBHOOK_URL>
+
+# Site Configuration
+SITE_URL=https://app.humancatalystbeacon.com
+FROM_EMAIL=noreply@humancatalystbeacon.com
+SERVER_ENV_EOF
+
+echo "✅ Fichier server.env créé"
+
+# ============================================================
+# INSTRUCTIONS DE REMPLACEMENT
+# ============================================================
+# Remplacez les valeurs suivantes dans les fichiers créés :
+#
+# <VOTRE_SUPABASE_URL>
+#   → Votre URL Supabase (ex: https://xxxxx.supabase.co)
+#
+# <VOTRE_SUPABASE_ANON_KEY>
+#   → Votre clé anonyme Supabase (commence par eyJ...)
+#
+# <VOTRE_SUPABASE_SERVICE_ROLE_KEY>
+#   → Votre clé service role Supabase (commence par eyJ...)
+#   ⚠️  SECRET - Ne jamais exposer dans le frontend!
+#
+# <VOTRE_STRIPE_PUBLISHABLE_KEY>
+#   → Votre clé publique Stripe (commence par pk_live_... ou pk_test_...)
+#
+# <VOTRE_STRIPE_SECRET_KEY>
+#   → Votre clé secrète Stripe (commence par sk_live_... ou sk_test_...)
+#   ⚠️  SECRET - Ne jamais exposer dans le frontend!
+#
+# <VOTRE_STRIPE_WEBHOOK_SECRET>
+#   → Votre secret webhook Stripe (commence par whsec_...)
+#
+# <VOTRE_STUDENT_MONTHLY_PRICE_ID>
+#   → ID du prix Stripe pour Student Monthly (commence par price_...)
+#
+# <VOTRE_STUDENT_YEARLY_PRICE_ID>
+#   → ID du prix Stripe pour Student Yearly (commence par price_...)
+#
+# <VOTRE_TEACHER_MONTHLY_PRICE_ID>
+#   → ID du prix Stripe pour Teacher Monthly (commence par price_...)
+#
+# <VOTRE_TEACHER_YEARLY_PRICE_ID>
+#   → ID du prix Stripe pour Teacher Yearly (commence par price_...)
+#
+# <VOTRE_N8N_WEBHOOK_URL>
+#   → URL de votre webhook N8N (ex: https://xxx.n8n.cloud/webhook/xxx)
+#   (Optionnel - peut être laissé vide si non utilisé)
+#
+# ============================================================
+# VÉRIFICATION RAPIDE
+# ============================================================
+# Après avoir rempli les valeurs, vérifiez avec :
+#
+# cat .env | grep -E "REACT_APP_SUPABASE|REACT_APP_STRIPE"
+# cat server.env | grep -E "SUPABASE|STRIPE"
+#
+# ============================================================

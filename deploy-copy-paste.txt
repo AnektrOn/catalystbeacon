@@ -1,7 +1,10 @@
-#!/bin/bash
-# Robust Deployment Script - Hostinger Optimized
-# Usage: bash deploy.sh
+# ============================================================
+# DEPLOY SCRIPT - COPY AND PASTE INTO TERMINAL
+# ============================================================
+# Copy everything below this line and paste into your terminal
+# ============================================================
 
+bash << 'DEPLOY_EOF'
 set -e
 
 APP_DIR=~/domains/humancatalystbeacon.com/public_html/app
@@ -21,7 +24,6 @@ echo ""
 
 # Step 2: Dependencies (Optimized - avoids full cleanup for speed)
 echo "📦 Step 2: Installing dependencies..."
-# On évite de tout supprimer à chaque fois pour gagner du temps, sauf si nécessaire
 npm install --legacy-peer-deps
 
 # Verify critical dependencies are installed
@@ -60,10 +62,8 @@ if [ ! -f ".env" ] && [ ! -f ".env.production" ]; then
     exit 1
 fi
 
-# Create React App automatically loads .env files, but we'll verify they exist
 if [ -f ".env" ]; then
     echo "   ✅ Found .env file"
-    # Verify critical variables exist in .env (without exposing values)
     if grep -q "REACT_APP_SUPABASE_URL" .env && grep -q "REACT_APP_SUPABASE_ANON_KEY" .env; then
         echo "   ✅ .env contains required Supabase variables"
     else
@@ -142,7 +142,6 @@ echo ""
 
 # Step 5: Critical Deployment to Domain Root (Fixes 404/403)
 echo "🚚 Step 5: Synchronizing build with server root..."
-# Copie tout le contenu du build vers le dossier parent (app/) qui est lié au domaine
 cp -r build/* .
 echo "   ✅ Build files synchronized"
 echo ""
@@ -151,7 +150,7 @@ echo ""
 echo "🔧 Step 6: Setting permissions and routing..."
 chmod -R 755 .
 find . -type f -exec chmod 644 {} \;
-chmod 755 deploy.sh # On garde le script exécutable
+chmod 755 deploy.sh 2>/dev/null || true
 
 # Création du .htaccess pour gérer React Router sur LiteSpeed
 cat <<EOT > .htaccess
@@ -184,4 +183,4 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "✅ DEPLOYMENT COMPLETE!"
 echo "🌐 URL: https://app.humancatalystbeacon.com"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
+DEPLOY_EOF
