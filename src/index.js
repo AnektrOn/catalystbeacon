@@ -7,8 +7,13 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import colorPaletteSwitcher from './utils/colorPaletteSwitcher';
 
-// Initialize color palette system
-colorPaletteSwitcher.init();
+// Initialize color palette system - defer to prevent blocking initial render
+// Use requestAnimationFrame to ensure CSS is loaded before initialization
+if (typeof window !== 'undefined') {
+  requestAnimationFrame(() => {
+    colorPaletteSwitcher.init();
+  });
+}
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

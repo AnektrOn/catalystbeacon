@@ -202,7 +202,7 @@
   }
 
   body {
-    background-color: hsl(var(--background));
+    background-color: transparent;
     color: var(--text-primary);
     font-family: 'Cinzel', serif;
     font-size: 1rem; /* 16px - base lisible */

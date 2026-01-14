@@ -177,17 +177,16 @@ const AppShell = () => {
         }
 
         // Get most recent lesson completion
-        // Fix: Remove .not() syntax and filter in JavaScript for compatibility
         const { data: recentLesson, error: lessonError } = await supabase
           .from('user_lesson_progress')
           .select('completed_at, course_id, chapter_number, lesson_number')
           .eq('user_id', user.id)
           .eq('is_completed', true)
+          .not('completed_at', 'is', null)
           .order('completed_at', { ascending: false })
           .limit(1)
           .maybeSingle();
 
-        // Filter out null completed_at in JavaScript
         if (!lessonError && recentLesson && recentLesson.completed_at) {
           // Fetch course title separately
           let courseTitle = 'Course';

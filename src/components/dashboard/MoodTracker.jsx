@@ -322,7 +322,7 @@ const MoodTracker = ({ userId }) => {
 
           {/* Chart Area */}
           <div className="mood-tracker-chart-wrapper">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <LineChart
                 data={chartData}
                 margin={{ top: 10, right: 10, left: 10, bottom: 10 }}

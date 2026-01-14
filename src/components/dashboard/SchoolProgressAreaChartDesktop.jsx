@@ -146,7 +146,7 @@ const SchoolProgressAreaChartDesktop = ({ userId }) => {
           </div>
         ) : chartData && chartData.length > 0 && categories && categories.length > 0 ? (
           <div style={{ width: '100%', height: '320px', position: 'relative', minHeight: '320px' }}>
-            <ResponsiveContainer width="100%" height={320}>
+            <ResponsiveContainer width="100%" height={320} minWidth={0} minHeight={0}>
             <RechartsAreaChart
               data={chartData}
               margin={{ top: 10, right: 10, left: 0, bottom: 60 }}

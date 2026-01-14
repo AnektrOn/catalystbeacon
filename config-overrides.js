@@ -6,9 +6,23 @@ module.exports = function override(config, env) {
   // For production builds, we can disable minification if needed
   // This helps with memory issues on low-resource servers
   if (env === 'production') {
-    // Disable source maps to reduce memory usage
-    if (process.env.GENERATE_SOURCEMAP === 'false') {
+    // Disable source maps by default in production to prevent JSON.parse errors
+    // Source maps are not needed in production and can cause issues when .map files are missing
+    if (process.env.GENERATE_SOURCEMAP !== 'true') {
       config.devtool = false;
+      
+      // Remove source map comments from output files
+      // This prevents browsers from trying to load non-existent .map files
+      if (config.optimization && config.optimization.minimizer) {
+        config.optimization.minimizer.forEach((minimizer) => {
+          if (minimizer.constructor.name === 'TerserPlugin') {
+            minimizer.options = minimizer.options || {};
+            minimizer.options.sourceMap = false;
+            minimizer.options.terserOptions = minimizer.options.terserOptions || {};
+            minimizer.options.terserOptions.sourceMap = false;
+          }
+        });
+      }
     }
     
     // If BUILD_NO_MINIFY is set, disable minification

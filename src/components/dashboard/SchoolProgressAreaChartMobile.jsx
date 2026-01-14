@@ -167,7 +167,7 @@ const SchoolProgressAreaChartMobile = ({ userId }) => {
           </div>
         ) : chartData && chartData.length > 0 && categories && categories.length > 0 ? (
           <div style={{ width: '100%', height: '250px', position: 'relative', minHeight: '250px' }}>
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={250} minWidth={0} minHeight={0}>
             <RechartsAreaChart
               data={chartData}
               margin={{ top: 10, right: 5, left: 0, bottom: 50 }}

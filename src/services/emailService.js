@@ -36,9 +36,14 @@ async function callEmailFunction(emailType, emailData) {
     clearTimeout(timeoutId)
 
     if (!response.ok) {
-      // Handle 404 (Edge Function not deployed) gracefully
+      // Handle 404 (Edge Function not deployed) gracefully - skip Edge Function entirely
       if (response.status === 404) {
-        return { success: false, error: 'Email service not available (Edge Function not deployed)' }
+        return { success: false, error: 'Email service not available (Edge Function not deployed)', skipEdgeFunction: true }
+      }
+      
+      // Handle CORS errors gracefully
+      if (response.status === 0 || response.type === 'opaque') {
+        return { success: false, error: 'CORS error - Edge Function not accessible', skipEdgeFunction: true }
       }
       
       let error
@@ -79,13 +84,19 @@ class EmailService {
     const emailData = { emailType: 'sign-up', email, userName: userName || 'there' }
     
     // Method 1: Try Supabase Edge Function (primary)
+    // Skip if Edge Function is not deployed (404) or has CORS issues
     if (SUPABASE_URL && SUPABASE_ANON_KEY) {
       try {
         const result = await callEmailFunction('sign-up', { email, userName })
         if (result.success) {
           return { success: true, data: result }
         }
+        // If Edge Function is not available, skip to next method
+        if (result.skipEdgeFunction) {
+          // Skip Edge Function for future calls
+        }
       } catch (error) {
+        // Continue to fallback methods
       }
     }
     

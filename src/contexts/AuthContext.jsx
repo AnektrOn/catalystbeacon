@@ -131,8 +131,7 @@ export const AuthProvider = ({ children }) => {
           const result = await dataCache.fetchWithCache(
             cacheKey,
             async () => {
-              // Increase timeout to 10 seconds for slow connections
-              const withTimeout = (promise, ms = 10000) => {
+              const withTimeout = (promise, ms = 5000) => {
                 return Promise.race([
                   promise,
                   new Promise((_, reject) => setTimeout(() => reject(new Error('PROFILE_FETCH_TIMEOUT')), ms))
@@ -164,7 +163,7 @@ export const AuthProvider = ({ children }) => {
       }
       
       // Direct fetch (no cache or cache failed)
-      // Increase timeout to 10 seconds for slow connections
+      // Increased timeout to 10s for production environments with slower connections
       const withTimeout = (promise, ms = 10000) => {
         return Promise.race([
           promise,
@@ -232,11 +231,11 @@ export const AuthProvider = ({ children }) => {
     
     logDebug('🔍 AuthContext: Starting authentication check...')
 
-    // Force timeout to prevent infinite loading (8 seconds max - enough for session + profile fetch)
+    // Force timeout to prevent infinite loading (15 seconds max - enough for session + profile fetch in production)
     const forceTimeout = setTimeout(() => {
       logWarn('⏰ AuthContext: Force timeout reached, setting loading to false')
       setLoading(false)
-    }, 8000)
+    }, 15000)
 
     let loadingCleared = false
     const clearLoadingSafely = () => {
@@ -248,7 +247,8 @@ export const AuthProvider = ({ children }) => {
     }
 
     // Helper to wrap promises with timeout
-    const withTimeout = (promise, ms = 3000) => {
+    // Increased timeout to 5s for production environments
+    const withTimeout = (promise, ms = 5000) => {
       return Promise.race([
         promise,
         new Promise((_, reject) => 

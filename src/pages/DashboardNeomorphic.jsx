@@ -422,25 +422,12 @@ const DashboardNeomorphic = () => {
           .gte('created_at', oneWeekAgo.toISOString())
         xpLogs = result.data || []
         xpError = result.error
-        
-        // Handle 404 (table doesn't exist) or other errors gracefully
-        if (xpError) {
-          // PGRST116 = not found (table or row doesn't exist)
-          // 404 = table doesn't exist or RLS blocking
-          if (xpError.code === 'PGRST116' || xpError.code === '42P01' || xpError.message?.includes('does not exist')) {
-            // Table doesn't exist or RLS issue - use empty array
-            xpLogs = []
-            xpError = null // Clear error to prevent warning
-          }
-        }
       } catch (err) {
-        // Network or other errors - continue with empty array
-        xpLogs = []
         xpError = err
       }
 
-      if (xpError && xpError.code !== 'PGRST116' && xpError.code !== '42P01') {
-        // Only log non-404 errors (table missing is expected if not set up)
+      if (xpError && xpError.code !== 'PGRST116') {
+        // Error loading XP logs
       }
 
       const totalXP = xpLogs?.reduce((sum, log) => sum + (log.xp_earned || 0), 0) || 0
@@ -476,28 +463,23 @@ const DashboardNeomorphic = () => {
 
       let averageScore = 0
       try {
-        // Fix: PostgREST doesn't support .not('score', 'is', null) syntax
-        // Instead, fetch all completed lessons and filter in JavaScript
         const { data: lessonProgress, error: progressError } = await supabase
           .from('user_lesson_progress')
           .select('score')
           .eq('user_id', user.id)
           .eq('is_completed', true)
+          .not('score', 'is', null)
 
         if (!progressError && lessonProgress && lessonProgress.length > 0) {
-          // Filter out null scores in JavaScript
-          const scores = lessonProgress
-            .map(lp => lp.score)
-            .filter(score => score !== null && score !== undefined && score > 0)
-          
+          const scores = lessonProgress.map(lp => lp.score || 0).filter(s => s > 0)
           if (scores.length > 0) {
             averageScore = scores.reduce((sum, score) => sum + score, 0) / scores.length
           }
         } else if (progressError) {
-          // Error loading lesson progress - just continue without average score
+          // 400 error might be due to column name or syntax - just continue
         }
       } catch (err) {
-        // Error calculating average score - continue without it
+        // Error calculating average score
       }
 
       setDashboardData(prev => ({

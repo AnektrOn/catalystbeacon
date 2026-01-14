@@ -253,17 +253,16 @@ const AppShellMobile = () => {
         }
 
         // Get most recent lesson completion
-        // Fix: Remove .not() syntax and filter in JavaScript for compatibility
         const { data: recentLesson, error: lessonError } = await supabase
           .from('user_lesson_progress')
           .select('completed_at, course_id, chapter_number, lesson_number')
           .eq('user_id', user.id)
           .eq('is_completed', true)
+          .not('completed_at', 'is', null)
           .order('completed_at', { ascending: false })
           .limit(1)
           .maybeSingle();
 
-        // Filter out null completed_at in JavaScript
         if (!lessonError && recentLesson && recentLesson.completed_at) {
           // Fetch course title separately
           let courseTitle = 'Course';
@@ -484,7 +483,7 @@ const AppShellMobile = () => {
                 <MoreVertical size={20} aria-hidden="true" />
               </button>
               
-              {isActionsMenuOpen && createPortal(
+              {isActionsMenuOpen && typeof document !== 'undefined' && document.body && createPortal(
                 <>
                   <div 
                     className="fixed inset-0 z-[90]"
@@ -645,7 +644,7 @@ const AppShellMobile = () => {
       </aside>
 
       {/* Mobile Slide-out Menu */}
-      {isMobileMenuOpen && createPortal(
+      {isMobileMenuOpen && typeof document !== 'undefined' && document.body && createPortal(
         <div
           className="fixed inset-0 z-50 lg:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
@@ -768,7 +767,8 @@ const AppShellMobile = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Main Content Area */}
@@ -811,7 +811,7 @@ const AppShellMobile = () => {
         </div>
       </nav>
     </div>
-  );
+  )
 }
 
 export default AppShellMobile;

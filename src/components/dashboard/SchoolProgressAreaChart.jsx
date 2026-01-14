@@ -164,7 +164,7 @@ const SchoolProgressAreaChart = ({ userId }) => {
         </div>
       </div>
       <div className="school-chart-container" style={{ height: `${chartHeight}px`, minHeight: `${chartHeight}px` }}>
-        <ResponsiveContainer width="100%" height={chartHeight}>
+        <ResponsiveContainer width="100%" height={chartHeight} minWidth={0} minHeight={0}>
           <RechartsAreaChart
             data={chartData}
             margin={{ top: 10, right: 10, left: 0, bottom: 60 }}

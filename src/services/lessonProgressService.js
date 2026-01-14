@@ -15,27 +15,22 @@ class LessonProgressService {
   async getCompletedLessonsBySchool(userId, period = 'month') {
     try {
       // First, get all completed lessons
-      // Fix: Remove .not() syntax and filter in JavaScript for compatibility
       const { data: completedLessons, error: lessonsError } = await supabase
         .from('user_lesson_progress')
         .select('completed_at, course_id')
         .eq('user_id', userId)
         .eq('is_completed', true)
+        .not('completed_at', 'is', null)
         .order('completed_at', { ascending: true })
 
       if (lessonsError) throw lessonsError
 
-      // Filter out null completed_at in JavaScript
-      const validCompletedLessons = (completedLessons || []).filter(
-        lesson => lesson.completed_at !== null && lesson.completed_at !== undefined
-      )
-
-      if (!validCompletedLessons || validCompletedLessons.length === 0) {
+      if (!completedLessons || completedLessons.length === 0) {
         return { data: [], categories: [], error: null }
       }
 
       // Get unique course_ids
-      const courseIds = [...new Set(validCompletedLessons.map(l => l.course_id).filter(Boolean))]
+      const courseIds = [...new Set(completedLessons.map(l => l.course_id).filter(Boolean))]
 
       if (courseIds.length === 0) {
         return { data: [], categories: [], error: null }
@@ -61,7 +56,7 @@ class LessonProgressService {
       const grouped = {}
       const schoolNames = new Set()
 
-      validCompletedLessons.forEach(lesson => {
+      completedLessons.forEach(lesson => {
         if (!lesson.completed_at || !lesson.course_id) return
 
         const schoolName = courseMap.get(lesson.course_id) || 'Other'
