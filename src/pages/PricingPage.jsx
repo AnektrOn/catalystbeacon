@@ -87,16 +87,15 @@ const PricingPage = () => {
       return
     }
 
+    // Define endpoint at the very beginning of the function
+    const endpoint = API_ENDPOINTS.CREATE_CHECKOUT_SESSION
+    console.log('🔵 Target endpoint:', endpoint)
+
     setLoading(true)
-    
 
     try {
       // Use relative URL - backend is proxied through the same domain
       // This works for both development (Vite proxy) and production
-      
-      // Use centralized API endpoint configuration
-      const checkoutUrl = API_ENDPOINTS.CREATE_CHECKOUT_SESSION
-      console.log('🔵 Stripe checkout request sent to:', checkoutUrl)
       
       // Retry logic: Try up to 2 times with exponential backoff
       let lastError = null
@@ -107,7 +106,7 @@ const PricingPage = () => {
             await new Promise(resolve => setTimeout(resolve, 1000))
           }
           
-          const response = await fetch(checkoutUrl, {
+          const response = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -205,13 +204,13 @@ const PricingPage = () => {
             throw new Error(errorMsg)
           }
 
-          const checkoutUrl = session.url || session.checkoutUrl
-          if (!checkoutUrl) {
+          const checkoutSessionUrl = session.url || session.checkoutUrl
+          if (!checkoutSessionUrl) {
             throw new Error('No checkout URL received from server')
           }
 
           // Success! Redirect to Stripe Checkout
-          window.location.href = checkoutUrl
+          window.location.href = checkoutSessionUrl
           return // Success, exit
           
         } catch (error) {
