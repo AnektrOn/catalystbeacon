@@ -93,23 +93,6 @@ const PricingPage = () => {
       // Use relative URL - backend is proxied through the same domain
       // This works for both development (Vite proxy) and production
       
-      // Test server connectivity first
-      try {
-        const healthResponse = await fetch('/health', {
-          method: 'GET',
-          signal: AbortSignal.timeout(5000) // 5 second timeout
-        })
-        
-        if (!healthResponse.ok) {
-          // Server health check failed
-        }
-      } catch (healthError) {
-        toast.error('Server is not accessible. Please check if the server is running.')
-        setLoading(false)
-        return
-      }
-      
-      
       // Retry logic: Try up to 2 times with exponential backoff
       let lastError = null
       for (let attempt = 1; attempt <= 2; attempt++) {
