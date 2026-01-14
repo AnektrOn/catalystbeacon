@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processing Payment...</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #f9fafb; margin: 0; }
+        .loader { border: 4px solid #e5e7eb; border-top: 4px solid #4f46e5; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 24px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .status { font-size: 1.25rem; color: #374151; margin-bottom: 1rem; }
+        .error-box { display: none; background-color: #fef2f2; border: 1px solid #fee2e2; color: #991b1b; padding: 1rem; border-radius: 0.5rem; max-width: 400px; text-align: center; }
+        .back-btn { margin-top: 1rem; color: #4f46e5; text-decoration: none; font-weight: 500; display: none; }
+    </style>
+</head>
+<body>
+    <div id="loader" class="loader"></div>
+    <div id="status" class="status">Connecting to secure payment...</div>
+    <div id="error-box" class="error-box"></div>
+    <a href="/pricing" id="back-btn" class="back-btn">Return to Pricing</a>
+
+    <script>
+        // Get params from URL
+        const params = new URLSearchParams(window.location.search);
+        const userId = params.get('uid');
+        const userEmail = params.get('email');
+        const priceId = params.get('pid');
+
+        const statusEl = document.getElementById('status');
+        const loaderEl = document.getElementById('loader');
+        const errorBox = document.getElementById('error-box');
+        const backBtn = document.getElementById('back-btn');
+
+        function showError(msg) {
+            loaderEl.style.display = 'none';
+            statusEl.style.display = 'none';
+            errorBox.style.display = 'block';
+            errorBox.textContent = msg;
+            backBtn.style.display = 'inline-block';
+        }
+
+        if (!userId || !priceId || !userEmail) {
+            showError("Missing payment information. Please try again from the pricing page.");
+        } else {
+            // Call backend API directly using absolute URL to avoid proxy issues
+            fetch('https://app.humancatalystbeacon.com/api/create-checkout-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, userEmail, priceId })
+            })
+            .then(async res => {
+                const text = await res.text();
+                try { return JSON.parse(text); } 
+                catch (e) { throw new Error("Server returned non-JSON response (HTML error page)."); }
+            })
+            .then(data => {
+                if (data.url) {
+                    statusEl.textContent = "Redirecting to Stripe...";
+                    window.location.href = data.url;
+                } else {
+                    throw new Error(data.error || "No payment URL received.");
+                }
+            })
+            .catch(err => showError("Payment Error: " + err.message));
+        }
+    </script>
+</body>
+</html>

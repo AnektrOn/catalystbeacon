@@ -69,22 +69,25 @@ const PricingPage = () => {
   ]
 
   const handleSubscribe = (priceId, paymentLink) => {
-    // Vérifications de base
+    // Direct link bypass
+    if (paymentLink) {
+      window.location.href = paymentLink;
+      return;
+    }
+
     if (!user) {
       navigate('/login');
       return;
     }
 
-    // BYPASS COMPLET : Utilisation directe des Payment Links Stripe en HTML
-    // Pas de fetch, pas de backend, juste une redirection directe
-    if (paymentLink) {
-      console.log('🚀 Redirection directe vers Stripe Payment Link');
-      window.location.href = paymentLink;
-      return;
-    }
+    // Redirect to static HTML page with params
+    const params = new URLSearchParams({
+      uid: user.id,
+      email: user.email,
+      pid: priceId
+    });
 
-    // Si pas de Payment Link, on affiche une erreur
-    toast.error('Payment link not configured. Please contact support.');
+    window.location.href = `/pay.html?${params.toString()}`;
   }
 
   // Determine current plan from role and subscription status
