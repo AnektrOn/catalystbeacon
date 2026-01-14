@@ -1926,8 +1926,8 @@ if (!fs.existsSync(buildPath)) {
 }
 
 // Health check endpoint (MUST be before static files and catch-all)
-// Moved to /api/health to match proxy configuration
-app.get('/api/health', (req, res) => {
+// Dual endpoint: /health (for backward compatibility with old builds) and /api/health
+const healthCheckHandler = (req, res) => {
   const stripeKey = process.env.STRIPE_SECRET_KEY
   res.json({ 
     status: 'ok', 
@@ -1948,7 +1948,11 @@ app.get('/api/health', (req, res) => {
       dotEnvExists: fs.existsSync(path.join(__dirname, '.env'))
     }
   })
-})
+}
+
+// Support both /health (for old builds) and /api/health (for new code)
+app.get('/health', healthCheckHandler)
+app.get('/api/health', healthCheckHandler)
 
 // Serve static files (CSS, JS, images, etc.) - this must come before catch-all
 app.use(express.static(buildPath, {
