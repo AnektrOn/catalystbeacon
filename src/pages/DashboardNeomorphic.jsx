@@ -125,25 +125,14 @@ const DashboardNeomorphic = () => {
     if (payment === 'success' && sessionId && user && !paymentProcessed) {
       setPaymentProcessed(true) // Mark as processed immediately
       
-      // Determine API URL: use Create React App env var with proper fallback
-      const API_URL = process.env.REACT_APP_API_URL || 
-                      (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
-                        ? 'http://localhost:3001' 
-                        : window.location.origin)
-      
       toast.success('🎉 Payment completed! Processing your subscription...')
 
-      // PRIMARY: Use API server directly (most reliable)
+      // PRIMARY: Use API server directly (most reliable) with relative URL
       const processPaymentSuccess = async () => {
         try {
-          // PRIMARY METHOD: Call API server directly
+          // PRIMARY METHOD: Call API server directly using relative URL
           try {
-            const API_URL = process.env.REACT_APP_API_URL || 
-                            (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
-                              ? 'http://localhost:3001' 
-                              : window.location.origin)
-            
-            const response = await fetch(`${API_URL}/api/payment-success?session_id=${sessionId}`, {
+            const response = await fetch(`/api/payment-success?session_id=${sessionId}`, {
               method: 'GET',
               headers: {
                 'Content-Type': 'application/json',

@@ -467,12 +467,8 @@ const SubscriptionSection = ({ profile }) => {
     const [isLoading, setIsLoading] = useState(false);
     
     // WORKAROUND 1: Use Supabase Edge Function (best - no CORS issues)
-    // WORKAROUND 2: Auto-detect environment with fallback
+    // WORKAROUND 2: Use relative URLs - backend is proxied through the same domain
     const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
-    const API_URL = process.env.REACT_APP_API_URL || 
-                    (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
-                        ? 'http://localhost:3001' 
-                        : window.location.origin);
 
     const handleManageSubscription = async () => {
         if (!user?.id) {
@@ -537,8 +533,8 @@ const SubscriptionSection = ({ profile }) => {
                 }
             }
             
-            // WORKAROUND 2: Fallback to API server (with proper URL detection)
-            const response = await fetch(`${API_URL}/api/create-portal-session`, {
+            // WORKAROUND 2: Fallback to API server using relative URL
+            const response = await fetch('/api/create-portal-session', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

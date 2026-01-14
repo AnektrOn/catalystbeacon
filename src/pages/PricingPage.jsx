@@ -3,7 +3,6 @@ import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { PRICE_IDS } from '../lib/stripe'
-import { supabase } from '../lib/supabaseClient'
 
 const PricingPage = () => {
   const { user, profile } = useAuth()
@@ -91,37 +90,18 @@ const PricingPage = () => {
     
 
     try {
-      // Use API server as PRIMARY solution (most reliable)
-      // CRITICAL: On mobile, window.location.origin might not work correctly
-      // Use explicit protocol detection
-      let API_URL = process.env.REACT_APP_API_URL
-      if (!API_URL) {
-        if (typeof window !== 'undefined') {
-          if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            API_URL = 'http://localhost:3001'
-          } else {
-            // Use current origin for production
-            API_URL = `${window.location.protocol}//${window.location.host}`
-          }
-        } else {
-          API_URL = window.location.origin
-        }
-      }
-      
-      
-      // Use API server directly (no Edge Function attempts)
-      const apiBaseUrl = API_URL
+      // Use relative URL - backend is proxied through the same domain
+      // This works for both development (Vite proxy) and production
       
       // Test server connectivity first
       try {
-        const healthResponse = await fetch(`${apiBaseUrl}/health`, {
+        const healthResponse = await fetch('/health', {
           method: 'GET',
           signal: AbortSignal.timeout(5000) // 5 second timeout
         })
         
-        if (healthResponse.ok) {
-          const healthData = await healthResponse.json()
-        } else {
+        if (!healthResponse.ok) {
+          // Server health check failed
         }
       } catch (healthError) {
         toast.error('Server is not accessible. Please check if the server is running.')
@@ -139,7 +119,7 @@ const PricingPage = () => {
             await new Promise(resolve => setTimeout(resolve, 1000))
           }
           
-          const response = await fetch(`${apiBaseUrl}/api/create-checkout-session`, {
+          const response = await fetch('/api/create-checkout-session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -273,8 +253,7 @@ const PricingPage = () => {
       let errorMessage = 'Something went wrong. Please try again.'
       
       if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
-        const apiUrl = process.env.REACT_APP_API_URL || window.location.origin
-        errorMessage = `Cannot connect to server at ${apiUrl}. Please make sure the server is running.`
+        errorMessage = 'Cannot connect to server. Please make sure the server is running.'
       } else if (error.message?.includes('FALLBACK_TO_API_SERVER')) {
         // This should not happen since we use API server directly
         errorMessage = 'Unable to create checkout session. Please try again or contact support.'

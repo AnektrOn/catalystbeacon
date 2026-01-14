@@ -100,18 +100,13 @@ class EmailService {
       }
     }
     
-    // Method 2: Try Server API (fallback)
+    // Method 2: Try Server API (fallback) using relative URL
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 
-                      (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
-                        ? 'http://localhost:3001' 
-                        : window.location.origin)
-      
       // Add timeout to prevent hanging
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 5000)
       
-      const response = await fetch(`${API_URL}/api/send-signup-email`, {
+      const response = await fetch('/api/send-signup-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, userName }),

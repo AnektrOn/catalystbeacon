@@ -16,18 +16,14 @@ export const PRICE_IDS = {
   TEACHER_YEARLY: process.env.REACT_APP_STRIPE_TEACHER_YEARLY_PRICE_ID
 }
 
-// Get API URL from environment variables
-// Create React App uses REACT_APP_ prefix
-const API_URL = process.env.REACT_APP_API_URL || 
-                (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
-                  ? 'http://localhost:3001' 
-                  : window.location.origin)
+// Use relative URL - backend is proxied through the same domain
+// This works for both development (Vite proxy) and production
 
 // Modern Stripe Checkout approach - create session on backend first
 export const createCheckoutSession = async (priceId, userEmail) => {
   try {
-    // Call our backend to create the checkout session
-    const response = await fetch(`${API_URL}/api/create-checkout-session`, {
+    // Call our backend to create the checkout session using relative URL
+    const response = await fetch('/api/create-checkout-session', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

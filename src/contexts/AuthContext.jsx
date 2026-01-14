@@ -420,21 +420,10 @@ export const AuthProvider = ({ children }) => {
         
         
         // Skip Supabase Edge Function - it doesn't exist (404 error)
-        // Go directly to server API
-        
-        // Use server API directly
-        let API_URL = process.env.REACT_APP_API_URL
-        if (!API_URL) {
-          if (process.env.NODE_ENV === 'development') {
-            API_URL = 'http://localhost:3001'
-          } else {
-            API_URL = window.location.origin
-          }
-        }
-        
+        // Go directly to server API using relative URL
         
         try {
-          const response = await fetch(`${API_URL}/api/send-signup-email`, {
+          const response = await fetch('/api/send-signup-email', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
