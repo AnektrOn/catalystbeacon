@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Grid3X3, Clock, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import masteryService from '../../services/masteryService';
@@ -81,7 +82,6 @@ const CalendarTabMobile = () => {
 
         setHabits(transformedHabits);
       } catch (error) {
-        console.error('Error loading data:', error);
       } finally {
         setLoading(false);
       }
@@ -158,7 +158,6 @@ const CalendarTabMobile = () => {
 
   const toggleCompletion = async (eventId) => {
     if (!user || !eventId.startsWith('habit-')) {
-      console.log('❌ toggleCompletion: Invalid user or eventId');
       return;
     }
     
@@ -171,17 +170,14 @@ const CalendarTabMobile = () => {
     const isCompleted = habit?.completed_dates?.includes(dateStr);
     const xpReward = habit?.xp_reward || 10;
     
-    console.log('🔄 toggleCompletion:', { habitId, dateStr, isCompleted, habitTitle: habit?.title });
     
     try {
       if (isCompleted) {
         await masteryService.removeHabitCompletion(user.id, habitId, dateStr);
       } else {
         const result = await masteryService.completeHabit(user.id, habitId, dateStr);
-        console.log('✅ Habit completion result:', result);
         
         // Show success notification with XP reward - call immediately after successful completion
-        console.log('✅ Showing completion toast for:', habit?.title, '+', xpReward, 'XP');
         toast.success(
           `Task Completed! ${habit?.title || 'Task'} • +${xpReward} XP earned`,
           {
@@ -225,13 +221,10 @@ const CalendarTabMobile = () => {
       // Refresh profile to update XP, level, and streak - wait a bit for DB to update
       if (user?.id) {
         setTimeout(async () => {
-          console.log('🔄 Refreshing profile after completion...');
           await fetchProfile(user.id);
-          console.log('✅ Profile refreshed');
         }, 500);
       }
     } catch (error) {
-      console.error('❌ Error toggling completion:', error);
       toast.error('Failed to update task. Please try again.', {
         duration: 3000,
         style: {
@@ -517,12 +510,13 @@ const CalendarTabMobile = () => {
       )}
 
       {/* Day Modal */}
-      {showDayModal && modalDay && (
+      {showDayModal && modalDay && createPortal(
         <div 
           className="fixed inset-0 z-[100] flex items-end justify-center"
           onClick={() => setShowDayModal(false)}
+          style={{ width: '100vw', height: '100vh' }}
         >
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" style={{ width: '100vw', height: '100vh' }} />
           <div 
             className="relative w-full max-w-md bg-ethereal-glass backdrop-blur-ethereal rounded-t-ethereal-lg shadow-ethereal-elevated border-t border-ethereal max-h-[80vh] overflow-y-auto safe-area-bottom"
             onClick={(e) => e.stopPropagation()}
@@ -588,7 +582,8 @@ const CalendarTabMobile = () => {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

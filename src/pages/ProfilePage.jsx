@@ -89,16 +89,10 @@ const ProfilePage = () => {
           const totalXP = profile?.current_xp || 0;
           
           // Debug logging removed for production
-          console.log('- User skills data:', userSkillsResult.data);
-          console.log('- User master stats data:', userMasterStatsResult.data);
-          console.log('- Total XP from profile.current_xp:', totalXP);
-          console.log('- Profile object:', profile);
           
           // Get current and next level based on total XP
           const levelResult = await levelsService.getCurrentAndNextLevel(totalXP);
           if (levelResult.data) {
-            console.log('- Current level:', levelResult.data.currentLevel);
-            console.log('- Next level:', levelResult.data.nextLevel);
             setCurrentLevel(levelResult.data.currentLevel);
             setNextLevel(levelResult.data.nextLevel);
           }
@@ -110,16 +104,12 @@ const ProfilePage = () => {
             userMasterStatsResult.data.forEach(stat => {
               const currentValue = stat.user_master_stats?.[0]?.current_value || 0;
               radarData[stat.display_name] = Math.min(currentValue, 200); // Cap at 200 for radar
-              console.log(`- ${stat.display_name}: ${currentValue}`);
             });
-            console.log('🎯 Final Radar Data:', radarData);
           } else {
-            console.log('❌ No user master stats data available for radar chart');
           }
           setRadarData(radarData);
         }
       } catch (error) {
-        console.error('Error loading user data:', error);
       }
     };
 
@@ -253,7 +243,6 @@ const ProfilePage = () => {
       setFormData(prev => ({ ...prev, avatar_url: publicUrl }))
       toast.success('Profile picture uploaded successfully')
     } catch (error) {
-      console.error('Error uploading avatar:', error)
       toast.error(error?.message || 'Failed to upload profile picture')
       setAvatarPreview(profile?.avatar_url || null)
     } finally {
@@ -310,7 +299,6 @@ const ProfilePage = () => {
         })
 
       if (uploadErr) {
-        console.warn('Backgrounds bucket upload failed, trying avatars bucket:', uploadErr);
         // Fallback to avatars bucket - use same path structure
         const { error: avatarUploadErr } = await supabase.storage
           .from('avatars')
@@ -358,12 +346,10 @@ const ProfilePage = () => {
       if (user?.id) {
         // The updateProfile function should already refresh the profile
         // But we can also manually trigger a refresh if needed
-        console.log('✅ Background image uploaded and profile updated:', publicUrl)
       }
       
       toast.success('Background image uploaded successfully')
     } catch (error) {
-      console.error('Error uploading background image:', error)
       toast.error(error?.message || 'Failed to upload background image')
       setBackgroundPreview(profile?.background_image || null)
     } finally {
@@ -389,7 +375,6 @@ const ProfilePage = () => {
       setAvatarPreview(null)
       toast.success('Profile picture removed')
     } catch (error) {
-      console.error('Error removing avatar:', error)
       toast.error('Failed to remove profile picture')
     }
   }
@@ -409,7 +394,6 @@ const ProfilePage = () => {
       setBackgroundPreview(null)
       toast.success('Background image removed')
     } catch (error) {
-      console.error('Error removing background:', error)
       toast.error('Failed to remove background image')
     }
   }

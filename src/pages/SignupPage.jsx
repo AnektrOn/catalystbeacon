@@ -84,14 +84,10 @@ const SignupPage = () => {
     e.preventDefault()
     e.stopPropagation()
     
-    console.log('Form submitted', { formData })
-    
     // Validate form first
     const isValid = validateForm()
-    console.log('Form validation result:', isValid, { errors })
     
     if (!isValid) {
-      console.log('Form validation failed, showing errors')
       // Scroll to first error
       const firstErrorField = Object.keys(errors)[0]
       if (firstErrorField) {
@@ -111,7 +107,6 @@ const SignupPage = () => {
     const minLoadingTime = new Promise(resolve => setTimeout(resolve, 500))
 
     try {
-      console.log('Calling signUp function...')
       // Security: Password comes from user input (formData.password), never hardcoded
       // All passwords are user-provided and validated before submission
       const [signUpResult] = await Promise.all([
@@ -119,36 +114,29 @@ const SignupPage = () => {
         minLoadingTime
       ])
       
-      console.log('SignUp result:', signUpResult)
       const { data, error } = signUpResult || {}
       
       if (error) {
-        console.error('SignUp error:', error)
         toast.error(error.message || 'Failed to create account')
         setLoading(false)
       } else {
-        console.log('SignUp successful, data:', data)
         // Check if user was immediately signed in (email confirmation disabled)
         if (data?.user && data?.session) {
           // User is signed in, redirect to dashboard (keep loader visible)
-          console.log('User signed in immediately, redirecting to dashboard')
           setTimeout(() => {
             navigate('/dashboard?new_user=true')
           }, 100)
         } else if (data?.user) {
           // User needs to verify email, redirect to login (keep loader visible)
-          console.log('Email confirmation required, redirecting to login')
           setTimeout(() => {
             navigate('/login')
           }, 100)
         } else {
-          console.error('Unexpected signup response - no user data')
           toast.error('Account creation completed but unexpected response received')
           setLoading(false)
         }
       }
     } catch (error) {
-      console.error('Signup error (catch block):', error)
       toast.error(error?.message || 'An unexpected error occurred')
       setLoading(false)
     }

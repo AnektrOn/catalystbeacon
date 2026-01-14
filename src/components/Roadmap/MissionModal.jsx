@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from '../../lib/supabaseClient';
 import './MissionModal.css';
 
@@ -43,7 +44,6 @@ const MissionModal = ({ isOpen, node, masterschool, onClose, onStart, onComplete
         setChapterTitle(content?.attached_to_chapter || `Chapter ${node.lesson.chapter_number}`);
       }
     } catch (err) {
-      console.error('Error loading chapter title:', err);
       setChapterTitle(`Chapter ${node.lesson.chapter_number}`);
     } finally {
       setLoadingChapter(false);
@@ -76,7 +76,7 @@ const MissionModal = ({ isOpen, node, masterschool, onClose, onStart, onComplete
   const { lesson } = node;
   const level = node.id + 1;
 
-  return (
+  return createPortal(
     <div 
       id="modal-overlay" 
       className={`modal-overlay ${isOpen ? 'open' : ''}`}
@@ -155,7 +155,8 @@ const MissionModal = ({ isOpen, node, masterschool, onClose, onStart, onComplete
           {buttonState === 'granted' && 'ACCESS GRANTED'}
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

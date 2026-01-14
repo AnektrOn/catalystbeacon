@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, Target, Star, BookOpen, Dumbbell, Flame, Trash2 } from 'lucide-react';
 import masteryService from '../../services/masteryService';
 import { useAuth } from '../../contexts/AuthContext';
@@ -70,18 +71,15 @@ const HabitsTabRobust = () => {
   useEffect(() => {
     const loadHabits = async () => {
       if (!user) {
-        console.log('📝 HabitsTab: No user, skipping data load');
         return;
       }
       
-      console.log('📝 HabitsTab: Loading habits data for user:', user.id);
       setError(null);
       
       try {
         // Load user habits with completion data
         const { data: userHabits, error: userHabitsError } = await masteryService.getUserHabits(user.id);
         if (userHabitsError) {
-          console.error('❌ HabitsTab: Error loading user habits:', userHabitsError);
           setError('Failed to load habits');
           return;
         }
@@ -89,7 +87,6 @@ const HabitsTabRobust = () => {
         // Load habits library
         const { data: libraryHabits, error: libraryError } = await masteryService.getHabitsLibrary();
         if (libraryError) {
-          console.error('❌ HabitsTab: Error loading habits library:', libraryError);
           setError('Failed to load habits library');
           return;
         }
@@ -125,9 +122,7 @@ const HabitsTabRobust = () => {
 
         setPersonalHabits(transformedHabits);
         setHabitsLibrary(libraryHabits || []);
-        console.log('✅ HabitsTab: Habits loaded successfully:', transformedHabits.length, 'personal habits,', libraryHabits?.length || 0, 'library habits');
       } catch (error) {
-        console.error('❌ HabitsTab: Exception during habits load:', error);
         setError('Failed to load habits data');
       }
     };
@@ -182,11 +177,9 @@ const HabitsTabRobust = () => {
     if (!user) return;
     
     try {
-      console.log('📝 HabitsTab: Toggling habit completion:', habitId, date);
       
       const { error } = await masteryService.toggleHabitCompletion(user.id, habitId, date);
       if (error) {
-        console.error('❌ HabitsTab: Error toggling habit:', error);
         setError('Failed to update habit');
         return;
       }
@@ -224,9 +217,7 @@ const HabitsTabRobust = () => {
         setPersonalHabits(transformedHabits);
       }
       
-      console.log('✅ HabitsTab: Habit toggled successfully');
     } catch (error) {
-      console.error('❌ HabitsTab: Exception during habit toggle:', error);
       setError('Failed to update habit');
     }
   };
@@ -235,11 +226,9 @@ const HabitsTabRobust = () => {
     if (!user || !newHabit.title.trim()) return;
     
     try {
-      console.log('📝 HabitsTab: Creating new habit:', newHabit.title);
       
       const { error } = await masteryService.createUserHabit(user.id, newHabit);
       if (error) {
-        console.error('❌ HabitsTab: Error creating habit:', error);
         setError('Failed to create habit');
         return;
       }
@@ -280,9 +269,7 @@ const HabitsTabRobust = () => {
         setPersonalHabits(transformedHabits);
       }
       
-      console.log('✅ HabitsTab: Habit created successfully');
     } catch (error) {
-      console.error('❌ HabitsTab: Exception during habit creation:', error);
       setError('Failed to create habit');
     }
   };
@@ -291,19 +278,15 @@ const HabitsTabRobust = () => {
     if (!user) return;
     
     try {
-      console.log('📝 HabitsTab: Deleting habit:', habitId);
       
       const { error } = await masteryService.deleteUserHabit(user.id, habitId);
       if (error) {
-        console.error('❌ HabitsTab: Error deleting habit:', error);
         setError('Failed to delete habit');
         return;
       }
 
       setPersonalHabits(prev => prev.filter(h => h.id !== habitId));
-      console.log('✅ HabitsTab: Habit deleted successfully');
     } catch (error) {
-      console.error('❌ HabitsTab: Exception during habit deletion:', error);
       setError('Failed to delete habit');
     }
   };
@@ -480,9 +463,9 @@ const HabitsTabRobust = () => {
       )}
 
       {/* Create Habit Modal */}
-      {showAddHabit && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-ethereal-glass rounded-ethereal border border-ethereal p-6 w-full max-w-md">
+      {showAddHabit && createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto" style={{ width: '100vw', height: '100vh' }}>
+          <div className="bg-ethereal-glass rounded-ethereal border border-ethereal p-6 w-full max-w-md my-auto" style={{ maxHeight: 'calc(100vh - 40px)' }}>
             <h3 className="text-lg font-semibold mb-4">Create New Habit</h3>
             <div className="space-y-4">
               <div>
@@ -532,7 +515,8 @@ const HabitsTabRobust = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

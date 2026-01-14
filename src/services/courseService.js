@@ -63,6 +63,8 @@ class CourseService {
    */
   async getAllCourses(filters = {}) {
     try {
+      const queryStartTime = Date.now();
+      
       // Optimized: First get course_ids with structures (fast, indexed, minimal data)
       // Then filter course_metadata by those IDs (also fast with index)
       const { data: courseStructures, error: structureError } = await supabase
@@ -74,6 +76,8 @@ class CourseService {
         // Return the error so the caller knows something went wrong
         return { data: null, error: structureError };
       }
+
+      logDebug(`Course structure query took ${Date.now() - queryStartTime}ms`);
 
       // Extract unique course_ids that have structures, filtering out null/undefined values
       const courseIdsWithStructure = [...new Set(
@@ -103,25 +107,46 @@ class CourseService {
 
       // Filter by unlocked schools if userId is provided
       if (filters.userId) {
-        // Get user's XP and unlocked schools
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('current_xp')
-          .eq('id', filters.userId)
-          .single();
+        const unlockQueryStartTime = Date.now();
+        
+        // Get user's XP and unlocked schools in parallel for better performance
+        const [profileResult, schoolsResult] = await Promise.all([
+          supabase
+            .from('profiles')
+            .select('current_xp')
+            .eq('id', filters.userId)
+            .single(),
+          supabase
+            .from('schools')
+            .select('name, unlock_xp')
+            .order('unlock_xp', { ascending: true })
+        ]);
 
-        const userXp = profile?.current_xp || 0;
+        if (profileResult.error) {
+          logWarn('Error fetching user profile for unlock check:', profileResult.error);
+        }
+        if (schoolsResult.error) {
+          logWarn('Error fetching schools for unlock check:', schoolsResult.error);
+        }
 
-        // Get unlocked school names
-        const { data: schools } = await supabase
-          .from('schools')
-          .select('name')
-          .lte('unlock_xp', userXp);
+        const userXp = profileResult?.data?.current_xp || 0;
 
-        const unlockedSchoolNames = schools?.map(s => s.name) || ['Ignition'];
+        // Get unlocked school names (filter in memory for better performance)
+        const unlockedSchoolNames = (schoolsResult?.data || [])
+          .filter(s => s.unlock_xp <= userXp)
+          .map(s => s.name);
+
+        // Always include Ignition as it's the default unlocked school
+        if (unlockedSchoolNames.length === 0 || !unlockedSchoolNames.includes('Ignition')) {
+          unlockedSchoolNames.push('Ignition');
+        }
+
+        logDebug(`Unlock check query took ${Date.now() - unlockQueryStartTime}ms, unlocked schools: ${unlockedSchoolNames.length}`);
 
         // Filter courses to only show unlocked schools
-        query = query.in('masterschool', unlockedSchoolNames);
+        if (unlockedSchoolNames.length > 0) {
+          query = query.in('masterschool', unlockedSchoolNames);
+        }
       }
 
       if (filters.difficulty_level) {
@@ -132,7 +157,9 @@ class CourseService {
         query = query.ilike('topic', `%${filters.topic}%`);
       }
 
+      const metadataQueryStartTime = Date.now();
       const { data, error } = await query;
+      const metadataQueryTime = Date.now() - metadataQueryStartTime;
 
       if (error) {
         logError(error, 'courseService - Error fetching courses with filters');
@@ -140,7 +167,7 @@ class CourseService {
         throw error;
       }
       
-      logDebug(`Successfully fetched ${data?.length || 0} courses with course_structure`);
+      logDebug(`Successfully fetched ${data?.length || 0} courses with course_structure (metadata query took ${metadataQueryTime}ms, total time: ${Date.now() - queryStartTime}ms)`);
       return { data, error: null };
     } catch (error) {
       logError(error, 'courseService - Error fetching courses');

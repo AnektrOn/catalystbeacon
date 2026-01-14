@@ -81,7 +81,6 @@ const AppearanceSection = ({ profile, updateProfile }) => {
                 });
 
             if (uploadErr) {
-                console.warn('Backgrounds bucket upload failed, trying avatars bucket:', uploadErr);
                 // If backgrounds bucket doesn't exist, try avatars bucket
                 // For avatars bucket, use the same path structure
                 const { error: avatarUploadErr } = await supabase.storage
@@ -117,7 +116,6 @@ const AppearanceSection = ({ profile, updateProfile }) => {
             }
 
             // Update profile with new background image URL (preserve existing settings)
-            console.log('📸 SettingsPage: Updating profile with background image URL:', publicUrl);
             const updateData = {
                 background_image: publicUrl,
                 updated_at: new Date().toISOString()
@@ -130,12 +128,10 @@ const AppearanceSection = ({ profile, updateProfile }) => {
 
             if (updateError) throw updateError;
 
-            console.log('✅ SettingsPage: Profile updated successfully:', updatedProfile);
             setBackgroundImage(publicUrl);
             setPreviewUrl(publicUrl);
             toast.success('Background image uploaded successfully');
         } catch (error) {
-            console.error('Error uploading background image:', error);
             toast.error(error?.message || 'Failed to upload background image');
         } finally {
             setIsUploading(false);
@@ -173,7 +169,6 @@ const AppearanceSection = ({ profile, updateProfile }) => {
         setIsUploading(true);
         try {
             const urlToSave = backgroundImageUrl.trim();
-            console.log('📸 SettingsPage: Updating profile with background image URL:', urlToSave);
             const updateData = {
                 background_image: urlToSave,
                 updated_at: new Date().toISOString()
@@ -186,13 +181,11 @@ const AppearanceSection = ({ profile, updateProfile }) => {
 
             if (error) throw error;
 
-            console.log('✅ SettingsPage: Profile updated successfully:', updatedProfile);
             setBackgroundImage(urlToSave);
             setPreviewUrl(urlToSave);
             setBackgroundImageUrl('');
             toast.success('Background image updated successfully');
         } catch (error) {
-            console.error('Error updating background image:', error);
             toast.error(error?.message || 'Failed to update background image');
         } finally {
             setIsUploading(false);
@@ -219,7 +212,6 @@ const AppearanceSection = ({ profile, updateProfile }) => {
             setBackgroundImageUrl('');
             toast.success('Background image removed');
         } catch (error) {
-            console.error('Error removing background image:', error);
             toast.error(error?.message || 'Failed to remove background image');
         } finally {
             setIsUploading(false);
@@ -508,7 +500,6 @@ const SubscriptionSection = ({ profile }) => {
                     const supabaseEndpoint = `${SUPABASE_URL}/functions/v1/create-portal-session`;
                     const accessToken = authSession.access_token;
                     
-                    console.log('Using Supabase Edge Function:', supabaseEndpoint);
                     
                     // Add 5s timeout to prevent hanging
                     const controller = new AbortController()
@@ -532,7 +523,6 @@ const SubscriptionSection = ({ profile }) => {
                             return;
                         }
                     } else if (response.status === 401 || response.status === 404 || response.status === 503 || response.status >= 500) {
-                        console.warn(`⚠️ Supabase Edge Function returned ${response.status}, falling back to API server`);
                         throw new Error('FALLBACK_TO_API_SERVER');
                     }
                 } catch (supabaseError) {
@@ -540,17 +530,14 @@ const SubscriptionSection = ({ profile }) => {
                     if (supabaseError.name === 'AbortError' || 
                         supabaseError.message === 'FALLBACK_TO_API_SERVER' ||
                         supabaseError.message?.includes('timeout')) {
-                        console.warn('Supabase Edge Function timeout or error, falling back to API server:', supabaseError.name || supabaseError.message);
                         // Fall through to API server
                     } else {
-                        console.warn('Supabase Edge Function error:', supabaseError);
                         throw new Error('FALLBACK_TO_API_SERVER');
                     }
                 }
             }
             
             // WORKAROUND 2: Fallback to API server (with proper URL detection)
-            console.log('Using API server:', `${API_URL}/api/create-portal-session`);
             const response = await fetch(`${API_URL}/api/create-portal-session`, {
                 method: 'POST',
                 headers: {
@@ -573,7 +560,6 @@ const SubscriptionSection = ({ profile }) => {
                 throw new Error('No portal URL returned');
             }
         } catch (error) {
-            console.error('Error creating portal session:', error);
             toast.error(error?.message || 'Failed to open subscription management. Please try again.');
         } finally {
             setIsLoading(false);
@@ -779,7 +765,6 @@ const SettingsPage = () => {
 
             toast.success('Profile updated successfully');
         } catch (error) {
-            console.error('Error updating profile:', error);
             toast.error(error?.message || 'Failed to update profile');
         } finally {
             setIsSaving(false);

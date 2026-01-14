@@ -34,7 +34,6 @@ export function init() {
     // Listen for dark mode changes
     setupDarkModeListener();
   } catch (error) {
-    console.error('Error initializing color palette:', error);
     switchTo(DEFAULT_PALETTE, false);
   }
 }
@@ -74,7 +73,6 @@ export function switchTo(paletteKey, save = true) {
   
   const palette = colorPalettes[paletteKey];
   if (!palette) {
-    console.warn(`Palette "${paletteKey}" not found. Using default.`);
     switchTo(DEFAULT_PALETTE, save);
     return;
   }
@@ -97,7 +95,6 @@ export function switchTo(paletteKey, save = true) {
     try {
       localStorage.setItem(STORAGE_KEY, paletteKey);
     } catch (error) {
-      console.error('Error saving color palette to localStorage:', error);
     }
   }
   

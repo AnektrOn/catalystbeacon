@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabaseClient';
@@ -359,11 +360,6 @@ const AppShellMobile = () => {
 
   // Debug: Log current profile state
   useEffect(() => {
-    console.log('🎨 AppShellMobile: Current profile state:', {
-      hasProfile: !!profile,
-      hasBackgroundImage: !!profile?.background_image,
-      backgroundImageUrl: profile?.background_image
-    });
   }, [profile]);
 
   return (
@@ -487,11 +483,12 @@ const AppShellMobile = () => {
                 <MoreVertical size={20} aria-hidden="true" />
               </button>
               
-              {isActionsMenuOpen && (
+              {isActionsMenuOpen && createPortal(
                 <>
                   <div 
                     className="fixed inset-0 z-[90]"
                     onClick={() => setIsActionsMenuOpen(false)}
+                    style={{ width: '100vw', height: '100vh' }}
                   />
                   <div
                     className="fixed bg-ethereal-glass backdrop-blur-ethereal rounded-ethereal shadow-ethereal-elevated border border-ethereal z-[100] overflow-visible"
@@ -543,7 +540,8 @@ const AppShellMobile = () => {
                       </button>
                     </div>
                   </div>
-                </>
+                </>,
+                document.body
               )}
             </div>
             
@@ -646,12 +644,13 @@ const AppShellMobile = () => {
       </aside>
 
       {/* Mobile Slide-out Menu */}
-      {isMobileMenuOpen && (
+      {isMobileMenuOpen && createPortal(
         <div
           className="fixed inset-0 z-50 lg:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
+          style={{ width: '100vw', height: '100vh' }}
         >
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" style={{ width: '100vw', height: '100vh' }} />
           <div
             className="absolute top-0 left-0 bottom-0 w-80 max-w-[80vw] bg-ethereal-glass backdrop-blur-ethereal border-r border-ethereal shadow-ethereal-elevated flex flex-col"
             onClick={(e) => e.stopPropagation()}
@@ -811,8 +810,9 @@ const AppShellMobile = () => {
         </div>
       </nav>
     </div>
-  );
-};
+    ,
+    document.body
+  )}
 
 export default AppShellMobile;
 

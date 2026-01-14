@@ -37,7 +37,6 @@ const ToolboxTabMobile = () => {
         const { data: userTools } = await masteryService.getUserToolboxItems(user.id);
         setUserToolbox(userTools || []);
       } catch (err) {
-        console.error('Error loading toolbox:', err);
         // Error logged above
       } finally {
         setLoading(false);
@@ -68,7 +67,6 @@ const ToolboxTabMobile = () => {
 
       triggerRefresh();
     } catch (err) {
-      console.error('Error using tool:', err);
     }
   };
 
@@ -98,7 +96,6 @@ const ToolboxTabMobile = () => {
         },
       });
     } catch (err) {
-      console.error('Error adding tool:', err);
       toast.error('Failed to add tool. Please try again.', {
         duration: 3000,
         style: {
@@ -133,7 +130,6 @@ const ToolboxTabMobile = () => {
         },
       });
     } catch (err) {
-      console.error('Error deleting tool:', err);
       toast.error('Failed to delete tool. Please try again.', {
         duration: 3000,
         style: {
@@ -194,7 +190,6 @@ const ToolboxTabMobile = () => {
       const msgLower = msg.toLowerCase();
       const needsColumn = msgLower.includes('show_on_calendar') && (msgLower.includes('column') || msgLower.includes('schema cache'));
 
-      console.error('Error toggling calendar visibility:', msg, errObj);
 
       if (needsColumn) {
         setCalendarVisibilitySupported(false);

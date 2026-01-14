@@ -111,7 +111,6 @@ export const useRoadmapLessonTracking = (
     const scrollContainer = findScrollContainer();
     
     if (!scrollContainer) {
-      console.warn('Scroll container not found');
       return 0;
     }
     
@@ -165,9 +164,7 @@ export const useRoadmapLessonTracking = (
     setScrollPercentage(prev => {
       // Only log significant changes (10% increments)
       if (percentage >= 100 && prev < 100) {
-        console.log('🎉 Scrolled to bottom! 100%');
       } else if (Math.floor(percentage / 10) !== Math.floor(prev / 10)) {
-        console.log(`📜 Scroll: ${percentage}%`);
       }
       return percentage;
     });
@@ -196,7 +193,6 @@ export const useRoadmapLessonTracking = (
 
       lastUpdateRef.current = Date.now();
     } catch (err) {
-      console.error('Error updating lesson tracking:', err);
       setError(err.message);
     }
   }, [enabled, userId, courseId, chapterNumber, lessonNumber]);
@@ -215,10 +211,8 @@ export const useRoadmapLessonTracking = (
 
   // Initialize tracking on mount
   useEffect(() => {
-    console.log('🎯 LessonTracker mounted:', { enabled, userId, courseId, chapterNumber, lessonNumber });
     
     if (!enabled || !userId || !courseId) {
-      console.warn('Tracking disabled or missing data:', { enabled, userId, courseId });
       return;
     }
 
@@ -235,21 +229,17 @@ export const useRoadmapLessonTracking = (
         );
 
         if (progress) {
-          console.log('📊 Loaded existing progress:', progress);
           // Don't set time from previous session - start fresh
           // setTimeSpent(progress.time_spent_seconds || 0);
           setScrollPercentage(progress.scroll_percentage || 0);
           setCanComplete(progress.can_complete || false);
         } else {
-          console.log('No existing progress, starting fresh');
         }
       } catch (err) {
-        console.error('Error loading lesson progress:', err);
       }
 
       // Start tracking AFTER loading progress
       if (!startTimeRef.current) {
-        console.log('⏱️ Initializing timer...');
         startTimeRef.current = Date.now();
         setIsTracking(true);
 
@@ -268,19 +258,16 @@ export const useRoadmapLessonTracking = (
           // Log every 10 seconds
           if (elapsed % 10 === 0 && elapsed > 0) {
             const currentScroll = calculateScrollPercentage();
-            console.log(`⏱️ ${elapsed}s | 📜 ${currentScroll}%`);
             updateProgress(elapsed, currentScroll);
           }
         }, 1000);
 
-        console.log('✅ Timer started! Interval:', intervalRef.current);
       }
     };
 
     init();
 
     return () => {
-      console.log('🛑 LessonTracker unmounting');
       isMountedRef.current = false;
       
       if (intervalRef.current) {
@@ -300,7 +287,6 @@ export const useRoadmapLessonTracking = (
   // Add scroll listener - works for both desktop and mobile
   useEffect(() => {
     if (!enabled) {
-      console.log('Scroll listener not added - tracking disabled');
       return;
     }
 
@@ -311,13 +297,11 @@ export const useRoadmapLessonTracking = (
     const setupListenerForContainer = (container) => {
       // Don't setup duplicate listeners
       if (isListenerSetup) {
-        console.log('⚠️ Listener already setup, skipping...');
         return;
       }
 
       if (container === 'window') {
         // Handle window scrolling (mobile fallback)
-        console.log('📜 Adding scroll listener to window (mobile fallback)...');
         window.addEventListener('scroll', handleScroll, { passive: true });
         // Also listen to touchmove for better mobile detection
         window.addEventListener('touchmove', handleScroll, { passive: true });
@@ -327,7 +311,6 @@ export const useRoadmapLessonTracking = (
         });
       } else {
         // Handle element scrolling
-        console.log('📜 Adding scroll listener to container:', container.className || container.tagName || 'unnamed');
         container.addEventListener('scroll', handleScroll, { passive: true });
         // Also listen to touchmove for better mobile detection
         container.addEventListener('touchmove', handleScroll, { passive: true });
@@ -337,21 +320,17 @@ export const useRoadmapLessonTracking = (
         });
       }
       isListenerSetup = true;
-      console.log('✅ Scroll listener added');
     };
 
     const setupScrollListener = () => {
       scrollContainer = findScrollContainer();
       
       if (!scrollContainer) {
-        console.warn('⚠️ Scroll container not found, retrying in 1s...');
         const timeout = setTimeout(() => {
           const retryContainer = findScrollContainer();
           if (retryContainer) {
-            console.log('✅ Found scroll container on retry');
             setupListenerForContainer(retryContainer);
           } else {
-            console.error('❌ Scroll container still not found');
           }
         }, 1000);
         
@@ -370,7 +349,6 @@ export const useRoadmapLessonTracking = (
       if (!isListenerSetup) {
         const newContainer = findScrollContainer();
         if (newContainer) {
-          console.log('🔄 Retrying scroll container setup...');
           setupListenerForContainer(newContainer);
         }
       }
@@ -379,7 +357,6 @@ export const useRoadmapLessonTracking = (
     cleanupFunctions.push(() => clearTimeout(retryTimeout));
 
     return () => {
-      console.log('Removing scroll listener');
       cleanupFunctions.forEach(cleanup => cleanup());
       isListenerSetup = false;
     };
@@ -396,7 +373,6 @@ export const useRoadmapLessonTracking = (
       
       // Update to server when status changes
       if (shouldBeComplete) {
-        console.log('🎉 All requirements met! Can complete lesson now.');
         forceUpdate();
       }
     }

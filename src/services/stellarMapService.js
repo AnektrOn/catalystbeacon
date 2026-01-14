@@ -25,7 +25,6 @@ class StellarMapService {
       }
 
       if (!data || data.length === 0) {
-        console.warn(`[StellarMapService] No families found for level "${level}"`);
       }
 
       return { data: data || [], error: null };
@@ -238,7 +237,6 @@ class StellarMapService {
 
       if (!families || families.length === 0) {
         const warning = `[StellarMapService] No families found for level "${level}" (normalized: "${finalLevel}")`;
-        console.warn(warning);
         if (isDevelopment) {
           // Check if level exists at all in database
           const { data: allLevels } = await supabase
@@ -246,7 +244,6 @@ class StellarMapService {
             .select('level')
             .order('level');
           const uniqueLevels = [...new Set((allLevels || []).map(f => f.level))];
-          console.warn(`[StellarMapService] Available levels in database:`, uniqueLevels);
         }
         return { data: {}, error: null };
       }
@@ -258,7 +255,6 @@ class StellarMapService {
       families.forEach(family => {
         if (!family.id || !family.name) {
           if (isDevelopment) {
-            console.warn('[StellarMapService] Family missing id or name:', family);
           }
           return;
         }
@@ -269,7 +265,6 @@ class StellarMapService {
           family.constellations.forEach(constellation => {
             if (!constellation.id || !constellation.name) {
               if (isDevelopment) {
-                console.warn('[StellarMapService] Constellation missing id or name:', constellation);
               }
               return;
             }
@@ -277,11 +272,6 @@ class StellarMapService {
             // CRITICAL: Validate constellation level matches the requested level
             if (constellation.level && constellation.level !== finalLevel) {
               if (isDevelopment) {
-                console.warn(
-                  `[StellarMapService] SKIPPING constellation "${constellation.name}" (${constellation.id}): ` +
-                  `has level "${constellation.level}" but requested level is "${finalLevel}". ` +
-                  `This constellation should not be in a ${finalLevel} family.`
-                );
               }
               return; // Skip this constellation - it's for a different level
             }
@@ -289,10 +279,6 @@ class StellarMapService {
             // Validate constellation belongs to this family
             if (constellation.family_id && constellation.family_id !== family.id) {
               if (isDevelopment) {
-                console.warn(
-                  `[StellarMapService] Constellation "${constellation.name}" has mismatched family_id: ` +
-                  `expected ${family.id}, got ${constellation.family_id}`
-                );
               }
             }
 
@@ -347,17 +333,9 @@ class StellarMapService {
         });
 
         if ((nodes?.length || 0) === 0 && (totalNodeCount || 0) > 0) {
-          console.warn(
-            `[StellarMapService] WARNING: ${totalNodeCount} nodes exist for level "${level}" but 0 nodes loaded. ` +
-            `This may indicate a data structure issue.`
-          );
         }
 
         if ((totalNodeCount || 0) === 0) {
-          console.warn(
-            `[StellarMapService] WARNING: No nodes exist in database for level "${level}" (normalized: "${finalLevel}"). ` +
-            `Check if nodes have been imported for this level.`
-          );
           // Check what levels have nodes
           const { data: levelsWithNodes } = await supabase
             .from('stellar_map_nodes')
@@ -366,9 +344,7 @@ class StellarMapService {
             `);
           if (levelsWithNodes && levelsWithNodes.length > 0) {
             const availableLevels = [...new Set(levelsWithNodes.map(n => n.constellations?.level).filter(Boolean))];
-            console.warn(`[StellarMapService] Available levels with nodes:`, availableLevels);
           } else {
-            console.warn(`[StellarMapService] No nodes found in database at all. Database may be empty.`);
           }
         }
       }
@@ -383,7 +359,6 @@ class StellarMapService {
         nodes.forEach(node => {
           if (!node.constellations || !node.constellations.id) {
             if (isDevelopment) {
-              console.warn(`[StellarMapService] Node ${node.id} missing constellation relationship`);
             }
             misgroupedNodes.push({
               node,
@@ -397,10 +372,6 @@ class StellarMapService {
 
           if (!constellationData) {
             if (isDevelopment) {
-              console.warn(
-                `[StellarMapService] Node ${node.id} (${node.title}) has constellation_id ${constellationId} ` +
-                `that is not in level "${level}"`
-              );
             }
             misgroupedNodes.push({
               node,
@@ -417,10 +388,6 @@ class StellarMapService {
           const nodeConstellationLevel = node.constellations?.level;
           if (nodeConstellationLevel && nodeConstellationLevel !== finalLevel) {
             if (isDevelopment) {
-              console.warn(
-                `[StellarMapService] Node ${node.id} (${node.title}) belongs to constellation ` +
-                `"${constellation.name}" with level "${nodeConstellationLevel}" but requested level is "${finalLevel}"`
-              );
             }
             misgroupedNodes.push({
               node,
@@ -434,11 +401,6 @@ class StellarMapService {
           if (isDevelopment) {
             const nodeConstellationFamilyId = node.constellations?.family_id;
             if (nodeConstellationFamilyId && nodeConstellationFamilyId !== family.id) {
-              console.warn(
-                `[StellarMapService] Note: Node ${node.id} (${node.title}) has constellation with family_id ${nodeConstellationFamilyId} ` +
-                `but is correctly grouped under family ${family.id} (${family.name}) via constellation mapping. ` +
-                `This is acceptable - trusting the constellation-family relationship from our map.`
-              );
             }
           }
 
@@ -497,32 +459,13 @@ class StellarMapService {
         );
 
         if (misgroupedNodes.length > 0) {
-          console.warn(
-            `[StellarMapService] Found ${misgroupedNodes.length} misgrouped nodes for level "${level}":`,
-            misgroupedNodes.map(item => ({
-              nodeId: item.node.id,
-              nodeTitle: item.node.title,
-              reason: item.reason
-            }))
-          );
+          // Log misgrouped nodes if needed
         }
 
         if (totalNodes === 0 && (nodes?.length || 0) > 0) {
-          console.warn(
-            `[StellarMapService] WARNING: ${nodes.length} nodes fetched but 0 nodes in result. ` +
-            `This could mean:\n` +
-            `1. All nodes were filtered out by validation\n` +
-            `2. User XP (${xp}) is too low for level "${level}" (Insight needs 15000+, Transformation needs 36000+)\n` +
-            `3. No nodes match the constellation-family relationships`
-          );
         }
 
         if (totalNodes === 0 && (nodes?.length || 0) === 0) {
-          console.warn(
-            `[StellarMapService] No nodes found for level "${level}". ` +
-            `Check if nodes exist in database for this level. ` +
-            `(XP filter has been removed - all nodes should be visible)`
-          );
         }
       }
 
@@ -731,7 +674,6 @@ class StellarMapService {
       // Check completion status
       const { data: completion, error: completionError } = await this.checkNodeCompletion(userId, nodeId);
       if (completionError) {
-        console.warn('Error checking completion status:', completionError);
         // Return node data even if completion check fails
       }
 

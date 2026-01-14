@@ -19,25 +19,15 @@ const ProtectedSubscriptionRoute = ({ children, requiredFeature = null }) => {
 
   // Debug logging for admin access
   if (profile) {
-    console.log('🔐 ProtectedRoute Check:', {
-      role,
-      isAdminUser,
-      isAdmin,
-      hasProfile: !!profile,
-      loading,
-      path: location.pathname
-    })
   }
 
   // Admin users have access to everything - allow immediately (check both sources)
   // Check profile role directly first, then fallback to hook result
   if (isAdminUser && profile) {
-    console.log('✅ Admin access granted via profile role')
     return children
   }
   
   if (isAdmin && profile) {
-    console.log('✅ Admin access granted via subscription hook')
     return children
   }
 

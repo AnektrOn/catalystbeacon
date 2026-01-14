@@ -80,20 +80,13 @@ const SchoolProgressAreaChart = ({ userId }) => {
         )
 
         if (result.error) {
-          console.error('Error loading chart data:', result.error)
           setChartData([])
           setCategories([])
         } else {
-          console.log('Chart data loaded:', { 
-            dataPoints: result.data?.length || 0, 
-            categories: result.categories?.length || 0,
-            sampleData: result.data?.[0]
-          })
           setChartData(result.data || [])
           setCategories(result.categories || [])
         }
       } catch (err) {
-        console.error('Error in loadData:', err)
         setChartData([])
         setCategories([])
       } finally {

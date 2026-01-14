@@ -29,7 +29,6 @@ const XPProgressChart = ({ userId }) => {
           .order('created_at', { ascending: true })
 
         if (error) {
-          console.error('Error loading XP chart data:', error)
           throw error
         }
 
@@ -62,7 +61,6 @@ const XPProgressChart = ({ userId }) => {
 
         setChartData(chartDataArray)
       } catch (error) {
-        console.error('Error loading XP chart data:', error)
         setChartData([])
       } finally {
         setLoading(false)

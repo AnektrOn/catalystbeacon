@@ -326,17 +326,24 @@
 
 /* Modal */
 .mood-tracker-modal-overlay {
-  position: fixed;
-  inset: 0;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
-  z-index: 1000;
+  z-index: 1000 !important;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 20px;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 20px;
+  box-sizing: border-box;
+  margin: 0 !important;
 }
 
 .mood-tracker-modal {
@@ -344,14 +351,15 @@
   border-radius: 16px;
   width: 100%;
   max-width: 400px;
-  max-height: calc(100vh - 40px);
+  max-height: calc(100vh - 40px) !important;
   overflow-y: auto;
   overflow-x: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   border: 1px solid hsl(var(--border));
   -webkit-overflow-scrolling: touch;
-  margin: 0;
-  position: relative;
+  margin: auto !important;
+  position: relative !important;
+  transform: none !important;
 }
 
 .mood-tracker-modal-header {
@@ -673,19 +681,18 @@
   }
 
   .mood-tracker-modal-overlay {
-    padding: 8px;
-    align-items: flex-start;
+    padding: 20px;
+    align-items: center;
     justify-content: center;
-    padding-top: 60px;
+    padding-top: 20px;
   }
 
   .mood-tracker-modal {
-    max-width: calc(100% - 16px);
-    max-height: calc(100vh - 80px);
-    margin: 0 auto;
+    max-width: calc(100% - 40px);
+    max-height: calc(100vh - 40px);
+    margin: auto;
     width: 100%;
     position: relative;
-    top: 0;
   }
 
   .mood-tracker-modal-header {
@@ -755,14 +762,16 @@
   }
 
   .mood-tracker-modal-overlay {
-    padding: 4px;
-    padding-top: 16px;
+    padding: 20px;
+    align-items: center;
+    justify-content: center;
   }
 
   .mood-tracker-modal {
-    max-width: calc(100% - 8px);
-    max-height: calc(100vh - 32px);
+    max-width: calc(100% - 40px);
+    max-height: calc(100vh - 40px);
     border-radius: 12px;
+    margin: auto;
   }
 
   .mood-tracker-modal-header,

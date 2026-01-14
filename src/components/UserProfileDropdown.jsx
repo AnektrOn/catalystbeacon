@@ -38,7 +38,6 @@ const UserProfileDropdown = ({ isOpen, onClose }) => {
             navigate('/login');
             onClose();
         } catch (error) {
-            console.error('Error signing out:', error);
             // Still navigate to login even if signOut fails
             navigate('/login');
             onClose();

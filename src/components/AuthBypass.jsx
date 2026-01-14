@@ -8,7 +8,12 @@ const AuthBypass = () => {
   const bypassAuth = () => {
     setIsBypassing(true)
     // Clear any existing auth state
-    localStorage.removeItem('sb-mbffycgrqfeesfnhhcdm-auth-token')
+    // Clear all Supabase auth tokens from localStorage
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
+        localStorage.removeItem(key)
+      }
+    })
     sessionStorage.clear()
     
     // Navigate to login

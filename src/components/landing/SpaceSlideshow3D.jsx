@@ -341,7 +341,6 @@ const SpaceSlideshow3D = ({ slides = [] }) => {
     setIsTransitioning(true);
     setCurrentSlide((prev) => {
       const next = (prev + 1) % totalSlides;
-      console.log('Next slide:', next);
       return next;
     });
     setTimeout(() => setIsTransitioning(false), 1500);
@@ -352,7 +351,6 @@ const SpaceSlideshow3D = ({ slides = [] }) => {
     setIsTransitioning(true);
     setCurrentSlide((prev) => {
       const next = (prev - 1 + totalSlides) % totalSlides;
-      console.log('Previous slide:', next);
       return next;
     });
     setTimeout(() => setIsTransitioning(false), 1500);
@@ -361,7 +359,6 @@ const SpaceSlideshow3D = ({ slides = [] }) => {
   const goToSlide = (index) => {
     if (isTransitioning || index === currentSlide) return;
     setIsTransitioning(true);
-    console.log('Go to slide:', index);
     setCurrentSlide(index);
     setTimeout(() => setIsTransitioning(false), 1500);
   };

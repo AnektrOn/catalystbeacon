@@ -74,7 +74,6 @@ const SchoolProgressAreaChartMobile = ({ userId }) => {
         )
 
         if (result.error) {
-          console.error('Error loading chart data:', result.error)
           setChartData([])
           setCategories([])
         } else {
@@ -85,15 +84,6 @@ const SchoolProgressAreaChartMobile = ({ userId }) => {
             data = data.slice(-3)
           }
 
-          console.log('Mobile Chart Data:', { 
-            dataLength: data.length, 
-            categories: result.categories?.length || 0,
-            sampleData: data[0],
-            allData: data,
-            firstDataPoint: data[0],
-            categoriesList: result.categories,
-            dataKeys: data[0] ? Object.keys(data[0]) : []
-          })
           
           // Verify data structure
           if (data.length > 0 && result.categories && result.categories.length > 0) {
@@ -101,19 +91,8 @@ const SchoolProgressAreaChartMobile = ({ userId }) => {
             const allKeys = Object.keys(firstPoint)
             const hasAllSchools = result.categories.every(cat => allKeys.includes(cat))
             
-            console.log('✅ Data structure check:', {
-              hasPeriod: firstPoint.Period !== undefined,
-              hasSchoolData: hasAllSchools,
-              sampleValues: result.categories.map(cat => ({ school: cat, value: firstPoint[cat], exists: firstPoint[cat] !== undefined })),
-              allKeys: allKeys,
-              expectedCategories: result.categories
-            })
             
             if (!hasAllSchools) {
-              console.error('❌ Missing school data in chart data!', {
-                missing: result.categories.filter(cat => !allKeys.includes(cat)),
-                available: allKeys
-              })
             }
           }
 
@@ -121,7 +100,6 @@ const SchoolProgressAreaChartMobile = ({ userId }) => {
           setCategories(result.categories || [])
         }
       } catch (err) {
-        console.error('Error in loadData:', err)
         setChartData([])
         setCategories([])
       } finally {
@@ -153,16 +131,6 @@ const SchoolProgressAreaChartMobile = ({ userId }) => {
   
   useEffect(() => {
     if (willRender && chartData[0]) {
-      console.log('Mobile Chart Render:', {
-        loading,
-        chartDataLength: chartData?.length || 0,
-        categoriesLength: categories?.length || 0,
-        firstDataPoint: chartData?.[0],
-        willRenderChart: willRender,
-        categories: categories
-      })
-      console.log('📊 First data point keys:', Object.keys(chartData[0]))
-      console.log('📊 First data point values:', chartData[0])
     }
   }, [willRender, chartData, categories, loading])
 

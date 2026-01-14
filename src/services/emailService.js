@@ -13,7 +13,6 @@ const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY
 async function callEmailFunction(emailType, emailData) {
   try {
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-      console.warn('⚠️ Supabase configuration missing - cannot send email')
       return { success: false, error: 'Supabase configuration missing' }
     }
 
@@ -39,8 +38,6 @@ async function callEmailFunction(emailType, emailData) {
     if (!response.ok) {
       // Handle 404 (Edge Function not deployed) gracefully
       if (response.status === 404) {
-        console.warn('⚠️ send-email Edge Function not found (404). Email will not be sent.')
-        console.warn('To enable emails, deploy the send-email Edge Function in Supabase Dashboard')
         return { success: false, error: 'Email service not available (Edge Function not deployed)' }
       }
       
@@ -57,14 +54,11 @@ async function callEmailFunction(emailType, emailData) {
   } catch (error) {
     // Handle timeout and network errors gracefully
     if (error.name === 'AbortError' || error.message?.includes('timeout')) {
-      console.warn('⚠️ Email service timeout. Email will not be sent.')
       return { success: false, error: 'Email service timeout' }
     }
     if (error.message.includes('NetworkError') || error.message.includes('CORS')) {
-      console.warn('⚠️ Email service unavailable (network error). Email will not be sent.')
       return { success: false, error: 'Email service unavailable' }
     }
-    console.error('Error calling email function:', error)
     return { success: false, error: error.message }
   }
 }
@@ -89,11 +83,9 @@ class EmailService {
       try {
         const result = await callEmailFunction('sign-up', { email, userName })
         if (result.success) {
-          console.log('✅ Sign-up email sent via Supabase Edge Function')
           return { success: true, data: result }
         }
       } catch (error) {
-        console.warn('⚠️ Supabase Edge Function failed, trying server API...')
       }
     }
     
@@ -120,12 +112,10 @@ class EmailService {
       if (response.ok) {
         const result = await response.json()
         if (result.success) {
-          console.log('✅ Sign-up email sent via server API')
           return { success: true, data: result }
         }
       }
     } catch (error) {
-      console.warn('⚠️ Server API failed, queueing email in localStorage...')
     }
     
     // Method 3: Queue in localStorage (ultimate fallback - 100% reliable)
@@ -137,14 +127,12 @@ class EmailService {
         retries: 0
       })
       localStorage.setItem('email_queue', JSON.stringify(emailQueue))
-      console.log('✅ Email queued in localStorage (will retry later)')
       
       // Try to process queue in background
       this.processEmailQueue()
       
       return { success: true, queued: true, message: 'Email queued for sending' }
     } catch (error) {
-      console.error('❌ Failed to queue email:', error)
       return { success: false, error: 'All email methods failed' }
     }
   }
@@ -155,13 +143,11 @@ class EmailService {
       const queue = JSON.parse(localStorage.getItem('email_queue') || '[]')
       if (queue.length === 0) return
       
-      console.log(`📧 Processing ${queue.length} queued emails...`)
       
       const processed = []
       for (const emailItem of queue) {
         // Skip if too many retries
         if (emailItem.retries >= 5) {
-          console.warn('⚠️ Email exceeded max retries, removing from queue:', emailItem.email)
           continue
         }
         
@@ -176,7 +162,6 @@ class EmailService {
           ])
           
           if (result.success) {
-            console.log('✅ Queued email sent successfully:', emailItem.email)
             processed.push(emailItem)
           } else {
             // Increment retry count
@@ -186,7 +171,6 @@ class EmailService {
         } catch (error) {
           // Handle timeout and other errors
           if (error.message?.includes('timeout') || error.name === 'AbortError') {
-            console.warn('⚠️ Email send timeout, will retry later:', emailItem.email)
           }
           emailItem.retries = (emailItem.retries || 0) + 1
           emailItem.lastRetry = Date.now()
@@ -198,10 +182,8 @@ class EmailService {
       localStorage.setItem('email_queue', JSON.stringify(remaining))
       
       if (processed.length > 0) {
-        console.log(`✅ Processed ${processed.length} queued emails`)
       }
     } catch (error) {
-      console.error('Error processing email queue:', error)
     }
   }
 
@@ -222,10 +204,8 @@ class EmailService {
         ipAddress
       })
       
-      console.log('Sign-in confirmation email sent to:', email)
       return { success: true, data: result }
     } catch (error) {
-      console.error('Error sending sign-in email:', error)
       return { success: false, error }
     }
   }
@@ -251,10 +231,8 @@ class EmailService {
         subscriptionId
       })
       
-      console.log('Payment confirmation email sent to:', email)
       return { success: true, data: result }
     } catch (error) {
-      console.error('Error sending payment confirmation email:', error)
       return { success: false, error }
     }
   }
@@ -280,10 +258,8 @@ class EmailService {
         totalXP
       })
       
-      console.log('Lesson completion email sent to:', email)
       return { success: true, data: result }
     } catch (error) {
-      console.error('Error sending lesson completion email:', error)
       return { success: false, error }
     }
   }
@@ -303,10 +279,8 @@ class EmailService {
         newLessons
       })
       
-      console.log('New lessons email sent to:', email)
       return { success: true, data: result }
     } catch (error) {
-      console.error('Error sending new lessons email:', error)
       return { success: false, error }
     }
   }
@@ -332,10 +306,8 @@ class EmailService {
         ctaUrl
       })
       
-      console.log('App update email sent to:', email)
       return { success: true, data: result }
     } catch (error) {
-      console.error('Error sending app update email:', error)
       return { success: false, error }
     }
   }
@@ -357,10 +329,8 @@ class EmailService {
         newRole
       })
       
-      console.log('Role change email sent to:', email)
       return { success: true, data: result }
     } catch (error) {
-      console.error('Error sending role change email:', error)
       return { success: false, error }
     }
   }
@@ -382,10 +352,8 @@ class EmailService {
         cancellationDate
       })
       
-      console.log('Subscription cancellation email sent to:', email)
       return { success: true, data: result }
     } catch (error) {
-      console.error('Error sending subscription cancellation email:', error)
       return { success: false, error }
     }
   }
@@ -413,10 +381,8 @@ class EmailService {
         cancelUrl
       })
       
-      console.log('Renewal reminder email sent to:', email)
       return { success: true, data: result }
     } catch (error) {
-      console.error('Error sending renewal reminder email:', error)
       return { success: false, error }
     }
   }

@@ -7,7 +7,6 @@ const Html = drei.Html;
 
 // Debug: Verify Html is imported
 if (!Html) {
-  console.error('[CanvasNode] Html component is undefined from @react-three/drei', drei);
 }
 
 // Node colors like HTML example
@@ -68,7 +67,6 @@ const CanvasNodeComponent = ({
     const canvas = canvasRef.current;
     if (!canvas) {
       if (process.env.NODE_ENV === 'development') {
-        console.warn('[CanvasNode] Canvas ref is null');
       }
       return;
     }
@@ -80,18 +78,8 @@ const CanvasNodeComponent = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) {
       if (process.env.NODE_ENV === 'development') {
-        console.warn('[CanvasNode] Could not get 2D context');
       }
       return;
-    }
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[CanvasNode] Rendering node:', {
-        canvasSize,
-        difficulty,
-        color: style.color,
-        baseRadius: 5 + (difficulty * 1.5)
-      });
     }
     
     // Initial render
@@ -195,15 +183,6 @@ const CanvasNodeComponent = ({
   // Debug: Log node creation
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('[CanvasNode] Node rendered:', {
-        id: userData?.id,
-        title: userData?.title,
-        position,
-        difficulty,
-        canvasSize,
-        interactionSize,
-        style: style.color
-      });
     }
   }, [userData?.id, position, difficulty, canvasSize, interactionSize, style.color]);
 

@@ -60,7 +60,6 @@ export const ThemeProvider = ({ children }) => {
     const palette = colorPalettes[currentPalette];
     
     if (!palette) {
-      console.warn(`Palette "${currentPalette}" not found. Using default.`);
       return;
     }
 
@@ -77,7 +76,6 @@ export const ThemeProvider = ({ children }) => {
     try {
       localStorage.setItem(STORAGE_KEY, currentPalette);
     } catch (error) {
-      console.error('Error saving color palette to localStorage:', error);
     }
 
     // Dispatch custom event for components that need to react
@@ -141,7 +139,6 @@ export const ThemeProvider = ({ children }) => {
       // Also update the legacy switcher for compatibility
       colorPaletteSwitcher.switchTo(paletteKey, true);
     } else {
-      console.warn(`Palette "${paletteKey}" not found.`);
     }
   };
 

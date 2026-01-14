@@ -110,7 +110,6 @@ const Achievements = () => {
 
                 setAchievements(transformedAchievements);
             } catch (error) {
-                console.error('Error loading achievements:', error);
                 setAchievements([]);
             } finally {
                 setLoading(false);

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Wrench, Plus, Target, Trash2, CheckCircle, Clock, Star } from 'lucide-react';
 import masteryService from '../../services/masteryService';
 import { useAuth } from '../../contexts/AuthContext';
@@ -126,7 +127,6 @@ const ToolboxTab = () => {
         setToolboxLibrary(libraryData || []);
         setUserToolbox(transformedUserToolbox);
       } catch (error) {
-        console.error('Error loading toolbox:', error);
         setError(error.message);
       } finally {
         setLoading(false);
@@ -186,7 +186,6 @@ const ToolboxTab = () => {
         setUserToolbox(transformedUserToolbox);
       }
     } catch (error) {
-      console.error('Error adding tool:', error);
       setError(error.message);
     }
   };
@@ -263,7 +262,6 @@ const ToolboxTab = () => {
       setSelectedTool(null);
       setConversionData({ frequency_type: 'daily' }); // Reset form
     } catch (error) {
-      console.error('Error converting tool to habit:', error);
       setError(error.message);
     }
   };
@@ -276,7 +274,6 @@ const ToolboxTab = () => {
       // Find the user toolbox item ID
       const toolboxItem = userToolbox.find(tool => tool.toolbox_library?.id === toolId || tool.id === toolId);
       if (!toolboxItem) {
-        console.error('Toolbox item not found:', toolId);
         return;
       }
 
@@ -284,7 +281,6 @@ const ToolboxTab = () => {
       const { error } = await masteryService.removeUserToolboxItem(toolboxItem.id);
       
       if (error) {
-        console.error('Error removing tool:', error);
         handleError(error);
         return;
       }
@@ -292,7 +288,6 @@ const ToolboxTab = () => {
       // Update local state
       setUserToolbox(userToolbox.filter(tool => tool.id !== toolboxItem.id));
     } catch (error) {
-      console.error('Error removing tool:', error);
       handleError(error);
     }
   };
@@ -436,7 +431,6 @@ const ToolboxTab = () => {
         setUserToolbox(transformedUserToolbox);
       }
     } catch (error) {
-      console.error('Error using tool:', error);
       setError(error.message);
     }
   };
@@ -713,9 +707,9 @@ const ToolboxTab = () => {
       )}
 
       {/* Convert to Habit Modal */}
-      {showConvertModal && selectedTool && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="glass-modal">
+      {showConvertModal && selectedTool && createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto" style={{ width: '100vw', height: '100vh' }}>
+          <div className="glass-modal my-auto" style={{ maxHeight: 'calc(100vh - 40px)' }}>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Convert "{selectedTool.title}" to Habit
             </h3>
@@ -758,7 +752,8 @@ const ToolboxTab = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

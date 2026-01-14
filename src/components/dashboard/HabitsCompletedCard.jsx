@@ -74,11 +74,9 @@ const HabitsCompletedCard = () => {
             }
           }
         } catch (trendError) {
-          console.error('Error calculating trend:', trendError)
           // Don't set error, just skip trend
         }
       } catch (err) {
-        console.error('Error loading habits completed:', err)
         setError('Failed to load habits data')
       } finally {
         setLoading(false)

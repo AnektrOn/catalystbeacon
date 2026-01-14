@@ -186,7 +186,6 @@ const CourseCreationPage = () => {
       toast.success('Course saved as draft!');
       navigate(`/courses/${course.id}`);
     } catch (err) {
-      console.error('Error saving course:', err);
       toast.error('Failed to save course. Please try again.');
     } finally {
       setSaving(false);
@@ -230,7 +229,6 @@ const CourseCreationPage = () => {
       toast.success('Course submitted for review!');
       navigate('/courses');
     } catch (err) {
-      console.error('Error submitting course:', err);
       toast.error('Failed to submit course. Please try again.');
     } finally {
       setSaving(false);

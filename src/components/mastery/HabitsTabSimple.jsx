@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, Target, Star, BookOpen, Dumbbell, Flame, Trash2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabaseClient';
@@ -36,12 +37,10 @@ const HabitsTabSimple = () => {
   // Load habits from Supabase
   useEffect(() => {
     if (!user) {
-      console.log('📝 HabitsTabSimple: No user, skipping data load');
       return;
     }
     
     const loadHabits = async () => {
-      console.log('📝 HabitsTabSimple: Loading habits data for user:', user.id);
       setError(null);
       setLoading(true);
       
@@ -50,14 +49,12 @@ const HabitsTabSimple = () => {
         const { data: userHabits, error: habitsError } = await masteryService.getUserHabits(user.id);
         
         if (habitsError) {
-          console.error('❌ HabitsTabSimple: Error loading habits:', habitsError);
           setError('Failed to load habits');
           setHabits([]);
           return;
         }
 
         if (!userHabits || userHabits.length === 0) {
-          console.log('📝 HabitsTabSimple: No habits found');
           setHabits([]);
           setLoading(false);
           return;
@@ -72,7 +69,6 @@ const HabitsTabSimple = () => {
           .in('habit_id', habitIds);
 
         if (completionsError) {
-          console.warn('⚠️ HabitsTabSimple: Error loading completions:', completionsError);
         }
 
         // Group completions by habit_id
@@ -107,9 +103,7 @@ const HabitsTabSimple = () => {
         });
 
         setHabits(transformedHabits);
-        console.log('✅ HabitsTabSimple: Loaded', transformedHabits.length, 'habits from Supabase');
       } catch (err) {
-        console.error('❌ HabitsTabSimple: Exception loading habits:', err);
         setError('Failed to load habits');
         setHabits([]);
       } finally {
@@ -121,7 +115,6 @@ const HabitsTabSimple = () => {
   }, [user]);
 
   const handleToggleHabit = async (habitId, date) => {
-    console.log('📝 HabitsTabSimple: Toggling habit completion:', habitId, date);
     
     if (!user) return;
     
@@ -179,9 +172,7 @@ const HabitsTabSimple = () => {
         window.dispatchEvent(event);
       }
 
-      console.log('✅ HabitsTabSimple: Habit toggled successfully');
     } catch (err) {
-      console.error('❌ HabitsTabSimple: Error toggling habit:', err);
       setError('Failed to update habit completion');
     }
   };
@@ -262,7 +253,6 @@ const HabitsTabSimple = () => {
   const handleCreateHabit = async () => {
     if (!newHabit.title.trim() || !user) return;
     
-    console.log('📝 HabitsTabSimple: Creating new habit:', newHabit.title);
     
     try {
       // Create custom habit in Supabase
@@ -299,15 +289,12 @@ const HabitsTabSimple = () => {
       setNewHabit({ title: '', description: '', frequency_type: 'daily', xp_reward: 10 });
       setShowAddHabit(false);
       
-      console.log('✅ HabitsTabSimple: Habit created successfully');
     } catch (err) {
-      console.error('❌ HabitsTabSimple: Error creating habit:', err);
       setError('Failed to create habit');
     }
   };
 
   const handleDeleteHabit = async (habitId) => {
-    console.log('📝 HabitsTabSimple: Deleting habit:', habitId);
     
     if (!user) return;
     
@@ -324,9 +311,7 @@ const HabitsTabSimple = () => {
       // Remove from local state
       setHabits(prev => prev.filter(h => h.id !== habitId));
       
-      console.log('✅ HabitsTabSimple: Habit deleted successfully');
     } catch (err) {
-      console.error('❌ HabitsTabSimple: Error deleting habit:', err);
       setError('Failed to delete habit');
     }
   };
@@ -454,9 +439,9 @@ const HabitsTabSimple = () => {
       </div>
 
       {/* Create Habit Modal */}
-      {showAddHabit && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-ethereal-glass rounded-ethereal border border-ethereal p-6 w-full max-w-md">
+      {showAddHabit && createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto" style={{ width: '100vw', height: '100vh' }}>
+          <div className="bg-ethereal-glass rounded-ethereal border border-ethereal p-6 w-full max-w-md my-auto" style={{ maxHeight: 'calc(100vh - 40px)' }}>
             <h3 className="text-lg font-semibold mb-4">Create New Habit</h3>
             <div className="space-y-4">
               <div>
@@ -506,7 +491,8 @@ const HabitsTabSimple = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

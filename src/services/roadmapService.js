@@ -14,7 +14,6 @@ class RoadmapService {
   async getRoadmapLessons(masterschool) {
     try {
       // Query course_content and course_metadata directly (more reliable)
-      console.log('Fetching roadmap lessons for:', masterschool);
       
       // Get courses for this masterschool
       const { data: courses, error: coursesError } = await supabase
@@ -23,17 +22,13 @@ class RoadmapService {
         .eq('masterschool', masterschool);
 
       if (coursesError) {
-        console.error('Error fetching courses:', coursesError);
         throw coursesError;
       }
 
       if (!courses || courses.length === 0) {
-        console.warn(`No courses found for masterschool: ${masterschool}`);
-        console.warn('Try running: UPDATE course_metadata SET masterschool = \'Ignition\' WHERE course_id IN (SELECT course_id FROM course_metadata LIMIT 15);');
         return [];
       }
 
-      console.log(`✅ Found ${courses.length} courses for ${masterschool}`);
       const courseIds = courses.map(c => c.course_id);
 
       // Get all lessons for these courses
@@ -46,16 +41,13 @@ class RoadmapService {
         .order('lesson_number', { ascending: true });
 
       if (lessonsError) {
-        console.error('❌ Error fetching lessons:', lessonsError);
         throw lessonsError;
       }
 
       if (!lessons || lessons.length === 0) {
-        console.warn(`⚠️ No lessons found in course_content for course IDs:`, courseIds);
         return [];
       }
 
-      console.log(`✅ Found ${lessons.length} lessons in course_content`);
 
       // Merge course and lesson data
       const merged = (lessons || []).map(lesson => {
@@ -75,20 +67,12 @@ class RoadmapService {
 
       // Sort by difficulty, master skill, then course/chapter/lesson
       const sorted = this._sortLessons(merged);
-      console.log(`✅ Returning ${sorted.length} sorted lessons (${new Set(sorted.map(l => l.master_skill_linked)).size} master skills)`);
       
       if (sorted.length > 0) {
-        console.log('First 3 lessons:', sorted.slice(0, 3).map(l => ({
-          title: l.lesson_title,
-          course: l.course_title,
-          difficulty: l.difficulty_numeric,
-          masterSkill: l.master_skill_linked
-        })));
       }
       
       return sorted;
     } catch (error) {
-      console.error('Error fetching roadmap lessons:', error);
       throw new Error(`Failed to fetch roadmap lessons: ${error.message}`);
     }
   }
@@ -127,11 +111,9 @@ class RoadmapService {
         };
       });
 
-      console.log('📊 Grouped by master skill:', Object.keys(paginated));
 
       return paginated;
     } catch (error) {
-      console.error('Error grouping roadmap by master skill:', error);
       throw error;
     }
   }
@@ -153,7 +135,6 @@ class RoadmapService {
 
       if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
         // Table might not exist yet - return empty progress
-        console.warn('roadmap_progress table not found or error:', error.code);
         return {
           user_id: userId,
           masterschool,
@@ -179,7 +160,6 @@ class RoadmapService {
       return data;
     } catch (error) {
       // If table doesn't exist, just return empty progress
-      console.warn('Error fetching roadmap progress, returning empty:', error.message);
       return {
         user_id: userId,
         masterschool,
@@ -207,7 +187,6 @@ class RoadmapService {
       const lessonIndex = allLessons.findIndex(l => l.lesson_id === lessonId);
       
       if (lessonIndex === -1) {
-        console.warn('Lesson not found in roadmap:', lessonId);
         return false;
       }
 
@@ -230,7 +209,6 @@ class RoadmapService {
         .single();
 
       if (error && error.code !== 'PGRST116') {
-        console.warn('Error checking previous lesson completion:', error);
         // If we can't check, unlock it anyway (better UX)
         return true;
       }
@@ -238,7 +216,6 @@ class RoadmapService {
       // Return true if previous lesson is completed
       return data?.is_completed === true;
     } catch (error) {
-      console.error('Error checking lesson unlock status:', error);
       // If error, unlock anyway (better UX than blocking)
       return true;
     }
@@ -258,14 +235,12 @@ class RoadmapService {
     try {
       // Validate inputs
       if (!userId || !courseId || !chapterNumber || !lessonNumber) {
-        console.warn('Missing required parameters for lesson tracking:', { userId, courseId, chapterNumber, lessonNumber });
         return { canComplete: false };
       }
 
       // Ensure courseId is an integer
       const courseIdInt = parseInt(courseId);
       if (isNaN(courseIdInt)) {
-        console.error('Invalid course_id (not a number):', courseId);
         return { canComplete: false };
       }
 
@@ -277,7 +252,6 @@ class RoadmapService {
         .single();
 
       if (courseCheckError || !courseExists) {
-        console.error('Course not found in course_metadata:', { courseId: courseIdInt, error: courseCheckError });
         return { canComplete: false };
       }
 
@@ -307,7 +281,6 @@ class RoadmapService {
       if (error) {
         // If it's a foreign key constraint error, log it but don't crash
         if (error.code === '23503' || error.message.includes('foreign key constraint')) {
-          console.error('Foreign key constraint violation - course_id not found:', { courseId: courseIdInt, error: error.message });
           return { canComplete: false };
         }
         throw error;
@@ -318,7 +291,6 @@ class RoadmapService {
         canComplete
       };
     } catch (error) {
-      console.error('Error updating lesson tracking:', error);
       // Return a safe default instead of throwing to prevent UI crashes
       return { canComplete: false };
     }
@@ -415,12 +387,10 @@ class RoadmapService {
             xpEarned,
             profileData.current_xp || 0
           ).catch(err => {
-            console.log('Lesson completion email send failed (non-critical):', err)
             // Don't fail lesson completion if email fails
           })
         }
       } catch (emailError) {
-        console.log('Lesson completion email error (non-critical):', emailError)
         // Don't fail lesson completion if email fails
       }
 
@@ -431,7 +401,6 @@ class RoadmapService {
         message: 'Lesson completed successfully!'
       };
     } catch (error) {
-      console.error('Error completing lesson:', error);
       throw new Error(`Failed to complete lesson: ${error.message}`);
     }
   }
@@ -459,13 +428,11 @@ class RoadmapService {
 
       if (error) {
         // Table might not exist yet - just return empty array
-        console.warn('roadmap_notifications table not found:', error.code);
         return [];
       }
 
       return data || [];
     } catch (error) {
-      console.warn('Error fetching roadmap notifications, returning empty:', error);
       return [];
     }
   }
@@ -484,7 +451,6 @@ class RoadmapService {
 
       if (error) throw error;
     } catch (error) {
-      console.error('Error marking notification as read:', error);
       throw error;
     }
   }
@@ -513,7 +479,6 @@ class RoadmapService {
         message: 'Roadmap change detection is a placeholder for admin functionality'
       };
     } catch (error) {
-      console.error('Error detecting roadmap changes:', error);
       throw error;
     }
   }
@@ -553,7 +518,6 @@ class RoadmapService {
 
       return null; // All lessons completed or none unlocked
     } catch (error) {
-      console.error('Error getting next lesson:', error);
       return allLessons[0] || null; // Fallback to first lesson
     }
   }
@@ -583,7 +547,6 @@ class RoadmapService {
 
       return data;
     } catch (error) {
-      console.error('Error fetching lesson progress:', error);
       throw error;
     }
   }

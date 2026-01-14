@@ -1,4 +1,5 @@
 import React from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { X, Lock, Sparkles, BookOpen, Target, Calendar, Settings } from 'lucide-react'
 
@@ -66,9 +67,9 @@ const UpgradeModal = ({ isOpen, onClose, restrictedFeature = null }) => {
   const featureInfo = getFeatureInfo()
   const Icon = featureInfo.icon
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className="glass-panel-floating rounded-2xl p-6 sm:p-8 max-w-md w-full animate-scale-in border border-white/10 shadow-2xl">
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in overflow-y-auto" style={{ width: '100vw', height: '100vh' }}>
+      <div className="glass-panel-floating rounded-2xl p-6 sm:p-8 max-w-md w-full animate-scale-in border border-white/10 shadow-2xl my-auto" style={{ maxHeight: 'calc(100vh - 40px)' }}>
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -141,7 +142,8 @@ const UpgradeModal = ({ isOpen, onClose, restrictedFeature = null }) => {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

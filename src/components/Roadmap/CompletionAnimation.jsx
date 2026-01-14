@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import './CompletionAnimation.css';
 
 const CompletionAnimation = ({ isVisible, onComplete, xpEarned, lessonTitle }) => {
@@ -19,7 +20,7 @@ const CompletionAnimation = ({ isVisible, onComplete, xpEarned, lessonTitle }) =
 
   if (!isVisible) return null;
 
-  return (
+  return createPortal(
     <div className={`completion-animation-overlay ${showAnimation ? 'visible' : ''}`}>
       <div className="completion-animation-content">
         <div className="completion-checkmark">
@@ -36,7 +37,8 @@ const CompletionAnimation = ({ isVisible, onComplete, xpEarned, lessonTitle }) =
         </div>
         <div className="completion-message">Neural Link Strengthened</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

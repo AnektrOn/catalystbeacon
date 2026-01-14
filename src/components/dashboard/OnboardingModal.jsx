@@ -1,12 +1,13 @@
 import React from 'react'
+import { createPortal } from 'react-dom'
 import { Sparkles, X, ArrowRight, BookOpen, Target, Users } from 'lucide-react'
 
 const OnboardingModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className="glass-panel-floating rounded-ethereal p-8 sm:p-10 max-w-lg w-full animate-scale-in border border-ethereal shadow-ethereal-elevated relative overflow-hidden">
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in overflow-y-auto" style={{ width: '100vw', height: '100vh' }}>
+      <div className="glass-panel-floating rounded-ethereal p-8 sm:p-10 max-w-lg w-full animate-scale-in border border-ethereal shadow-ethereal-elevated relative overflow-hidden my-auto" style={{ maxHeight: 'calc(100vh - 40px)' }}>
         
         {/* Decorative Background Elements */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
@@ -79,7 +80,8 @@ const OnboardingModal = ({ isOpen, onClose }) => {
           <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

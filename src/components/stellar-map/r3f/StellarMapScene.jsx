@@ -107,17 +107,14 @@ function SceneContent({
   const sceneElements = useMemo(() => {
     if (!hierarchyData || Object.keys(hierarchyData).length === 0) {
       if (process.env.NODE_ENV === 'development') {
-        console.warn('[StellarMapScene] No hierarchyData or empty hierarchyData');
       }
       return [];
     }
 
     if (process.env.NODE_ENV === 'development') {
-      console.log('[StellarMapScene] Rendering nodes, hierarchyData keys:', Object.keys(hierarchyData));
       const totalNodesInData = Object.values(hierarchyData).reduce((sum, constellations) => 
         sum + Object.values(constellations).reduce((s, nodes) => s + (nodes?.length || 0), 0), 0
       );
-      console.log('[StellarMapScene] Total nodes in hierarchyData:', totalNodesInData);
     }
 
     const elements = [];
@@ -220,14 +217,6 @@ function SceneContent({
           nodeDifficultiesRef.current[node.id] = node.difficulty || 0;
 
           if (process.env.NODE_ENV === 'development') {
-            console.log('[StellarMapScene] Creating CanvasNode:', {
-              id: node.id,
-              title: node.title,
-              position: nodePosArray,
-              difficulty: node.difficulty,
-              nodeIndex,
-              totalNodes: nodes.length
-            });
           }
 
           elements.push(
@@ -287,14 +276,6 @@ function SceneContent({
     setConstellationCenters(centers);
     
     if (process.env.NODE_ENV === 'development') {
-      console.log('[StellarMapScene] Total elements to render:', elements.length);
-      console.log('[StellarMapScene] Total nodes:', Object.keys(nodePositionsRef.current).length);
-      console.log('[StellarMapScene] Node positions:', nodePositionsRef.current);
-      console.log('[StellarMapScene] Elements breakdown:', {
-        totalElements: elements.length,
-        nodeElements: elements.filter(el => el?.key?.startsWith('node-')).length,
-        fogElements: elements.filter(el => el?.key?.startsWith('family-') || el?.key?.startsWith('constellation-')).length
-      });
     }
     
     // Notify parent of centers and positions
@@ -315,13 +296,9 @@ function SceneContent({
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
       if (sceneElements === null) {
-        console.warn('[StellarMapScene] sceneElements is null - no data to render');
       } else if (Array.isArray(sceneElements)) {
-        console.log('[StellarMapScene] sceneElements is array with length:', sceneElements.length);
         const nodeCount = sceneElements.filter(el => el?.key?.startsWith('node-')).length;
-        console.log('[StellarMapScene] Number of node elements:', nodeCount);
       } else {
-        console.warn('[StellarMapScene] sceneElements is not null or array:', typeof sceneElements, sceneElements);
       }
     }
   }, [sceneElements]);
@@ -458,7 +435,6 @@ export function StellarMapScene({
         gl.setPixelRatio(Math.min(window.devicePixelRatio, 1.0))
         
         if (process.env.NODE_ENV === 'development') {
-          console.log('[StellarMapScene] Canvas created, gl.domElement:', gl.domElement);
         }
       }}
     >

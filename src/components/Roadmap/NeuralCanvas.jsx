@@ -45,7 +45,6 @@ const NeuralCanvas = forwardRef(({ nodes, currentLevel, config }, ref) => {
     const height = Math.min(calculatedHeight, 5000);
     
     if (calculatedHeight > 5000) {
-      console.warn(`⚠️ NeuralCanvas: Hauteur bridée à 5000px`);
     }
 
     canvas.width = width;

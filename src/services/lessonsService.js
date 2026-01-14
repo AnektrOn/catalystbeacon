@@ -32,7 +32,6 @@ class LessonsService {
           .in('course_id', courseIds)
 
         if (coursesError) {
-          console.warn('Error fetching course metadata:', coursesError)
         } else {
           courses?.forEach(course => {
             courseMetadata[course.course_id] = course
@@ -56,7 +55,6 @@ class LessonsService {
 
       return { data: flattened, error: null }
     } catch (error) {
-      console.error('Error fetching all lessons:', error)
       return { data: [], error }
     }
   }

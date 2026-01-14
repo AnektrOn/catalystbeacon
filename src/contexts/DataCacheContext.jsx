@@ -96,7 +96,6 @@ export const DataCacheProvider = ({ children }) => {
 
     // Check if already loading (prevent duplicate requests)
     if (pendingRequests.current[key] && !force) {
-      console.log(`⏳ DataCache: Request already in progress for ${key}, waiting...`)
       return pendingRequests.current[key]
     }
 
@@ -126,7 +125,6 @@ export const DataCacheProvider = ({ children }) => {
         // Store in cache
         setCached(key, data, ttl)
         
-        console.log(`✅ DataCache: Fetched and cached ${key}`)
         return { data, fromCache: false }
       } catch (error) {
         logError(error, `DataCache - Error fetching ${key}`)
@@ -164,7 +162,6 @@ export const DataCacheProvider = ({ children }) => {
         delete newCache[keyOrPattern]
         return newCache
       })
-      console.log(`🗑️ DataCache: Invalidated ${keyOrPattern}`)
     } else if (keyOrPattern instanceof RegExp) {
       // Pattern match
       setCache(prev => {
@@ -176,7 +173,6 @@ export const DataCacheProvider = ({ children }) => {
         })
         return newCache
       })
-      console.log(`🗑️ DataCache: Invalidated pattern ${keyOrPattern}`)
     }
   }, [])
 
@@ -186,7 +182,6 @@ export const DataCacheProvider = ({ children }) => {
   const clearCache = useCallback(() => {
     setCache({})
     sessionStorage.removeItem('app_data_cache')
-    console.log('🗑️ DataCache: Cleared all cache')
   }, [])
 
   /**

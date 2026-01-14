@@ -217,7 +217,6 @@ const AppShell = () => {
           setLastAchievement(null);
         }
       } catch (error) {
-        console.warn('Error loading XP and achievements:', error);
       }
     };
 
@@ -242,7 +241,6 @@ const AppShell = () => {
   }
 
   // Debug: Verify new version is loading
-  console.log('🎨 NEW AppShell loaded - with earth tones and expandable sidebar!');
 
   // Mock notification count - replace with actual data
   const notificationCount = 3;

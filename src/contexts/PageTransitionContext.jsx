@@ -34,7 +34,6 @@ export const PageTransitionProvider = ({ children }) => {
   useEffect(() => {
     if (isTransitioning) {
       const safetyTimeout = setTimeout(() => {
-        console.warn('⚠️ PageTransition: Safety timeout reached, forcing endTransition');
         setIsTransitioning(false);
       }, 10000); // 10 seconds max
 
@@ -43,12 +42,10 @@ export const PageTransitionProvider = ({ children }) => {
   }, [isTransitioning]);
 
   const startTransition = () => {
-    console.log('🔄 PageTransition: Starting transition');
     setIsTransitioning(true);
   };
   
   const endTransition = () => {
-    console.log('✅ PageTransition: Ending transition');
     setIsTransitioning(false);
   };
 

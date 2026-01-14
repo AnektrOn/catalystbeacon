@@ -24,7 +24,6 @@ class LevelsService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error fetching levels:', error);
       return { data: null, error };
     }
   }
@@ -44,7 +43,6 @@ class LevelsService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error fetching level by number:', error);
       return { data: null, error };
     }
   }
@@ -90,7 +88,6 @@ class LevelsService {
         error: null 
       };
     } catch (error) {
-      console.error('Error getting current and next level:', error);
       return { data: null, error };
     }
   }

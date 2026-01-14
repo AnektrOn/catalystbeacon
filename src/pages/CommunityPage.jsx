@@ -43,7 +43,6 @@ const CommunityPage = () => {
       if (postsResult.data && postsResult.data.length > 0) {
         setPosts(postsResult.data)
       } else if (postsResult.error) {
-        console.error('Error loading posts:', postsResult.error)
         setPosts([])
       } else {
         setPosts([])
@@ -54,7 +53,6 @@ const CommunityPage = () => {
       if (leaderboardResult.data && leaderboardResult.data.length > 0) {
         setLeaderboard(leaderboardResult.data)
       } else if (leaderboardResult.error) {
-        console.error('Error loading leaderboard:', leaderboardResult.error)
         setLeaderboard([])
       } else {
         setLeaderboard([])
@@ -65,13 +63,11 @@ const CommunityPage = () => {
       if (challengesResult.data && challengesResult.data.length > 0) {
         setChallenges(challengesResult.data)
       } else if (challengesResult.error) {
-        console.error('Error loading challenges:', challengesResult.error)
         setChallenges([])
       } else {
         setChallenges([])
       }
     } catch (error) {
-      console.error('Error loading data:', error)
       setPosts([])
       setLeaderboard([])
       setChallenges([])
@@ -97,12 +93,10 @@ const CommunityPage = () => {
         ))
       }
     } catch (error) {
-      console.error('Error toggling like:', error)
     }
   }
 
   const handleShare = (postId) => {
-    console.log('Sharing post:', postId)
   }
 
   const handlePostCreated = (newPost) => {

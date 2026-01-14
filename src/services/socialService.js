@@ -26,7 +26,6 @@ class SocialService {
       if (error) throw error
       return { data, error: null }
     } catch (error) {
-      console.error('Error fetching posts:', error)
       return { data: null, error }
     }
   }
@@ -56,7 +55,6 @@ class SocialService {
       if (error) throw error
       return { data, error: null }
     } catch (error) {
-      console.error('Error creating post:', error)
       return { data: null, error }
     }
   }
@@ -107,7 +105,6 @@ class SocialService {
         return { data: { liked: true }, error: null }
       }
     } catch (error) {
-      console.error('Error toggling post like:', error)
       return { data: null, error }
     }
   }
@@ -125,7 +122,6 @@ class SocialService {
       if (error) throw error
       return { data: true, error: null }
     } catch (error) {
-      console.error('Error updating post likes count:', error)
       return { data: null, error }
     }
   }
@@ -152,7 +148,6 @@ class SocialService {
       if (error) throw error
       return { data, error: null }
     } catch (error) {
-      console.error('Error fetching post comments:', error)
       return { data: null, error }
     }
   }
@@ -179,7 +174,6 @@ class SocialService {
       await this.updatePostCommentsCount(postId, 1)
       return { data, error: null }
     } catch (error) {
-      console.error('Error adding comment:', error)
       return { data: null, error }
     }
   }
@@ -197,7 +191,6 @@ class SocialService {
       if (error) throw error
       return { data: true, error: null }
     } catch (error) {
-      console.error('Error updating post comments count:', error)
       return { data: null, error }
     }
   }
@@ -222,7 +215,6 @@ class SocialService {
       if (error) throw error
       return { data, error: null }
     } catch (error) {
-      console.error('Error fetching leaderboard:', error)
       return { data: null, error }
     }
   }
@@ -246,7 +238,6 @@ class SocialService {
       if (error) throw error
       return { data, error: null }
     } catch (error) {
-      console.error('Error fetching challenges:', error)
       return { data: null, error }
     }
   }
@@ -268,7 +259,6 @@ class SocialService {
       if (error) throw error
       return { data, error: null }
     } catch (error) {
-      console.error('Error joining challenge:', error)
       return { data: null, error }
     }
   }
@@ -299,7 +289,6 @@ class SocialService {
       if (error) throw error
       return { data, error: null }
     } catch (error) {
-      console.error('Error searching posts:', error)
       return { data: null, error }
     }
   }
@@ -329,7 +318,6 @@ class SocialService {
       if (error) throw error
       return { data, error: null }
     } catch (error) {
-      console.error('Error fetching user posts:', error)
       return { data: null, error }
     }
   }

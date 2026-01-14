@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, Target, Star, BookOpen, Dumbbell, Flame, Trash2 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
@@ -70,11 +71,9 @@ const HabitsTabFixed = () => {
   useEffect(() => {
     const loadHabits = async () => {
       if (!user) {
-        console.log('📝 HabitsTabFixed: No user, skipping data load');
         return;
       }
       
-      console.log('📝 HabitsTabFixed: Loading habits data for user:', user.id);
       setError(null);
       
       try {
@@ -85,7 +84,6 @@ const HabitsTabFixed = () => {
           .eq('user_id', user.id);
 
         if (userHabitsError) {
-          console.error('❌ HabitsTabFixed: Error loading user habits:', userHabitsError);
           setError('Failed to load habits');
           return;
         }
@@ -96,7 +94,6 @@ const HabitsTabFixed = () => {
           .select('*');
 
         if (libraryError) {
-          console.error('❌ HabitsTabFixed: Error loading habits library:', libraryError);
           setError('Failed to load habits library');
           return;
         }
@@ -122,7 +119,6 @@ const HabitsTabFixed = () => {
               
               completions = completionData || [];
             } catch (completionError) {
-              console.log('📝 HabitsTabFixed: habit_completions table not found, using empty completions');
               completions = [];
             }
 
@@ -143,9 +139,7 @@ const HabitsTabFixed = () => {
 
         setPersonalHabits(transformedHabits);
         setHabitsLibrary(libraryHabits || []);
-        console.log('✅ HabitsTabFixed: Habits loaded successfully:', transformedHabits.length, 'personal habits,', libraryHabits?.length || 0, 'library habits');
       } catch (error) {
-        console.error('❌ HabitsTabFixed: Exception during habits load:', error);
         setError('Failed to load habits data');
       }
     };
@@ -200,7 +194,6 @@ const HabitsTabFixed = () => {
     if (!user) return;
     
     try {
-      console.log('📝 HabitsTabFixed: Toggling habit completion:', habitId, date);
       
       // Try to toggle completion in database
       try {
@@ -213,10 +206,8 @@ const HabitsTabFixed = () => {
           });
 
         if (toggleError) {
-          console.log('📝 HabitsTabFixed: habit_completions table not found, using local state only');
         }
       } catch (dbError) {
-        console.log('📝 HabitsTabFixed: Database toggle failed, using local state only');
       }
 
       // Update local state immediately for responsive UI
@@ -237,9 +228,7 @@ const HabitsTabFixed = () => {
         return habit;
       }));
       
-      console.log('✅ HabitsTabFixed: Habit toggled successfully');
     } catch (error) {
-      console.error('❌ HabitsTabFixed: Exception during habit toggle:', error);
       setError('Failed to update habit');
     }
   };
@@ -248,7 +237,6 @@ const HabitsTabFixed = () => {
     if (!user || !newHabit.title.trim()) return;
     
     try {
-      console.log('📝 HabitsTabFixed: Creating new habit:', newHabit.title);
       
       const { data, error } = await supabase
         .from('user_habits')
@@ -263,7 +251,6 @@ const HabitsTabFixed = () => {
         .single();
 
       if (error) {
-        console.error('❌ HabitsTabFixed: Error creating habit:', error);
         setError('Failed to create habit');
         return;
       }
@@ -282,9 +269,7 @@ const HabitsTabFixed = () => {
       setNewHabit({ title: '', description: '', frequency_type: 'daily', xp_reward: 10 });
       setShowAddHabit(false);
       
-      console.log('✅ HabitsTabFixed: Habit created successfully');
     } catch (error) {
-      console.error('❌ HabitsTabFixed: Exception during habit creation:', error);
       setError('Failed to create habit');
     }
   };
@@ -293,7 +278,6 @@ const HabitsTabFixed = () => {
     if (!user) return;
     
     try {
-      console.log('📝 HabitsTabFixed: Deleting habit:', habitId);
       
       const { error } = await supabase
         .from('user_habits')
@@ -302,15 +286,12 @@ const HabitsTabFixed = () => {
         .eq('user_id', user.id);
 
       if (error) {
-        console.error('❌ HabitsTabFixed: Error deleting habit:', error);
         setError('Failed to delete habit');
         return;
       }
 
       setPersonalHabits(prev => prev.filter(h => h.id !== habitId));
-      console.log('✅ HabitsTabFixed: Habit deleted successfully');
     } catch (error) {
-      console.error('❌ HabitsTabFixed: Exception during habit deletion:', error);
       setError('Failed to delete habit');
     }
   };
@@ -319,7 +300,6 @@ const HabitsTabFixed = () => {
     if (!user) return;
     
     try {
-      console.log('📝 HabitsTabFixed: Adding habit from library:', libraryHabit.title);
       
       const { data, error } = await supabase
         .from('user_habits')
@@ -334,7 +314,6 @@ const HabitsTabFixed = () => {
         .single();
 
       if (error) {
-        console.error('❌ HabitsTabFixed: Error adding habit from library:', error);
         setError('Failed to add habit from library');
         return;
       }
@@ -350,9 +329,7 @@ const HabitsTabFixed = () => {
       };
 
       setPersonalHabits(prev => [...prev, newHabitData]);
-      console.log('✅ HabitsTabFixed: Habit added from library successfully');
     } catch (error) {
-      console.error('❌ HabitsTabFixed: Exception during library habit addition:', error);
       setError('Failed to add habit from library');
     }
   };
@@ -533,9 +510,9 @@ const HabitsTabFixed = () => {
       )}
 
       {/* Create Habit Modal */}
-      {showAddHabit && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-ethereal-glass rounded-ethereal border border-ethereal p-6 w-full max-w-md">
+      {showAddHabit && createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto" style={{ width: '100vw', height: '100vh' }}>
+          <div className="bg-ethereal-glass rounded-ethereal border border-ethereal p-6 w-full max-w-md my-auto" style={{ maxHeight: 'calc(100vh - 40px)' }}>
             <h3 className="text-lg font-semibold mb-4">Create New Habit</h3>
             <div className="space-y-4">
               <div>
@@ -585,7 +562,8 @@ const HabitsTabFixed = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

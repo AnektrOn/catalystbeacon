@@ -50,7 +50,6 @@ export const memoizeAsync = (fn, getKey = (...args) => JSON.stringify(args), ttl
       cache.set(key, { result, timestamp: now });
       return result;
     } catch (error) {
-      console.error('Error in memoized async function:', error);
       throw error;
     }
   };
@@ -95,5 +94,4 @@ export const throttle = (fn, limit) => {
 export const clearMemoizationCache = () => {
   // This would need to be implemented per component
   // as we can't access all caches from here
-  console.log('Memoization cache cleared');
 };

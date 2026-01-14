@@ -91,7 +91,6 @@ export class ThreeSceneManager {
     try {
       const container = document.getElementById(containerId);
       if (!container) {
-        console.warn(`Container ${containerId} not found`);
         return null;
       }
 
@@ -104,7 +103,6 @@ export class ThreeSceneManager {
       const H = container.clientHeight || window.innerHeight;
 
       if (W === 0 || H === 0) {
-        console.warn(`Container ${containerId} has zero dimensions`);
         return null;
       }
 
@@ -159,7 +157,6 @@ export class ThreeSceneManager {
       // Core styles
       const currentCoreStyles = CORE_STYLES[coreName];
       if (!currentCoreStyles) {
-        console.error(`Styles for core '${coreName}' not found`);
         return null;
       }
 
@@ -322,7 +319,6 @@ export class ThreeSceneManager {
       this.scenes[coreName] = context;
       return context;
     } catch (error) {
-      console.error(`Error initializing scene for ${coreName}:`, error);
       return null;
     }
   }

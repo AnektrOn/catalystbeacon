@@ -64,7 +64,6 @@ serve(async (req) => {
       )
     }
 
-    console.log('🔄 Processing role update from session:', { session_id, user_id })
 
     // Récupérer le checkout session depuis Stripe
     const session = await stripe.checkout.sessions.retrieve(session_id)
@@ -93,7 +92,6 @@ serve(async (req) => {
       newRole = 'Teacher'
     }
     
-    console.log('📝 Determined role:', newRole, 'from planType:', planType, 'priceId:', priceId)
 
     // Vérifier le rôle actuel pour préserver Admin
     const { data: currentProfile } = await supabase
@@ -110,7 +108,6 @@ serve(async (req) => {
     }
 
     const currentRole = currentProfile.role || 'Free'
-    console.log('📊 Current role:', currentRole)
 
     // Préparer les données de mise à jour
     const updateData: any = {
@@ -122,9 +119,7 @@ serve(async (req) => {
     // Ne mettre à jour le rôle que si l'utilisateur n'est pas Admin
     if (currentRole !== 'Admin') {
       updateData.role = newRole
-      console.log(`✅ Will update role from "${currentRole}" to "${newRole}"`)
     } else {
-      console.log('⚠️ User is Admin - preserving Admin role')
     }
 
     // Mettre à jour le profil avec retry
@@ -132,7 +127,6 @@ serve(async (req) => {
     let lastError = null
     
     for (let attempt = 1; attempt <= 3; attempt++) {
-      console.log(`🔄 Update attempt ${attempt}/3`)
       
       const { data, error } = await supabase
         .from('profiles')
@@ -142,19 +136,16 @@ serve(async (req) => {
 
       if (error) {
         lastError = error
-        console.error(`❌ Attempt ${attempt} failed:`, error.message)
         if (attempt < 3) {
           await new Promise(resolve => setTimeout(resolve, attempt * 500))
         }
       } else {
-        console.log(`✅ Profile updated successfully on attempt ${attempt}:`, data)
         updateSuccess = true
         break
       }
     }
 
     if (!updateSuccess) {
-      console.error('❌ Failed to update profile after 3 attempts:', lastError)
       return new Response(
         JSON.stringify({ 
           error: 'Failed to update profile',
@@ -181,9 +172,7 @@ serve(async (req) => {
       })
 
     if (subError) {
-      console.error('⚠️ Error updating subscriptions table:', subError)
     } else {
-      console.log('✅ Subscription record updated')
     }
 
     return new Response(
@@ -195,7 +184,6 @@ serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
-    console.error('❌ Error:', error)
     return new Response(
       JSON.stringify({ error: error.message || 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

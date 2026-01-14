@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Play, CheckCircle, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import stellarMapService from '../../services/stellarMapService';
@@ -96,7 +97,6 @@ const YouTubePlayerModal = ({
           setIsCompleted(true);
         }
       } catch (err) {
-        console.warn('Error checking completion status:', err);
       }
     };
 
@@ -139,7 +139,6 @@ const YouTubePlayerModal = ({
                 clearInterval(watchTimeIntervalRef.current);
               }
             } catch (err) {
-              console.warn('Error tracking watch time:', err);
             }
           }, 1000); // Update every second
         },
@@ -151,7 +150,6 @@ const YouTubePlayerModal = ({
             try {
               lastPlayTimeRef.current = newPlayer.getCurrentTime();
             } catch (err) {
-              console.warn('Error getting current time:', err);
             }
           } else if (event.data === window.YT.PlayerState.ENDED) {
             // Video ended - complete tracking
@@ -163,7 +161,6 @@ const YouTubePlayerModal = ({
           }
         },
         onError: (event) => {
-          console.error('YouTube player error:', event.data);
           setError('Failed to load video. Please try again.');
           setIsLoading(false);
           if (watchTimeIntervalRef.current) {
@@ -195,12 +192,10 @@ const YouTubePlayerModal = ({
           } else {
             // Container already removed, just clear the player reference
             // The iframe will be cleaned up by React
-            console.log('Player container already removed, skipping destroy');
           }
         } catch (err) {
           // Silently handle errors - container may already be removed
           if (err.name !== 'NotFoundError') {
-            console.warn('Error destroying player:', err);
           }
         }
       }
@@ -228,11 +223,6 @@ const YouTubePlayerModal = ({
       const videoDuration = player?.getDuration() || 0;
       const watchPercentage = videoDuration > 0 ? (finalWatchTime / videoDuration) * 100 : 0;
 
-      console.log('📊 Video completion tracking:', {
-        watchTime: finalWatchTime,
-        videoDuration: videoDuration,
-        watchPercentage: watchPercentage.toFixed(1) + '%'
-      });
 
       // Check if already completed (double-check)
       const { data: existing } = await stellarMapService.checkNodeCompletion(user.id, nodeData.id);
@@ -306,7 +296,6 @@ const YouTubePlayerModal = ({
         }
       }
     } catch (err) {
-      console.error('Error completing node:', err);
       toast.error('Failed to award XP. Please try again.', {
         duration: 4000,
       });
@@ -333,12 +322,10 @@ const YouTubePlayerModal = ({
           player.destroy();
         } else {
           // Container already removed, just clear the player reference
-          console.log('Player container already removed, skipping destroy');
         }
       } catch (err) {
         // Silently handle NotFoundError - container may already be removed
         if (err.name !== 'NotFoundError') {
-          console.warn('Error destroying player on close:', err);
         }
       }
     }
@@ -352,9 +339,9 @@ const YouTubePlayerModal = ({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
-      <div className="relative w-full max-w-4xl bg-gradient-to-br from-slate-900/95 to-slate-800/95 rounded-2xl shadow-2xl border border-white/10 overflow-hidden my-auto">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto" style={{ width: '100vw', height: '100vh' }}>
+      <div className="relative w-full max-w-4xl bg-gradient-to-br from-slate-900/95 to-slate-800/95 rounded-2xl shadow-2xl border border-white/10 overflow-hidden my-auto" style={{ maxHeight: 'calc(100vh - 40px)' }}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/10">
           <div className="flex items-center gap-3">
@@ -467,7 +454,8 @@ const YouTubePlayerModal = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

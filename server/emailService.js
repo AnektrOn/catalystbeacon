@@ -27,8 +27,6 @@ function getTransporter() {
   }
 
   if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
-    console.warn('⚠️ SMTP configuration incomplete. Emails will not be sent.')
-    console.warn('Required: SMTP_HOST, SMTP_USER, SMTP_PASS')
     return null
   }
 
@@ -46,12 +44,6 @@ function getTransporter() {
     }
   })
 
-  console.log('✅ Email transporter created:', {
-    host: SMTP_HOST,
-    port: SMTP_PORT,
-    secure: SMTP_SECURE,
-    user: SMTP_USER
-  })
 
   return transporter
 }
@@ -63,7 +55,6 @@ async function sendEmailViaSMTP(to, subject, html) {
   const mailTransporter = getTransporter()
 
   if (!mailTransporter) {
-    console.error('❌ Cannot send email: SMTP not configured')
     return { success: false, error: 'Email service not configured' }
   }
 
@@ -75,15 +66,9 @@ async function sendEmailViaSMTP(to, subject, html) {
       html: html
     })
 
-    console.log('✅ Email sent successfully:', {
-      messageId: info.messageId,
-      to: to,
-      subject: subject
-    })
 
     return { success: true, data: { messageId: info.messageId } }
   } catch (error) {
-    console.error('❌ Error sending email via SMTP:', error)
     return { success: false, error: error.message }
   }
 }

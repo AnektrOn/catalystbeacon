@@ -7,6 +7,8 @@ const ColorPaletteDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentPalette, setCurrentPalette] = useState(colorPaletteSwitcher.getCurrentPalette());
   const dropdownRef = useRef(null);
+  const touchStartRef = useRef(null);
+  const isScrollingRef = useRef(false);
 
   useEffect(() => {
     const handlePaletteChange = (event) => {
@@ -19,15 +21,81 @@ const ColorPaletteDropdown = () => {
       }
     };
 
+    // Track touch start for mobile scroll detection
+    const handleTouchStart = (event) => {
+      // Always track touch start position
+      touchStartRef.current = {
+        x: event.touches[0].clientX,
+        y: event.touches[0].clientY,
+        target: event.target,
+        time: Date.now()
+      };
+      isScrollingRef.current = false;
+      
+      // If touch is inside the dropdown, don't close on touchstart
+      if (dropdownRef.current && dropdownRef.current.contains(event.target)) {
+        return; // Don't close - allow interaction inside dropdown
+      }
+    };
+
+    // Track touch move to detect scrolling
+    const handleTouchMove = (event) => {
+      if (!touchStartRef.current) return;
+      
+      const touch = event.touches[0];
+      const deltaX = Math.abs(touch.clientX - touchStartRef.current.x);
+      const deltaY = Math.abs(touch.clientY - touchStartRef.current.y);
+      
+      // If moved more than 5px, consider it a scroll/pan gesture
+      if (deltaX > 5 || deltaY > 5) {
+        isScrollingRef.current = true;
+      }
+    };
+
+    // Only close on touchend if it was a tap (not a scroll)
+    const handleTouchEnd = (event) => {
+      if (!touchStartRef.current) {
+        return;
+      }
+      
+      // If touch ended inside the dropdown, don't close
+      if (dropdownRef.current && dropdownRef.current.contains(event.target)) {
+        touchStartRef.current = null;
+        isScrollingRef.current = false;
+        return;
+      }
+      
+      // If user was scrolling/panning, don't close the modal
+      if (isScrollingRef.current) {
+        touchStartRef.current = null;
+        isScrollingRef.current = false;
+        return;
+      }
+      
+      // Check if it was a quick tap (less than 300ms) outside the dropdown
+      const touchDuration = Date.now() - touchStartRef.current.time;
+      if (touchDuration < 300 && !dropdownRef.current.contains(event.target)) {
+        // It was a quick tap outside - close the modal
+        setIsOpen(false);
+      }
+      
+      touchStartRef.current = null;
+      isScrollingRef.current = false;
+    };
+
     window.addEventListener('colorPaletteChanged', handlePaletteChange);
-    // Support both mouse and touch events for mobile compatibility
     document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('touchstart', handleClickOutside);
+    // Use touch events that distinguish between taps and scrolls
+    document.addEventListener('touchstart', handleTouchStart, { passive: true });
+    document.addEventListener('touchmove', handleTouchMove, { passive: true });
+    document.addEventListener('touchend', handleTouchEnd, { passive: true });
 
     return () => {
       window.removeEventListener('colorPaletteChanged', handlePaletteChange);
       document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
     };
   }, []);
 
@@ -57,17 +125,38 @@ const ColorPaletteDropdown = () => {
       </button>
 
       {isOpen && (
-        <div className="color-palette-dropdown" ref={dropdownContainerRef}>
+        <div 
+          className="color-palette-dropdown" 
+          ref={dropdownContainerRef}
+          onTouchStart={(e) => {
+            // Prevent closing when touching inside the dropdown
+            e.stopPropagation();
+          }}
+          onTouchMove={(e) => {
+            // Prevent closing when scrolling inside the dropdown
+            e.stopPropagation();
+          }}
+        >
           <div className="color-palette-dropdown-header">
             <span className="color-palette-dropdown-title">Color Themes</span>
           </div>
-          <div className="color-palette-dropdown-list" ref={listRef}>
+          <div 
+            className="color-palette-dropdown-list" 
+            ref={listRef}
+            onTouchStart={(e) => {
+              // Allow scrolling in the list
+              e.stopPropagation();
+            }}
+            onTouchMove={(e) => {
+              // Allow scrolling in the list
+              e.stopPropagation();
+            }}
+          >
             {Object.entries(palettes).map(([key, palette], index) => {
               const isValid = palette && palette.light && palette.name;
               
               // Skip if palette structure is invalid
               if (!isValid) {
-                console.warn(`⚠️ Invalid palette structure for key: ${key}`, palette);
                 return null;
               }
               

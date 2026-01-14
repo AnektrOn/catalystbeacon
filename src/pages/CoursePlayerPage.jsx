@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { usePageTransition } from '../contexts/PageTransitionContext';
@@ -61,17 +62,9 @@ const CoursePlayerPage = () => {
     const fromRoadmapParam = params.get('fromRoadmap');
     const returnParam = params.get('return');
     
-    console.log('📍 CoursePlayerPage: URL params:', { fromRoadmapParam, returnParam, fullUrl: window.location.href });
     
     // If fromRoadmap=true OR if return param contains roadmap path, consider it as from roadmap
     const isFromRoadmap = fromRoadmapParam === 'true' || (returnParam && (returnParam.includes('roadmap') || returnParam.includes('/roadmap/')));
-    
-    console.log('📍 CoursePlayerPage: Detecting roadmap mode:', { 
-      fromRoadmapParam, 
-      returnParam, 
-      isFromRoadmap,
-      returnParamContainsRoadmap: returnParam?.includes('roadmap')
-    });
     
     if (isFromRoadmap) {
       setFromRoadmap(true);
@@ -80,20 +73,16 @@ const CoursePlayerPage = () => {
       if (returnParam) {
         try {
           const decoded = returnParam.includes('%') ? decodeURIComponent(returnParam) : returnParam;
-          console.log('📍 CoursePlayerPage: Setting returnUrl from param:', { original: returnParam, decoded });
           setReturnUrl(decoded);
         } catch (e) {
-          console.warn('⚠️ CoursePlayerPage: Error decoding returnUrl, using as-is:', returnParam);
           setReturnUrl(returnParam);
         }
       } else {
         // Default return URL if not provided
-        console.log('📍 CoursePlayerPage: No return param, using default roadmap URL');
         setReturnUrl('/roadmap/ignition');
       }
     } else {
       // Reset if not from roadmap
-      console.log('📍 CoursePlayerPage: Not from roadmap, resetting flags');
       setFromRoadmap(false);
       setReturnUrl(null);
     }
@@ -138,7 +127,6 @@ const CoursePlayerPage = () => {
 
       // Check if we need to build structure from course_content (for roadmap navigation)
       if (!fullCourse?.chapters || fullCourse.chapters.length === 0) {
-        console.warn('No chapters in course_structure, building from course_content...');
         
         // Load ALL lessons for this course from course_content
         const { data: allLessons, error: allLessonsError } = await supabase
@@ -149,7 +137,6 @@ const CoursePlayerPage = () => {
           .order('lesson_number', { ascending: true });
 
         if (allLessonsError) {
-          console.error('Error loading lessons from course_content:', allLessonsError);
           throw allLessonsError;
         }
 
@@ -176,7 +163,6 @@ const CoursePlayerPage = () => {
 
         // Convert to array and sort
         fullCourse.chapters = Object.values(chaptersMap).sort((a, b) => a.chapter_number - b.chapter_number);
-        console.log(`✅ Built ${fullCourse.chapters.length} chapters from course_content`);
       }
 
       setCourseStructure(fullCourse);
@@ -186,11 +172,9 @@ const CoursePlayerPage = () => {
       const lesson = chapter?.lessons?.find(l => l.lesson_number === lessonNum);
 
       if (!chapter || !lesson) {
-        console.error('Lesson not found after fallback. Chapter:', chapter, 'Lesson:', lesson);
         throw new Error('Lesson not found');
       }
 
-      console.log('✅ Current lesson loaded:', lesson.lesson_title);
       setCurrentLesson(lesson);
 
       // Load lesson content (use course_id, not UUID)
@@ -202,10 +186,8 @@ const CoursePlayerPage = () => {
           lessonNum
         );
         if (contentError && contentError.code !== 'PGRST116') {
-          console.warn('Lesson content not found:', contentError);
         } else if (content) {
           setLessonContent(content);
-          console.log('✅ Lesson content loaded');
         }
 
         // Load lesson description
@@ -261,12 +243,10 @@ const CoursePlayerPage = () => {
           // }
           setQuizData([]); // No quizzes until quiz system is implemented
         } catch (quizErr) {
-          console.warn('Quiz data not available:', quizErr);
           setQuizData([]);
         }
       }
     } catch (err) {
-      console.error('Error loading lesson:', err);
       setError('Failed to load lesson. Please try again.');
       toast.error('Failed to load lesson');
     } finally {
@@ -343,7 +323,6 @@ const CoursePlayerPage = () => {
         },
       });
     } catch (err) {
-      console.error('Error completing lesson:', err);
       toast.error(err.message || 'Failed to complete lesson. Please try again.');
     } finally {
       setIsCompleting(false);
@@ -455,15 +434,16 @@ const CoursePlayerPage = () => {
   }
 
   return (
-    <div className={`flex h-[calc(100vh-80px)] overflow-hidden transition-all duration-500 ${cinemaMode ? 'fixed inset-0 z-50' : ''}`} style={cinemaMode ? { backgroundColor: 'var(--bg-secondary, #0f0f0f)' } : {}}>
+    <div className={`flex h-[calc(100vh-80px)] overflow-hidden transition-all duration-500 ${cinemaMode ? 'fixed inset-0 z-50 overflow-y-auto' : ''}`} style={cinemaMode ? { backgroundColor: 'var(--bg-secondary, #0f0f0f)', width: '100vw', height: '100vh' } : {}}>
 
       {/* Mobile Menu Overlay - Disabled in roadmap mode only for free users */}
-      {showMobileMenu && (!fromRoadmap || !isFreeUser) && (
+      {showMobileMenu && (!fromRoadmap || !isFreeUser) ? createPortal(
         <div 
           className="fixed inset-0 z-40 lg:hidden"
           onClick={() => setShowMobileMenu(false)}
+          style={{ width: '100vw', height: '100vh' }}
         >
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" style={{ width: '100vw', height: '100vh' }} />
           <div 
             className="absolute top-0 left-0 bottom-0 w-80 max-w-[85vw] bg-slate-900/95 backdrop-blur-xl shadow-2xl flex flex-col"
             onClick={(e) => e.stopPropagation()}
@@ -515,8 +495,9 @@ const CoursePlayerPage = () => {
               ))}
             </div>
           </div>
-        </div>
-      )}
+        </div>,
+        document.body
+      ) : null}
 
       {/* Sidebar - Course Structure (Desktop) - Hidden in roadmap mode only for free users */}
       {(!fromRoadmap || !isFreeUser) && (
@@ -669,21 +650,21 @@ const CoursePlayerPage = () => {
           <div className={`max-w-4xl mx-auto transition-all duration-500 ${cinemaMode ? 'py-12' : 'py-6'}`}>
 
             {/* Lesson Header */}
-            <div className="mb-8 text-center">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 10%, transparent)', color: 'var(--color-primary)', borderColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', borderWidth: '1px', borderStyle: 'solid' }}>
+            <div className="mb-12 text-center">
+              <div className="meta-text inline-flex items-center gap-2 px-3 py-1 rounded-full mb-6" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 10%, transparent)', color: 'var(--color-primary)', borderColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', borderWidth: '1px', borderStyle: 'solid' }}>
                 Chapter {chapterNum} • Lesson {lessonNum}
               </div>
               {fromRoadmap && isFreeUser && (
-                <div className="mb-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
+                <div className="mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
                   <span>🔓</span>
                   <span>Free Preview Mode - Roadmap Access</span>
                 </div>
               )}
-              <h1 className="text-3xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4 font-heading leading-tight">
+              <h1 className="mb-6">
                 {currentLesson.lesson_title}
               </h1>
               {lessonDescription?.lesson_description && (
-                <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto leading-relaxed">
+                <p className="text-body max-w-2xl mx-auto">
                   {lessonDescription.lesson_description}
                 </p>
               )}
@@ -719,10 +700,10 @@ const CoursePlayerPage = () => {
                   {/* The Hook */}
                   {lessonContent.the_hook && (
                     <div className="glass-panel-floating p-8 !m-0">
-                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-3">
+                      <h3 className="mb-6 flex items-center gap-3">
                         <span style={{ color: 'var(--color-primary)' }}>01.</span> The Hook
                       </h3>
-                      <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
+                      <p className="text-body">
                         {lessonContent.the_hook}
                       </p>
                     </div>
@@ -733,26 +714,26 @@ const CoursePlayerPage = () => {
                     <div className="grid md:grid-cols-2 gap-6">
                       {lessonContent.key_terms_1 && (
                         <div className="glass-card-premium p-6">
-                          <h4 className="font-bold text-lg mb-2" style={{ color: 'var(--color-primary)' }}>{lessonContent.key_terms_1}</h4>
-                          <p className="text-gray-600 dark:text-gray-300">{lessonContent.key_terms_1_def}</p>
+                          <h4 className="mb-3" style={{ color: 'var(--color-primary)' }}>{lessonContent.key_terms_1}</h4>
+                          <p className="text-body-sm">{lessonContent.key_terms_1_def}</p>
                         </div>
                       )}
                       {lessonContent.key_terms_2 && (
                         <div className="glass-card-premium p-6">
-                          <h4 className="font-bold text-lg mb-2" style={{ color: 'var(--color-primary)' }}>{lessonContent.key_terms_2}</h4>
-                          <p className="text-gray-600 dark:text-gray-300">{lessonContent.key_terms_2_def}</p>
+                          <h4 className="mb-3" style={{ color: 'var(--color-primary)' }}>{lessonContent.key_terms_2}</h4>
+                          <p className="text-body-sm">{lessonContent.key_terms_2_def}</p>
                         </div>
                       )}
                       {lessonContent.key_terms_3 && (
                         <div className="glass-card-premium p-6">
-                          <h4 className="font-bold text-lg mb-2" style={{ color: 'var(--color-primary)' }}>{lessonContent.key_terms_3}</h4>
-                          <p className="text-gray-600 dark:text-gray-300">{lessonContent.key_terms_3_def}</p>
+                          <h4 className="mb-3" style={{ color: 'var(--color-primary)' }}>{lessonContent.key_terms_3}</h4>
+                          <p className="text-body-sm">{lessonContent.key_terms_3_def}</p>
                         </div>
                       )}
                       {lessonContent.key_terms_4 && (
                         <div className="glass-card-premium p-6">
-                          <h4 className="font-bold text-lg mb-2" style={{ color: 'var(--color-primary)' }}>{lessonContent.key_terms_4}</h4>
-                          <p className="text-gray-600 dark:text-gray-300">{lessonContent.key_terms_4_def}</p>
+                          <h4 className="mb-3" style={{ color: 'var(--color-primary)' }}>{lessonContent.key_terms_4}</h4>
+                          <p className="text-body-sm">{lessonContent.key_terms_4_def}</p>
                         </div>
                       )}
                     </div>
@@ -761,32 +742,32 @@ const CoursePlayerPage = () => {
                   {/* Core Concepts */}
                   {(lessonContent.core_concepts_1 || lessonContent.core_concepts_2 || lessonContent.core_concepts_3 || lessonContent.core_concepts_4) && (
                     <div className="glass-panel-floating p-8 !m-0">
-                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
+                      <h3 className="mb-8 flex items-center gap-3">
                         <span style={{ color: 'var(--color-primary)' }}>02.</span> Core Concepts
                       </h3>
-                      <div className="space-y-6">
+                      <div className="space-y-8">
                         {lessonContent.core_concepts_1 && (
                           <div className="pl-6 border-l-2" style={{ borderColor: 'color-mix(in srgb, var(--color-primary) 30%, transparent)' }}>
-                            <h4 className="font-bold text-xl text-gray-900 dark:text-white mb-2">{lessonContent.core_concepts_1}</h4>
-                            <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{lessonContent.core_concepts_1_def}</p>
+                            <h4 className="mb-3">{lessonContent.core_concepts_1}</h4>
+                            <p className="text-body">{lessonContent.core_concepts_1_def}</p>
                           </div>
                         )}
                         {lessonContent.core_concepts_2 && (
                           <div className="pl-6 border-l-2" style={{ borderColor: 'color-mix(in srgb, var(--color-primary) 30%, transparent)' }}>
-                            <h4 className="font-bold text-xl text-gray-900 dark:text-white mb-2">{lessonContent.core_concepts_2}</h4>
-                            <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{lessonContent.core_concepts_2_def}</p>
+                            <h4 className="mb-3">{lessonContent.core_concepts_2}</h4>
+                            <p className="text-body">{lessonContent.core_concepts_2_def}</p>
                           </div>
                         )}
                         {lessonContent.core_concepts_3 && (
                           <div className="pl-6 border-l-2" style={{ borderColor: 'color-mix(in srgb, var(--color-primary) 30%, transparent)' }}>
-                            <h4 className="font-bold text-xl text-gray-900 dark:text-white mb-2">{lessonContent.core_concepts_3}</h4>
-                            <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{lessonContent.core_concepts_3_def}</p>
+                            <h4 className="mb-3">{lessonContent.core_concepts_3}</h4>
+                            <p className="text-body">{lessonContent.core_concepts_3_def}</p>
                           </div>
                         )}
                         {lessonContent.core_concepts_4 && (
                           <div className="pl-6 border-l-2" style={{ borderColor: 'color-mix(in srgb, var(--color-primary) 30%, transparent)' }}>
-                            <h4 className="font-bold text-xl text-gray-900 dark:text-white mb-2">{lessonContent.core_concepts_4}</h4>
-                            <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{lessonContent.core_concepts_4_def}</p>
+                            <h4 className="mb-3">{lessonContent.core_concepts_4}</h4>
+                            <p className="text-body">{lessonContent.core_concepts_4_def}</p>
                           </div>
                         )}
                       </div>
@@ -797,14 +778,14 @@ const CoursePlayerPage = () => {
                   <div className="grid md:grid-cols-2 gap-6">
                     {lessonContent.synthesis && (
                       <div className="glass-panel-floating p-8 !m-0">
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Synthesis</h3>
-                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{lessonContent.synthesis}</p>
+                        <h3 className="mb-6">Synthesis</h3>
+                        <p className="text-body">{lessonContent.synthesis}</p>
                       </div>
                     )}
                     {lessonContent.connect_to_your_life && (
                       <div className="glass-panel-floating p-8 !m-0" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 5%, transparent)', borderColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', borderWidth: '1px', borderStyle: 'solid' }}>
-                        <h3 className="text-xl font-bold mb-4" style={{ color: 'var(--color-primary)' }}>Connect to Your Life</h3>
-                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{lessonContent.connect_to_your_life}</p>
+                        <h3 className="mb-6" style={{ color: 'var(--color-primary)' }}>Connect to Your Life</h3>
+                        <p className="text-body">{lessonContent.connect_to_your_life}</p>
                       </div>
                     )}
                   </div>
@@ -812,40 +793,40 @@ const CoursePlayerPage = () => {
                   {/* Key Takeaways */}
                   {(lessonContent.key_takeaways_1 || lessonContent.key_takeaways_2 || lessonContent.key_takeaways_3 || lessonContent.key_takeaways_4) && (
                     <div className="glass-panel-floating p-8 !m-0">
-                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
+                      <h3 className="mb-8 flex items-center gap-3">
                         <span style={{ color: 'var(--color-primary)' }}>03.</span> Key Takeaways
                       </h3>
                       <ul className="space-y-4">
                         {lessonContent.key_takeaways_1 && (
                           <li className="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
-                            <div className="p-2 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', color: 'var(--color-primary)' }}>
+                            <div className="p-2 rounded-lg flex-shrink-0" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', color: 'var(--color-primary)' }}>
                               <CheckCircle size={20} />
                             </div>
-                            <span className="text-lg text-gray-700 dark:text-gray-200 pt-1">{lessonContent.key_takeaways_1}</span>
+                            <span className="text-body pt-1">{lessonContent.key_takeaways_1}</span>
                           </li>
                         )}
                         {lessonContent.key_takeaways_2 && (
                           <li className="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
-                            <div className="p-2 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', color: 'var(--color-primary)' }}>
+                            <div className="p-2 rounded-lg flex-shrink-0" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', color: 'var(--color-primary)' }}>
                               <CheckCircle size={20} />
                             </div>
-                            <span className="text-lg text-gray-700 dark:text-gray-200 pt-1">{lessonContent.key_takeaways_2}</span>
+                            <span className="text-body pt-1">{lessonContent.key_takeaways_2}</span>
                           </li>
                         )}
                         {lessonContent.key_takeaways_3 && (
                           <li className="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
-                            <div className="p-2 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', color: 'var(--color-primary)' }}>
+                            <div className="p-2 rounded-lg flex-shrink-0" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', color: 'var(--color-primary)' }}>
                               <CheckCircle size={20} />
                             </div>
-                            <span className="text-lg text-gray-700 dark:text-gray-200 pt-1">{lessonContent.key_takeaways_3}</span>
+                            <span className="text-body pt-1">{lessonContent.key_takeaways_3}</span>
                           </li>
                         )}
                         {lessonContent.key_takeaways_4 && (
                           <li className="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
-                            <div className="p-2 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', color: 'var(--color-primary)' }}>
+                            <div className="p-2 rounded-lg flex-shrink-0" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', color: 'var(--color-primary)' }}>
                               <CheckCircle size={20} />
                             </div>
-                            <span className="text-lg text-gray-700 dark:text-gray-200 pt-1">{lessonContent.key_takeaways_4}</span>
+                            <span className="text-body pt-1">{lessonContent.key_takeaways_4}</span>
                           </li>
                         )}
                       </ul>

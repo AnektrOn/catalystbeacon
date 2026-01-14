@@ -30,12 +30,10 @@ export const useSubscription = () => {
           .maybeSingle()
         
         if (error && error.code !== 'PGRST116') {
-          console.warn('Error fetching subscription:', error)
         }
         
         setSubscriptionData(data)
       } catch (error) {
-        console.warn('Exception fetching subscription:', error)
         setSubscriptionData(null)
       } finally {
         setSubscriptionLoading(false)
@@ -84,18 +82,6 @@ export const useSubscription = () => {
   const isFreeUser = role === 'Free' || !hasActiveSubscription
   
   // Debug logging
-  console.log('🔍 Subscription Check:', {
-    role,
-    isAdmin,
-    profileSubscriptionStatus,
-    subscriptionTableStatus,
-    hasActiveProfileStatus,
-    hasActiveTableStatus,
-    hasActiveSubscription,
-    isFreeUser,
-    profileId: profile?.id,
-    userId: user?.id
-  })
   
   return {
     isFreeUser,

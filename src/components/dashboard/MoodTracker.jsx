@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import {
   LineChart,
   Line,
@@ -82,12 +83,10 @@ const MoodTracker = ({ userId }) => {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
       
       if (sessionError) {
-        console.error('Session error:', sessionError)
         throw new Error(`Authentication error: ${sessionError.message}`)
       }
       
       if (!session?.user) {
-        console.warn('No authenticated session found')
         setEntries({})
         setLoading(false)
         return
@@ -98,7 +97,6 @@ const MoodTracker = ({ userId }) => {
       
       // Verify userId prop matches authenticated user (for security)
       if (userId && userId !== authenticatedUserId) {
-        console.warn('userId prop does not match authenticated user ID')
         // Still proceed with authenticated user ID for RLS compliance
       }
       
@@ -115,12 +113,6 @@ const MoodTracker = ({ userId }) => {
         .order('date', { ascending: true })
 
       if (error) {
-        console.error('Supabase query error:', {
-          message: error.message,
-          code: error.code,
-          details: error.details,
-          hint: error.hint
-        })
         throw error
       }
 
@@ -136,7 +128,6 @@ const MoodTracker = ({ userId }) => {
 
       setEntries(entriesMap)
     } catch (error) {
-      console.error('Error loading mood tracker entries:', error)
       
       // Provide more specific error messages
       let errorMessage = 'Failed to load mood tracker data'
@@ -188,11 +179,6 @@ const MoodTracker = ({ userId }) => {
         })
 
       if (error) {
-        console.error('Error saving entry:', {
-          message: error.message,
-          code: error.code,
-          details: error.details
-        })
         throw error
       }
 
@@ -201,7 +187,6 @@ const MoodTracker = ({ userId }) => {
       setEditingDate(null)
       loadEntries()
     } catch (error) {
-      console.error('Error saving entry:', error)
       let errorMessage = 'Failed to save entry'
       if (error?.message) {
         errorMessage = `Failed to save: ${error.message}`
@@ -409,18 +394,11 @@ const MoodTracker = ({ userId }) => {
       </div>
 
       {/* Input Modal */}
-      {showInputModal && (
+      {showInputModal && createPortal(
         <div className="mood-tracker-modal-overlay" onClick={() => setShowInputModal(false)}>
           <div 
             className="mood-tracker-modal" 
             onClick={(e) => e.stopPropagation()}
-            style={window.innerWidth > 768 && modalPosition.top > 0 ? {
-              position: 'absolute',
-              top: `${modalPosition.top}px`,
-              left: `${modalPosition.left}px`,
-              transform: 'none',
-              margin: 0
-            } : {}}
           >
             <div className="mood-tracker-modal-header">
               <h3>
@@ -503,7 +481,8 @@ const MoodTracker = ({ userId }) => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   )

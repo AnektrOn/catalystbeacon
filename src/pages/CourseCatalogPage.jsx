@@ -59,7 +59,6 @@ const CourseCatalogPage = () => {
       setError(null);
 
       timeoutId = setTimeout(() => {
-        console.warn('⏰ CourseCatalogPage: loadData timeout reached');
         setError('Loading is taking longer than expected. Please refresh the page.');
         setLoading(false);
       }, 30000); // 30 second timeout
@@ -76,7 +75,6 @@ const CourseCatalogPage = () => {
           8000,
           'getSchoolsWithUnlockStatus'
         ).catch((err) => {
-          console.warn('Schools unlock fetch failed; continuing without unlock status:', err);
           return { data: null, error: err };
         });
 
@@ -89,7 +87,6 @@ const CourseCatalogPage = () => {
       } else {
         // If no user, just get all schools
         const schoolsRes = await withTimeout(schoolService.getAllSchools(), 8000, 'getAllSchools').catch((err) => {
-          console.warn('Schools fetch failed; continuing without schools list:', err);
           return { data: null, error: err };
         });
         schoolsData = schoolsRes?.data || [];
@@ -104,10 +101,9 @@ const CourseCatalogPage = () => {
       const filters = user?.id ? { userId: user.id } : {};
       const coursesRes = await withTimeout(
         courseService.getCoursesBySchool(filters),
-        12000,
+        20000, // Increased timeout to 20s to handle larger datasets
         'getCoursesBySchool'
       ).catch((err) => {
-        console.error('Courses fetch failed:', err);
         return { data: null, error: err };
       });
 
@@ -115,7 +111,6 @@ const CourseCatalogPage = () => {
       
       // If courses failed to load, show error but don't block the page
       if (fetchError) {
-        console.error('Failed to load courses:', fetchError);
         setError('Failed to load courses. Please refresh the page.');
         setCoursesBySchool({});
         setLoading(false);
@@ -184,7 +179,6 @@ const CourseCatalogPage = () => {
               8000,
               'user_course_progress'
             ).catch((err) => {
-              console.warn('Progress fetch failed; continuing without progress:', err);
               return { data: null, error: err };
             });
             const { data: allProgress, error: progressError } = progressRes || {};
@@ -212,7 +206,6 @@ const CourseCatalogPage = () => {
               }
             }
           } catch (err) {
-            console.warn('Failed to batch load course progress:', err);
             // Continue without progress - courses will still display
           }
         }
@@ -232,8 +225,6 @@ const CourseCatalogPage = () => {
         setSchoolNames(sortedSchoolNames);
         
         // Log school_name values for reference
-        console.log('📚 Unique school_name values found:', sortedSchoolNames);
-        console.log('📚 Total unique school_name values:', sortedSchoolNames.length);
       } else {
         setCoursesBySchool(data || {});
         
@@ -250,11 +241,8 @@ const CourseCatalogPage = () => {
         setSchoolNames(sortedSchoolNames);
         
         // Log school_name values for reference
-        console.log('📚 Unique school_name values found:', sortedSchoolNames);
-        console.log('📚 Total unique school_name values:', sortedSchoolNames.length);
       }
     } catch (err) {
-      console.error('Error loading data:', err);
       setError('Failed to load courses. Please try again.');
     } finally {
       if (timeoutId) {

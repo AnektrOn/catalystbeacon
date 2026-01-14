@@ -3,7 +3,6 @@ import { Flame, Brain, Activity, Crown } from 'lucide-react'
 
 // Verify all icons are imported correctly
 if (!Flame || !Brain || !Activity || !Crown) {
-  console.error('Missing icons from lucide-react')
 }
 
 const EtherealStatsCards = ({ 

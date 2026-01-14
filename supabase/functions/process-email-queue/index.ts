@@ -26,7 +26,6 @@ serve(async (req) => {
       .rpc('get_pending_emails', { limit_count: 10 })
 
     if (fetchError) {
-      console.error('Error fetching pending emails:', fetchError)
       return new Response(
         JSON.stringify({ error: fetchError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -40,7 +39,6 @@ serve(async (req) => {
       )
     }
 
-    console.log(`Processing ${pendingEmails.length} pending emails...`)
 
     // Process each email by calling the send-email Edge Function
     const results = []
@@ -78,7 +76,6 @@ serve(async (req) => {
               .update({ status: 'sent', sent_at: new Date().toISOString() })
               .eq('id', email.id)
             results.push({ id: email.id, status: 'sent' })
-            console.log(`✅ Email sent: ${email.recipient_email} (${email.email_type})`)
           } else {
             // Mark as failed (but allow retry if attempts < max)
             const newStatus = (email.attempts + 1) >= (email.max_attempts || 3) ? 'failed' : 'pending'
@@ -90,7 +87,6 @@ serve(async (req) => {
               })
               .eq('id', email.id)
             results.push({ id: email.id, status: 'failed', error: result.error })
-            console.error(`❌ Email failed: ${email.recipient_email} - ${result.error}`)
           }
         } else {
           const errorText = await sendResponse.text()
@@ -103,7 +99,6 @@ serve(async (req) => {
             })
             .eq('id', email.id)
           results.push({ id: email.id, status: 'failed', error: errorText })
-          console.error(`❌ Email failed: ${email.recipient_email} - HTTP ${sendResponse.status}`)
         }
       } catch (error) {
         const newStatus = (email.attempts + 1) >= (email.max_attempts || 3) ? 'failed' : 'pending'
@@ -115,7 +110,6 @@ serve(async (req) => {
           })
           .eq('id', email.id)
         results.push({ id: email.id, status: 'failed', error: error.message })
-        console.error(`❌ Email error: ${email.recipient_email} - ${error.message}`)
       }
     }
 
@@ -133,7 +127,6 @@ serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
-    console.error('Error processing email queue:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

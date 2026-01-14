@@ -1,4 +1,5 @@
 import React, { Suspense, useEffect, useMemo, useRef, useState, createContext, useContext } from "react"
+import { createPortal } from "react-dom"
 import * as THREE from "three"
 import { Canvas, useFrame } from "@react-three/fiber"
 import {
@@ -270,9 +271,9 @@ function NodeModal() {
   // Early return after all hooks
   if (!selectedNode) return null
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={handleBackdropClick}>
-      <div className="relative max-w-md w-full mx-4">
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm overflow-y-auto" onClick={handleBackdropClick} style={{ width: '100vw', height: '100vh' }}>
+      <div className="relative max-w-md w-full mx-4 my-auto" style={{ maxHeight: 'calc(100vh - 40px)' }}>
         <button onClick={handleClose} className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors z-10">
           <X className="w-8 h-8" />
         </button>
@@ -330,7 +331,8 @@ function NodeModal() {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

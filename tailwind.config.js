@@ -89,9 +89,34 @@ module.exports = {
       fontFamily: {
         sans: ['Cinzel', 'serif'],
         heading: ['Cinzel', 'serif'],
+        body: ['Cinzel', 'serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
         'ethereal-body': ['Cinzel', 'serif'],
         'ethereal-heading': ['Cinzel', 'serif'],
+      },
+      fontSize: {
+        // Design Tokens Typographiques - Approche Raffinée (Contraste par poids/couleurs)
+        'h1': ['2.25rem', { lineHeight: '1.2', letterSpacing: '0.08em', fontWeight: '700', textTransform: 'uppercase' }], // 36px - Élégant, UPPERCASE avec tracking raffiné
+        'h2': ['1.75rem', { lineHeight: '1.3', letterSpacing: '0', fontWeight: '700' }], // 28px - Bold
+        'h3': ['1.5rem', { lineHeight: '1.4', letterSpacing: '0', fontWeight: '600' }], // 24px - SemiBold
+        'h4': ['1.375rem', { lineHeight: '1.4', letterSpacing: '0', fontWeight: '600' }], // 22px
+        'h5': ['1.25rem', { lineHeight: '1.5', letterSpacing: '0', fontWeight: '600' }], // 20px
+        'h6': ['1.125rem', { lineHeight: '1.5', letterSpacing: '0.05em', fontWeight: '600' }], // 18px
+        'body': ['1rem', { lineHeight: '1.75', letterSpacing: '0', fontWeight: '400', textTransform: 'lowercase' }], // 16px - Lisible
+        'body-sm': ['0.875rem', { lineHeight: '1.625', letterSpacing: '0', fontWeight: '400' }], // 14px
+        'meta': ['0.75rem', { lineHeight: '1.5', letterSpacing: '0.1em', fontWeight: '600', textTransform: 'uppercase' }], // 12px - Meta-data
+      },
+      fontWeight: {
+        'normal': '400',
+        'medium': '500',
+        'semibold': '600',
+        'bold': '700',
+        'extrabold': '800',
+      },
+      letterSpacing: {
+        'tight': '-0.02em',
+        'normal': '0',
+        'wide': '0.1em',
       },
       boxShadow: {
         'ethereal-base': 'var(--ethereal-shadow-base)',
@@ -125,5 +150,8 @@ module.exports = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require("tailwindcss-animate"),
+    require("@tailwindcss/typography"),
+  ],
 }

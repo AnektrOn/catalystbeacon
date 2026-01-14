@@ -398,11 +398,9 @@ async function sendEmailViaSupabase(
     
     // Alternative: Use pg_net to send HTTP request to email service
     // For now, we'll log and return success (emails will be sent via database triggers)
-    console.log('Email would be sent to:', to, 'Subject:', subject)
     
     return { success: true, message: 'Email queued for sending' }
   } catch (error) {
-    console.error('Error sending email:', error)
     return { success: false, error }
   }
 }
@@ -574,7 +572,6 @@ serve(async (req) => {
       // For now, store in queue AND try to send via external service if configured
       // The queue ensures emails are never lost
     } catch (emailSendError) {
-      console.warn('Direct email send failed, will queue:', emailSendError)
     }
 
     // BULLETPROOF: Always queue email as backup (even if direct send works)
@@ -621,7 +618,6 @@ serve(async (req) => {
       
       if (oldError) {
         dbError = oldError
-        console.error('Failed to queue email (both structures failed):', oldError)
       } else {
         emailRecord = oldRecord
       }
@@ -659,7 +655,6 @@ serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
-    console.error('Error in send-email function:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

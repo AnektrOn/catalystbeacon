@@ -88,7 +88,6 @@ const CourseDetailPage = () => {
         }
       }
     } catch (err) {
-      console.error('Error loading course:', err);
       setError('Failed to load course. Please try again.');
       toast.error('Failed to load course');
     } finally {
@@ -116,7 +115,6 @@ const CourseDetailPage = () => {
         );
 
         if (nextLessonError) {
-          console.error('Error finding next lesson:', nextLessonError);
         }
 
         if (nextLesson) {
@@ -124,7 +122,6 @@ const CourseDetailPage = () => {
           return;
         }
       } catch (err) {
-        console.error('Error getting next lesson:', err);
       }
     }
 

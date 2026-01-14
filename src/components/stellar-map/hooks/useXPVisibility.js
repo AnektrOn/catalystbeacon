@@ -61,10 +61,6 @@ export function useXPVisibility() {
   
   // Debug logging
   if (process.env.NODE_ENV === 'development') {
-    console.log('[useXPVisibility] Profile:', profile);
-    console.log('[useXPVisibility] current_xp:', profile?.current_xp);
-    console.log('[useXPVisibility] current_xp type:', typeof profile?.current_xp);
-    console.log('[useXPVisibility] All profile keys:', profile ? Object.keys(profile) : 'no profile');
   }
   
   // Handle XP - check for null, undefined, or if it's actually 0

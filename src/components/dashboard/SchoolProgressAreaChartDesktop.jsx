@@ -74,21 +74,13 @@ const SchoolProgressAreaChartDesktop = ({ userId }) => {
         )
 
         if (result.error) {
-          console.error('Error loading chart data:', result.error)
           setChartData([])
           setCategories([])
         } else {
-          console.log('Desktop Chart Data:', { 
-            dataLength: result.data?.length || 0, 
-            categories: result.categories?.length || 0,
-            sampleData: result.data?.[0],
-            allData: result.data
-          })
           setChartData(result.data || [])
           setCategories(result.categories || [])
         }
       } catch (err) {
-        console.error('Error in loadData:', err)
         setChartData([])
         setCategories([])
       } finally {
@@ -114,23 +106,6 @@ const SchoolProgressAreaChartDesktop = ({ userId }) => {
     }
     return null
   }
-
-  // Debug: Log current state
-  console.log('Desktop Chart Render:', {
-    loading,
-    chartDataLength: chartData?.length || 0,
-    categoriesLength: categories?.length || 0,
-    chartData: chartData,
-    categories: categories,
-    firstDataPoint: chartData?.[0],
-    allValues: chartData?.map(d => {
-      const values = {}
-      categories?.forEach(cat => {
-        values[cat] = d[cat]
-      })
-      return { Period: d.Period, ...values }
-    })
-  })
 
   return (
     <ModernCard className="school-progress-chart" elevated>

@@ -34,9 +34,6 @@ const StellarMap = () => {
   // Debug: Log profile and XP
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('[StellarMap] Profile loaded:', profile);
-      console.log('[StellarMap] Profile current_xp:', profile?.current_xp);
-      console.log('[StellarMap] Visibility data userXP:', visibilityData.userXP);
     }
   }, [profile, visibilityData.userXP]);
 
@@ -48,7 +45,6 @@ const StellarMap = () => {
         setError(null);
 
         if (DEBUG) {
-          console.log(`[StellarMap] Loading data for core: ${currentCore}, XP: ${visibilityData.userXP}`);
         }
 
         const { data, error: fetchError } = await stellarMapService.getNodesGroupedByHierarchy(
@@ -57,35 +53,27 @@ const StellarMap = () => {
         );
 
         if (fetchError) {
-          console.error('[StellarMap] Data fetch error:', fetchError);
           throw fetchError;
         }
 
         if (DEBUG) {
-          console.log('[StellarMap] Data loaded:', data);
-          console.log('[StellarMap] Data keys:', Object.keys(data || {}));
           const totalNodes = Object.values(data || {}).reduce((sum, constellations) => 
             sum + Object.values(constellations).reduce((s, nodes) => s + (nodes?.length || 0), 0), 0
           );
-          console.log('[StellarMap] Total nodes in data:', totalNodes);
           
           // Detailed breakdown
           if (data && Object.keys(data).length > 0) {
             Object.entries(data).forEach(([familyName, constellations]) => {
               const familyNodeCount = Object.values(constellations).reduce((sum, nodes) => sum + (nodes?.length || 0), 0);
-              console.log(`[StellarMap] Family "${familyName}": ${familyNodeCount} nodes across ${Object.keys(constellations).length} constellations`);
               Object.entries(constellations).forEach(([constName, nodes]) => {
-                console.log(`[StellarMap]   - Constellation "${constName}": ${nodes?.length || 0} nodes`);
               });
             });
           } else {
-            console.warn('[StellarMap] WARNING: No data returned from service. Check database for nodes in level:', currentCore);
           }
         }
 
         setHierarchyData(data || {});
       } catch (err) {
-        console.error('Error loading stellar map data:', err);
         setError(err.message || 'Failed to load stellar map data');
       } finally {
         setLoading(false);
@@ -153,7 +141,6 @@ const StellarMap = () => {
         });
       } else {
         // Invalid YouTube URL, open in new tab
-        console.warn('Could not extract YouTube video ID from URL:', nodeData.link);
         window.open(nodeData.link, '_blank');
       }
     } else {

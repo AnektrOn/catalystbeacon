@@ -13,7 +13,6 @@ const PricingPage = () => {
   // Check if PRICE_IDS are loaded
   useEffect(() => {
     if (!PRICE_IDS || !PRICE_IDS.STUDENT_MONTHLY || !PRICE_IDS.TEACHER_MONTHLY) {
-      console.error('⚠️ PRICE_IDS not properly loaded:', PRICE_IDS)
       toast.error('Pricing configuration error. Please refresh the page.')
     }
   }, [])
@@ -85,13 +84,11 @@ const PricingPage = () => {
 
     if (!priceId) {
       toast.error('Invalid price ID. Please contact support.')
-      console.error('Price ID is missing:', priceId)
       return
     }
 
     setLoading(true)
     
-    console.log('🔄 Starting checkout process:', { priceId, userId: user.id, userEmail: user.email })
 
     try {
       // Use API server as PRIMARY solution (most reliable)
@@ -111,14 +108,12 @@ const PricingPage = () => {
         }
       }
       
-      console.log('📞 Using API server as PRIMARY solution:', API_URL)
       
       // Use API server directly (no Edge Function attempts)
       const apiBaseUrl = API_URL
       
       // Test server connectivity first
       try {
-        console.log('🔍 Testing server connectivity...')
         const healthResponse = await fetch(`${apiBaseUrl}/health`, {
           method: 'GET',
           signal: AbortSignal.timeout(5000) // 5 second timeout
@@ -126,18 +121,14 @@ const PricingPage = () => {
         
         if (healthResponse.ok) {
           const healthData = await healthResponse.json()
-          console.log('✅ Server is accessible:', healthData)
         } else {
-          console.warn('⚠️ Server health check failed:', healthResponse.status)
         }
       } catch (healthError) {
-        console.error('❌ Server is not accessible:', healthError.message)
         toast.error('Server is not accessible. Please check if the server is running.')
         setLoading(false)
         return
       }
       
-      console.log('📞 Creating checkout session via API server:', `${apiBaseUrl}/api/create-checkout-session`)
       
       // Retry logic: Try up to 2 times with exponential backoff
       let lastError = null
@@ -146,7 +137,6 @@ const PricingPage = () => {
           if (attempt > 1) {
             // Wait before retry: 1s
             await new Promise(resolve => setTimeout(resolve, 1000))
-            console.log(`🔄 Retry attempt ${attempt}/2 for checkout session...`)
           }
           
           const response = await fetch(`${apiBaseUrl}/api/create-checkout-session`, {
@@ -161,7 +151,6 @@ const PricingPage = () => {
             signal: AbortSignal.timeout(15000) // 15 second timeout
           })
 
-          console.log(`API server response (attempt ${attempt}):`, response.status, response.statusText)
 
           if (!response.ok) {
             let errorMessage = `HTTP ${response.status}: ${response.statusText}`
@@ -180,7 +169,6 @@ const PricingPage = () => {
             
             // Don't retry on 4xx errors (client errors)
             if (response.status >= 400 && response.status < 500) {
-              console.error('❌ Client error (no retry):', errorMessage)
               if (response.status === 503) {
                 // 503 means service unavailable - could be server not running or Stripe not configured
                 const detailedError = errorDetails || errorMessage
@@ -217,7 +205,6 @@ const PricingPage = () => {
           }
 
           const session = await response.json()
-          console.log('✅ Checkout session received:', { id: session.id, hasUrl: !!session.url })
 
           if (session.error) {
             const errorMsg = session.details 
@@ -232,24 +219,20 @@ const PricingPage = () => {
           }
 
           // Success! Redirect to Stripe Checkout
-          console.log('✅ Redirecting to Stripe Checkout via Server API:', checkoutUrl)
           window.location.href = checkoutUrl
           return // Success, exit
           
         } catch (error) {
           lastError = error
           if (error.name === 'AbortError' || error.message?.includes('timeout')) {
-            console.warn(`⚠️ Request timeout (attempt ${attempt}/2)`)
             if (attempt < 2) continue
             toast.error('Request timeout. Please check your connection and try again.')
           } else if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
-            console.warn(`⚠️ Network error (attempt ${attempt}/2):`, error.message)
             if (attempt < 2) continue
             toast.error('Network error. Please check your connection and try again.')
           }
           if (attempt === 2) {
             // Final attempt failed
-            console.error('❌ All checkout attempts failed:', error)
             if (!error.message?.includes('timeout') && !error.message?.includes('NetworkError')) {
               toast.error('Unable to create checkout session. Please try again or contact support.')
             }
@@ -261,10 +244,6 @@ const PricingPage = () => {
       // Should never reach here, but just in case
       throw lastError || new Error('Failed to create checkout session after all retries')
     } catch (error) {
-      console.error('❌ Error creating checkout session:', error)
-      console.error('Error name:', error.name)
-      console.error('Error message:', error.message)
-      console.error('Error stack:', error.stack)
       
       // Provide more helpful error messages
       let errorMessage = 'Something went wrong. Please try again.'
@@ -280,18 +259,6 @@ const PricingPage = () => {
       }
       
       toast.error(errorMessage)
-      console.error('Full error details:', {
-        error,
-        errorName: error.name,
-        errorMessage: error.message,
-        API_URL: process.env.REACT_APP_API_URL || window.location.origin,
-        SUPABASE_URL: process.env.REACT_APP_SUPABASE_URL,
-        priceId,
-        envCheck: {
-          hasReactAppSupabaseUrl: !!process.env.REACT_APP_SUPABASE_URL,
-          hasReactAppApiUrl: !!process.env.REACT_APP_API_URL
-        }
-      })
     } finally {
       setLoading(false)
     }
@@ -321,39 +288,13 @@ const PricingPage = () => {
   // Debug logging
   useEffect(() => {
     if (user && profile) {
-      console.log('📊 Pricing Page - User Info:', {
-        userId: user.id,
-        userEmail: user.email,
-        role: profile.role,
-        subscriptionStatus: profile.subscription_status,
-        subscriptionId: profile.subscription_id,
-        currentPlan: currentPlan,
-        hasActiveSubscription: hasActiveSubscription
-      })
     }
     
     // Debug environment variables (without exposing secrets)
-    const supabaseUrlValue = process.env.REACT_APP_SUPABASE_URL
-    console.log('🔧 Pricing Page - Environment Config:', {
-      hasSupabaseUrl: !!supabaseUrlValue,
-      supabaseUrl: supabaseUrlValue ? `Set (${supabaseUrlValue.substring(0, 40)}...)` : 'Missing - RESTART SERVER!',
-      hasApiUrl: !!process.env.REACT_APP_API_URL,
-      apiUrl: process.env.REACT_APP_API_URL || 'Not set (will use Supabase)',
-      hasStripeKey: !!process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY,
-      hasPriceIds: {
-        student: !!process.env.REACT_APP_STRIPE_STUDENT_MONTHLY_PRICE_ID,
-        teacher: !!process.env.REACT_APP_STRIPE_TEACHER_MONTHLY_PRICE_ID
-      },
-      nodeEnv: process.env.NODE_ENV,
-      allReactAppKeys: Object.keys(process.env).filter(k => k.startsWith('REACT_APP_'))
-    })
+    const supabaseUrlValue = process.env.REACT_APP_SUPABASE_URL;
     
     // Warn if Supabase URL is missing
     if (!supabaseUrlValue) {
-      console.warn('⚠️ REACT_APP_SUPABASE_URL is not set!', {
-        message: 'Make sure your .env file exists in the project root and contains REACT_APP_SUPABASE_URL',
-        instruction: 'After creating/updating .env file, you MUST restart the development server (Ctrl+C then npm start)'
-      })
     }
   }, [user, profile, currentPlan, hasActiveSubscription])
 

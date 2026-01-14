@@ -10,10 +10,8 @@ import * as THREE from 'three';
  */
 export function checkThreeJS() {
   if (typeof THREE === 'undefined') {
-    console.error('Three.js is not loaded');
     return false;
   }
-  console.log('Three.js version:', THREE.REVISION);
   return true;
 }
 
@@ -44,7 +42,6 @@ export function checkContainers() {
     };
   });
 
-  console.table(results);
   return results;
 }
 
@@ -53,7 +50,6 @@ export function checkContainers() {
  */
 export function inspectScene(scene, camera, renderer) {
   if (!scene || !camera || !renderer) {
-    console.error('Scene, camera, or renderer is missing');
     return null;
   }
 
@@ -86,7 +82,6 @@ export function inspectScene(scene, camera, renderer) {
     info.objects.byType[type] = (info.objects.byType[type] || 0) + 1;
   });
 
-  console.log('Scene Info:', info);
   return info;
 }
 
@@ -95,7 +90,6 @@ export function inspectScene(scene, camera, renderer) {
  */
 export function checkNodeData(hierarchyData) {
   if (!hierarchyData || Object.keys(hierarchyData).length === 0) {
-    console.warn('Hierarchy data is empty');
     return { valid: false, error: 'Empty data' };
   }
 
@@ -134,9 +128,7 @@ export function checkNodeData(hierarchyData) {
   };
 
   if (issues.length > 0) {
-    console.warn('Node Data Issues:', issues);
   } else {
-    console.log('Node Data Valid:', result);
   }
 
   return result;
@@ -161,7 +153,6 @@ export function checkXPVisibility(userXP, coreName) {
 
   const thresholds = XP_THRESHOLDS[coreName];
   if (!thresholds) {
-    console.error(`Invalid core name: ${coreName}`);
     return null;
   }
 
@@ -186,7 +177,6 @@ export function checkXPVisibility(userXP, coreName) {
       group === 'Lens' ? thresholds.Prism - userXP : thresholds.Lens - userXP
   };
 
-  console.log('XP Visibility:', result);
   return result;
 }
 
@@ -206,7 +196,6 @@ export function startPerformanceMonitor() {
       fps = frameCount;
       frameCount = 0;
       lastTime = currentTime;
-      console.log(`FPS: ${fps}`);
     }
 
     requestAnimationFrame(monitor);
@@ -225,14 +214,8 @@ export function startPerformanceMonitor() {
 export function checkMemoryUsage() {
   if (performance.memory) {
     const memory = performance.memory;
-    console.log('Memory Usage:', {
-      used: `${(memory.usedJSHeapSize / 1048576).toFixed(2)} MB`,
-      total: `${(memory.totalJSHeapSize / 1048576).toFixed(2)} MB`,
-      limit: `${(memory.jsHeapSizeLimit / 1048576).toFixed(2)} MB`
-    });
     return memory;
   } else {
-    console.warn('Memory API not available');
     return null;
   }
 }
@@ -242,7 +225,6 @@ export function checkMemoryUsage() {
  */
 export function countSceneObjects(scene) {
   if (!scene) {
-    console.error('Scene is null');
     return null;
   }
 
@@ -279,7 +261,6 @@ export function countSceneObjects(scene) {
     }
   });
 
-  console.log('Scene Object Counts:', counts);
   return counts;
 }
 
@@ -450,13 +431,7 @@ export function validateNodeGrouping(hierarchyData, level) {
   };
 
   if (issues.length > 0) {
-    console.warn('[validateNodeGrouping] Validation issues found:', result);
   } else {
-    console.log('[validateNodeGrouping] All nodes correctly grouped:', {
-      totalFamilies,
-      totalConstellations,
-      totalNodes
-    });
   }
 
   return result;

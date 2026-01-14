@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Grid3X3, Clock, Trash2, CheckCircle, Target, Brain, Star } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { supabase } from '../../lib/supabaseClient';
@@ -97,7 +98,6 @@ const CalendarTab = () => {
         // No events stored - all habit events generated virtually on-demand
         setEvents([]);
       } catch (error) {
-        console.error('Error loading habits and events:', error);
         setError(error.message);
       } finally {
         setLoading(false);
@@ -395,13 +395,10 @@ const CalendarTab = () => {
         // Refresh profile to update XP, level, and streak - wait a bit for DB to update
         if (user?.id) {
           setTimeout(async () => {
-            console.log('🔄 Refreshing profile after completion...');
             await fetchProfile(user.id);
-            console.log('✅ Profile refreshed');
           }, 500); // Small delay to ensure DB updates are complete
         }
       } catch (error) {
-        console.error('Error completing habit:', error);
         setError(error.message);
         toast.error('Failed to update habit. Please try again.', {
           duration: 3000,
@@ -472,7 +469,6 @@ const CalendarTab = () => {
       // Trigger refresh to update other tabs
       triggerRefresh();
     } catch (error) {
-      console.error('Error completing habit:', error);
       setError(error.message);
     }
   };
@@ -719,7 +715,7 @@ const CalendarTab = () => {
                           backgroundColor: event.completed ? `${event.color}40` : event.color,
                           borderLeft: `3px solid ${event.color}`
                         }}
-                        onClick={() => event.source !== 'habit' && console.log('Edit event:', event)}
+                        onClick={() => event.source !== 'habit' && {}}
                       >
                         <div className="flex items-center space-x-1">
                           {event.source === 'habit' && (
@@ -1061,7 +1057,7 @@ const CalendarTab = () => {
                   <div
                     key={event.id}
                     className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-                        onClick={() => event.source !== 'habit' && console.log('Edit event:', event)}
+                        onClick={() => event.source !== 'habit' && {}}
                   >
                     <div className="flex items-center space-x-2">
                       <div
@@ -1100,9 +1096,9 @@ const CalendarTab = () => {
       )}
 
       {/* Completion Popup */}
-      {completionPopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
+      {completionPopup && createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto" style={{ width: '100vw', height: '100vh' }}>
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl my-auto" style={{ maxHeight: 'calc(100vh - 40px)' }}>
             <div className="text-center">
               {completionPopup.action === 'completed' ? (
                 <>
@@ -1170,7 +1166,8 @@ const CalendarTab = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>

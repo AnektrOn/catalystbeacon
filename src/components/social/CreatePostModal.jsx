@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   X,
   Image as ImageIcon,
@@ -49,7 +50,6 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
       const { data, error } = await socialService.createPost(postData)
 
       if (error) {
-        console.error('Error creating post:', error)
         return
       }
 
@@ -65,7 +65,6 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
       onPostCreated?.(data)
       onClose()
     } catch (error) {
-      console.error('Error creating post:', error)
     } finally {
       setLoading(false)
     }
@@ -81,9 +80,9 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
 
   if (!isOpen) return null
 
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-      <div className="glass-panel-floating w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+  return createPortal(
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in overflow-y-auto" style={{ width: '100vw', height: '100vh' }}>
+      <div className="glass-panel-floating w-full max-w-2xl overflow-y-auto my-auto" style={{ maxHeight: 'calc(100vh - 40px)' }}>
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-white/10">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">Create Post</h2>
@@ -248,7 +247,8 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

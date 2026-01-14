@@ -48,7 +48,6 @@ class HabitsService {
 
       return { data: count || 0, error: null }
     } catch (error) {
-      console.error('Error fetching habits completed count:', error)
       return { data: 0, error }
     }
   }
@@ -134,7 +133,6 @@ class HabitsService {
 
       return { data: result, error: null }
     } catch (error) {
-      console.error('Error fetching habits completed by period:', error)
       return { data: [], error }
     }
   }

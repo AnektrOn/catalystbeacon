@@ -101,7 +101,6 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition' }) => {
   useEffect(() => {
     // Safety timeout: always end transition after max 5 seconds to prevent infinite loading
     const safetyTimeout = setTimeout(() => {
-      console.warn('⚠️ NeuralPathRoadmap: Safety timeout reached, forcing endTransition');
       endTransition();
     }, 5000);
 
@@ -197,7 +196,6 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition' }) => {
       }
 
     } catch (err) {
-      console.error('Error loading roadmap:', err);
       // Even on error, end transition to prevent infinite loading
       setTimeout(() => {
         endTransition();

@@ -25,7 +25,6 @@ class ErrorBoundary extends React.Component {
     logError(error, 'ErrorBoundary')
     if (process.env.NODE_ENV === 'development') {
       // Include errorInfo in development
-      console.error('ErrorBoundary error details:', errorInfo)
     }
   }
 

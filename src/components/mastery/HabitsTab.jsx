@@ -199,7 +199,6 @@ const HabitsTab = () => {
         setPersonalHabits(transformedHabits);
       }
     } catch (error) {
-      console.error('Error adding habit:', error);
       setError(error.message);
     }
   };
@@ -253,7 +252,6 @@ const HabitsTab = () => {
       setNewHabit({ title: '', description: '', frequency_type: 'daily', xp_reward: 10 });
       setShowAddHabit(false);
     } catch (error) {
-      console.error('Error creating habit:', error);
       setError(error.message);
     }
   };
@@ -304,7 +302,6 @@ const HabitsTab = () => {
         setPersonalHabits(transformedHabits);
       }
     } catch (error) {
-      console.error('Error deleting habit:', error);
       setError(error.message);
     }
   };
@@ -355,7 +352,6 @@ const HabitsTab = () => {
         setPersonalHabits(transformedHabits);
       }
     } catch (error) {
-      console.error('Error completing habit:', error);
       setError(error.message);
     }
   };

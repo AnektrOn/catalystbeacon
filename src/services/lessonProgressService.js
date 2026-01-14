@@ -113,7 +113,6 @@ class LessonProgressService {
         error: null 
       }
     } catch (error) {
-      console.error('Error getting completed lessons by school:', error)
       return { data: null, categories: [], error }
     }
   }
@@ -167,7 +166,6 @@ class LessonProgressService {
 
       return { data: totals, error: null }
     } catch (error) {
-      console.error('Error getting total completed by school:', error)
       return { data: null, error }
     }
   }

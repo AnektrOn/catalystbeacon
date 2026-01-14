@@ -28,16 +28,6 @@ const LessonTracker = ({
 
   // Log tracker props for debugging
   useEffect(() => {
-    console.log('🎓 LessonTracker props:', {
-      courseId,
-      chapterNumber,
-      lessonNumber,
-      lessonId,
-      lessonTitle,
-      masterschool,
-      enabled,
-      userId: user?.id
-    });
   }, [courseId, chapterNumber, lessonNumber, lessonId, lessonTitle, masterschool, enabled, user]);
 
   const {
@@ -65,12 +55,6 @@ const LessonTracker = ({
 
   const handleCompleteClick = () => {
     if (canComplete) {
-      console.log('🎓 LessonTracker: Opening modal with props:', {
-        fromRoadmap,
-        returnUrl,
-        masterschool,
-        lessonId
-      });
       setShowModal(true);
     }
   };
@@ -83,7 +67,6 @@ const LessonTracker = ({
     // Update state after lesson completion
     // Don't reload immediately - let the modal handle navigation
     // The page will update naturally when user navigates
-    console.log('✅ LessonTracker: Lesson completed successfully', result);
   };
 
   if (!enabled || !user) return null;
@@ -218,13 +201,6 @@ const LessonTracker = ({
         returnUrl={returnUrl}
         isFreeUser={isFreeUser}
       />
-      {/* Debug: Log props passed to modal */}
-      {showModal && console.log('🎓 LessonTracker: Passing props to CompleteLessonModal', {
-        fromRoadmap,
-        returnUrl,
-        masterschool,
-        lessonId
-      })}
     </>
   );
 };

@@ -22,7 +22,6 @@ class SkillsService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error fetching skills:', error);
       return { data: null, error };
     }
   }
@@ -52,7 +51,6 @@ class SkillsService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error fetching skills by IDs:', error);
       return { data: null, error };
     }
   }
@@ -70,7 +68,6 @@ class SkillsService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error fetching master stats:', error);
       return { data: null, error };
     }
   }
@@ -104,7 +101,6 @@ class SkillsService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error fetching user skills:', error);
       return { data: null, error };
     }
   }
@@ -127,7 +123,6 @@ class SkillsService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error fetching user skills by IDs:', error);
       return { data: null, error };
     }
   }
@@ -144,7 +139,6 @@ class SkillsService {
         return { data: null, error: new Error('No skill IDs provided') };
       }
 
-      console.log(`🎯 Awarding ${pointsPerSkill} points to ${skillIds.length} skills for user ${userId}`);
 
       // Get current user_skills records
       const { data: existingSkills, error: fetchError } = await this.getUserSkillsByIds(userId, skillIds);
@@ -192,9 +186,7 @@ class SkillsService {
             .eq('id', update.id);
 
           if (updateError) {
-            console.error('Error updating skill:', updateError);
           } else {
-            console.log(`✅ Updated skill ${update.id}: ${update.current_value}`);
           }
         }
       }
@@ -206,10 +198,8 @@ class SkillsService {
           .insert(inserts);
 
         if (insertError) {
-          console.error('Error inserting skills:', insertError);
           throw insertError;
         } else {
-          console.log(`✅ Inserted ${inserts.length} new skill records`);
         }
       }
 
@@ -221,7 +211,6 @@ class SkillsService {
         error: null 
       };
     } catch (error) {
-      console.error('Error awarding skill points:', error);
       return { data: null, error };
     }
   }
@@ -252,7 +241,6 @@ class SkillsService {
 
       return { data: grouped, error: null };
     } catch (error) {
-      console.error('Error grouping skills by master stat:', error);
       return { data: null, error };
     }
   }
@@ -262,45 +250,32 @@ class SkillsService {
    */
   async testSkillsSystem() {
     try {
-      console.log('🧪 Testing Skills System...\n');
 
       // Test 1: Get all skills
-      console.log('1. Fetching all skills...');
       const { data: skills, error: skillsError } = await this.getAllSkills();
       if (skillsError) throw skillsError;
-      console.log(`✅ Found ${skills.length} skills`);
 
       // Test 2: Get master stats
-      console.log('\n2. Fetching master stats...');
       const { data: masterStats, error: masterStatsError } = await this.getMasterStats();
       if (masterStatsError) throw masterStatsError;
-      console.log(`✅ Found ${masterStats.length} master stats:`, masterStats.map(m => m.display_name));
 
       // Test 3: Test with current user (if authenticated)
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        console.log(`\n3. Testing with user: ${user.email}`);
         
         // Get user skills
-        console.log('Fetching user skills...');
         const { data: userSkills, error: userSkillsError } = await this.getUserSkills(user.id);
         if (userSkillsError) throw userSkillsError;
-        console.log(`✅ User has progress in ${userSkills.length} skills`);
 
         // Test awarding skill points
-        console.log('\n4. Testing skill point award...');
         const testSkillIds = [skills[0].id]; // Use first skill for test
         const { data: awardResult, error: awardError } = await this.awardSkillPoints(user.id, testSkillIds, 0.1);
         if (awardError) throw awardError;
-        console.log('✅ Skill points awarded:', awardResult);
       } else {
-        console.log('\n⚠️ No authenticated user, skipping user-specific tests');
       }
 
-      console.log('\n✅ Skills system test complete!');
       return { success: true };
     } catch (error) {
-      console.error('❌ Skills system test failed:', error);
       return { success: false, error };
     }
   }
@@ -323,7 +298,6 @@ class SkillsService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error fetching user master stats:', error);
       return { data: null, error };
     }
   }

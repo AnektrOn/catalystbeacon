@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Wrench, Plus, Target, Trash2, CheckCircle, Clock, Star } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
@@ -68,11 +69,9 @@ const ToolboxTabFixed = () => {
   useEffect(() => {
     const loadToolbox = async () => {
       if (!user) {
-        console.log('🔧 ToolboxTabFixed: No user, skipping data load');
         return;
       }
       
-      console.log('🔧 ToolboxTabFixed: Loading toolbox data for user:', user.id);
       setError(null);
       
       try {
@@ -82,7 +81,6 @@ const ToolboxTabFixed = () => {
           .select('*');
 
         if (libraryError) {
-          console.error('❌ ToolboxTabFixed: Error loading toolbox library:', libraryError);
           setError('Failed to load toolbox library');
           return;
         }
@@ -94,7 +92,6 @@ const ToolboxTabFixed = () => {
           .eq('user_id', user.id);
 
         if (userToolboxError) {
-          console.error('❌ ToolboxTabFixed: Error loading user toolbox:', userToolboxError);
           setError('Failed to load user toolbox');
           return;
         }
@@ -119,7 +116,6 @@ const ToolboxTabFixed = () => {
               
               usageData = usage || [];
             } catch (usageError) {
-              console.log('🔧 ToolboxTabFixed: toolbox_usage table not found, using empty usage');
               usageData = [];
             }
 
@@ -139,9 +135,7 @@ const ToolboxTabFixed = () => {
 
         setToolboxLibrary(libraryData || []);
         setUserToolbox(transformedUserToolbox);
-        console.log('✅ ToolboxTabFixed: Toolbox loaded successfully:', transformedUserToolbox.length, 'user tools,', libraryData?.length || 0, 'library tools');
       } catch (error) {
-        console.error('❌ ToolboxTabFixed: Exception during toolbox load:', error);
         setError('Failed to load toolbox data');
       }
     };
@@ -153,7 +147,6 @@ const ToolboxTabFixed = () => {
     if (!user || !selectedTool) return;
     
     try {
-      console.log('🔧 ToolboxTabFixed: Converting tool to habit:', selectedTool.title);
       
       // Create a new habit from the tool
       const { error } = await supabase
@@ -169,7 +162,6 @@ const ToolboxTabFixed = () => {
         .single();
 
       if (error) {
-        console.error('❌ ToolboxTabFixed: Error converting tool to habit:', error);
         setError('Failed to convert tool to habit');
         return;
       }
@@ -177,9 +169,7 @@ const ToolboxTabFixed = () => {
       setShowConvertModal(false);
       setSelectedTool(null);
       
-      console.log('✅ ToolboxTabFixed: Tool converted to habit successfully');
     } catch (error) {
-      console.error('❌ ToolboxTabFixed: Exception during tool conversion:', error);
       setError('Failed to convert tool to habit');
     }
   };
@@ -188,7 +178,6 @@ const ToolboxTabFixed = () => {
     if (!user) return;
     
     try {
-      console.log('🔧 ToolboxTabFixed: Adding tool to user toolbox:', toolId);
       
       // Get the tool from library
       const { data: tool, error: toolError } = await supabase
@@ -198,7 +187,6 @@ const ToolboxTabFixed = () => {
         .single();
 
       if (toolError) {
-        console.error('❌ ToolboxTabFixed: Error getting tool from library:', toolError);
         setError('Failed to get tool from library');
         return;
       }
@@ -217,7 +205,6 @@ const ToolboxTabFixed = () => {
         .single();
 
       if (error) {
-        console.error('❌ ToolboxTabFixed: Error adding tool to toolbox:', error);
         setError('Failed to add tool to toolbox');
         return;
       }
@@ -234,9 +221,7 @@ const ToolboxTabFixed = () => {
 
       setUserToolbox(prev => [...prev, newToolData]);
       
-      console.log('✅ ToolboxTabFixed: Tool added to toolbox successfully');
     } catch (error) {
-      console.error('❌ ToolboxTabFixed: Exception during tool addition:', error);
       setError('Failed to add tool to toolbox');
     }
   };
@@ -245,7 +230,6 @@ const ToolboxTabFixed = () => {
     if (!user) return;
     
     try {
-      console.log('🔧 ToolboxTabFixed: Removing tool from user toolbox:', toolId);
       
       const { error } = await supabase
         .from('user_toolbox_items')
@@ -254,15 +238,12 @@ const ToolboxTabFixed = () => {
         .eq('user_id', user.id);
 
       if (error) {
-        console.error('❌ ToolboxTabFixed: Error removing tool from toolbox:', error);
         setError('Failed to remove tool from toolbox');
         return;
       }
 
       setUserToolbox(prev => prev.filter(t => t.id !== toolId));
-      console.log('✅ ToolboxTabFixed: Tool removed from toolbox successfully');
     } catch (error) {
-      console.error('❌ ToolboxTabFixed: Exception during tool removal:', error);
       setError('Failed to remove tool from toolbox');
     }
   };
@@ -271,7 +252,6 @@ const ToolboxTabFixed = () => {
     if (!user) return;
     
     try {
-      console.log('🔧 ToolboxTabFixed: Recording tool usage:', toolId);
       
       const today = new Date().toISOString().split('T')[0];
       
@@ -286,10 +266,8 @@ const ToolboxTabFixed = () => {
           });
 
         if (usageError) {
-          console.log('🔧 ToolboxTabFixed: toolbox_usage table not found, using local state only');
         }
       } catch (dbError) {
-        console.log('🔧 ToolboxTabFixed: Database usage recording failed, using local state only');
       }
 
       // Update local state immediately for responsive UI
@@ -310,9 +288,7 @@ const ToolboxTabFixed = () => {
         return tool;
       }));
       
-      console.log('✅ ToolboxTabFixed: Tool usage recorded successfully');
     } catch (error) {
-      console.error('❌ ToolboxTabFixed: Exception during usage recording:', error);
       setError('Failed to record tool usage');
     }
   };
@@ -508,9 +484,9 @@ const ToolboxTabFixed = () => {
       )}
 
       {/* Convert to Habit Modal */}
-      {showConvertModal && selectedTool && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-ethereal-glass rounded-ethereal border border-ethereal p-6 w-full max-w-md">
+      {showConvertModal && selectedTool && createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto" style={{ width: '100vw', height: '100vh' }}>
+          <div className="bg-ethereal-glass rounded-ethereal border border-ethereal p-6 w-full max-w-md my-auto" style={{ maxHeight: 'calc(100vh - 40px)' }}>
             <h3 className="text-lg font-semibold mb-4">Convert to Habit</h3>
             <p className="text-gray-600 mb-4">
               Convert "{selectedTool.title}" into a trackable habit?
@@ -547,7 +523,8 @@ const ToolboxTabFixed = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

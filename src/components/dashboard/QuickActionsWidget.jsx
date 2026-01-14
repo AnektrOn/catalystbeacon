@@ -53,7 +53,6 @@ const QuickActionsWidget = memo(({ actions = [] }) => {
                             onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                console.log('Quick Action clicked:', action.id);
                                 action.action();
                             }}
                             className="group p-4 rounded-xl bg-white/50 dark:bg-black/20 border border-gray-200 dark:border-white/10 hover:bg-white/70 dark:hover:bg-black/30 hover:scale-105 transition-all duration-300 flex flex-col items-center gap-2 cursor-pointer"

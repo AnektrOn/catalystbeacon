@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Wrench, Plus, Target, Trash2, CheckCircle, Clock, Star } from 'lucide-react';
 import masteryService from '../../services/masteryService';
 import { useAuth } from '../../contexts/AuthContext';
@@ -68,18 +69,15 @@ const ToolboxTabRobust = () => {
   useEffect(() => {
     const loadToolbox = async () => {
       if (!user) {
-        console.log('🔧 ToolboxTab: No user, skipping data load');
         return;
       }
       
-      console.log('🔧 ToolboxTab: Loading toolbox data for user:', user.id);
       setError(null);
       
       try {
         // Load toolbox library
         const { data: libraryData, error: libraryError } = await masteryService.getToolboxLibrary();
         if (libraryError) {
-          console.error('❌ ToolboxTab: Error loading toolbox library:', libraryError);
           setError('Failed to load toolbox library');
           return;
         }
@@ -87,7 +85,6 @@ const ToolboxTabRobust = () => {
         // Load user toolbox items
         const { data: userToolboxData, error: userToolboxError } = await masteryService.getUserToolboxItems(user.id);
         if (userToolboxError) {
-          console.error('❌ ToolboxTab: Error loading user toolbox:', userToolboxError);
           setError('Failed to load user toolbox');
           return;
         }
@@ -122,9 +119,7 @@ const ToolboxTabRobust = () => {
 
         setToolboxLibrary(libraryData || []);
         setUserToolbox(transformedUserToolbox);
-        console.log('✅ ToolboxTab: Toolbox loaded successfully:', transformedUserToolbox.length, 'user tools,', libraryData?.length || 0, 'library tools');
       } catch (error) {
-        console.error('❌ ToolboxTab: Exception during toolbox load:', error);
         setError('Failed to load toolbox data');
       }
     };
@@ -136,11 +131,9 @@ const ToolboxTabRobust = () => {
     if (!user || !selectedTool) return;
     
     try {
-      console.log('🔧 ToolboxTab: Converting tool to habit:', selectedTool.title);
       
       const { error } = await masteryService.convertToolToHabit(user.id, selectedTool.id, conversionData);
       if (error) {
-        console.error('❌ ToolboxTab: Error converting tool to habit:', error);
         setError('Failed to convert tool to habit');
         return;
       }
@@ -180,9 +173,7 @@ const ToolboxTabRobust = () => {
         setUserToolbox(transformedUserToolbox);
       }
       
-      console.log('✅ ToolboxTab: Tool converted to habit successfully');
     } catch (error) {
-      console.error('❌ ToolboxTab: Exception during tool conversion:', error);
       setError('Failed to convert tool to habit');
     }
   };
@@ -191,11 +182,9 @@ const ToolboxTabRobust = () => {
     if (!user) return;
     
     try {
-      console.log('🔧 ToolboxTab: Adding tool to user toolbox:', toolId);
       
       const { error } = await masteryService.addToolToUserToolbox(user.id, toolId);
       if (error) {
-        console.error('❌ ToolboxTab: Error adding tool to toolbox:', error);
         setError('Failed to add tool to toolbox');
         return;
       }
@@ -232,9 +221,7 @@ const ToolboxTabRobust = () => {
         setUserToolbox(transformedUserToolbox);
       }
       
-      console.log('✅ ToolboxTab: Tool added to toolbox successfully');
     } catch (error) {
-      console.error('❌ ToolboxTab: Exception during tool addition:', error);
       setError('Failed to add tool to toolbox');
     }
   };
@@ -243,19 +230,15 @@ const ToolboxTabRobust = () => {
     if (!user) return;
     
     try {
-      console.log('🔧 ToolboxTab: Removing tool from user toolbox:', toolId);
       
       const { error } = await masteryService.removeToolFromUserToolbox(user.id, toolId);
       if (error) {
-        console.error('❌ ToolboxTab: Error removing tool from toolbox:', error);
         setError('Failed to remove tool from toolbox');
         return;
       }
 
       setUserToolbox(prev => prev.filter(t => t.id !== toolId));
-      console.log('✅ ToolboxTab: Tool removed from toolbox successfully');
     } catch (error) {
-      console.error('❌ ToolboxTab: Exception during tool removal:', error);
       setError('Failed to remove tool from toolbox');
     }
   };
@@ -264,11 +247,9 @@ const ToolboxTabRobust = () => {
     if (!user) return;
     
     try {
-      console.log('🔧 ToolboxTab: Recording tool usage:', toolId);
       
       const { error } = await masteryService.recordToolboxUsage(user.id, toolId);
       if (error) {
-        console.error('❌ ToolboxTab: Error recording tool usage:', error);
         setError('Failed to record tool usage');
         return;
       }
@@ -305,9 +286,7 @@ const ToolboxTabRobust = () => {
         setUserToolbox(transformedUserToolbox);
       }
       
-      console.log('✅ ToolboxTab: Tool usage recorded successfully');
     } catch (error) {
-      console.error('❌ ToolboxTab: Exception during usage recording:', error);
       setError('Failed to record tool usage');
     }
   };
@@ -502,9 +481,9 @@ const ToolboxTabRobust = () => {
       )}
 
       {/* Convert to Habit Modal */}
-      {showConvertModal && selectedTool && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-ethereal-glass rounded-ethereal border border-ethereal p-6 w-full max-w-md">
+      {showConvertModal && selectedTool && createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto" style={{ width: '100vw', height: '100vh' }}>
+          <div className="bg-ethereal-glass rounded-ethereal border border-ethereal p-6 w-full max-w-md my-auto" style={{ maxHeight: 'calc(100vh - 40px)' }}>
             <h3 className="text-lg font-semibold mb-4">Convert to Habit</h3>
             <p className="text-gray-600 mb-4">
               Convert "{selectedTool.title}" into a trackable habit?
@@ -541,7 +520,8 @@ const ToolboxTabRobust = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

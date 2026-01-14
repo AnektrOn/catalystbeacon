@@ -167,7 +167,6 @@ export class InteractionManager {
 
     const centerPos = constellationCenters[constellationName];
     if (!centerPos) {
-      console.warn(`No position found for constellation "${constellationName}"`);
       return;
     }
 

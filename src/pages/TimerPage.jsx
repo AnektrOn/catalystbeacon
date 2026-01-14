@@ -83,7 +83,7 @@ const TimerPage = () => {
     const CurrentIcon = MODES[mode].icon;
 
     return (
-        <div className={`transition-all duration-500 ${isCinemaMode ? 'fixed inset-0 z-50 flex items-center justify-center' : 'space-y-6'}`} style={isCinemaMode ? { backgroundColor: 'var(--bg-secondary, #0f0f0f)' } : {}}>
+        <div className={`transition-all duration-500 ${isCinemaMode ? 'fixed inset-0 z-50 flex items-center justify-center overflow-y-auto' : 'space-y-6'}`} style={isCinemaMode ? { backgroundColor: 'var(--bg-secondary, #0f0f0f)', width: '100vw', height: '100vh' } : {}}>
 
             {/* Header (Hidden in Cinema Mode) */}
             {!isCinemaMode && (

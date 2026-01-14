@@ -62,7 +62,6 @@ const LoginForm = () => {
         navigate('/dashboard')
       }
     } catch (error) {
-      console.error('Login error:', error)
       setError(error.message || 'An unexpected error occurred. Please try again.')
     } finally {
       setLoading(false)

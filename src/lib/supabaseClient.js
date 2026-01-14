@@ -5,24 +5,14 @@ let supabaseInstance = null
 
 // Get Supabase credentials from environment variables
 // Create React App uses REACT_APP_ prefix
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || 'https://mock-project.supabase.co'
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || 'mock_anon_key_for_testing_only'
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL
+const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY
 
-// For QA testing, allow mock values but warn
-if (supabaseUrl.includes('mock') || supabaseAnonKey.includes('mock')) {
-  console.warn('⚠️ QA TESTING: Using mock Supabase credentials. Real functionality will not work.')
-}
-
-// Validate that we have some values (even if mock)
+// Validate that we have required environment variables
 if (!supabaseUrl || !supabaseAnonKey) {
   const errorMsg = 'Missing Supabase environment variables. ' +
     'Please set REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY in your .env file. ' +
     'Make sure to restart your development server after adding environment variables.'
-  console.error('Supabase Config Error:', {
-    hasReactAppUrl: !!process.env.REACT_APP_SUPABASE_URL,
-    hasReactAppKey: !!process.env.REACT_APP_SUPABASE_ANON_KEY,
-    allEnvKeys: Object.keys(process.env).filter(k => k.includes('SUPABASE'))
-  })
   throw new Error(errorMsg)
 }
 

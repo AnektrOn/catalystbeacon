@@ -12,7 +12,6 @@ class StellarMapErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error('Stellar Map Error:', error, errorInfo);
     this.setState({
       error,
       errorInfo

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Wrench, Plus, Trash2, CheckCircle, Flame } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
@@ -74,20 +75,15 @@ const ToolboxTabCompact = () => {
   // Load toolbox data from database - NO LOADING STATE
   useEffect(() => {
     const loadToolbox = async () => {
-      console.log('🔧 ToolboxTabCompact: Starting toolbox data load');
       setError(null);
       
       try {
         // Load skills first
-        console.log('🎯 ToolboxTabCompact: Loading skills...');
         const { data: skillsData, error: skillsError } = await skillsService.getAllSkills();
         let skillsMap = new Map();
         if (!skillsError && skillsData) {
           skillsMap = new Map(skillsData.map(skill => [skill.id, skill]));
-          console.log('✅ ToolboxTabCompact: Skills loaded:', skillsData.length);
-          console.log('📋 Skills map created with', skillsMap.size, 'entries');
         } else {
-          console.error('❌ ToolboxTabCompact: Failed to load skills:', skillsError);
         }
 
         // Load toolbox library from database (always load this)
@@ -96,30 +92,24 @@ const ToolboxTabCompact = () => {
           .select('*');
 
         if (libraryError) {
-          console.error('❌ ToolboxTabCompact: Error loading toolbox library:', libraryError);
           setError('Failed to load toolbox library');
           return;
         }
 
-        console.log('✅ ToolboxTabCompact: Library loaded successfully:', libraryData?.length || 0, 'items');
 
         // Load user toolbox items from database (only if user exists)
         let userToolboxData = [];
         if (user && user.id) {
-          console.log('🔧 ToolboxTabCompact: Loading user toolbox for user:', user.id);
           
           const { data: userData, error: userToolboxError } = await masteryService.getUserToolboxItems(user.id);
 
           if (userToolboxError) {
-            console.error('❌ ToolboxTabCompact: Error loading user toolbox:', userToolboxError);
             // Don't fail completely, just use empty user toolbox
             userToolboxData = [];
           } else {
             userToolboxData = userData || [];
-            console.log('✅ ToolboxTabCompact: User toolbox loaded:', userToolboxData.length, 'items');
           }
         } else {
-          console.log('🔧 ToolboxTabCompact: No user, using empty user toolbox');
         }
 
         // Transform user toolbox items to include real usage data and UI properties
@@ -143,7 +133,6 @@ const ToolboxTabCompact = () => {
                 
                 usageData = usage || [];
               } catch (usageError) {
-                console.log('🔧 ToolboxTabCompact: toolbox_usage table not found, using empty usage');
                 usageData = [];
               }
             }
@@ -179,20 +168,16 @@ const ToolboxTabCompact = () => {
         );
 
         // Enrich library tools with skill information
-        console.log('🎯 ToolboxTabCompact: Enriching library tools with skills...');
-        console.log('📋 Skills map size:', skillsMap.size);
         const enrichedLibraryTools = (libraryData || []).map(tool => {
           const toolSkills = (tool.skill_tags || [])
             .map(skillId => {
               const skill = skillsMap.get(skillId);
               if (!skill) {
-                console.log(`⚠️ Skill not found in map: ${skillId}`);
               }
               return skill;
             })
             .filter(Boolean);
           
-          console.log(`📝 Tool "${tool.title}": ${tool.skill_tags?.length || 0} skill_tags -> ${toolSkills.length} skills`);
           
           return {
             ...tool,
@@ -202,10 +187,7 @@ const ToolboxTabCompact = () => {
 
         setToolboxLibrary(enrichedLibraryTools);
         setUserToolbox(transformedUserToolbox);
-        console.log('✅ ToolboxTabCompact: Toolbox loaded successfully:', transformedUserToolbox.length, 'user tools,', enrichedLibraryTools.length, 'library tools');
-        console.log('📋 ToolboxTabCompact: Library toolbox data:', enrichedLibraryTools);
       } catch (error) {
-        console.error('❌ ToolboxTabCompact: Exception during toolbox load:', error);
         // Try to at least load the library data as fallback
         try {
           const { data: fallbackLibrary } = await supabase
@@ -213,9 +195,7 @@ const ToolboxTabCompact = () => {
             .select('*');
           setToolboxLibrary(fallbackLibrary || []);
           setUserToolbox([]);
-          console.log('🔧 ToolboxTabCompact: Fallback library loaded:', fallbackLibrary?.length || 0, 'items');
         } catch (fallbackError) {
-          console.error('❌ ToolboxTabCompact: Fallback also failed:', fallbackError);
           setError('Failed to load toolbox data');
         }
       }
@@ -226,14 +206,11 @@ const ToolboxTabCompact = () => {
 
   const handleConvertToHabit = async () => {
     if (!user || !selectedTool) {
-      console.log('🔧 ToolboxTabCompact: Cannot convert - no user or tool selected');
       setError('Please log in to convert tools to habits');
       return;
     }
     
     try {
-      console.log('🔧 ToolboxTabCompact: Converting tool to habit:', selectedTool.title);
-      console.log('🔧 ToolboxTabCompact: Frequency type:', conversionData.frequency_type);
       
       // Create a new habit from the tool
       const { data: newHabit, error } = await supabase
@@ -249,13 +226,10 @@ const ToolboxTabCompact = () => {
         .single();
 
       if (error) {
-        console.error('❌ ToolboxTabCompact: Error converting tool to habit:', error);
-        console.error('❌ ToolboxTabCompact: Error details:', error.message);
         setError(`Failed to convert tool to habit: ${error.message}`);
         return;
       }
 
-      console.log('✅ ToolboxTabCompact: Tool converted to habit successfully:', newHabit);
       
       // Show success message
       toast.success(`"${selectedTool.title}" has been converted to a habit! You can now track it in the Habits tab.`);
@@ -266,37 +240,31 @@ const ToolboxTabCompact = () => {
       setConversionData({ frequency_type: 'daily' });
       
     } catch (error) {
-      console.error('❌ ToolboxTabCompact: Exception during tool conversion:', error);
       setError(`Failed to convert tool to habit: ${error.message}`);
     }
   };
 
   const handleAddToToolbox = async (toolId) => {
     if (!user) {
-      console.log('🔧 ToolboxTabCompact: Cannot add tool - no user');
       setError('Please log in to add tools to your toolbox');
       return;
     }
     
     try {
-      console.log('🔧 ToolboxTabCompact: Adding tool to user toolbox:', toolId);
       
       // Use masteryService to add tool to user toolbox
       const { data: insertedData, error } = await masteryService.addToolboxItem(user.id, toolId);
 
       if (error) {
-        console.error('❌ ToolboxTabCompact: Error adding tool to toolbox:', error);
         setError(`Failed to add tool to toolbox: ${error.message}`);
         return;
       }
 
-      console.log('✅ ToolboxTabCompact: Tool added to toolbox successfully:', insertedData);
       
       // Refresh the toolbox data to get the updated list
       const { data: updatedToolbox, error: refreshError } = await masteryService.getUserToolboxItems(user.id);
       
       if (refreshError) {
-        console.error('❌ ToolboxTabCompact: Error refreshing toolbox:', refreshError);
         // Don't fail completely, just show success
       } else {
         // Transform the updated data
@@ -323,20 +291,17 @@ const ToolboxTabCompact = () => {
       }
       
     } catch (error) {
-      console.error('❌ ToolboxTabCompact: Exception during tool addition:', error);
       setError(`Failed to add tool to toolbox: ${error.message}`);
     }
   };
 
   const handleRemoveFromToolbox = async (toolId) => {
     if (!user) {
-      console.log('🔧 ToolboxTabCompact: Cannot remove tool - no user');
       setError('Please log in to remove tools from your toolbox');
       return;
     }
     
     try {
-      console.log('🔧 ToolboxTabCompact: Removing tool from user toolbox:', toolId);
       
       const { error } = await supabase
         .from('user_toolbox_items')
@@ -345,15 +310,12 @@ const ToolboxTabCompact = () => {
         .eq('user_id', user.id);
 
       if (error) {
-        console.error('❌ ToolboxTabCompact: Error removing tool from toolbox:', error);
         setError(`Failed to remove tool from toolbox: ${error.message}`);
         return;
       }
 
       setUserToolbox(prev => prev.filter(t => t.id !== toolId));
-      console.log('✅ ToolboxTabCompact: Tool removed from toolbox successfully');
     } catch (error) {
-      console.error('❌ ToolboxTabCompact: Exception during tool removal:', error);
       setError(`Failed to remove tool from toolbox: ${error.message}`);
     }
   };
@@ -362,7 +324,6 @@ const ToolboxTabCompact = () => {
     if (!user) return;
     
     try {
-      console.log('🔧 ToolboxTabCompact: Recording tool usage:', toolId);
       
       const today = new Date().toISOString().split('T')[0];
       
@@ -377,10 +338,8 @@ const ToolboxTabCompact = () => {
           });
 
         if (usageError) {
-          console.log('🔧 ToolboxTabCompact: toolbox_usage table not found, using local state only');
         }
       } catch (dbError) {
-        console.log('🔧 ToolboxTabCompact: Database usage recording failed, using local state only');
       }
 
       // Update local state immediately for responsive UI
@@ -401,9 +360,7 @@ const ToolboxTabCompact = () => {
         return tool;
       }));
       
-      console.log('✅ ToolboxTabCompact: Tool usage recorded successfully');
     } catch (error) {
-      console.error('❌ ToolboxTabCompact: Exception during usage recording:', error);
       setError('Failed to record tool usage');
     }
   };
@@ -626,9 +583,9 @@ const ToolboxTabCompact = () => {
       )}
 
       {/* Convert to Habit Modal */}
-      {showConvertModal && selectedTool && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+      {showConvertModal && selectedTool && createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto" style={{ width: '100vw', height: '100vh' }}>
+          <div className="bg-white rounded-lg p-6 w-full max-w-md my-auto" style={{ maxHeight: 'calc(100vh - 40px)' }}>
             <h3 className="text-lg font-semibold mb-4">Convert to Habit</h3>
             <p className="text-gray-600 mb-4">
               Convert "{selectedTool.title}" into a trackable habit?
@@ -665,7 +622,8 @@ const ToolboxTabCompact = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

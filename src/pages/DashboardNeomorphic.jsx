@@ -91,7 +91,6 @@ const DashboardNeomorphic = () => {
                                   new Date(profile.created_at) > new Date(Date.now() - 24 * 60 * 60 * 1000)) // Created in last 24 hours
 
     if (shouldShowOnboarding && !profile.has_completed_onboarding) {
-      console.log('🎯 New user detected (URL param or database flag), showing onboarding modal')
       setShowOnboardingModal(true)
     } else if (upgradePrompt === 'true' && !isAdmin) {
       setShowUpgradeModal(true)
@@ -108,32 +107,15 @@ const DashboardNeomorphic = () => {
     const payment = urlParams.get('payment') || searchParams.get('payment')
     const sessionId = urlParams.get('session_id') || searchParams.get('session_id')
 
-    // CRITICAL: Always log this to debug - FORCE LOG even in production
-    console.log('🔍🔍🔍 Payment success check (DashboardNeomorphic - FORCED LOG):', { 
-      payment, 
-      sessionId, 
-      hasUser: !!user, 
-      userId: user?.id, 
-      hasProfile: !!profile,
-      profileRole: profile?.role,
-      searchParams: searchParams.toString(),
-      windowLocation: window.location.href,
-      timestamp: new Date().toISOString(),
-      paymentProcessed
-    })
-
     // Prevent duplicate processing
     if (paymentProcessed) {
-      console.log('⚠️ Payment already processed, skipping...')
       return
     }
 
     // Si on a payment=success mais pas encore user, attendre un peu avec retry
     if (payment === 'success' && sessionId && !user) {
-      console.log('⏳ Waiting for user to load before processing payment...')
       // Retry après 1 seconde
       const retryTimer = setTimeout(() => {
-        console.log('🔄 Retrying payment processing after user load delay...')
         // Le useEffect se re-déclenchera quand user sera chargé
       }, 1000)
       return () => clearTimeout(retryTimer)
@@ -143,10 +125,6 @@ const DashboardNeomorphic = () => {
     if (payment === 'success' && sessionId && user && !paymentProcessed) {
       setPaymentProcessed(true) // Mark as processed immediately
       
-      console.log('🎯🎯🎯 PAYMENT SUCCESS DETECTED - STARTING PROCESSING 🎯🎯🎯')
-      console.log('🎯 PAYMENT SUCCESS DETECTED:', { payment, sessionId, userId: user.id })
-      console.log('🎯 Current profile role:', profile?.role)
-      
       // Determine API URL: use Create React App env var with proper fallback
       const API_URL = process.env.REACT_APP_API_URL || 
                       (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
@@ -154,23 +132,16 @@ const DashboardNeomorphic = () => {
                         : window.location.origin)
       
       toast.success('🎉 Payment completed! Processing your subscription...')
-      console.log('🔄 Processing payment success for session:', sessionId)
-      console.log('📍 API URL:', API_URL)
 
       // PRIMARY: Use API server directly (most reliable)
       const processPaymentSuccess = async () => {
         try {
-          console.log('🔄 Processing payment success via API server...', { sessionId, userId: user.id })
-          
           // PRIMARY METHOD: Call API server directly
           try {
-            console.log('📞 Calling API server to update subscription...')
             const API_URL = process.env.REACT_APP_API_URL || 
                             (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
                               ? 'http://localhost:3001' 
                               : window.location.origin)
-            
-            console.log('🌐 API server URL:', `${API_URL}/api/payment-success?session_id=${sessionId}`)
             
             const response = await fetch(`${API_URL}/api/payment-success?session_id=${sessionId}`, {
               method: 'GET',
@@ -180,11 +151,8 @@ const DashboardNeomorphic = () => {
               signal: AbortSignal.timeout(20000) // 20 second timeout
             })
             
-            console.log('📥 API server response status:', response.status)
-            
             if (response.ok) {
               const data = await response.json()
-              console.log('✅ API server updated subscription successfully:', data)
               toast.success('✅ Subscription activated!')
               // Wait a bit for DB to update
               await new Promise(resolve => setTimeout(resolve, 1500))
@@ -194,27 +162,13 @@ const DashboardNeomorphic = () => {
               return { success: true }
             } else {
               const errorText = await response.text()
-              console.error('❌ API server error:', response.status, errorText)
               throw new Error(`API server returned ${response.status}: ${errorText}`)
             }
           } catch (apiError) {
-            console.error('❌ API server call failed:', apiError)
-            console.error('API Error details:', {
-              message: apiError.message,
-              name: apiError.name,
-              stack: apiError.stack
-            })
             throw apiError
           }
           
         } catch (error) {
-          console.error('❌ Payment success processing error:', error)
-          console.error('Error details:', {
-            message: error.message,
-            stack: error.stack,
-            name: error.name
-          })
-          
           // Show user-friendly message
           toast.warning('Payment successful! Subscription update may take a moment. Please refresh the page in a few seconds.')
           
@@ -229,10 +183,8 @@ const DashboardNeomorphic = () => {
       }
       
       // Start processing IMMEDIATELY
-      console.log('🚀 Starting payment processing function...')
       processPaymentSuccess()
         .then((result) => {
-          console.log('✅ Payment processing completed:', result)
           // Clean up URL
           const newParams = new URLSearchParams(searchParams)
           newParams.delete('payment')
@@ -240,22 +192,12 @@ const DashboardNeomorphic = () => {
           navigate({ search: newParams.toString() }, { replace: true })
         })
         .catch(error => {
-          console.error('❌ Error processing payment success:', error)
-          console.error('Error stack:', error.stack)
           // Clean up URL even on error
           const newParams = new URLSearchParams(searchParams)
           newParams.delete('payment')
           newParams.delete('session_id')
           navigate({ search: newParams.toString() }, { replace: true })
         })
-    } else {
-      // Log when conditions are not met
-      if (payment === 'success' && !sessionId) {
-        console.warn('⚠️ Payment=success but no session_id in URL')
-      }
-      if (payment === 'success' && sessionId && !user) {
-        console.log('⏳ Payment success detected but user not loaded yet')
-      }
     }
   }, [searchParams, user, profile, fetchProfile, navigate, paymentProcessed])
 
@@ -299,8 +241,7 @@ const DashboardNeomorphic = () => {
         xpToNext
       })
     } catch (error) {
-      console.error('Error loading level data:', error)
-      // Don't show error toast - just log it
+      // Don't show error toast - just continue
     }
   }, [profile, user])
 
@@ -324,7 +265,7 @@ const DashboardNeomorphic = () => {
         .limit(1)
       
       if (completionsError && completionsError.code !== 'PGRST116') {
-        console.warn('Error loading habit completions:', completionsError)
+        // Error loading habit completions
       }
       
       const completed = completions && completions.length > 0
@@ -338,7 +279,7 @@ const DashboardNeomorphic = () => {
         }
       }))
     } catch (error) {
-      console.error('Error loading ritual data:', error)
+      // Error loading ritual data
     }
   }, [user, profile])
 
@@ -354,7 +295,7 @@ const DashboardNeomorphic = () => {
         .order('unlock_xp', { ascending: true })
 
       if (schoolsError && schoolsError.code !== 'PGRST116') {
-        console.warn('Error loading schools:', schoolsError)
+        // Error loading schools
       }
 
       const userXp = profile.current_xp || 0
@@ -376,7 +317,7 @@ const DashboardNeomorphic = () => {
       })
 
       if (coursesError) {
-        console.warn('Error loading courses:', coursesError)
+        // Error loading courses
       }
 
       if (!courses || courses.length === 0) {
@@ -394,13 +335,12 @@ const DashboardNeomorphic = () => {
         courses.slice(0, 5).map(async (course, index) => {
           try {
             if (!course.course_id) {
-              console.warn('Course missing course_id:', course);
               return null;
             }
             const { data: progress, error: progressError } = await courseService.getUserCourseProgress(user.id, course.course_id)
             // Progress errors are non-critical - just continue without progress data
             if (progressError) {
-              console.warn('Error loading course progress (non-critical):', progressError)
+              // Error loading course progress (non-critical)
             }
             const isCompleted = progress?.status === 'completed'
             const isCurrent = index === 0 && progress?.status === 'in_progress'
@@ -412,7 +352,6 @@ const DashboardNeomorphic = () => {
               isCurrent
             }
           } catch (err) {
-            console.warn('Error processing course:', err)
             return null
           }
         })
@@ -431,7 +370,7 @@ const DashboardNeomorphic = () => {
         }
       }))
     } catch (error) {
-      console.error('Error loading constellation data:', error)
+      // Error loading constellation data
     }
   }, [user, profile])
 
@@ -441,7 +380,6 @@ const DashboardNeomorphic = () => {
       const { data: posts, error: postsError } = await socialService.getPosts(5)
       
       if (postsError) {
-        console.warn('Error loading teacher feed:', postsError)
         setDashboardData(prev => ({
           ...prev,
           teacherFeed: { posts: [] }
@@ -459,7 +397,6 @@ const DashboardNeomorphic = () => {
         teacherFeed: { posts: teacherPosts }
       }))
     } catch (error) {
-      console.error('Error loading teacher feed:', error)
       setDashboardData(prev => ({
         ...prev,
         teacherFeed: { posts: [] }
@@ -486,12 +423,11 @@ const DashboardNeomorphic = () => {
         xpLogs = result.data || []
         xpError = result.error
       } catch (err) {
-        console.warn('Error loading XP logs (table may not exist):', err)
         xpError = err
       }
 
       if (xpError && xpError.code !== 'PGRST116') {
-        console.warn('Error loading XP logs:', xpError)
+        // Error loading XP logs
       }
 
       const totalXP = xpLogs?.reduce((sum, log) => sum + (log.xp_earned || 0), 0) || 0
@@ -508,12 +444,11 @@ const DashboardNeomorphic = () => {
         lessonsCount = result.count || 0
         lessonsError = result.error
       } catch (err) {
-        console.warn('Error loading lessons completed:', err)
         lessonsError = err
       }
 
       if (lessonsError && lessonsError.code !== 'PGRST116') {
-        console.warn('Error loading lessons completed:', lessonsError)
+        // Error loading lessons completed
       }
 
       // Get achievements count
@@ -523,7 +458,7 @@ const DashboardNeomorphic = () => {
         .eq('user_id', user.id)
 
       if (achievementsError && achievementsError.code !== 'PGRST116') {
-        console.warn('Error loading achievements:', achievementsError)
+        // Error loading achievements
       }
 
       let averageScore = 0
@@ -541,11 +476,10 @@ const DashboardNeomorphic = () => {
             averageScore = scores.reduce((sum, score) => sum + score, 0) / scores.length
           }
         } else if (progressError) {
-          // 400 error might be due to column name or syntax - just log and continue
-          console.warn('Error loading lesson progress for average score:', progressError)
+          // 400 error might be due to column name or syntax - just continue
         }
       } catch (err) {
-        console.warn('Error calculating average score:', err)
+        // Error calculating average score
       }
 
       setDashboardData(prev => ({
@@ -560,7 +494,7 @@ const DashboardNeomorphic = () => {
         }
       }))
     } catch (error) {
-      console.error('Error loading stats data:', error)
+      // Error loading stats data
     }
   }, [user, profile])
 
@@ -582,8 +516,7 @@ const DashboardNeomorphic = () => {
           loadStatsData()
         ])
       } catch (error) {
-        console.error('Error loading dashboard data:', error)
-        // Don't show error toast - just log it
+        // Don't show error toast - just continue
       } finally {
         setLoading(false)
       }
@@ -742,7 +675,6 @@ const DashboardNeomorphic = () => {
                 .eq('id', user.id)
               
               if (updateError) {
-                console.error('Error marking onboarding complete:', updateError)
                 // Retry once after 1 second
                 setTimeout(async () => {
                   await supabase
@@ -754,11 +686,9 @@ const DashboardNeomorphic = () => {
                     .eq('id', user.id)
                 }, 1000)
               } else {
-                console.log('✅ Onboarding marked as completed in database')
                 await fetchProfile(user.id)
               }
             } catch (error) {
-              console.error('Error updating onboarding status:', error)
               localStorage.setItem(`onboarding_completed_${user.id}`, 'true')
             }
           }

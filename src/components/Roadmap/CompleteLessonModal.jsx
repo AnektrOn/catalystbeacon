@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { usePageTransition } from '../../contexts/PageTransitionContext';
 import roadmapService from '../../services/roadmapService';
@@ -37,16 +38,6 @@ const CompleteLessonModal = ({
     setError(null);
 
     try {
-      console.log('🎯 CompleteLessonModal: Completing lesson with params:', {
-        userId,
-        lessonId,
-        courseId,
-        chapterNumber,
-        lessonNumber,
-        masterschool,
-        fromRoadmap,
-        returnUrl
-      });
 
       const result = await roadmapService.completeLesson(
         userId,
@@ -59,10 +50,8 @@ const CompleteLessonModal = ({
       );
 
       if (result.success) {
-        console.log('✅ CompleteLessonModal: Lesson completed successfully, showing rewards', result.rewards);
         setRewards(result.rewards);
         setCompleted(true);
-        console.log('✅ CompleteLessonModal: Set completed to true, modal should show rewards screen');
         
         // Load skill names if skills_earned exists
         if (result.rewards?.skills_earned && Array.isArray(result.rewards.skills_earned) && result.rewards.skills_earned.length > 0) {
@@ -71,10 +60,8 @@ const CompleteLessonModal = ({
             if (skillsData) {
               const names = skillsData.map(skill => skill.display_name || skill.name || skill.id);
               setSkillNames(names);
-              console.log('✅ CompleteLessonModal: Loaded skill names:', names);
             }
           } catch (skillError) {
-            console.warn('⚠️ CompleteLessonModal: Could not load skill names:', skillError);
             // Fallback to skill IDs if names can't be loaded
             setSkillNames(result.rewards.skills_earned);
           }
@@ -83,11 +70,9 @@ const CompleteLessonModal = ({
         // Don't call onComplete here - wait for user to choose navigation
         // onComplete will be called when user clicks a navigation button
       } else {
-        console.error('❌ CompleteLessonModal: Lesson completion failed', result.message);
         setError(result.message);
       }
     } catch (err) {
-      console.error('Error completing lesson:', err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -96,7 +81,6 @@ const CompleteLessonModal = ({
 
 
   const handleBackToRoadmap = () => {
-    console.log('🔄 CompleteLessonModal: handleBackToRoadmap called', { fromRoadmap, returnUrl });
     
     // Call onComplete before navigation if provided
     if (onComplete && completed) {
@@ -112,9 +96,7 @@ const CompleteLessonModal = ({
         // Extract just the path (remove query params for navigation)
         const urlPath = decoded.split('?')[0];
         targetUrl = urlPath || '/roadmap/ignition';
-        console.log('🔄 CompleteLessonModal: Using returnUrl:', { original: returnUrl, decoded, targetUrl });
       } catch (e) {
-        console.warn('⚠️ CompleteLessonModal: Error decoding returnUrl, using default:', e);
         targetUrl = '/roadmap/ignition';
       }
     }
@@ -143,7 +125,6 @@ const CompleteLessonModal = ({
         navigate(`/roadmap/ignition`);
       }
     } catch (err) {
-      console.error('Error getting next lesson:', err);
       onClose();
       startTransition();
       navigate(`/roadmap/ignition`);
@@ -152,9 +133,8 @@ const CompleteLessonModal = ({
 
   if (!isOpen) return null;
 
-  console.log('🎯 CompleteLessonModal: Rendering modal', { isOpen, completed, loading, hasRewards: !!rewards });
 
-  return (
+  return createPortal(
     <div className="complete-lesson-modal__overlay" onClick={onClose}>
       <div className="complete-lesson-modal" onClick={(e) => e.stopPropagation()}>
         {!completed ? (
@@ -261,7 +241,8 @@ const CompleteLessonModal = ({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

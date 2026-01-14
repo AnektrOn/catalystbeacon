@@ -55,7 +55,6 @@ class SchoolService {
 
       return { data: schoolsWithStatus, error: null };
     } catch (error) {
-      console.error('Error getting schools with unlock status:', error);
       return { data: null, error };
     }
   }
@@ -100,7 +99,6 @@ class SchoolService {
         error: null
       };
     } catch (error) {
-      console.error('Error checking school unlock:', error);
       return { data: null, error };
     }
   }
@@ -122,7 +120,6 @@ class SchoolService {
 
       return { data: unlockedNames, error: null };
     } catch (error) {
-      console.error('Error getting unlocked school names:', error);
       return { data: null, error };
     }
   }
@@ -143,7 +140,6 @@ class SchoolService {
 
       return { data, error: null };
     } catch (error) {
-      console.error('Error getting all schools:', error);
       return { data: null, error };
     }
   }

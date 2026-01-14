@@ -27,7 +27,6 @@ const AllLessonsCard = () => {
           setError(null)
         }
       } catch (err) {
-        console.error('Error loading lessons:', err)
         setError('Failed to load lessons')
       } finally {
         setLoading(false)
@@ -38,7 +37,6 @@ const AllLessonsCard = () => {
 
     // Subscribe to realtime updates
     const unsubscribe = lessonsService.subscribeToLessons((payload) => {
-      console.log('Lessons update:', payload)
       loadLessons() // Reload on any change
     })
 
@@ -63,7 +61,6 @@ const AllLessonsCard = () => {
         setError(null)
       }
     } catch (err) {
-      console.error('Error refreshing lessons:', err)
       setError('Failed to refresh lessons')
     } finally {
       setLoading(false)

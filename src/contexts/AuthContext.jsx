@@ -416,11 +416,9 @@ export const AuthProvider = ({ children }) => {
       try {
         const userName = userData?.full_name || data.user?.user_metadata?.full_name || null
         
-        console.log('📧 Attempting to send sign-up confirmation email to:', email)
         
         // Skip Supabase Edge Function - it doesn't exist (404 error)
         // Go directly to server API
-        console.log('📧 Skipping Supabase Edge Function (not deployed), using server API directly')
         
         // Use server API directly
         let API_URL = process.env.REACT_APP_API_URL
@@ -432,7 +430,6 @@ export const AuthProvider = ({ children }) => {
           }
         }
         
-        console.log('📧 Using server API:', API_URL)
         
         try {
           const response = await fetch(`${API_URL}/api/send-signup-email`, {
@@ -451,40 +448,29 @@ export const AuthProvider = ({ children }) => {
           if (!response.ok) {
             // If 503, server is not available - this is OK, email is non-critical
             if (response.status === 503) {
-              console.warn('⚠️ Server unavailable (503) - email service not accessible. Account created successfully.')
             } else {
               const errorData = await response.json().catch(() => ({ error: 'Failed to send email' }))
-              console.warn('⚠️ Sign-up email send failed:', errorData.error || errorData.message)
               if (errorData.warning) {
-                console.warn('Email service warning:', errorData.warning)
               }
             }
           } else {
             const result = await response.json()
             if (result.success) {
-              console.log('✅ Sign-up confirmation email sent via server API')
             } else {
-              console.warn('⚠️ Sign-up email not sent:', result.message || 'Unknown error')
             }
           }
         } catch (fetchError) {
           // Network errors are OK - email is non-critical
           if (fetchError.name === 'AbortError' || fetchError.message?.includes('timeout')) {
-            console.warn('⚠️ Sign-up email request timeout (non-critical):', fetchError.message)
           } else if (fetchError.message?.includes('Failed to fetch') || fetchError.message?.includes('NetworkError')) {
-            console.warn('⚠️ Sign-up email network error (non-critical):', fetchError.message)
           } else {
-            console.warn('⚠️ Sign-up email error (non-critical):', fetchError.message)
           }
         }
       } catch (emailError) {
         // Handle timeout and network errors gracefully
         if (emailError.name === 'AbortError' || emailError.message?.includes('timeout')) {
-          console.warn('⚠️ Sign-up email request timeout (non-critical):', emailError.message)
         } else if (emailError.message?.includes('Failed to fetch') || emailError.message?.includes('NetworkError')) {
-          console.warn('⚠️ Sign-up email network error (non-critical):', emailError.message)
         } else {
-          console.warn('⚠️ Sign-up email error (non-critical):', emailError.message)
         }
         // Don't fail signup if email fails - this is non-critical
       }

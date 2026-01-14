@@ -22,7 +22,6 @@ serve(async (req) => {
     const siteUrl = Deno.env.get('SITE_URL')
 
     if (!stripeSecretKey || stripeSecretKey === '') {
-      console.error('❌ STRIPE_SECRET_KEY is missing or empty')
       return new Response(
         JSON.stringify({ 
           error: 'Server configuration error: STRIPE_SECRET_KEY is not set',
@@ -36,7 +35,6 @@ serve(async (req) => {
     }
 
     if (!supabaseUrl || supabaseUrl === '') {
-      console.error('❌ SUPABASE_URL is missing or empty')
       return new Response(
         JSON.stringify({ 
           error: 'Server configuration error: SUPABASE_URL is not set',
@@ -50,7 +48,6 @@ serve(async (req) => {
     }
 
     if (!supabaseServiceRoleKey || supabaseServiceRoleKey === '') {
-      console.error('❌ SUPABASE_SERVICE_ROLE_KEY is missing or empty')
       return new Response(
         JSON.stringify({ 
           error: 'Server configuration error: SUPABASE_SERVICE_ROLE_KEY is not set',
@@ -64,7 +61,6 @@ serve(async (req) => {
     }
 
     if (!supabaseAnonKey || supabaseAnonKey === '') {
-      console.error('❌ SUPABASE_ANON_KEY is missing or empty')
       return new Response(
         JSON.stringify({ 
           error: 'Server configuration error: SUPABASE_ANON_KEY is not set',
@@ -78,7 +74,6 @@ serve(async (req) => {
     }
 
     if (!siteUrl || siteUrl === '') {
-      console.error('❌ SITE_URL is missing or empty')
       return new Response(
         JSON.stringify({ 
           error: 'Server configuration error: SITE_URL is not set',
@@ -170,9 +165,7 @@ serve(async (req) => {
       const body = await req.json()
       priceId = body.priceId
       planType = body.planType
-      console.log('📥 Request body parsed:', { priceId, planType })
     } catch (parseError) {
-      console.error('❌ Error parsing request body:', parseError)
       return new Response(
         JSON.stringify({ 
           error: 'Invalid request body',
@@ -207,16 +200,13 @@ serve(async (req) => {
         .single()
 
       if (profileError) {
-        console.error('❌ Error fetching profile:', profileError)
         throw new Error(`Failed to fetch user profile: ${profileError.message}`)
       }
 
       if (profile?.stripe_customer_id) {
         customerId = profile.stripe_customer_id
-        console.log('✅ Using existing Stripe customer:', customerId)
       } else {
         // Create new Stripe customer
-        console.log('🔄 Creating new Stripe customer for user:', user.id)
         const customer = await stripe.customers.create({
           email: user.email,
           metadata: {
@@ -224,7 +214,6 @@ serve(async (req) => {
           },
         })
         customerId = customer.id
-        console.log('✅ Created Stripe customer:', customerId)
 
         // Update profile with customer ID (use service client)
         const { error: updateError } = await supabaseServiceClient
@@ -233,25 +222,15 @@ serve(async (req) => {
           .eq('id', user.id)
 
         if (updateError) {
-          console.error('⚠️ Warning: Failed to update profile with customer ID:', updateError)
           // Don't throw - we can still proceed with checkout
         } else {
-          console.log('✅ Updated profile with customer ID')
         }
       }
     } catch (customerError) {
-      console.error('❌ Error in customer creation/retrieval:', customerError)
       throw customerError
     }
 
     // Create checkout session
-    console.log('🔄 Creating Stripe checkout session:', {
-      customerId,
-      priceId,
-      planType,
-      successUrl: `${siteUrl}/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancelUrl: `${siteUrl}/pricing?payment=cancelled`
-    })
     
     let session
     try {
@@ -273,21 +252,9 @@ serve(async (req) => {
         },
       })
     } catch (stripeError) {
-      console.error('❌ Stripe API error creating checkout session:', stripeError)
-      console.error('Stripe error details:', {
-        type: stripeError?.type,
-        code: stripeError?.code,
-        message: stripeError?.message,
-        statusCode: stripeError?.statusCode,
-        requestId: stripeError?.requestId
-      })
       throw stripeError
     }
 
-    console.log('✅ Checkout session created successfully:', { 
-      sessionId: session.id, 
-      hasUrl: !!session.url 
-    })
 
     // Return response in format expected by PricingPage (both id and sessionId for compatibility)
     return new Response(
@@ -304,15 +271,6 @@ serve(async (req) => {
 
   } catch (error) {
     // Enhanced error logging
-    console.error('❌ Error creating checkout session:', error)
-    console.error('Error details:', {
-      message: error?.message || 'No error message',
-      stack: error?.stack || 'No stack trace',
-      name: error?.name || 'UnknownError',
-      type: error?.type || 'No type',
-      code: error?.code || 'No code',
-      statusCode: error?.statusCode || 'No status code',
-      raw: JSON.stringify(error, Object.getOwnPropertyNames(error))
     })
     
     // Return detailed error for debugging (but don't expose sensitive info)
@@ -328,7 +286,6 @@ serve(async (req) => {
       details: Deno.env.get('ENVIRONMENT') === 'development' ? error?.stack : undefined
     }
     
-    console.error('📤 Returning error response:', JSON.stringify(errorResponse, null, 2))
     
     return new Response(
       JSON.stringify(errorResponse),

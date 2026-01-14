@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, Target, Star, BookOpen, Dumbbell, Flame, Trash2, CheckCircle, Lock } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { supabase } from '../../lib/supabaseClient';
@@ -79,20 +80,15 @@ const HabitsTabCompact = () => {
   // Load habits data from database - NO LOADING STATE
   useEffect(() => {
     const loadHabits = async () => {
-      console.log('📝 HabitsTabCompact: Starting habits data load');
       setError(null);
       
       try {
         // Load skills first
-        console.log('🎯 HabitsTabCompact: Loading skills...');
         const { data: skillsData, error: skillsError } = await skillsService.getAllSkills();
         let skillsMap = new Map();
         if (!skillsError && skillsData) {
           skillsMap = new Map(skillsData.map(skill => [skill.id, skill]));
-          console.log('✅ HabitsTabCompact: Skills loaded:', skillsData.length);
-          console.log('📋 Skills map created with', skillsMap.size, 'entries');
         } else {
-          console.error('❌ HabitsTabCompact: Failed to load skills:', skillsError);
         }
 
         // Load habits library from database (always load this)
@@ -101,17 +97,14 @@ const HabitsTabCompact = () => {
           .select('*');
 
         if (libraryError) {
-          console.error('❌ HabitsTabCompact: Error loading habits library:', libraryError);
           setError('Failed to load habits library');
           return;
         }
 
-        console.log('✅ HabitsTabCompact: Library loaded successfully:', libraryHabits?.length || 0, 'items');
 
         // Load user habits from database (only if user exists)
         let userHabits = [];
         if (user && user.id) {
-          console.log('📝 HabitsTabCompact: Loading user habits for user:', user.id);
           
           const { data: userData, error: userHabitsError } = await supabase
             .from('user_habits')
@@ -119,15 +112,12 @@ const HabitsTabCompact = () => {
             .eq('user_id', user.id);
 
           if (userHabitsError) {
-            console.error('❌ HabitsTabCompact: Error loading user habits:', userHabitsError);
             // Don't fail completely, just use empty user habits
             userHabits = [];
           } else {
             userHabits = userData || [];
-            console.log('✅ HabitsTabCompact: User habits loaded:', userHabits.length, 'items');
           }
         } else {
-          console.log('📝 HabitsTabCompact: No user, using empty user habits');
         }
 
         // Transform user habits to include completion data and UI properties
@@ -152,7 +142,6 @@ const HabitsTabCompact = () => {
                 
                 completions = completionData || [];
               } catch (completionError) {
-                console.log('📝 HabitsTabCompact: user_habit_completions table not found, using empty completions');
                 completions = [];
               }
             }
@@ -176,7 +165,6 @@ const HabitsTabCompact = () => {
                   .filter(Boolean);
               }
             } catch (skillError) {
-              console.log('Could not load skills for habit:', habit.id);
             }
 
             return {
@@ -192,20 +180,16 @@ const HabitsTabCompact = () => {
         );
 
         // Enrich library habits with skill information
-        console.log('🎯 HabitsTabCompact: Enriching library habits with skills...');
-        console.log('📋 Skills map size:', skillsMap.size);
         const enrichedLibraryHabits = (libraryHabits || []).map(habit => {
           const habitSkills = (habit.skill_tags || [])
             .map(skillId => {
               const skill = skillsMap.get(skillId);
               if (!skill) {
-                console.log(`⚠️ Skill not found in map: ${skillId}`);
               }
               return skill;
             })
             .filter(Boolean);
           
-          console.log(`📝 Habit "${habit.title}": ${habit.skill_tags?.length || 0} skill_tags -> ${habitSkills.length} skills`);
           
           return {
             ...habit,
@@ -215,10 +199,7 @@ const HabitsTabCompact = () => {
 
         setPersonalHabits(transformedHabits);
         setHabitsLibrary(enrichedLibraryHabits);
-        console.log('✅ HabitsTabCompact: Habits loaded successfully:', transformedHabits.length, 'personal habits,', enrichedLibraryHabits.length, 'library habits');
-        console.log('📋 HabitsTabCompact: Library habits data:', enrichedLibraryHabits);
       } catch (error) {
-        console.error('❌ HabitsTabCompact: Exception during habits load:', error);
         // Try to at least load the library data as fallback
         try {
           const { data: fallbackLibrary } = await supabase
@@ -226,9 +207,7 @@ const HabitsTabCompact = () => {
             .select('*');
           setHabitsLibrary(fallbackLibrary || []);
           setPersonalHabits([]);
-          console.log('📝 HabitsTabCompact: Fallback library loaded:', fallbackLibrary?.length || 0, 'items');
         } catch (fallbackError) {
-          console.error('❌ HabitsTabCompact: Fallback also failed:', fallbackError);
           setError('Failed to load habits data');
         }
       }
@@ -265,7 +244,6 @@ const HabitsTabCompact = () => {
     if (!user) return;
     
     try {
-      console.log('📝 HabitsTabCompact: Toggling habit completion:', habitId, date);
       
       // Get habit info for toast notification
       const habit = personalHabits.find(h => h.id === habitId);
@@ -278,23 +256,18 @@ const HabitsTabCompact = () => {
         // Remove completion
         const result = await masteryService.removeHabitCompletion(user.id, habitId, date);
         if (result.error) {
-          console.error('❌ HabitsTabCompact: Error removing completion:', result.error);
           toast.error('Failed to remove completion. Please try again.');
           return;
         }
-        console.log('✅ HabitsTabCompact: Completion removed');
       } else {
         // Complete habit (this will award XP)
         const result = await masteryService.completeHabit(user.id, habitId, date);
         if (result.error) {
-          console.error('❌ HabitsTabCompact: Error completing habit:', result.error);
           toast.error('Failed to complete habit. Please try again.');
           return;
         }
-        console.log('✅ HabitsTabCompact: Completion added and XP awarded');
         
         // Show success notification with XP reward
-        console.log('✅ Showing completion toast for:', habit?.title, '+', xpReward, 'XP');
         toast.success(
           `Habit Completed! 🔥 ${habit?.title || 'Habit'} • +${xpReward} XP earned`,
           {
@@ -343,15 +316,11 @@ const HabitsTabCompact = () => {
       // Refresh profile to update XP, level, and streak - wait a bit for DB to update
       if (user?.id) {
         setTimeout(async () => {
-          console.log('🔄 Refreshing profile after completion...');
           await fetchProfile(user.id);
-          console.log('✅ Profile refreshed');
         }, 500);
       }
       
-      console.log('✅ HabitsTabCompact: Habit toggled successfully');
     } catch (error) {
-      console.error('❌ HabitsTabCompact: Exception during habit toggle:', error);
       setError('Failed to update habit');
       toast.error('Failed to update habit. Please try again.');
     }
@@ -368,7 +337,6 @@ const HabitsTabCompact = () => {
     }
     
     try {
-      console.log('📝 HabitsTabCompact: Creating new habit:', newHabit.title);
       
       const { data, error } = await supabase
         .from('user_habits')
@@ -383,7 +351,6 @@ const HabitsTabCompact = () => {
         .single();
 
       if (error) {
-        console.error('❌ HabitsTabCompact: Error creating habit:', error);
         setError('Failed to create habit');
         return;
       }
@@ -402,9 +369,7 @@ const HabitsTabCompact = () => {
       setNewHabit({ title: '', description: '', frequency_type: 'daily', xp_reward: 10 });
       setShowAddHabit(false);
       
-      console.log('✅ HabitsTabCompact: Habit created successfully');
     } catch (error) {
-      console.error('❌ HabitsTabCompact: Exception during habit creation:', error);
       setError('Failed to create habit');
     }
   };
@@ -413,7 +378,6 @@ const HabitsTabCompact = () => {
     if (!user) return;
     
     try {
-      console.log('📝 HabitsTabCompact: Deleting habit:', habitId);
       
       const { error } = await supabase
         .from('user_habits')
@@ -422,15 +386,12 @@ const HabitsTabCompact = () => {
         .eq('user_id', user.id);
 
       if (error) {
-        console.error('❌ HabitsTabCompact: Error deleting habit:', error);
         setError('Failed to delete habit');
         return;
       }
 
       setPersonalHabits(prev => prev.filter(h => h.id !== habitId));
-      console.log('✅ HabitsTabCompact: Habit deleted successfully');
     } catch (error) {
-      console.error('❌ HabitsTabCompact: Exception during habit deletion:', error);
       setError('Failed to delete habit');
     }
   };
@@ -439,7 +400,6 @@ const HabitsTabCompact = () => {
     if (!user) return;
     
     try {
-      console.log('📝 HabitsTabCompact: Adding habit from library:', libraryHabit.title);
       
       const { data, error } = await supabase
         .from('user_habits')
@@ -454,7 +414,6 @@ const HabitsTabCompact = () => {
         .single();
 
       if (error) {
-        console.error('❌ HabitsTabCompact: Error adding habit from library:', error);
         setError('Failed to add habit from library');
         return;
       }
@@ -470,9 +429,7 @@ const HabitsTabCompact = () => {
       };
 
       setPersonalHabits(prev => [...prev, newHabitData]);
-      console.log('✅ HabitsTabCompact: Habit added from library successfully');
     } catch (error) {
-      console.error('❌ HabitsTabCompact: Exception during library habit addition:', error);
       setError('Failed to add habit from library');
     }
   };
@@ -725,9 +682,9 @@ const HabitsTabCompact = () => {
       )}
 
       {/* Create Habit Modal */}
-      {showAddHabit && (!isFreeUser || isAdmin) && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+      {showAddHabit && (!isFreeUser || isAdmin) && createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto" style={{ width: '100vw', height: '100vh' }}>
+          <div className="bg-white rounded-lg p-6 w-full max-w-md my-auto" style={{ maxHeight: 'calc(100vh - 40px)' }}>
             <h3 className="text-lg font-semibold mb-4">Create New Habit</h3>
             <div className="space-y-4">
               <div>
@@ -777,7 +734,8 @@ const HabitsTabCompact = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -68,7 +68,6 @@ const HabitsTabMobile = () => {
 
         setPersonalHabits(transformed);
       } catch (err) {
-        console.error('Error loading habits:', err);
         // Error logged above
       } finally {
         setLoading(false);
@@ -80,7 +79,6 @@ const HabitsTabMobile = () => {
 
   const toggleHabitToday = async (habitId) => {
     if (!user) {
-      console.log('❌ toggleHabitToday: No user');
       return;
     }
 
@@ -89,17 +87,14 @@ const HabitsTabMobile = () => {
     const isCompleted = habit?.completed_today;
     const xpReward = habit?.xp_reward || 10;
 
-    console.log('🔄 toggleHabitToday:', { habitId, isCompleted, habitTitle: habit?.title });
 
     try {
       if (isCompleted) {
         await masteryService.removeHabitCompletion(user.id, habitId, todayStr);
       } else {
         const result = await masteryService.completeHabit(user.id, habitId, todayStr);
-        console.log('✅ Habit completion result:', result);
         
         // Show success notification with XP reward - call immediately after successful completion
-        console.log('✅ Showing completion toast for:', habit?.title, '+', xpReward, 'XP');
         toast.success(
           `Habit Completed! 🔥 ${habit?.title} • +${xpReward} XP earned`,
           {
@@ -143,13 +138,10 @@ const HabitsTabMobile = () => {
       // Refresh profile to update XP, level, and streak - wait a bit for DB to update
       if (user?.id) {
         setTimeout(async () => {
-          console.log('🔄 Refreshing profile after completion...');
           await fetchProfile(user.id);
-          console.log('✅ Profile refreshed');
         }, 500);
       }
     } catch (err) {
-      console.error('❌ Error toggling habit:', err);
       toast.error('Failed to update habit. Please try again.', {
         duration: 3000,
         style: {
@@ -202,7 +194,6 @@ const HabitsTabMobile = () => {
         },
       });
     } catch (err) {
-      console.error('Error adding habit:', err);
       toast.error('Failed to add habit. Please try again.', {
         duration: 3000,
         style: {
@@ -237,7 +228,6 @@ const HabitsTabMobile = () => {
         },
       });
     } catch (err) {
-      console.error('Error deleting habit:', err);
       toast.error('Failed to delete habit. Please try again.', {
         duration: 3000,
         style: {
@@ -298,7 +288,6 @@ const HabitsTabMobile = () => {
       const msgLower = msg.toLowerCase();
       const needsColumn = msgLower.includes('show_on_calendar') && (msgLower.includes('column') || msgLower.includes('schema cache'));
 
-      console.error('Error toggling calendar visibility:', msg, errObj);
 
       if (needsColumn) {
         setCalendarVisibilitySupported(false);
