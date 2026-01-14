@@ -1,14 +1,12 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { PRICE_IDS } from '../lib/stripe'
-import { API_ENDPOINTS } from '../config'
 
 const PricingPage = () => {
   const { user, profile } = useAuth()
   const navigate = useNavigate()
-  const [loading, setLoading] = useState(false)
 
   // Check if PRICE_IDS are loaded
   useEffect(() => {
@@ -70,58 +68,23 @@ const PricingPage = () => {
     }
   ]
 
-  const handleSubscribe = async (priceId, paymentLink) => {
-    // 1. Définitions de sécurité
-    if (!user) { navigate('/login'); return; }
-    if (paymentLink) { window.location.href = paymentLink; return; }
-    if (!priceId) { toast.error('Invalid price ID'); return; }
-
-    setLoading(true);
-
-    try {
-      // 2. UTILISE UN NOM UNIQUE : 'finalStripeRequestUrl'
-      // N'utilise plus jamais 'checkoutUrl' ici car il y a un conflit d'import
-      const finalStripeRequestUrl = '/api/create-checkout-session'; 
-      
-      console.log('🔵 Appel vers :', finalStripeRequestUrl);
-      
-      const response = await fetch(finalStripeRequestUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          priceId: priceId,
-          userId: user.id,
-          userEmail: user.email
-        }),
-        signal: AbortSignal.timeout(15000)
-      });
-
-      // 2. On vérifie si c'est du HTML au lieu de JSON (le problème LiteSpeed)
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('text/html')) {
-        throw new Error('Le serveur a renvoyé du HTML au lieu de JSON. Vérifiez le proxy .htaccess.');
-      }
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || `Erreur serveur ${response.status}`);
-      }
-
-      if (data.url) {
-        console.log('🚀 Redirection vers Stripe...');
-        window.location.href = data.url;
-      } else {
-        throw new Error('URL de checkout Stripe manquante dans la réponse');
-      }
-
-    } catch (error) {
-      console.error('❌ Erreur détaillée:', error);
-      // ICI : On n'utilise PLUS 'checkoutUrl' dans le message d'erreur pour éviter le crash lexical
-      toast.error(`Erreur: ${error.message}`);
-    } finally {
-      setLoading(false);
+  const handleSubscribe = (priceId, paymentLink) => {
+    // Vérifications de base
+    if (!user) {
+      navigate('/login');
+      return;
     }
+
+    // BYPASS COMPLET : Utilisation directe des Payment Links Stripe en HTML
+    // Pas de fetch, pas de backend, juste une redirection directe
+    if (paymentLink) {
+      console.log('🚀 Redirection directe vers Stripe Payment Link');
+      window.location.href = paymentLink;
+      return;
+    }
+
+    // Si pas de Payment Link, on affiche une erreur
+    toast.error('Payment link not configured. Please contact support.');
   }
 
   // Determine current plan from role and subscription status
@@ -224,10 +187,10 @@ const PricingPage = () => {
 
               <button
                 onClick={() => handleSubscribe(plan.priceId, plan.paymentLink)}
-                disabled={plan.disabled || loading || (plan.name === currentPlan && hasActiveSubscription)}
+                disabled={plan.disabled || (plan.name === currentPlan && hasActiveSubscription)}
                 className={`mt-8 block w-full py-3 px-6 border border-transparent rounded-md text-center text-sm font-medium text-white ${plan.buttonStyle} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed`}
               >
-                {loading ? 'Processing...' : (plan.name === currentPlan && hasActiveSubscription ? 'Current Plan' : plan.buttonText)}
+                {plan.name === currentPlan && hasActiveSubscription ? 'Current Plan' : plan.buttonText}
               </button>
             </div>
           ))}
