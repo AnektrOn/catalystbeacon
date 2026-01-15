@@ -594,6 +594,30 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const signInWithGoogle = async () => {
+    try {
+      logDebug('🔐 signInWithGoogle: Starting Google OAuth flow...')
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`
+        }
+      })
+
+      if (error) throw error
+      
+      logDebug('✅ signInWithGoogle: OAuth flow initiated successfully')
+      // Note: The user will be redirected to Google, then back to the app
+      // The auth state change listener will handle the rest
+      return { data, error: null }
+    } catch (error) {
+      logError(error, 'Sign in with Google error')
+      toast.error(error.message || 'Failed to sign in with Google')
+      return { data: null, error }
+    }
+  }
+
   const value = {
     user,
     profile,
@@ -603,7 +627,8 @@ export const AuthProvider = ({ children }) => {
     signOut,
     resetPassword,
     updateProfile,
-    fetchProfile
+    fetchProfile,
+    signInWithGoogle
   }
 
   return (
