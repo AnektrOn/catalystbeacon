@@ -67,7 +67,7 @@ async function testTables() {
 }
 
 async function main() {
-  console.log('🧪 Human Catalyst University - Auth System Test\n')
+  console.log('🧪 Human Catalyst Beacon - Auth System Test\n')
   
   const connectionOk = await testConnection()
   

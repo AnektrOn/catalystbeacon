@@ -121,7 +121,7 @@ NODE_ENV=production
 - [ ] SMTP configuré dans N8N (SendGrid, Supabase SMTP, ou autre)
 - [ ] Les credentials SMTP sont valides
 - [ ] Le "From" email est configuré: `noreply@humancatalystbeacon.com`
-- [ ] Le "From Name" est configuré: `The Human Catalyst University`
+- [ ] Le "From Name" est configuré: `The Human Catalyst Beacon`
 
 #### 3.3 Test du Workflow
 ```bash

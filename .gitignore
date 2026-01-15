@@ -68,3 +68,6 @@ supabase.tar.gz
 # Test files
 test-auth.js
 src/test-supabase.js
+
+# Generated screenshots
+screenshots/

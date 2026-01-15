@@ -5,7 +5,7 @@
 ### Paramètres SMTP Node
 
 1. **Operation** : `Send Email`
-2. **From Email** : Votre email (ex: `noreply@hcuniversity.com`)
+2. **From Email** : Votre email (ex: `noreply@humancatalystbeacon.com`)
 3. **To Email** : `{{ $json.email }}`
 4. **Subject** : `The Path Is Open. Your Journey Begins.`
 5. **Email Type** : `HTML`
@@ -23,7 +23,7 @@ Dans le template HTML, remplacez ces URLs :
    ```html
    <a href="https://votredomaine.com/dashboard">
    ```
-   → Remplacez par votre URL de dashboard (ex: `https://hcuniversity.com/dashboard`)
+   → Remplacez par votre URL de dashboard (ex: `https://humancatalystbeacon.com/dashboard`)
 
 2. **Lien Unsubscribe** :
    ```html

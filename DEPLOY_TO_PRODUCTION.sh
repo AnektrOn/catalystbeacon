@@ -1,5 +1,5 @@
 #!/bin/bash
-# Deploy HC University Roadmap to Production
+# Deploy HC Beacon Roadmap to Production
 # Server path: ~/domains/humancatalystbeacon.com/public_html/app
 
 echo "🚀 Deploying Ignition Roadmap to humancatalystbeacon.com..."

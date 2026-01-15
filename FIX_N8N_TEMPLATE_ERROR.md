@@ -37,7 +37,7 @@ htmlParts.push('<body style="background-color: #050508;">');
 htmlParts.push('<table width="600" style="background-color: #0a0a0e; border-radius: 24px;">');
 htmlParts.push('<tr><td align="center" style="padding: 40px;">');
 htmlParts.push('<div style="font-family: "Cinzel", serif; font-size: 28px; color: #ffffff;">');
-htmlParts.push('HC <span style="color: #a5f3fc;">UNIVERSITY</span>');
+htmlParts.push('HC <span style="color: #a5f3fc;">BEACON</span>');
 htmlParts.push('</div>');
 htmlParts.push('<h1 style="font-family: "Cinzel", serif; color: #ffffff; font-size: 36px; text-align: center;">');
 htmlParts.push('The Path <br/><span style="color: #a78bfa;">Is Open</span>.');

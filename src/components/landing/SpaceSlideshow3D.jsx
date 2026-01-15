@@ -209,7 +209,7 @@ function SlideContent({ slideIndex }) {
             Human Catalyst
           </Text3DComponent>
           <Text3DComponent position={[-2, 0, 0]} size={0.8} color="#81754B">
-            University
+            Beacon
           </Text3DComponent>
           
           {/* Interactive torus with glow */}

@@ -33,7 +33,7 @@ htmlParts.push('<table width="600" cellpadding="0" cellspacing="0" border="0" st
 htmlParts.push('<tr><td style="height: 2px; background: linear-gradient(90deg, #050508, #a5f3fc, #a78bfa, #050508); font-size: 0; line-height: 0;">&nbsp;</td></tr>');
 htmlParts.push('<tr><td align="center" style="padding: 40px 0 20px 0;">');
 htmlParts.push('<div style="font-family: "Cinzel", serif; font-size: 28px; font-weight: 600; letter-spacing: 4px; color: #ffffff; text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);">');
-htmlParts.push('HC <span style="color: #a5f3fc; text-shadow: 0 0 10px rgba(165, 243, 252, 0.5);">UNIVERSITY</span>');
+htmlParts.push('HC <span style="color: #a5f3fc; text-shadow: 0 0 10px rgba(165, 243, 252, 0.5);">BEACON</span>');
 htmlParts.push('</div>');
 htmlParts.push('<div style="font-family: "Rajdhani", sans-serif; font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 3px; margin-top: 8px;">The Catalyst Path</div>');
 htmlParts.push('</td></tr>');
@@ -93,7 +93,7 @@ htmlParts.push('</td></tr>');
 htmlParts.push('<tr><td style="background-color: rgba(255, 255, 255, 0.02); padding: 30px; border-top: 1px solid rgba(255, 255, 255, 0.05);">');
 htmlParts.push('<table width="100%" cellpadding="0" cellspacing="0" border="0">');
 htmlParts.push('<tr><td align="center" style="color: #6b7280; font-size: 11px; font-family: "Rajdhani", Arial, sans-serif; line-height: 1.6; text-transform: uppercase; letter-spacing: 1px;">');
-htmlParts.push('<p style="margin: 0 0 10px 0;">HC University &copy; 2024. The Awakening.</p>');
+htmlParts.push('<p style="margin: 0 0 10px 0;">HC Beacon &copy; 2024. The Awakening.</p>');
 htmlParts.push('<p style="margin: 0;">');
 htmlParts.push('<a href="' + siteUrl + '/unsubscribe?email=' + encodeURIComponent(userEmail) + '" style="color: #6b7280; text-decoration: underline;">Unsubscribe</a> &nbsp;•&nbsp; ');
 htmlParts.push('<a href="' + siteUrl + '/support" style="color: #6b7280; text-decoration: underline;">Guide</a>');

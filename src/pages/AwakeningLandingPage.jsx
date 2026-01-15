@@ -15,9 +15,9 @@ import {
   ChevronDown
 } from 'lucide-react';
 
-// Logo path - production uses /assets/Logo uni.png
+// Logo path - production uses /assets/Logo beacon.png
 // For local development, we'll try the production path first, then fallback to hc-logo.svg
-const LogoUni = '/hc-logo.svg';
+const LogoBeacon = '/hc-logo.svg';
 
 /* --- INTERNAL COMPONENT: ETHEREAL CARD (Matching XPCircleWidget V4) --- */
 const NeomorphicCard = ({ 
@@ -94,24 +94,11 @@ const EnhancedLandingPage = () => {
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', handleScroll);
     
-    // Random glitch effect (Slower, more mystical)
+    // Random glitch effect (Frequency: Every 2 seconds)
     const glitchInterval = setInterval(() => {
       setGlitchActive(true);
-      setTimeout(() => setGlitchActive(false), 200);
-    }, 8000);
-
-    // Generate ETHEREAL particles (Pale Cyan/White/Soft Violet)
-    const newParticles = Array.from({ length: 50 }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: Math.random() * 2 + 1, // Smaller, star-like
-      duration: Math.random() * 20 + 15, // Slower float
-      delay: Math.random() * 5,
-      opacity: Math.random() * 0.5 + 0.1,
-      color: i % 3 === 0 ? '#a5f3fc' : i % 3 === 1 ? '#ffffff' : '#a78bfa' // Pale Cyan, White, Violet
-    }));
-    setParticles(newParticles);
+      setTimeout(() => setGlitchActive(false), 800);
+    }, 2000);
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
@@ -119,171 +106,136 @@ const EnhancedLandingPage = () => {
     };
   }, []);
 
-  // Global Styles for the Ethereal Theme
+  // Global Styles for the Ethereal Theme - MATCHING HTML PREVIEW EXACTLY
   const globalStyles = `
-    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Rajdhani:wght@300;400;500;600;700&display=swap');
-
     :root {
-      --ethereal-cyan: #a5f3fc;   /* Pale Cyan */
-      --ethereal-white: #ffffff;  /* White */
-      --ethereal-violet: #a78bfa; /* Soft Violet */
+      --ethereal-cyan: #a5f3fc;
+      --ethereal-violet: #a78bfa;
       --bg-dark: #020202;
-    }
-
-    body {
-      background-color: var(--bg-dark);
-      font-family: 'Rajdhani', sans-serif;
-      color: #e0e0e0;
     }
 
     .font-cinzel { font-family: 'Cinzel', serif; }
     .font-rajdhani { font-family: 'Rajdhani', sans-serif; }
 
-    /* Animations from XPCircleWidget */
-    @keyframes breathe-light {
-      0%, 100% { opacity: 0.5; transform: scale(1); }
-      50% { opacity: 0.8; transform: scale(1.1); }
-    }
-    .animate-breathe-light { animation: breathe-light 8s ease-in-out infinite; }
-
-    @keyframes float-particle {
-      0% { transform: translateY(0) translateX(0); opacity: 0; }
-      20% { opacity: 0.8; }
-      80% { opacity: 0.8; }
-      100% { transform: translateY(-100px) translateX(20px); opacity: 0; }
-    }
-    .animate-float-particle { animation: float-particle 10s infinite linear; }
-
-    @keyframes float {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-20px); }
-    }
-    
+    /* Animations */
     @keyframes spin-slow {
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
     }
     .animate-spin-slow { animation: spin-slow 60s linear infinite; }
 
-    /* Soft Glitch Effect */
-    .glitch { position: relative; }
+    @keyframes breathe-light {
+      0%, 100% { opacity: 0.5; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.1); }
+    }
+    .animate-breathe-light { animation: breathe-light 8s ease-in-out infinite; }
+
+    /* Text Shadow Glow */
+    .text-shadow-glow {
+      text-shadow: 0 0 20px rgba(165, 243, 252, 0.4);
+    }
+
+    /* RESTORED GLITCH EFFECT (The original one you liked) */
+    .glitch { position: relative; display: block; }
     .glitch::before, .glitch::after {
       content: attr(data-text);
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%;
-      background: var(--bg-dark);
+      background: #020202;
+      opacity: 0.8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      z-index: 50;
+      font-size: inherit;
+      font-weight: bold;
     }
     .glitch::before {
-      left: 2px; text-shadow: -1px 0 #a5f3fc;
-      clip: rect(24px, 550px, 90px, 0);
+      left: 2px;
+      text-shadow: -1px 0 #a5f3fc;
+      clip-path: inset(10% 0 60% 0);
       animation: glitch-anim 0.3s infinite linear alternate-reverse;
     }
     .glitch::after {
-      left: -2px; text-shadow: -1px 0 #a78bfa;
-      clip: rect(85px, 550px, 140px, 0);
+      left: -2px;
+      text-shadow: -1px 0 #a78bfa;
+      clip-path: inset(70% 0 10% 0);
       animation: glitch-anim 0.3s infinite linear alternate-reverse;
-    }
-    @keyframes glitch-anim {
-      0% { clip: rect(10px, 9999px, 30px, 0); }
-      20% { clip: rect(80px, 9999px, 10px, 0); }
-      40% { clip: rect(30px, 9999px, 80px, 0); }
-      60% { clip: rect(60px, 9999px, 20px, 0); }
-      100% { clip: rect(5px, 9999px, 80px, 0); }
+      animation-delay: 0.1s;
     }
 
-    /* Ethereal Buttons */
+    @keyframes glitch-anim {
+      0% { clip-path: inset(10% 0 85% 0); transform: translate(0); }
+      20% { clip-path: inset(85% 0 5% 0); transform: translate(-2px, 2px); }
+      40% { clip-path: inset(5% 0 90% 0); transform: translate(2px, -2px); }
+      60% { clip-path: inset(70% 0 10% 0); transform: translate(-1px, 1px); }
+      80% { clip-path: inset(40% 0 50% 0); transform: translate(1px, -1px); }
+      100% { clip-path: inset(15% 0 70% 0); transform: translate(0); }
+    }
+
+    /* Restored Button Styles */
     .btn-ethereal-primary {
-      background: rgba(165, 243, 252, 0.1);
-      border: 1px solid rgba(165, 243, 252, 0.3);
-      color: #a5f3fc;
-      font-weight: 600;
-      letter-spacing: 2px;
-      backdrop-filter: blur(4px);
-      transition: all 0.4s ease;
-      box-shadow: 0 0 15px rgba(165, 243, 252, 0.1);
+      background: rgba(165, 243, 252, 0.05) !important;
+      border: 1px solid rgba(165, 243, 252, 0.3) !important;
+      color: #a5f3fc !important;
+      font-weight: 600 !important;
+      letter-spacing: 2px !important;
+      backdrop-filter: blur(4px) !important;
+      transition: all 0.4s ease !important;
+      box-shadow: 0 0 15px rgba(165, 243, 252, 0.1) !important;
     }
     .btn-ethereal-primary:hover {
-      background: rgba(165, 243, 252, 0.2);
-      border-color: rgba(165, 243, 252, 0.6);
-      box-shadow: 0 0 30px rgba(165, 243, 252, 0.25);
-      transform: translateY(-2px);
-      text-shadow: 0 0 10px rgba(165, 243, 252, 0.8);
-      color: white;
+      background: rgba(165, 243, 252, 0.15) !important;
+      border-color: rgba(165, 243, 252, 0.6) !important;
+      box-shadow: 0 0 30px rgba(165, 243, 252, 0.25) !important;
+      transform: translateY(-2px) !important;
+      text-shadow: 0 0 10px rgba(165, 243, 252, 0.8) !important;
+      color: white !important;
     }
 
     .btn-ethereal-text {
-      color: rgba(255, 255, 255, 0.6);
-      letter-spacing: 1px;
-      transition: all 0.3s;
+      color: rgba(255, 255, 255, 0.6) !important;
+      letter-spacing: 1px !important;
+      transition: all 0.3s !important;
     }
     .btn-ethereal-text:hover {
-      color: #a5f3fc;
-      text-shadow: 0 0 10px rgba(165, 243, 252, 0.5);
+      color: #a5f3fc !important;
+      text-shadow: 0 0 10px rgba(165, 243, 252, 0.5) !important;
     }
   `;
 
   return (
-    <div className="min-h-screen bg-[#020202] text-white overflow-hidden relative">
+    <div className="min-h-screen bg-[#020202] text-[#e0e0e0] overflow-hidden relative font-rajdhani">
       <style>{globalStyles}</style>
       
       {/* --- BACKGROUND LAYER --- */}
       <div className="fixed inset-0 z-0 pointer-events-none">
-        {/* Deep Void */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#08080c] via-[#020202] to-[#000000]" />
-        
-        {/* Subtle Grid (Lower opacity for ethereal feel) */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(165,243,252,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(165,243,252,0.02)_1px,transparent_1px)] bg-[size:60px_60px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)]" />
-
-        {/* Floating Particles */}
-        {particles.map((p) => (
-          <div
-            key={p.id}
-            className="absolute rounded-full"
-            style={{
-              left: `${p.x}%`,
-              top: `${p.y}%`,
-              width: `${p.size}px`,
-              height: `${p.size}px`,
-              background: p.color,
-              boxShadow: `0 0 ${p.size * 2}px ${p.color}`,
-              opacity: p.opacity,
-              animation: `float ${p.duration}s ease-in-out ${p.delay}s infinite`
-            }}
-          />
-        ))}
-
-        {/* Ambient Light Orbs (Soft Cyan/Violet) */}
         <div 
-          className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full blur-[120px] opacity-15 animate-breathe-light"
+          className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full blur-[120px] opacity-20 animate-breathe-light"
           style={{ 
             background: 'radial-gradient(circle, #a5f3fc 0%, transparent 70%)',
-            transform: `translate(${scrollY * 0.05}px, ${scrollY * 0.05}px)` 
-          }}
-        />
-        <div 
-          className="absolute bottom-1/3 right-1/4 w-[600px] h-[600px] rounded-full blur-[140px] opacity-10 animate-breathe-light"
-          style={{ 
-            background: 'radial-gradient(circle, #a78bfa 0%, transparent 70%)',
-            transform: `translate(${-scrollY * 0.05}px, ${-scrollY * 0.05}px)` 
+            transform: `translate(${scrollY * 0.02}px, ${scrollY * 0.02}px)` 
           }}
         />
       </div>
 
       {/* --- NAVIGATION --- */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#020202]/60 backdrop-blur-md border-b border-white/5">
+      <nav className="fixed top-0 left-0 right-0 z-[100] bg-[#020202]/60 backdrop-blur-md border-b border-white/5">
         <div className="container mx-auto px-6">
           <div className="flex items-center justify-between h-24">
             <div className="flex items-center gap-3">
-              <img src={LogoUni} alt="HC University" className="h-12 w-auto object-contain drop-shadow-[0_0_15px_rgba(165,243,252,0.6)]" />
+              <img src={LogoBeacon} alt="HC Beacon" className="h-12 w-auto object-contain drop-shadow-[0_0_15px_rgba(165,243,252,0.6)]" />
             </div>
 
             <div className="flex items-center gap-8">
-              <Link to="/login" className="hidden md:block text-sm font-rajdhani tracking-widest text-gray-400 hover:text-cyan-200 transition-colors uppercase">
+              <Link to="/login" className="hidden md:block text-sm font-cinzel tracking-wide text-gray-400 hover:text-cyan-200 transition-colors">
                 Access
               </Link>
-              <Button asChild className="btn-ethereal-primary rounded-full px-8 py-2 text-xs">
+              <Button asChild variant="ghost" className="btn-ethereal-primary rounded-full px-8 py-2 text-xs">
                 <Link to="/signup">
-                  INITIALIZE
+                  Initialize
                 </Link>
               </Button>
             </div>
@@ -292,11 +244,10 @@ const EnhancedLandingPage = () => {
       </nav>
 
       {/* --- HERO SECTION --- */}
-      <section className="relative min-h-screen flex items-center justify-center px-4 pt-20">
-        {/* Orbital Rings Background (Matches Widget) */}
-        <div 
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-20 pointer-events-none"
-        >
+      <section className="relative flex items-center justify-center px-4 pt-80 pb-40 w-full">
+        
+        {/* Orbital Rings Background */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-20 pointer-events-none z-0">
           <svg width="1000" height="1000" viewBox="0 0 1000 1000" className="animate-spin-slow">
             <circle cx="500" cy="500" r="400" fill="none" stroke="#a5f3fc" strokeWidth="0.5" />
             <circle cx="500" cy="500" r="400" fill="none" stroke="white" strokeWidth="1" strokeDasharray="1 30" />
@@ -305,77 +256,102 @@ const EnhancedLandingPage = () => {
           </svg>
         </div>
 
-        <div className="relative z-10 max-w-5xl mx-auto text-center">
-          {/* Badge */}
-          <div className="mb-10 flex justify-center">
-            <div className="px-6 py-2 border border-cyan-200/20 bg-cyan-900/5 backdrop-blur-md rounded-full text-cyan-100 text-xs font-cinzel font-semibold tracking-[0.3em] uppercase shadow-[0_0_30px_rgba(165,243,252,0.1)]">
-              ✦ System Awakening Sequence ✦
+        <div className="relative z-10 max-w-6xl mx-auto text-center">
+            
+            {/* Badge */}
+            <div className="mb-10 flex justify-center">
+                <div className="px-6 py-2 border border-cyan-200/20 bg-cyan-900/5 backdrop-blur-md rounded-full text-cyan-100 text-xs font-cinzel font-semibold tracking-[0.3em] uppercase shadow-[0_0_30px_rgba(165,243,252,0.1)]">
+                  ✦ QUANTUM KERNEL: ACCESSED ✦
+                </div>
             </div>
-          </div>
 
-          <h1 className={`text-6xl md:text-8xl font-bold mb-8 leading-tight font-rajdhani text-white ${glitchActive ? 'glitch' : ''}`} data-text="ASCEND">
-            <span className="font-light text-5xl md:text-7xl block mb-2 text-gray-300">IGNITE YOUR</span>
-            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 via-white to-violet-300 filter drop-shadow-[0_0_20px_rgba(165,243,252,0.3)]">
-              CONSCIOUSNESS
-            </span>
-          </h1>
+            {/* Main Headline with JS Glitch Trigger */}
+            <h1 className="text-6xl md:text-9xl font-bold mb-10 leading-tight font-rajdhani text-white">
+                <span className="font-light text-5xl md:text-7xl block mb-3 text-gray-300 tracking-wide">REWRITE THE</span>
+                <span className={`block text-6xl md:text-9xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 via-white to-violet-300 filter drop-shadow-[0_0_30px_rgba(165,243,252,0.5)] ${glitchActive ? 'glitch' : ''}`} data-text="MATRIX">
+                  SOURCE CODE
+                </span>
+            </h1>
 
-          <p className="text-xl md:text-2xl text-gray-400 mb-12 max-w-2xl mx-auto font-light font-rajdhani tracking-wide leading-relaxed">
-          A system designed to transform how you perceive, decide, and act.
-          Not motivation. Not content. 
-            <span className="text-cyan-200 drop-shadow-[0_0_8px_rgba(165,243,252,0.5)]"> A complete framework for human evolution.</span>
-          </p>
+            {/* Subheadline (RESTAURÉ) */}
+            <p className="text-xl md:text-2xl text-gray-400 mb-12 max-w-3xl mx-auto font-light font-rajdhani tracking-wide leading-relaxed">
+                Most lives run on autopilot. This is a manual override.
+                <br className="hidden md:block" />
+                Not motivation. Not content. 
+                <span className="text-cyan-200 drop-shadow-[0_0_8px_rgba(165,243,252,0.5)] font-medium"> A complete framework for human evolution.</span>
+            </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-8 mb-20">
-            <Button asChild size="lg" className="btn-ethereal-primary rounded-full px-12 py-8 text-xl">
-              <Link to="/signup">
-                BEGIN THE JOURNEY
-                <ArrowRight className="ml-3 w-5 h-5" />
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="ghost" className="btn-ethereal-text rounded-full px-8 py-8 text-lg font-rajdhani">
-              <Link to="/courses">
-              Explore the system
-              </Link>
-            </Button>
-          </div>
+            {/* Buttons */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-8 mb-24">
+                <Button asChild className="group relative px-12 py-6 btn-ethereal-primary text-xl rounded-full h-auto">
+                    <Link to="/signup" className="flex items-center gap-3">
+                        INITIATE SEQUENCE
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 transition-transform group-hover:translate-x-1"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                    </Link>
+                </Button>
+                
+                <Button asChild variant="ghost" className="px-10 py-6 text-gray-400 font-rajdhani text-xl tracking-widest uppercase hover:text-[#a5f3fc] transition-colors duration-300 flex items-center gap-2 hover:drop-shadow-[0_0_10px_rgba(165,243,252,0.5)] h-auto">
+                    <Link to="/courses">
+                        EXPLORE THE ARCHITECTURE
+                    </Link>
+                </Button>
+            </div>
 
-          {/* Ethereal Stats (Revised for Genesis/Exclusivity Hook) */}
-          <div className="flex flex-wrap justify-center gap-12 border-t border-white/5 pt-12">
-            {[
-              { label: "System Status", val: "ONLINE", icon: Activity },
-              { label: "Genesis Cycle", val: "001", icon: Sparkles },
-              { label: "Access Ports", val: "OPEN", icon: Unlock },
-            ].map((stat, i) => (
-              <div key={i} className="text-center group">
-                <div className="flex items-center justify-center gap-2 mb-2 text-gray-500 group-hover:text-cyan-200 transition-colors">
-                  <stat.icon size={14} />
-                  <span className="text-xs font-cinzel tracking-[0.1em] uppercase">{stat.label}</span>
+            {/* Stats Bar */}
+            <div className="flex flex-wrap justify-center gap-16 border-t border-white/5 pt-12">
+                {/* Stat 1 */}
+                <div className="text-center group cursor-default">
+                    <div className="flex items-center justify-center gap-2 mb-2 text-gray-600 group-hover:text-cyan-200 transition-colors duration-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                        <span className="text-xs font-cinzel tracking-[0.2em] uppercase">System Status</span>
+                    </div>
+                    <div className="text-3xl font-light font-rajdhani text-white text-shadow-glow tracking-widest">
+                        ONLINE
+                    </div>
                 </div>
-                <div className="text-3xl font-light font-rajdhani text-white text-shadow-glow">
-                  {stat.val}
+
+                {/* Stat 2 */}
+                <div className="text-center group cursor-default">
+                    <div className="flex items-center justify-center gap-2 mb-2 text-gray-600 group-hover:text-cyan-200 transition-colors duration-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                        <span className="text-xs font-cinzel tracking-[0.2em] uppercase">Genesis Cycle</span>
+                    </div>
+                    <div className="text-3xl font-light font-rajdhani text-white text-shadow-glow tracking-widest">
+                        001
+                    </div>
                 </div>
-              </div>
-            ))}
-          </div>
+
+                {/* Stat 3 */}
+                <div className="text-center group cursor-default">
+                    <div className="flex items-center justify-center gap-2 mb-2 text-gray-600 group-hover:text-cyan-200 transition-colors duration-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <span className="text-xs font-cinzel tracking-[0.2em] uppercase">Access Ports</span>
+                    </div>
+                    <div className="text-3xl font-light font-rajdhani text-white text-shadow-glow tracking-widest">
+                        OPEN
+                    </div>
+                </div>
+            </div>
+
         </div>
       </section>
 
       {/* --- COMPARISON SECTION --- */}
-      <section className="relative py-32 px-4">
+      <section className="relative py-40 md:py-48 px-4">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-900/5 to-transparent pointer-events-none"></div>
         <div className="container mx-auto max-w-6xl relative z-10">
-          <div className="text-center mb-24">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 font-cinzel text-white">
-              CHOOSE YOUR <span className="text-cyan-200 drop-shadow-[0_0_10px_rgba(165,243,252,0.5)]">REALITY</span>
+          <div className="text-center mb-16">
+            <h2 className="text-5xl md:text-6xl font-bold mb-6 font-cinzel text-white">
+              CHOOSE YOUR <span className="text-cyan-200 drop-shadow-[0_0_15px_rgba(165,243,252,0.6)]">REALITY</span>
             </h2>
-            <p className="font-rajdhani text-xl text-gray-400 uppercase tracking-widest">
+            <p className="font-rajdhani text-lg md:text-xl text-gray-400 tracking-wide">
               Unawakened vs. Enlightened
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-12">
+          <div className="grid md:grid-cols-2 gap-8 md:gap-16">
             {/* Reactive (Negative - Darker/Redder) */}
-            <NeomorphicCard className="bg-[rgba(20,10,10,0.4)] border-red-900/30">
+            <NeomorphicCard className="bg-[rgba(20,10,10,0.4)] border-red-900/30 shadow-[0_25px_60px_rgba(0,0,0,0.6),inset_0_0_90px_rgba(239,68,68,0.05)]">
               <div className="flex items-center gap-4 mb-8">
                 <div className="w-12 h-12 rounded-full bg-red-900/10 flex items-center justify-center border border-red-500/20">
                   <X className="w-5 h-5 text-red-400" />
@@ -398,7 +374,7 @@ const EnhancedLandingPage = () => {
             </NeomorphicCard>
 
             {/* Intentional (Positive - Ethereal) */}
-            <NeomorphicCard className="bg-[rgba(165,243,252,0.03)] border-cyan-200/20" elevated>
+            <NeomorphicCard className="bg-[rgba(165,243,252,0.03)] border-cyan-200/30 shadow-[0_35px_70px_rgba(0,0,0,0.7),inset_0_0_100px_rgba(165,243,252,0.1)]" elevated>
               <div className="absolute top-0 right-0 p-6">
                 <div className="w-2 h-2 rounded-full bg-cyan-200 shadow-[0_0_10px_#a5f3fc] animate-pulse" />
               </div>
@@ -427,15 +403,15 @@ const EnhancedLandingPage = () => {
       </section>
 
       {/* --- WHAT THIS IS (AND IS NOT) --- */}
-      <section className="relative py-32 px-4">
+      <section className="relative py-32 md:py-40 px-4">
         <div className="container mx-auto max-w-4xl relative z-10">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-8 font-cinzel text-white">
-              WHAT THIS IS <span className="text-cyan-200 drop-shadow-[0_0_10px_rgba(165,243,252,0.5)]">(AND IS NOT)</span>
+          <div className="text-center mb-12">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 font-cinzel text-white">
+              WHAT THIS IS <span className="text-cyan-200 drop-shadow-[0_0_12px_rgba(165,243,252,0.5)]">(AND IS NOT)</span>
             </h2>
           </div>
 
-          <NeomorphicCard className="mb-12" size="large">
+          <NeomorphicCard className="mb-12 shadow-[0_40px_80px_rgba(0,0,0,0.7),inset_0_0_110px_rgba(165,243,252,0.08)] border-cyan-200/20" size="large" elevated>
             <div className="space-y-8">
               <div className="space-y-6">
                 <p className="text-xl md:text-2xl font-rajdhani text-gray-300 leading-relaxed">
@@ -473,7 +449,7 @@ const EnhancedLandingPage = () => {
             <h3 className="text-2xl md:text-3xl font-bold mb-8 font-cinzel text-white text-center">
               What makes it different
             </h3>
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-2 gap-6 md:gap-10">
               {[
                 "Structured progression, not random practices",
                 "Integration into daily life, not isolated experiences",
@@ -508,13 +484,13 @@ const EnhancedLandingPage = () => {
       </section>
 
       {/* --- THE PROGRESSION (Timeline) --- */}
-      <section className="relative py-32 px-4 bg-black/20">
+      <section className="relative py-40 md:py-48 px-4 bg-gradient-to-b from-black/20 via-cyan-900/10 to-black/20">
         <div className="container mx-auto max-w-5xl relative z-10">
-          <div className="text-center mb-24">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 font-cinzel text-white">
-              ASCENSION <span className="text-violet-300 drop-shadow-[0_0_10px_rgba(167,139,250,0.5)]">PATHWAY</span>
+          <div className="text-center mb-20">
+            <h2 className="text-5xl md:text-6xl font-bold mb-6 font-cinzel text-white">
+              ASCENSION <span className="text-violet-300 drop-shadow-[0_0_15px_rgba(167,139,250,0.6)]">PATHWAY</span>
             </h2>
-            <p className="font-rajdhani text-xl text-gray-400">
+            <p className="font-rajdhani text-lg md:text-xl text-gray-400">
               The sequence of evolution.
             </p>
           </div>
@@ -525,7 +501,7 @@ const EnhancedLandingPage = () => {
 
             {[
               {
-                stage: "01. INITIALIZE",
+                stage: "01. Initialize",
                 subtitle: "Stabilize awareness. Interrupt autopilot.",
                 desc: "You begin by observing how your mind actually works.",
                 details: [
@@ -538,7 +514,7 @@ const EnhancedLandingPage = () => {
                 color: "text-cyan-200"
               },
               {
-                stage: "02. AWAKENING",
+                stage: "02. Awakening",
                 subtitle: "Recognize patterns as they happen.",
                 desc: "You stop noticing patterns after the fact.",
                 details: [
@@ -551,7 +527,7 @@ const EnhancedLandingPage = () => {
                 color: "text-blue-300"
               },
               {
-                stage: "03. ASCENSION",
+                stage: "03. Ascension",
                 subtitle: "Act from clarity instead of habit.",
                 desc: "Understanding becomes applied.",
                 details: [
@@ -570,7 +546,7 @@ const EnhancedLandingPage = () => {
                 color: "text-violet-300"
               },
               {
-                stage: "04. MASTERY",
+                stage: "04. Mastery",
                 subtitle: "Sustain coherence over time.",
                 desc: "Awareness is no longer an effort.",
                 details: [
@@ -594,7 +570,7 @@ const EnhancedLandingPage = () => {
 
                 {/* Content Card */}
                 <div className="flex-1 ml-14 md:ml-0 w-full">
-                  <NeomorphicCard className="group hover:bg-[rgba(165,243,252,0.03)] transition-colors flex flex-col" size="large">
+                  <NeomorphicCard className={`group hover:bg-[rgba(165,243,252,0.03)] transition-colors flex flex-col ${i === 0 ? 'shadow-[0_25px_60px_rgba(0,0,0,0.6)]' : i === 1 ? 'shadow-[0_30px_65px_rgba(0,0,0,0.65)]' : i === 2 ? 'shadow-[0_35px_70px_rgba(0,0,0,0.7)]' : 'shadow-[0_40px_80px_rgba(0,0,0,0.75)]'}`} size="large" elevated={i >= 2}>
                     <div className="flex items-start justify-between mb-4 md:mb-6">
                       <h3 className={`text-lg md:text-xl font-bold font-rajdhani tracking-widest ${step.color} text-shadow-glow flex-1`}>{step.stage}</h3>
                       <step.icon className={`w-5 h-5 ${step.color} opacity-60 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2`} />
@@ -652,13 +628,13 @@ const EnhancedLandingPage = () => {
       </section>
 
       {/* --- GENESIS PROTOCOL --- */}
-      <section className="relative py-32 px-4">
+      <section className="relative py-32 md:py-40 px-4">
         <div className="container mx-auto max-w-5xl relative z-10">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 font-cinzel text-white">
-              GENESIS <span className="text-cyan-200 drop-shadow-[0_0_10px_rgba(165,243,252,0.5)]">PROTOCOL</span>
+          <div className="text-center mb-12">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 font-cinzel text-white">
+              GENESIS <span className="text-cyan-200 drop-shadow-[0_0_12px_rgba(165,243,252,0.5)]">PROTOCOL</span>
             </h2>
-            <p className="text-xl md:text-2xl font-rajdhani text-gray-400 mb-6">
+            <p className="text-lg md:text-xl font-rajdhani text-gray-400 mb-8">
               The core structure behind the system.
             </p>
           </div>
@@ -801,8 +777,9 @@ const EnhancedLandingPage = () => {
                     {/* Content Card */}
                     <div className="flex-1 pt-2">
                       <NeomorphicCard 
-                        className={`group transition-all duration-300 ${phase.borderColor} border`}
+                        className={`group transition-all duration-300 ${phase.borderColor} border ${i === 0 ? 'shadow-[0_20px_50px_rgba(0,0,0,0.5)]' : i === 1 ? 'shadow-[0_25px_55px_rgba(0,0,0,0.55)]' : i === 2 ? 'shadow-[0_30px_65px_rgba(0,0,0,0.65)]' : 'shadow-[0_35px_75px_rgba(0,0,0,0.7)]'}`}
                         size="medium"
+                        elevated={i >= 2}
                       >
                         {/* Always Visible Content */}
                         <div className="space-y-3">
@@ -891,8 +868,8 @@ const EnhancedLandingPage = () => {
           </div>
 
           {/* CTA */}
-          <div className="text-center mt-12">
-            <Button asChild size="lg" className="btn-ethereal-primary rounded-full px-12 py-6 text-lg">
+          <div className="text-center mt-16">
+            <Button asChild size="lg" className="btn-ethereal-primary rounded-full px-14 py-7 text-xl font-semibold shadow-[0_0_35px_rgba(165,243,252,0.35)] hover:shadow-[0_0_55px_rgba(165,243,252,0.55)] hover:scale-105 transition-all duration-300">
               <Link to="/signup">
                 → Initialize Access
               </Link>
@@ -902,17 +879,17 @@ const EnhancedLandingPage = () => {
       </section>
 
       {/* --- PRICING / ACCESS --- */}
-      <section className="relative py-32 px-4">
+      <section className="relative py-40 md:py-48 px-4 bg-black/30">
         <div className="container mx-auto max-w-6xl relative z-10">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 font-cinzel text-white">
-              SYSTEM <span className="text-cyan-200">ACCESS</span>
+          <div className="text-center mb-16">
+            <h2 className="text-5xl md:text-6xl font-bold mb-6 font-cinzel text-white">
+              SYSTEM <span className="text-cyan-200 drop-shadow-[0_0_15px_rgba(165,243,252,0.6)]">ACCESS</span>
             </h2>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-12 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 md:gap-16 max-w-4xl mx-auto">
             {/* Free Tier */}
-            <NeomorphicCard className="flex flex-col">
+            <NeomorphicCard className="flex flex-col shadow-[0_25px_60px_rgba(0,0,0,0.6)]">
               <div className="mb-8">
                 <h3 className="text-2xl font-bold font-cinzel text-gray-300 mb-2">INITIATE</h3>
                 <div className="text-5xl font-light font-rajdhani text-white">€0 <span className="text-lg font-normal text-gray-500">/ forever</span></div>
@@ -924,15 +901,15 @@ const EnhancedLandingPage = () => {
                   </li>
                 ))}
               </ul>
-              <Button asChild variant="ghost" className="w-full btn-ethereal-text py-6 rounded-full border border-white/10 hover:bg-white/5">
-                <Link to="/signup" className="w-full">
-                  START FREE
+              <Button asChild variant="ghost" className="w-full btn-ethereal-text py-7 rounded-full border border-white/10 hover:bg-white/5 text-lg font-semibold hover:scale-105 transition-all duration-300">
+                  <Link to="/signup" className="w-full">
+                  Start Free
                 </Link>
               </Button>
             </NeomorphicCard>
 
             {/* Paid Tier */}
-            <NeomorphicCard className="flex flex-col border-cyan-200/30 relative overflow-visible bg-[rgba(165,243,252,0.03)]" elevated>
+            <NeomorphicCard className="flex flex-col border-cyan-200/40 relative overflow-visible bg-[rgba(165,243,252,0.05)] shadow-[0_40px_90px_rgba(0,0,0,0.8),inset_0_0_120px_rgba(165,243,252,0.12)]" elevated>
               <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-cyan-900/80 text-cyan-200 text-xs font-bold font-rajdhani tracking-[0.2em] rounded-full border border-cyan-500/30 shadow-[0_0_15px_rgba(165,243,252,0.2)]">
                 FULL ACCESS
               </div>
@@ -953,9 +930,9 @@ const EnhancedLandingPage = () => {
                   </li>
                 ))}
               </ul>
-              <Button asChild className="w-full btn-ethereal-primary py-6 rounded-full text-lg">
-                <Link to="/signup" className="w-full">
-                  UPGRADE SYSTEM
+              <Button asChild className="w-full btn-ethereal-primary py-7 rounded-full text-xl font-semibold shadow-[0_0_30px_rgba(165,243,252,0.3)] hover:shadow-[0_0_50px_rgba(165,243,252,0.5)] hover:scale-105 transition-all duration-300">
+                  <Link to="/signup" className="w-full">
+                  Upgrade System
                 </Link>
               </Button>
             </NeomorphicCard>
@@ -968,10 +945,10 @@ const EnhancedLandingPage = () => {
         <div className="container mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-8">
             <div>
-              <img src={LogoUni} alt="HC University" className="h-10 w-auto mb-4 object-contain opacity-80" />
+              <img src={LogoBeacon} alt="HC Beacon" className="h-10 w-auto mb-4 object-contain opacity-80" />
               <p className="text-gray-500 font-rajdhani text-sm tracking-wide">System Version 2.4.0 // Neural Net Active</p>
             </div>
-            <div className="flex gap-10 text-sm font-rajdhani text-gray-400 tracking-[0.15em] uppercase">
+            <div className="flex gap-10 text-sm font-cinzel text-gray-400 tracking-wide">
               <Link to="/courses" className="hover:text-cyan-200 transition-colors">Data</Link>
               <Link to="/community" className="hover:text-cyan-200 transition-colors">Network</Link>
               <Link to="/terms" className="hover:text-cyan-200 transition-colors">Protocol</Link>

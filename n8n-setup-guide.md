@@ -131,7 +131,7 @@ return {
 
 - **Node Type**: SendGrid (ou SMTP générique)
 - **From Email**: `noreply@humancatalystbeacon.com`
-- **From Name**: `The Human Catalyst University`
+- **From Name**: `The Human Catalyst Beacon`
 - **To**: `{{ $json.to }}`
 - **Subject**: `{{ $json.subject }}`
 - **HTML**: `{{ $json.html }}`
@@ -166,9 +166,9 @@ Ajouter dans docker-compose.yml :
 ```yaml
 environment:
   - SITE_URL=https://humancatalystbeacon.com
-  - SITE_NAME=The Human Catalyst University
+  - SITE_NAME=The Human Catalyst Beacon
   - FROM_EMAIL=noreply@humancatalystbeacon.com
-  - FROM_NAME=The Human Catalyst University
+  - FROM_NAME=The Human Catalyst Beacon
   - SENDGRID_API_KEY=your_sendgrid_api_key
   - SMTP_HOST=smtp.sendgrid.net
   - SMTP_USER=apikey

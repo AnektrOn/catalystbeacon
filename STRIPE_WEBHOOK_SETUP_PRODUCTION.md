@@ -25,7 +25,7 @@ https://app.humancatalystbeacon.com/api/webhook
 
 3. **Configurez l'endpoint**
    - **Endpoint URL** : `https://app.humancatalystbeacon.com/api/webhook`
-   - **Description** : `HC University Production Webhook`
+   - **Description** : `HC Beacon Production Webhook`
    - Cliquez sur **"Add endpoint"**
 
 4. **Sélectionnez les événements à écouter**

@@ -59,7 +59,7 @@ let emoji = '';
 
 switch(emailData.emailType) {
   case 'sign-up':
-    message = `🎉 Bienvenue ${emailData.userName || 'there'}!\n\nMerci de rejoindre The Human Catalyst University!`;
+    message = `🎉 Bienvenue ${emailData.userName || 'there'}!\n\nMerci de rejoindre The Human Catalyst Beacon!`;
     break;
     
   case 'level-up':

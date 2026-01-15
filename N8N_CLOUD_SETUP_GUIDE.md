@@ -58,7 +58,7 @@ N8N_WEBHOOK_URL=https://your-instance.n8n.cloud/webhook/send-email
 - **User**: Votre adresse email professionnelle
 - **Password**: Votre mot de passe (ou App Password pour Gmail)
 - **From Email**: `noreply@humancatalystbeacon.com`
-- **From Name**: `The Human Catalyst University`
+- **From Name**: `The Human Catalyst Beacon`
 
 **Note Gmail** : Vous devez créer une "App Password" :
 1. Allez dans votre compte Google → Security
@@ -112,7 +112,7 @@ Pour chaque type d'email, créez un **Function Node** qui génère le HTML.
 ```javascript
 const emailData = $input.item.json;
 const siteUrl = $env.SITE_URL || 'https://humancatalystbeacon.com';
-const siteName = $env.SITE_NAME || 'The Human Catalyst University';
+const siteName = $env.SITE_NAME || 'The Human Catalyst Beacon';
 
 const html = `
 <!DOCTYPE html>
@@ -152,7 +152,7 @@ return {
 2. Configurez :
    - **Credential**: "SMTP Email" (créé à l'étape 2.2)
    - **From Email**: `{{ $env.FROM_EMAIL || 'noreply@humancatalystbeacon.com' }}`
-   - **From Name**: `{{ $env.FROM_NAME || 'The Human Catalyst University' }}`
+   - **From Name**: `{{ $env.FROM_NAME || 'The Human Catalyst Beacon' }}`
    - **To Email**: `{{ $json.to }}`
    - **Subject**: `{{ $json.subject }}`
    - **Email Type**: HTML

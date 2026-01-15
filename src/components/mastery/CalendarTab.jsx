@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Grid3X3, Clock, Trash2, CheckCircle, Target, Brain, Star } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -18,6 +18,7 @@ const CalendarTab = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [completionPopup, setCompletionPopup] = useState(null);
+  const isProcessingCompletion = useRef(false);
 
 
   // Helper function to get appropriate color for habits
@@ -54,20 +55,16 @@ const CalendarTab = () => {
         const { data: userHabits, error: userHabitsError } = await masteryService.getUserHabits(user.id);
         if (userHabitsError) throw userHabitsError;
 
-        // Load calendar events for current month
-        const startOfMonth = new Date();
-        startOfMonth.setDate(1);
-        const endOfMonth = new Date();
-        endOfMonth.setMonth(endOfMonth.getMonth() + 1, 0);
+        // Calculate month boundaries based on currentDate (viewed month), NOT today
+        const viewedYear = currentDate.getFullYear();
+        const viewedMonth = currentDate.getMonth();
+        const firstDayOfMonth = new Date(viewedYear, viewedMonth, 1);
+        const lastDayOfMonth = new Date(viewedYear, viewedMonth + 1, 0);
 
         // Transform user habits to include completion data
         const transformedHabits = await Promise.all(
           (userHabits || []).map(async (habit) => {
-            // Get completions for the entire current month
-            const today = new Date();
-            const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-            const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-            
+            // Get completions for the viewed month (based on currentDate)
             const { data: completions } = await masteryService.getHabitCompletions(
               user.id,
               habit.id,
@@ -80,7 +77,7 @@ const CalendarTab = () => {
 
             // Get completion dates
             const completedDates = (completions || []).map(c => c.completed_at.split('T')[0]);
-            const todayString = today.toISOString().split('T')[0];
+            const todayString = new Date().toISOString().split('T')[0];
 
             return {
               ...habit,
@@ -105,7 +102,7 @@ const CalendarTab = () => {
     };
 
     loadHabitsAndEvents();
-  }, [user]);
+  }, [user, currentDate]);
 
   const getDaysInMonth = (date) => {
     const year = date.getFullYear();
@@ -143,76 +140,93 @@ const CalendarTab = () => {
     return days;
   };
 
-  // Virtual event generation - creates habit events on-demand
-  const getVirtualHabitEvents = (date) => {
-    if (!date || !habits) return [];
-    const dateStr = date.toISOString().split('T')[0];
-    const virtualEvents = [];
+  // Memoized monthly events map for performance optimization
+  // Pre-computes all events for the current month to avoid recalculating in render loop
+  const monthlyEventsMap = useMemo(() => {
+    const eventsMap = {};
+    
+    // Get all days in the current month
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    
+    // Generate events for each day in the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      const dateStr = date.toISOString().split('T')[0];
+      
+      // Get real events from database
+      const realEvents = events.filter(event => event.date === dateStr);
+      
+      // Generate virtual habit events inline (same logic as getVirtualHabitEvents)
+      const virtualHabitEvents = [];
+      if (habits && habits.length > 0) {
+        const today = new Date();
+        const targetDate = new Date(dateStr);
+        const daysDiff = Math.floor((today - targetDate) / (1000 * 60 * 60 * 24));
+        const isClickable = daysDiff >= 0 && daysDiff <= 2;
 
-    // Check if this date is within completion range (current day + 2 days prior)
-    const today = new Date();
-    const targetDate = new Date(dateStr);
-    const daysDiff = Math.floor((today - targetDate) / (1000 * 60 * 60 * 24));
-    const isClickable = daysDiff >= 0 && daysDiff <= 2;
-
-    habits.forEach(habit => {
-      // For daily habits, create virtual event for any date
-      if (habit.frequency_type === 'daily') {
-        const isCompleted = habit.completed_dates.includes(dateStr);
-        virtualEvents.push({
-          id: `habit-${habit.id}|${dateStr}`,
-          title: habit.title,
-          date: dateStr,
-          startTime: '09:00',
-          endTime: '09:30',
-          color: habit.color,
-          completed: isCompleted,
-          source: 'habit',
-          habitId: habit.id,
-          description: habit.description,
-          xp_reward: habit.xp_reward,
-          isClickable: isClickable
+        habits.forEach(habit => {
+          // For daily habits, create virtual event for any date
+          if (habit.frequency_type === 'daily') {
+            const isCompleted = habit.completed_dates.includes(dateStr);
+            virtualHabitEvents.push({
+              id: `habit-${habit.id}|${dateStr}`,
+              title: habit.title,
+              date: dateStr,
+              startTime: '09:00',
+              endTime: '09:30',
+              color: habit.color,
+              completed: isCompleted,
+              source: 'habit',
+              habitId: habit.id,
+              description: habit.description,
+              xp_reward: habit.xp_reward,
+              isClickable: isClickable
+            });
+          } else {
+            // For non-daily habits, only show if completed on this date
+            if (habit.completed_dates.includes(dateStr)) {
+              virtualHabitEvents.push({
+                id: `habit-${habit.id}|${dateStr}`,
+                title: habit.title,
+                date: dateStr,
+                startTime: '09:00',
+                endTime: '09:30',
+                color: habit.color,
+                completed: true,
+                source: 'habit',
+                habitId: habit.id,
+                description: habit.description,
+                xp_reward: habit.xp_reward,
+                isClickable: isClickable
+              });
+            }
+          }
         });
-      } else {
-        // For non-daily habits, only show if completed on this date
-        if (habit.completed_dates.includes(dateStr)) {
-          virtualEvents.push({
-            id: `habit-${habit.id}|${dateStr}`,
-            title: habit.title,
-            date: dateStr,
-            startTime: '09:00',
-            endTime: '09:30',
-            color: habit.color,
-            completed: true,
-            source: 'habit',
-            habitId: habit.id,
-            description: habit.description,
-            xp_reward: habit.xp_reward,
-            isClickable: isClickable
-          });
-        }
       }
-    });
+      
+      // Combine and store in map
+      eventsMap[dateStr] = [...realEvents, ...virtualHabitEvents];
+    }
+    
+    return eventsMap;
+  }, [currentDate, events, habits]);
 
-    return virtualEvents;
-  };
-
-  const getEventsForDate = (date) => {
+  // Helper function to get events from the memoized map
+  const getEventsForDateOptimized = (date) => {
     if (!date) return [];
     const dateStr = date.toISOString().split('T')[0];
-    
-    // Get real events from database
-    const realEvents = events.filter(event => event.date === dateStr);
-    
-    // Get virtual habit events for this date
-    const virtualHabitEvents = getVirtualHabitEvents(date);
-    
-    // Combine real events with virtual habit events
-    return [...realEvents, ...virtualHabitEvents];
+    return monthlyEventsMap[dateStr] || [];
   };
 
-  // Calculate events for the selected day using virtual events
-  const selectedDayEvents = getEventsForDate(selectedDay);
+  // Calculate events for the selected day using optimized lookup
+  const selectedDayEvents = useMemo(() => {
+    if (!selectedDay) return [];
+    const dateStr = selectedDay.toISOString().split('T')[0];
+    return monthlyEventsMap[dateStr] || [];
+  }, [selectedDay, monthlyEventsMap]);
   const today = new Date();
   const isSelectedToday = selectedDay.toDateString() === today.toDateString();
 
@@ -253,8 +267,13 @@ const CalendarTab = () => {
     setView('day');
   };
 
-  const toggleEventCompletion = async (eventId) => {
+  const toggleEventCompletion = useCallback(async (eventId) => {
     if (!user) return;
+    
+    // Prevent double execution
+    if (isProcessingCompletion.current) {
+      return;
+    }
     
     // Parse the event ID to get habit info (format: habit-{habitId}|{date})
     if (eventId.startsWith('habit-')) {
@@ -278,6 +297,9 @@ const CalendarTab = () => {
         toast.error('You cannot complete habits for future dates.');
         return;
       }
+      
+      // Set processing flag
+      isProcessingCompletion.current = true;
       
       try {
         // Check if habit is already completed for this date
@@ -314,22 +336,88 @@ const CalendarTab = () => {
         } else {
           // Complete the habit
           result = await masteryService.completeHabit(user.id, habitId, fullDateString);
-          if (result.error) throw result.error;
+          
+          // Check for errors first
+          if (result.error) {
+            throw result.error;
+          }
+          
+          // Check if habit was already completed (race condition or state sync issue)
+          if (result.data?.alreadyCompleted) {
+            // Habit was already completed in DB, refresh state and show message
+            toast('Habit already completed for this date', {
+              icon: 'ℹ️',
+              duration: 3000,
+              style: {
+                background: 'rgba(30, 41, 59, 0.95)',
+                color: '#fff',
+                border: '1px solid rgba(59, 130, 246, 0.35)',
+                borderRadius: '12px',
+                padding: '14px 18px',
+                fontSize: '13px',
+                fontWeight: 500,
+              },
+            });
+            
+            // Refresh habits to sync with DB
+            const { data: userHabits } = await masteryService.getUserHabits(user.id);
+            if (userHabits) {
+              const viewedYear = currentDate.getFullYear();
+              const viewedMonth = currentDate.getMonth();
+              const firstDayOfMonth = new Date(viewedYear, viewedMonth, 1);
+              const lastDayOfMonth = new Date(viewedYear, viewedMonth + 1, 0);
+              
+              const transformedHabits = await Promise.all(
+                userHabits.map(async (h) => {
+                  const { data: completions } = await masteryService.getHabitCompletions(
+                    user.id,
+                    h.id,
+                    firstDayOfMonth.toISOString().split('T')[0],
+                    lastDayOfMonth.toISOString().split('T')[0]
+                  );
+                  const { data: streak } = await masteryService.calculateHabitStreak(user.id, h.id);
+                  const completedDates = (completions || []).map(c => c.completed_at.split('T')[0]);
+                  const todayString = new Date().toISOString().split('T')[0];
+                  
+                  return {
+                    ...h,
+                    completed_dates: completedDates,
+                    completed_today: completedDates.includes(todayString),
+                    streak: streak || 0,
+                    color: getHabitColor(h.title)
+                  };
+                })
+              );
+              setHabits(transformedHabits);
+            }
+            return; // Exit early, don't show completion popup
+          }
           
           // Get habit details including skill tags for popup
+          // First get the habit to check if habit_id exists before joining with habits_library
           const { data: habitDetails } = await supabase
             .from('user_habits')
-            .select(`
-              title,
-              xp_reward,
-              habits_library (
-                skill_tags
-              )
-            `)
+            .select('title, xp_reward, habit_id')
             .eq('id', habitId)
-            .single();
+            .maybeSingle();
           
-          const skillTags = habitDetails?.habits_library?.skill_tags || [];
+          // Get skill tags only if habit_id is not null
+          let skillTags = [];
+          if (habitDetails?.habit_id) {
+            const { data: libraryHabit } = await supabase
+              .from('habits_library')
+              .select('skill_tags')
+              .eq('id', habitDetails.habit_id)
+              .maybeSingle();
+            
+            skillTags = libraryHabit?.skill_tags || [];
+          }
+          
+          // Fallback to habit from state if needed
+          if (skillTags.length === 0) {
+            skillTags = habit?.skill_tags || [];
+          }
+          
           const statsPoints = skillTags.length > 0 ? (skillTags.length * 0.1).toFixed(1) : 0;
           
           // Show completion popup with XP and stats
@@ -399,17 +487,22 @@ const CalendarTab = () => {
           }, 500); // Small delay to ensure DB updates are complete
         }
       } catch (error) {
-        setError(error.message);
-        toast.error('Failed to update habit. Please try again.', {
-          duration: 3000,
+        console.error('Error completing habit:', error);
+        const errorMessage = error?.message || error?.toString() || 'Failed to update habit';
+        setError(errorMessage);
+        toast.error(`Failed to complete habit: ${errorMessage}`, {
+          duration: 4000,
           style: {
-          background: 'color-mix(in srgb, var(--color-error, #ef4444) 95%, transparent)',
-          color: '#fff',
+            background: 'color-mix(in srgb, var(--color-error, #ef4444) 95%, transparent)',
+            color: '#fff',
             borderRadius: '12px',
             padding: '14px 18px',
             fontSize: '13px',
           },
         });
+      } finally {
+        // Clear processing flag
+        isProcessingCompletion.current = false;
       }
     } else {
       // Handle regular events (find in events array)
@@ -420,7 +513,7 @@ const CalendarTab = () => {
         ));
       }
     }
-  };
+  }, [user, habits, events, triggerRefresh, fetchProfile, currentDate]);
 
   const deleteEvent = (eventId) => {
     const event = events.find(e => e.id === eventId);
@@ -440,8 +533,52 @@ const CalendarTab = () => {
     if (!user) return;
     
     try {
-      const { error } = await masteryService.completeHabit(user.id, habitId);
-      if (error) throw error;
+      const result = await masteryService.completeHabit(user.id, habitId);
+      
+      // Check for errors first
+      if (result.error) {
+        throw result.error;
+      }
+      
+      // Check if habit was already completed
+      if (result.data?.alreadyCompleted) {
+        toast('Habit already completed for today', {
+          icon: 'ℹ️',
+          duration: 3000,
+          style: {
+            background: 'rgba(30, 41, 59, 0.95)',
+            color: '#fff',
+            border: '1px solid rgba(59, 130, 246, 0.35)',
+            borderRadius: '12px',
+            padding: '14px 18px',
+            fontSize: '13px',
+            fontWeight: 500,
+          },
+        });
+        // Still update local state to reflect completion
+        setHabits(prevHabits => 
+          prevHabits.map(habit => {
+            if (habit.id === habitId) {
+              const todayString = new Date().toISOString().split('T')[0];
+              const updatedCompletedDates = [...habit.completed_dates];
+              
+              // Add today's completion if not already present
+              if (!updatedCompletedDates.includes(todayString)) {
+                updatedCompletedDates.push(todayString);
+              }
+              
+              return {
+                ...habit,
+                completed_dates: updatedCompletedDates,
+                completed_today: true,
+                streak: (habit.streak || 0) + 1
+              };
+            }
+            return habit;
+          })
+        );
+        return;
+      }
 
       // Update the specific habit in our habits state (virtual calendar approach)
       setHabits(prevHabits => 
@@ -469,7 +606,19 @@ const CalendarTab = () => {
       // Trigger refresh to update other tabs
       triggerRefresh();
     } catch (error) {
-      setError(error.message);
+      console.error('Error adding habit completion:', error);
+      const errorMessage = error?.message || error?.toString() || 'Failed to complete habit';
+      setError(errorMessage);
+      toast.error(`Failed to complete habit: ${errorMessage}`, {
+        duration: 4000,
+        style: {
+          background: 'color-mix(in srgb, var(--color-error, #ef4444) 95%, transparent)',
+          color: '#fff',
+          borderRadius: '12px',
+          padding: '14px 18px',
+          fontSize: '13px',
+        },
+      });
     }
   };
 
@@ -622,7 +771,7 @@ const CalendarTab = () => {
           
           <div className="grid grid-cols-7">
             {days.map((day, index) => {
-              const dayEvents = getEventsForDate(day);
+              const dayEvents = getEventsForDateOptimized(day);
               const isToday = day && day.toDateString() === new Date().toDateString();
               const isCurrentMonth = day && day.getMonth() === currentDate.getMonth();
               
@@ -650,7 +799,12 @@ const CalendarTab = () => {
                             style={{
                               backgroundColor: event.completed ? `${event.color}60` : `${event.color}`,
                             }}
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (event.source === 'habit' && !isProcessingCompletion.current) {
+                                toggleEventCompletion(event.id);
+                              }
+                            }}
                           >
                             <div className={`font-medium truncate ${event.completed ? 'line-through' : ''} text-white`}>
                               {event.title}
@@ -658,6 +812,28 @@ const CalendarTab = () => {
                             <div className="text-[9px] sm:text-xs text-white/80">
                               +{event.xp_reward} XP
                             </div>
+                            {event.source === 'habit' && (
+                              <div className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    if (!isProcessingCompletion.current) {
+                                      toggleEventCompletion(event.id);
+                                    }
+                                  }}
+                                  className={`p-0.5 rounded text-[8px] ${
+                                    event.completed 
+                                      ? 'bg-yellow-500 hover:bg-yellow-600 text-white' 
+                                      : 'bg-green-500 hover:bg-green-600 text-white'
+                                  }`}
+                                  aria-label={event.completed ? `Mark ${event.title} as incomplete` : `Mark ${event.title} as complete`}
+                                  title={event.completed ? 'Mark as incomplete' : 'Mark as complete'}
+                                >
+                                  <CheckCircle size={10} aria-hidden="true" />
+                                </button>
+                              </div>
+                            )}
                           </div>
                         ))}
                         {dayEvents.length > 2 && (
@@ -697,7 +873,7 @@ const CalendarTab = () => {
           
           <div className="grid grid-cols-7 min-h-[400px]">
             {getWeekDays(currentDate).map((day, index) => {
-              const dayEvents = getEventsForDate(day);
+              const dayEvents = getEventsForDateOptimized(day);
               const isToday = day.toDateString() === new Date().toDateString();
               
               return (
@@ -715,7 +891,11 @@ const CalendarTab = () => {
                           backgroundColor: event.completed ? `${event.color}40` : event.color,
                           borderLeft: `3px solid ${event.color}`
                         }}
-                        onClick={() => event.source !== 'habit' && {}}
+                        onClick={(e) => {
+                          if (event.source === 'habit' && !isProcessingCompletion.current) {
+                            toggleEventCompletion(event.id);
+                          }
+                        }}
                       >
                         <div className="flex items-center space-x-1">
                           {event.source === 'habit' && (
@@ -737,7 +917,10 @@ const CalendarTab = () => {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              toggleEventCompletion(event.id);
+                              e.preventDefault();
+                              if (!isProcessingCompletion.current) {
+                                toggleEventCompletion(event.id);
+                              }
                             }}
                             className={`p-1 rounded text-xs ${
                               event.completed 
@@ -941,7 +1124,10 @@ const CalendarTab = () => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            toggleEventCompletion(event.id);
+                            e.preventDefault();
+                            if (!isProcessingCompletion.current) {
+                              toggleEventCompletion(event.id);
+                            }
                           }}
                           className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors border ${
                             event.completed 
@@ -1019,7 +1205,7 @@ const CalendarTab = () => {
               {getDaysInMonth(currentDate).map((day, index) => {
                 const isToday = day && day.toDateString() === new Date().toDateString();
                 const isSelected = day && day.toDateString() === selectedDay.toDateString();
-                const hasEvents = day && getEventsForDate(day).length > 0;
+                const hasEvents = day && getEventsForDateOptimized(day).length > 0;
                 
                 return (
                   <button
@@ -1097,8 +1283,39 @@ const CalendarTab = () => {
 
       {/* Completion Popup */}
       {completionPopup && createPortal(
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto" style={{ width: '100vw', height: '100vh' }}>
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl my-auto" style={{ maxHeight: 'calc(100vh - 40px)' }}>
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center overflow-y-auto" 
+          style={{ 
+            width: '100vw', 
+            height: '100vh', 
+            zIndex: 9999,
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setCompletionPopup(null);
+            }
+          }}
+        >
+          <div 
+            className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl relative" 
+            style={{ maxHeight: 'calc(100vh - 40px)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setCompletionPopup(null)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              aria-label="Close modal"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
             <div className="text-center">
               {completionPopup.action === 'completed' ? (
                 <>

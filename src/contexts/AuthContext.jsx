@@ -76,6 +76,22 @@ export const AuthProvider = ({ children }) => {
 
       logDebug('✅ createDefaultProfile: Profile created successfully:', data)
       setProfile(data)
+      
+      // Check if we've already sent welcome email for this user in this session
+      const welcomeEmailSentKey = `welcome_email_sent_${userId}`
+      const alreadySent = sessionStorage.getItem(welcomeEmailSentKey)
+      
+      if (!alreadySent) {
+        // Mark as sent to avoid duplicate emails
+        sessionStorage.setItem(welcomeEmailSentKey, 'true')
+        // Send welcome email for new OAuth users (non-blocking)
+        sendWelcomeEmailForNewUser(user.email, user.user_metadata?.full_name || user.email?.split('@')[0] || 'there')
+          .catch(err => {
+            logDebug('Welcome email send failed (non-critical):', err)
+          })
+      } else {
+        logDebug('📧 createDefaultProfile: Welcome email already sent for this user in this session')
+      }
     } catch (error) {
       logError(error, 'createDefaultProfile - Exception')
       setProfile(null)
@@ -203,6 +219,33 @@ export const AuthProvider = ({ children }) => {
       logDebug('✅ fetchProfile: Profile fetched successfully:', data)
       setProfile(data)
       
+      // Check if this is a new profile (created in the last 30 seconds)
+      // This helps detect new OAuth users who just signed up
+      if (data?.created_at) {
+        const createdAt = new Date(data.created_at)
+        const now = new Date()
+        const secondsSinceCreation = (now - createdAt) / 1000
+        
+        if (secondsSinceCreation < 30) {
+          // Check if we've already sent welcome email for this user in this session
+          const welcomeEmailSentKey = `welcome_email_sent_${userId}`
+          const alreadySent = sessionStorage.getItem(welcomeEmailSentKey)
+          
+          if (!alreadySent) {
+            logDebug('🆕 fetchProfile: New profile detected (created', secondsSinceCreation.toFixed(1), 'seconds ago)')
+            // Mark as sent to avoid duplicate emails
+            sessionStorage.setItem(welcomeEmailSentKey, 'true')
+            // This is a new profile, send welcome email (non-blocking)
+            sendWelcomeEmailForNewUser(data.email, data.full_name || data.email?.split('@')[0] || 'there')
+              .catch(err => {
+                logDebug('Welcome email send failed (non-critical):', err)
+              })
+          } else {
+            logDebug('📧 fetchProfile: Welcome email already sent for this user in this session')
+          }
+        }
+      }
+      
       // Cache the profile if cache is available
       if (dataCache && data) {
         dataCache.setCached(`profile_${userId}`, data, 300000) // 5 minute TTL
@@ -328,6 +371,16 @@ export const AuthProvider = ({ children }) => {
           setProfile(null)
           isInitializedRef.current = false
           setLoading(false)
+          // Clear welcome email flags from sessionStorage
+          try {
+            Object.keys(sessionStorage).forEach(key => {
+              if (key.startsWith('welcome_email_sent_')) {
+                sessionStorage.removeItem(key)
+              }
+            })
+          } catch (e) {
+            // Ignore errors when clearing sessionStorage
+          }
           return
         }
         
@@ -610,11 +663,61 @@ export const AuthProvider = ({ children }) => {
       logDebug('✅ signInWithGoogle: OAuth flow initiated successfully')
       // Note: The user will be redirected to Google, then back to the app
       // The auth state change listener will handle the rest
+      // Welcome email will be sent if it's a new user (detected in fetchProfile)
       return { data, error: null }
     } catch (error) {
       logError(error, 'Sign in with Google error')
       toast.error(error.message || 'Failed to sign in with Google')
       return { data: null, error }
+    }
+  }
+
+  // Helper function to send welcome email for new users (OAuth or regular signup)
+  const sendWelcomeEmailForNewUser = async (email, userName) => {
+    if (!email) {
+      logWarn('sendWelcomeEmailForNewUser: No email provided')
+      return
+    }
+
+    try {
+      logDebug('📧 sendWelcomeEmailForNewUser: Sending welcome email to:', email)
+      
+      const response = await fetch('/api/send-signup-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          userName: userName || 'there'
+        }),
+        signal: AbortSignal.timeout(10000) // 10 second timeout
+      })
+
+      if (!response.ok) {
+        if (response.status === 503) {
+          logDebug('Email service not available (503)')
+        } else {
+          const errorData = await response.json().catch(() => ({ error: 'Failed to send email' }))
+          logWarn('Failed to send welcome email:', errorData)
+        }
+      } else {
+        const result = await response.json()
+        if (result.success) {
+          logDebug('✅ Welcome email sent successfully')
+        } else {
+          logWarn('Welcome email send returned success: false:', result)
+        }
+      }
+    } catch (fetchError) {
+      // Network errors are OK - email is non-critical
+      if (fetchError.name === 'AbortError' || fetchError.message?.includes('timeout')) {
+        logDebug('Welcome email request timed out (non-critical)')
+      } else if (fetchError.message?.includes('Failed to fetch') || fetchError.message?.includes('NetworkError')) {
+        logDebug('Network error sending welcome email (non-critical)')
+      } else {
+        logWarn('Error sending welcome email (non-critical):', fetchError)
+      }
     }
   }
 

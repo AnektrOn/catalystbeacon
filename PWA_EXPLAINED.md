@@ -58,7 +58,7 @@ Sur **iOS** :
 
 Comme une vraie app, avec :
 - Une icône (votre logo)
-- Un nom ("HC University")
+- Un nom ("HC Beacon")
 - S'ouvre en plein écran (sans barre d'adresse)
 
 ---
@@ -91,8 +91,8 @@ En regardant votre code, vous avez **déjà** :
 ### Votre manifest.json actuel :
 ```json
 {
-  "short_name": "HC University",
-  "name": "The Human Catalyst University",
+  "short_name": "HC Beacon",
+  "name": "The Human Catalyst Beacon",
   "icons": [...],
   "start_url": "/",
   "display": "standalone",  // ✅ S'ouvre comme une app

@@ -18,7 +18,7 @@
 - **User**: Votre adresse email professionnelle
 - **Password**: Votre mot de passe (ou App Password pour Gmail)
 - **From Email**: `noreply@humancatalystbeacon.com` (ou votre email)
-- **From Name**: `The Human Catalyst University`
+- **From Name**: `The Human Catalyst Beacon`
 
 **Exemples de Configuration** :
 
@@ -78,7 +78,7 @@ Au lieu d'utiliser le **SendGrid Node**, utilisez le **SMTP Node** :
 3. Configurez :
    - **Credential**: Sélectionnez votre credential SMTP créé à l'étape 1
    - **From Email**: `{{ $env.FROM_EMAIL || 'noreply@humancatalystbeacon.com' }}`
-   - **From Name**: `{{ $env.FROM_NAME || 'The Human Catalyst University' }}`
+   - **From Name**: `{{ $env.FROM_NAME || 'The Human Catalyst Beacon' }}`
    - **To Email**: `{{ $json.to }}`
    - **Subject**: `{{ $json.subject }}`
    - **Email Type**: `HTML`
@@ -97,9 +97,9 @@ Dans N8N Cloud, vous pouvez ajouter des variables d'environnement :
 1. Allez dans **Settings** → **Environment Variables**
 2. Ajoutez :
    - `FROM_EMAIL`: `noreply@humancatalystbeacon.com`
-   - `FROM_NAME`: `The Human Catalyst University`
+   - `FROM_NAME`: `The Human Catalyst Beacon`
    - `SITE_URL`: `https://humancatalystbeacon.com`
-   - `SITE_NAME`: `The Human Catalyst University`
+   - `SITE_NAME`: `The Human Catalyst Beacon`
 
 Ces variables seront accessibles dans les templates via `$env.FROM_EMAIL`
 

@@ -32,26 +32,42 @@ class MasteryService {
       const from = (page - 1) * limit;
       const to = from + limit - 1;
 
-      const { data, error, count } = await supabase
+      // First get user habits without join to avoid errors when habit_id is null
+      const { data: userHabits, error: habitsError, count } = await supabase
         .from('user_habits')
-        .select(`
-          *,
-          habits_library (
-            title,
-            description,
-            category,
-            skill_tags,
-            xp_reward
-          )
-        `, { count: 'exact' })
+        .select('*', { count: 'exact' })
         .eq('user_id', userId)
         .eq('is_active', true)
         .order('created_at', { ascending: false })
         .range(from, to);
 
-      if (error) throw error;
+      if (habitsError) throw habitsError;
+
+      // Get habits_library data only for habits that have a habit_id
+      const habitIds = userHabits
+        .map(h => h.habit_id)
+        .filter(id => id !== null);
+
+      let libraryMap = new Map();
+      if (habitIds.length > 0) {
+        const { data: libraryHabits } = await supabase
+          .from('habits_library')
+          .select('id, title, description, category, skill_tags, xp_reward')
+          .in('id', habitIds);
+
+        if (libraryHabits) {
+          libraryMap = new Map(libraryHabits.map(h => [h.id, h]));
+        }
+      }
+
+      // Merge library data with user habits
+      const mergedData = userHabits.map(habit => ({
+        ...habit,
+        habits_library: habit.habit_id ? libraryMap.get(habit.habit_id) || null : null
+      }));
+
       return {
-        data,
+        data: mergedData,
         error: null,
         pagination: {
           page,
@@ -177,20 +193,26 @@ class MasteryService {
         return { data: { alreadyCompleted: true }, error: null };
       }
 
-      // Get habit details for XP reward and skill_tags
+      // Get habit details for XP reward and habit_id (without join to avoid null errors)
       const { data: habit, error: habitError } = await supabase
         .from('user_habits')
-        .select(`
-          xp_reward,
-          habit_id,
-          habits_library (
-            skill_tags
-          )
-        `)
+        .select('xp_reward, habit_id')
         .eq('id', habitId)
         .single();
 
       if (habitError) throw habitError;
+
+      // Get skill tags only if habit_id is not null
+      let skillTags = [];
+      if (habit.habit_id) {
+        const { data: libraryHabit } = await supabase
+          .from('habits_library')
+          .select('skill_tags')
+          .eq('id', habit.habit_id)
+          .maybeSingle();
+        
+        skillTags = libraryHabit?.skill_tags || [];
+      }
 
       // Create completion record
       const { data, error } = await supabase
@@ -212,8 +234,7 @@ class MasteryService {
       // Award XP to user
       await this.awardXP(userId, habit.xp_reward, 'habit_completion', `Completed habit: ${habitId}`);
 
-      // Award skill points (0.1 per skill)
-      const skillTags = habit.habits_library?.skill_tags || [];
+      // Award skill points (0.1 per skill) - skillTags already retrieved above
       if (skillTags.length > 0) {
         logDebug(`🎯 Awarding 0.1 skill points to ${skillTags.length} skills`);
         await skillsService.awardSkillPoints(userId, skillTags, 0.1);
@@ -351,27 +372,29 @@ class MasteryService {
     try {
       const { data, error } = await supabase
         .from('user_habit_completions')
-        .select('id, completed_at')
-        .eq('habit_id', habitId)
-        .order('completed_at', { ascending: false });
+        .select('id', { count: 'exact', head: false })
+        .eq('habit_id', habitId);
 
       if (error) throw error;
 
       const completionCount = data?.length || 0;
-      const lastCompleted = data?.[0]?.completed_at || null;
 
+      // Only update completion_count, not last_completed_at (column doesn't exist)
       const { error: updateError } = await supabase
         .from('user_habits')
         .update({
-          completion_count: completionCount,
-          last_completed_at: lastCompleted
+          completion_count: completionCount
         })
         .eq('id', habitId);
 
-      if (updateError) throw updateError;
-      return { data: { completionCount, lastCompleted }, error: null };
+      if (updateError) {
+        // Log but don't throw - this is a non-critical update
+        logWarn(updateError, 'masteryService - Could not update habit completion count');
+      }
+      return { data: { completionCount }, error: null };
     } catch (error) {
       logError(error, 'masteryService - Error updating habit completion count');
+      // Don't throw - this is a non-critical operation
       return { data: null, error };
     }
   }
@@ -706,13 +729,13 @@ class MasteryService {
       }
 
       // Item doesn't exist, create it
+      // Note: show_on_calendar column doesn't exist in user_toolbox_items table
       const { data, error } = await supabase
         .from('user_toolbox_items')
         .insert({
           user_id: userId,
           toolbox_id: toolboxId,
-          is_active: true,
-          show_on_calendar: true // Default to showing on calendar
+          is_active: true
         })
         .select()
         .single();

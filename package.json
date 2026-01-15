@@ -61,6 +61,7 @@
     "test:full": "node scripts/masterTestRunner.js",
     "test:deep": "node scripts/deepInspection.js",
     "test:check": "node scripts/checkAppRunning.js",
+    "screenshots": "node scripts/generate-screenshots.js",
     "eject": "react-scripts eject",
     "lint": "eslint src --ext .js,.jsx",
     "lint:fix": "eslint src --ext .js,.jsx --fix"

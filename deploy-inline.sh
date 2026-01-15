@@ -9,7 +9,7 @@ set -e
 APP_DIR=~/domains/humancatalystbeacon.com/public_html/app
 ROOT_DIR=~/domains/humancatalystbeacon.com/public_html
 
-echo "🚀 Deploying HC University..."
+echo "🚀 Deploying HC Beacon..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 cd $APP_DIR

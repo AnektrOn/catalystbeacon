@@ -13,7 +13,7 @@ const SMTP_USER = process.env.SMTP_USER
 const SMTP_PASS = process.env.SMTP_PASS
 
 // Site configuration
-const SITE_NAME = process.env.SITE_NAME || 'The Human Catalyst University'
+const SITE_NAME = process.env.SITE_NAME || 'The Human Catalyst Beacon'
 const SITE_URL = process.env.SITE_URL || 'https://app.humancatalystbeacon.com'
 const FROM_EMAIL = process.env.FROM_EMAIL || SMTP_USER || 'noreply@humancatalystbeacon.com'
 const FROM_NAME = process.env.FROM_NAME || SITE_NAME

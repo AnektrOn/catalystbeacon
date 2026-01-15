@@ -137,7 +137,7 @@ const CosmicLoader = ({ fullScreen = true, message = "Loading your journey..." }
           {/* Logo */}
           <img 
             src="/hc-logo.svg" 
-            alt="HC University" 
+            alt="HC Beacon" 
             className="relative w-32 h-32 object-contain"
             style={{
               filter: 'drop-shadow(0 0 30px rgba(16, 185, 129, 0.5))',

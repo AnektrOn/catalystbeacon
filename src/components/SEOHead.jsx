@@ -5,7 +5,7 @@ import { useEffect } from 'react'
  * Usage: <SEOHead title="Page Title" description="Page description" />
  */
 const SEOHead = ({ 
-  title = 'The Human Catalyst University',
+  title = 'The Human Catalyst Beacon',
   description = 'Transform Your Mind, Transform Your Life - Online learning platform for personal development and mastery',
   keywords = 'personal development, online learning, transformation, mastery, self-improvement',
   image = '/logo512.png',

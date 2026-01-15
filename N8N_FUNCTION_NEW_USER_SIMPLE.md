@@ -18,7 +18,7 @@ Copiez ce code dans un **Function Node** après le Switch Node (branche "new-use
 // Sign Up Email Template - Version Corrigée
 const emailData = $input.item.json;
 const siteUrl = $env.SITE_URL || 'https://app.humancatalystbeacon.com';
-const siteName = $env.SITE_NAME || 'The Human Catalyst University';
+const siteName = $env.SITE_NAME || 'The Human Catalyst Beacon';
 
 // Construire le HTML avec concaténation
 const userName = emailData.userName || 'there';
@@ -45,7 +45,7 @@ const html = '<!DOCTYPE html>' +
                 '<tr><td style="height: 2px; background: linear-gradient(90deg, #050508, #a5f3fc, #a78bfa, #050508);">&nbsp;</td></tr>' +
                 '<tr><td align="center" style="padding: 40px 0 20px 0;">' +
                     '<div style="font-family: \'Cinzel\', serif; font-size: 28px; font-weight: 600; letter-spacing: 4px; color: #ffffff;">' +
-                        'HC <span style="color: #a5f3fc;">UNIVERSITY</span>' +
+                        'HC <span style="color: #a5f3fc;">BEACON</span>' +
                     '</div>' +
                     '<div style="font-family: \'Rajdhani\', sans-serif; font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 3px; margin-top: 8px;">The Catalyst Path</div>' +
                 '</td></tr>' +
@@ -105,7 +105,7 @@ const html = '<!DOCTYPE html>' +
                 '<tr><td style="background-color: rgba(255, 255, 255, 0.02); padding: 30px; border-top: 1px solid rgba(255, 255, 255, 0.05);">' +
                     '<table width="100%" cellpadding="0" cellspacing="0" border="0">' +
                         '<tr><td align="center" style="color: #6b7280; font-size: 11px; font-family: \'Rajdhani\', Arial, sans-serif;">' +
-                            '<p style="margin: 0 0 10px 0;">HC University &copy; 2024. The Awakening.</p>' +
+                            '<p style="margin: 0 0 10px 0;">HC Beacon &copy; 2024. The Awakening.</p>' +
                             '<p style="margin: 0;">' +
                                 '<a href="' + siteUrl + '/unsubscribe?email=' + encodeURIComponent(userEmail) + '" style="color: #6b7280; text-decoration: underline;">Unsubscribe</a> &nbsp;•&nbsp; ' +
                                 '<a href="' + siteUrl + '/support" style="color: #6b7280; text-decoration: underline;">Guide</a>' +

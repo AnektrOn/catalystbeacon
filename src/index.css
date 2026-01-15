@@ -234,109 +234,57 @@
   
   /* ============================================
      HIÉRARCHIE TYPOGRAPHIQUE STRICTE
-     Police Cinzel préservée - Amélioration uniquement via taille, poids, couleurs
+     Respect de la vision HC: Rajdhani par défaut, Cinzel pour l'accentuation
      ============================================ */
   
-  /* Body Text - Cinzel Regular, Couleur muted pour réduire charge cognitive */
-  body, p, li, span, div:not([class*="heading"]):not([class*="title"]):not([class*="meta"]) {
-    font-family: 'Cinzel', serif !important;
-    font-size: 1rem !important; /* 16px - base lisible */
-    line-height: 1.75 !important; /* relaxed pour lisibilité */
-    font-weight: 400 !important; /* Regular */
-    color: hsl(var(--muted-foreground)) !important; /* Gris adouci - réduit charge cognitive */
+  /* Body Text - Rajdhani par défaut */
+  body, p, li, span:not([class*="text-"]), div:not([class*="font-cinzel"]):not([class*="title"]):not([class*="meta"]):not([class*="text-"]) {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1rem; /* 16px - base lisible */
+    line-height: 1.75; /* relaxed pour lisibilité */
+    font-weight: 400;
+    color: hsl(var(--muted-foreground)); 
     text-rendering: optimizeLegibility;
-    -webkit-font-feature-settings: "kern" 1;
-    font-feature-settings: "kern" 1;
   }
   
-  /* H1 - Élégant, UPPERCASE avec tracking raffiné, Bold, Couleur principale, Marges généreuses */
+  /* H1 - Rajdhani par défaut pour correspondre au nouveau Hero */
   h1 {
-    font-family: 'Cinzel', serif !important;
-    font-size: 2.25rem !important; /* 36px - élégant, pas massif */
-    line-height: 1.2 !important;
-    font-weight: 700 !important; /* Bold - prestance sans exagération */
-    letter-spacing: 0.08em !important; /* tracking raffiné pour UPPERCASE élégant */
-    text-transform: uppercase !important; /* UPPERCASE pour prestance */
-    color: hsl(var(--foreground)) !important; /* Couleur principale (100% visible) */
-    margin-top: 2.5rem !important; /* 40px - marge généreuse au-dessus */
-    margin-bottom: 1rem !important; /* 16px - petite marge en-dessous */
+    font-family: 'Rajdhani', sans-serif;
+    line-height: 1.1;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: hsl(var(--foreground));
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
     text-rendering: optimizeLegibility;
   }
   
-  /* H2 - Medium, Bold, Couleur principale, Marges généreuses */
-  h2 {
-    font-family: 'Cinzel', serif !important;
-    font-size: 1.75rem !important; /* 28px */
-    line-height: 1.3 !important;
-    font-weight: 700 !important; /* Bold */
-    letter-spacing: 0 !important;
-    color: hsl(var(--foreground)) !important; /* Couleur principale (100% visible) */
-    margin-top: 2rem !important; /* 32px - marge généreuse au-dessus */
-    margin-bottom: 0.75rem !important; /* 12px - petite marge en-dessous */
+  /* H2, H3 - Rajdhani par défaut */
+  h2, h3, h4, h5, h6 {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    color: hsl(var(--foreground));
     text-rendering: optimizeLegibility;
   }
-  
-  /* H3 - Medium, SemiBold, Couleur accent/primary pour attirer l'œil */
-  h3 {
+
+  /* Classes utilitaires spécifiques pour forcer Cinzel */
+  .font-cinzel {
     font-family: 'Cinzel', serif !important;
-    font-size: 1.5rem !important; /* 24px */
-    line-height: 1.4 !important;
-    font-weight: 600 !important; /* SemiBold */
-    letter-spacing: 0 !important;
-    color: hsl(var(--primary)) !important; /* Couleur accent/primary - attire l'œil sans grossir */
-    margin-top: 1.5rem !important; /* 24px - marge généreuse au-dessus */
-    margin-bottom: 0.75rem !important; /* 12px - petite marge en-dessous */
-    text-rendering: optimizeLegibility;
+  }
+
+  .font-rajdhani {
+    font-family: 'Rajdhani', sans-serif !important;
   }
   
-  /* H4 - Medium, SemiBold, Couleur accent */
-  h4 {
-    font-family: 'Cinzel', serif !important;
-    font-size: 1.375rem !important; /* 22px */
-    line-height: 1.4 !important;
-    font-weight: 600 !important; /* SemiBold */
-    letter-spacing: 0 !important;
-    color: hsl(var(--primary)) !important; /* Couleur accent */
-    margin-top: 1.25rem !important; /* 20px - marge au-dessus */
-    margin-bottom: 0.5rem !important; /* 8px - petite marge en-dessous */
-    text-rendering: optimizeLegibility;
-  }
-  
-  /* H5 - Medium-Small, SemiBold */
-  h5 {
-    font-family: 'Cinzel', serif !important;
-    font-size: 1.25rem !important; /* 20px */
-    line-height: 1.5 !important;
-    font-weight: 600 !important; /* SemiBold */
-    letter-spacing: 0 !important;
-    color: hsl(var(--foreground)) !important; /* Couleur principale */
-    margin-top: 1rem !important; /* 16px - marge au-dessus */
-    margin-bottom: 0.5rem !important; /* 8px - petite marge en-dessous */
-    text-rendering: optimizeLegibility;
-  }
-  
-  /* H6 - Small heading, SemiBold */
-  h6 {
-    font-family: 'Cinzel', serif !important;
-    font-size: 1.125rem !important; /* 18px */
-    line-height: 1.5 !important;
-    font-weight: 600 !important; /* SemiBold */
-    letter-spacing: 0.05em !important;
-    color: hsl(var(--foreground)) !important; /* Couleur principale */
-    margin-top: 0.75rem !important; /* 12px - marge au-dessus */
-    margin-bottom: 0.5rem !important; /* 8px - petite marge en-dessous */
-    text-rendering: optimizeLegibility;
-  }
-  
-  /* Meta-data - Dates, Auteurs, etc. - Cinzel mais petit et uppercase */
+  /* Meta-data - Rajdhani mais petit et uppercase */
   .meta-text, [class*="meta"], time, .text-meta {
-    font-family: 'Cinzel', serif !important;
-    font-size: 0.75rem !important; /* 12px */
-    line-height: 1.5 !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.1em !important; /* wide tracking */
-    text-transform: uppercase !important;
-    color: hsl(var(--muted-foreground) / 0.8) !important; /* Gris sombre/muted */
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: hsl(var(--muted-foreground) / 0.8);
   }
   
   /* Fix for button text rendering - prevent letter spacing issues */
@@ -358,65 +306,19 @@
 
   /* Dark mode text colors are now set by colorPaletteSwitcher */
   
-  /* Prose styles pour le contenu de cours (avec @tailwindcss/typography) - Cinzel préservé, Approche Raffinée */
+  /* Prose styles pour le contenu de cours (avec @tailwindcss/typography) - Rajdhani par défaut */
   .prose {
-    font-family: 'Cinzel', serif !important;
-    color: hsl(var(--muted-foreground)) !important;
+    font-family: 'Rajdhani', sans-serif;
+    color: hsl(var(--muted-foreground));
   }
   
-  .prose h1 {
-    font-family: 'Cinzel', serif !important;
-    font-size: 2.25rem !important; /* 36px - élégant */
-    line-height: 1.2 !important;
-    font-weight: 700 !important; /* Bold */
-    letter-spacing: 0.08em !important; /* tracking raffiné pour UPPERCASE élégant */
-    text-transform: uppercase !important; /* UPPERCASE pour prestance */
-    color: hsl(var(--foreground)) !important; /* Couleur principale (100% visible) */
-    margin-top: 2.5rem !important; /* 40px - marge généreuse */
-    margin-bottom: 1rem !important; /* 16px - petite marge */
+  .prose h1, .prose h2, .prose h3, .prose h4 {
+    font-family: 'Rajdhani', sans-serif;
+    color: hsl(var(--foreground));
   }
   
-  .prose h2 {
-    font-family: 'Cinzel', serif !important;
-    font-size: 1.75rem !important; /* 28px */
-    line-height: 1.3 !important;
-    font-weight: 700 !important; /* Bold */
-    letter-spacing: 0 !important;
-    color: hsl(var(--foreground)) !important; /* Couleur principale (100% visible) */
-    margin-top: 2rem !important; /* 32px - marge généreuse */
-    margin-bottom: 0.75rem !important; /* 12px - petite marge */
-  }
-  
-  .prose h3 {
-    font-family: 'Cinzel', serif !important;
-    font-size: 1.5rem !important; /* 24px */
-    line-height: 1.4 !important;
-    font-weight: 600 !important; /* SemiBold */
-    letter-spacing: 0 !important;
-    color: hsl(var(--primary)) !important; /* Couleur accent - attire l'œil */
-    margin-top: 1.5rem !important; /* 24px - marge généreuse */
-    margin-bottom: 0.75rem !important; /* 12px - petite marge */
-  }
-  
-  .prose p {
-    font-family: 'Cinzel', serif !important;
-    font-size: 1rem !important; /* 16px - lisible */
-    line-height: 1.75 !important;
-    font-weight: 400 !important; /* Regular */
-    color: hsl(var(--muted-foreground)) !important; /* Gris adouci - réduit charge cognitive */
-    margin-bottom: 1.25rem !important;
-  }
-  
-  .prose ul, .prose ol {
-    font-family: 'Cinzel', serif !important;
-    font-size: 1rem !important; /* 16px */
-    line-height: 1.75 !important;
-    color: hsl(var(--muted-foreground)) !important; /* Gris adouci */
-    margin-bottom: 1.25rem !important;
-  }
-  
-  .prose li {
-    margin-bottom: 0.5rem !important;
+  .prose p, .prose ul, .prose ol, .prose li {
+    font-family: 'Rajdhani', sans-serif;
   }
   
   .prose strong {
@@ -575,12 +477,10 @@
   background: rgba(255, 255, 255, 0.3);
 }
 
-  /* Buttons, inputs, and form elements - Cinzel préservé */
+  /* Buttons, inputs, and form elements - Rajdhani par défaut */
   button, input, select, textarea, label, legend {
-    font-family: 'Cinzel', serif !important;
+    font-family: 'Rajdhani', sans-serif !important;
     text-rendering: optimizeLegibility;
-    -webkit-font-feature-settings: "kern" 1;
-    font-feature-settings: "kern" 1;
   }
 
 /* Chart elements - ensure Recharts and SVG text use serif */

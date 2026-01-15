@@ -1,4 +1,4 @@
-# 🚨 HC University - Authentication & Subscription System
+# 🚨 HC Beacon - Authentication & Subscription System
 
 > **⚠️ WARNING: This project has known issues and is NOT ready for production use.**
 

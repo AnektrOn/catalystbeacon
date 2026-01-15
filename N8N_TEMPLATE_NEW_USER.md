@@ -26,7 +26,7 @@ Depuis le Function Node, vous avez accès à :
 - **Subject** : `The Path Is Open. Your Journey Begins.`
 - **Email Type** : `HTML`
 
-### Message HTML (Template Personnalisé HC University)
+### Message HTML (Template Personnalisé HC Beacon)
 
 ```html
 <!DOCTYPE html>
@@ -80,7 +80,7 @@ Depuis le Function Node, vous avez accès à :
                         <td align="center" style="padding: 40px 0 20px 0;">
                             <!-- Logo Text -->
                             <div style="font-family: 'Cinzel', serif; font-size: 28px; font-weight: 600; letter-spacing: 4px; color: #ffffff; text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);">
-                                HC <span style="color: #a5f3fc; text-shadow: 0 0 10px rgba(165, 243, 252, 0.5);">UNIVERSITY</span>
+                                HC <span style="color: #a5f3fc; text-shadow: 0 0 10px rgba(165, 243, 252, 0.5);">BEACON</span>
                             </div>
                             <div style="font-family: 'Rajdhani', sans-serif; font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 3px; margin-top: 8px;">
                                 The Catalyst Path
@@ -192,7 +192,7 @@ Depuis le Function Node, vous avez accès à :
                             <table width="100%" cellpadding="0" cellspacing="0" border="0">
                                 <tr>
                                     <td align="center" style="color: #6b7280; font-size: 11px; font-family: 'Rajdhani', Arial, sans-serif; line-height: 1.6; text-transform: uppercase; letter-spacing: 1px;">
-                                        <p style="margin: 0 0 10px 0;">HC University &copy; 2024. The Awakening.</p>
+                                        <p style="margin: 0 0 10px 0;">HC Beacon &copy; 2024. The Awakening.</p>
                                         <p style="margin: 0;">
                                             <a href="https://votredomaine.com/unsubscribe?email={{ $json.email }}" style="color: #6b7280; text-decoration: underline;">Unsubscribe</a> &nbsp;•&nbsp; 
                                             <a href="https://votredomaine.com/support" style="color: #6b7280; text-decoration: underline;">Guide</a>

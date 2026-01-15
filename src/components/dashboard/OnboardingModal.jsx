@@ -35,7 +35,7 @@ const OnboardingModal = ({ isOpen, onClose }) => {
         </h2>
         
         <p className="text-center text-gray-300 mb-8 leading-relaxed">
-          Your journey at Human Catalyst University begins now. Here's what awaits you in this realm of transformation.
+          Your journey at Human Catalyst Beacon begins now. Here's what awaits you in this realm of transformation.
         </p>
 
         {/* Features Grid */}

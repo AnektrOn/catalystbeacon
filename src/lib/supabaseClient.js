@@ -26,7 +26,7 @@ if (!supabaseInstance) {
   },
   global: {
     headers: {
-      'x-client-info': 'hcuniversity-web'
+      'x-client-info': 'hcbeacon-web'
     }
   },
   db: {

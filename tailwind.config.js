@@ -87,12 +87,14 @@ module.exports = {
         "ethereal-lg": "var(--ethereal-card-radius-large)",
       },
       fontFamily: {
-        sans: ['Cinzel', 'serif'],
+        sans: ['Rajdhani', 'sans-serif'],
         heading: ['Cinzel', 'serif'],
-        body: ['Cinzel', 'serif'],
+        body: ['Rajdhani', 'sans-serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
-        'ethereal-body': ['Cinzel', 'serif'],
+        'ethereal-body': ['Rajdhani', 'sans-serif'],
         'ethereal-heading': ['Cinzel', 'serif'],
+        cinzel: ['Cinzel', 'serif'],
+        rajdhani: ['Rajdhani', 'sans-serif'],
       },
       fontSize: {
         // Design Tokens Typographiques - Approche Raffinée (Contraste par poids/couleurs)

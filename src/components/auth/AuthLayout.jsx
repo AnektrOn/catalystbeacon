@@ -7,7 +7,7 @@ const AuthLayout = ({ children, title, description }) => {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold font-heading text-foreground">
-            The Human Catalyst University
+            The Human Catalyst Beacon
           </h1>
           <p className="text-muted-foreground mt-2">
             Your journey to transformation begins here
@@ -27,7 +27,7 @@ const AuthLayout = ({ children, title, description }) => {
         </Card>
         
         <div className="text-center mt-6 text-sm text-muted-foreground">
-          <p>© 2024 The Human Catalyst University. All rights reserved.</p>
+          <p>© 2024 The Human Catalyst Beacon. All rights reserved.</p>
         </div>
       </div>
     </div>

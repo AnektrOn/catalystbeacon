@@ -152,19 +152,23 @@ const HabitsTabCompact = () => {
 
             // Get skills for this habit from library
             let habitSkills = [];
-            try {
-              const { data: libraryHabit } = await supabase
-                .from('habits_library')
-                .select('skill_tags')
-                .eq('id', habit.habit_id)
-                .single();
-              
-              if (libraryHabit && libraryHabit.skill_tags) {
-                habitSkills = libraryHabit.skill_tags
-                  .map(skillId => skillsMap.get(skillId))
-                  .filter(Boolean);
+            // Only query habits_library if habit_id is not null
+            if (habit.habit_id) {
+              try {
+                const { data: libraryHabit } = await supabase
+                  .from('habits_library')
+                  .select('skill_tags')
+                  .eq('id', habit.habit_id)
+                  .maybeSingle();
+                
+                if (libraryHabit && libraryHabit.skill_tags) {
+                  habitSkills = libraryHabit.skill_tags
+                    .map(skillId => skillsMap.get(skillId))
+                    .filter(Boolean);
+                }
+              } catch (skillError) {
+                // Silently fail if library habit not found
               }
-            } catch (skillError) {
             }
 
             return {

@@ -498,7 +498,7 @@ const CourseCatalogPage = () => {
   return (
     <div className="p-4 lg:p-8 max-w-7xl mx-auto overflow-x-hidden">
       <SEOHead 
-        title="Course Catalog - The Human Catalyst University"
+        title="Course Catalog - The Human Catalyst Beacon"
         description="Browse our comprehensive catalog of transformative courses across Ignition, Insight, Transformation, and God Mode schools"
       />
       <div className="mb-6">

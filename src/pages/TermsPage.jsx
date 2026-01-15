@@ -22,17 +22,17 @@ const TermsPage = () => {
           <section>
             <h2 className="text-2xl font-semibold mb-4">1. Acceptance of Terms</h2>
             <p className="text-muted-foreground">
-              By accessing and using Human Catalyst University, you accept and agree to be bound by the terms and provision of this agreement.
+              By accessing and using Human Catalyst Beacon, you accept and agree to be bound by the terms and provision of this agreement.
             </p>
           </section>
 
           <section>
             <h2 className="text-2xl font-semibold mb-4">2. Use License</h2>
             <p className="text-muted-foreground mb-2">
-              Permission is granted to temporarily access the materials on Human Catalyst University's website for personal, non-commercial transitory viewing only.
+              Permission is granted to temporarily access the materials on Human Catalyst Beacon's website for personal, non-commercial transitory viewing only.
             </p>
             <p className="text-muted-foreground">
-              This license shall automatically terminate if you violate any of these restrictions and may be terminated by Human Catalyst University at any time.
+              This license shall automatically terminate if you violate any of these restrictions and may be terminated by Human Catalyst Beacon at any time.
             </p>
           </section>
 
@@ -51,7 +51,7 @@ const TermsPage = () => {
           <section>
             <h2 className="text-2xl font-semibold mb-4">4. Content and Intellectual Property</h2>
             <p className="text-muted-foreground">
-              All content on this platform, including courses, materials, and resources, is the property of Human Catalyst University and is protected by copyright and other intellectual property laws.
+              All content on this platform, including courses, materials, and resources, is the property of Human Catalyst Beacon and is protected by copyright and other intellectual property laws.
             </p>
           </section>
 
@@ -83,7 +83,7 @@ const TermsPage = () => {
           <section>
             <h2 className="text-2xl font-semibold mb-4">7. Limitation of Liability</h2>
             <p className="text-muted-foreground">
-              Human Catalyst University shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use or inability to use the service.
+              Human Catalyst Beacon shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use or inability to use the service.
             </p>
           </section>
 

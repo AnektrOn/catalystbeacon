@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Target, CheckCircle, Star, Laptop, BookOpen, Dumbbell, Flame, Trash2 } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Plus, Target, CheckCircle, Star, Laptop, BookOpen, Dumbbell, Flame, Trash2, X } from 'lucide-react';
 import masteryService from '../../services/masteryService';
 import { useAuth } from '../../contexts/AuthContext';
 import { handleError } from '../../utils/errorHandler';
@@ -86,6 +87,8 @@ const HabitsTab = () => {
     frequency_type: 'daily',
     xp_reward: 10
   });
+  const [confirmAddHabit, setConfirmAddHabit] = useState(null);
+  const [confirmDeleteHabit, setConfirmDeleteHabit] = useState(null);
 
   // Load habits data
   useEffect(() => {
@@ -156,9 +159,15 @@ const HabitsTab = () => {
   // Add habit from library to personal
   const addHabitFromLibrary = async (habit) => {
     if (!user) return;
+    // Show confirmation modal first
+    setConfirmAddHabit(habit);
+  };
+
+  const confirmAddHabitAction = async () => {
+    if (!user || !confirmAddHabit) return;
     
     try {
-      const { error } = await masteryService.addHabitFromLibrary(user.id, habit.id);
+      const { error } = await masteryService.addHabitFromLibrary(user.id, confirmAddHabit.id);
       if (error) throw error;
 
       // Reload habits to get the updated list
@@ -198,8 +207,10 @@ const HabitsTab = () => {
 
         setPersonalHabits(transformedHabits);
       }
+      setConfirmDeleteHabit(null);
     } catch (error) {
       setError(error.message);
+      setConfirmDeleteHabit(null);
     }
   };
 
@@ -259,9 +270,18 @@ const HabitsTab = () => {
   // Delete habit
   const deleteHabit = async (habitId) => {
     if (!user) return;
+    // Find the habit to show in confirmation
+    const habit = personalHabits.find(h => h.id === habitId);
+    if (habit) {
+      setConfirmDeleteHabit({ id: habitId, title: habit.title });
+    }
+  };
+
+  const confirmDeleteHabitAction = async () => {
+    if (!user || !confirmDeleteHabit) return;
     
     try {
-      const { error } = await masteryService.deleteUserHabit(habitId);
+      const { error } = await masteryService.deleteUserHabit(confirmDeleteHabit.id);
       if (error) throw error;
 
       // Reload habits to get updated data
@@ -647,6 +667,128 @@ const HabitsTab = () => {
             ))}
           </div>
         </div>
+      )}
+
+      {/* Confirm Add Habit Modal */}
+      {confirmAddHabit && createPortal(
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" 
+          style={{ 
+            width: '100vw', 
+            height: '100vh', 
+            zIndex: 9999,
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setConfirmAddHabit(null);
+            }
+          }}
+        >
+          <div 
+            className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4 shadow-xl relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setConfirmAddHabit(null)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              aria-label="Close modal"
+            >
+              <X size={24} />
+            </button>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Plus size={32} className="text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Add Habit to Your List?
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                Are you sure you want to add <span className="font-medium">{confirmAddHabit.title}</span> to your personal habits?
+              </p>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setConfirmAddHabit(null)}
+                  className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmAddHabitAction}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  Add Habit
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Confirm Delete Habit Modal */}
+      {confirmDeleteHabit && createPortal(
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" 
+          style={{ 
+            width: '100vw', 
+            height: '100vh', 
+            zIndex: 9999,
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setConfirmDeleteHabit(null);
+            }
+          }}
+        >
+          <div 
+            className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4 shadow-xl relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setConfirmDeleteHabit(null)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              aria-label="Close modal"
+            >
+              <X size={24} />
+            </button>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 size={32} className="text-red-600 dark:text-red-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Delete Habit?
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                Are you sure you want to delete <span className="font-medium">{confirmDeleteHabit.title}</span>? This action cannot be undone and all completion history will be lost.
+              </p>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setConfirmDeleteHabit(null)}
+                  className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteHabitAction}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

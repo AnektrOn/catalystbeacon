@@ -27,9 +27,9 @@ services:
       
       # Email Configuration (for templates)
       - SITE_URL=${SITE_URL:-https://humancatalystbeacon.com}
-      - SITE_NAME=${SITE_NAME:-The Human Catalyst University}
+      - SITE_NAME=${SITE_NAME:-The Human Catalyst Beacon}
       - FROM_EMAIL=${FROM_EMAIL:-noreply@humancatalystbeacon.com}
-      - FROM_NAME=${FROM_NAME:-The Human Catalyst University}
+      - FROM_NAME=${FROM_NAME:-The Human Catalyst Beacon}
       
       # SMTP Configuration (if using SMTP node directly)
       - SMTP_HOST=${SMTP_HOST:-}

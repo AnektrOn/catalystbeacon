@@ -1,0 +1,80 @@
+bash << 'DEPLOY_EOF'
+set -e
+
+# --- CONFIGURATION ---
+APP_DIR=~/domains/humancatalystbeacon.com/public_html/app
+# ---------------------
+
+echo "🚀 DÉPLOIEMENT SÉCURISÉ (AVEC PROTECTION DES CLES)..."
+cd $APP_DIR
+
+# 0. SAUVEGARDE DES CLES (La protection ultime)
+echo "🛡️ 0. Sauvegarde du fichier server.env..."
+if [ -f "server.env" ]; then
+    cp server.env /tmp/server.env.backup
+    echo "   ✅ Clés mises en sécurité dans /tmp"
+else
+    echo "   ⚠️ Attention : Pas de server.env trouvé !"
+fi
+
+# 1. Mise à jour du code source
+echo "📥 1. Récupération du code Git..."
+git fetch origin main
+git reset --hard origin/main
+
+# 2. RESTAURATION DES CLES
+echo "🛡️ 2. Restauration du fichier server.env..."
+if [ -f "/tmp/server.env.backup" ]; then
+    mv /tmp/server.env.backup server.env
+    echo "   ✅ Clés restaurées avec succès !"
+fi
+
+# 3. Installation des dépendances
+echo "📦 3. Vérification des dépendances..."
+chmod +x node_modules/.bin/* 2>/dev/null || true
+
+# 4. Build (Méthode Directe Node.js)
+echo "🔨 4. Construction du build..."
+rm -rf build
+export NODE_OPTIONS='--max-old-space-size=4096'
+export GENERATE_SOURCEMAP=false
+export BUILD_NO_MINIFY=true
+
+echo "   Execution directe du compilateur..."
+node node_modules/react-app-rewired/bin/index.js build
+
+# 5. NETTOYAGE NUCLÉAIRE
+echo "🧹 5. Suppression des anciens fichiers..."
+rm -rf static
+rm -f index.html
+rm -f pay.html
+rm -f asset-manifest.json
+
+# 6. Déploiement
+echo "🚚 6. Copie des nouveaux fichiers..."
+cp -r build/* .
+
+# 7. Configuration .htaccess
+echo "🔧 7. Configuration .htaccess..."
+cat <<EOT > .htaccess
+Options -MultiViews
+RewriteEngine On
+RewriteBase /
+RewriteCond %{REQUEST_URI} ^/health$
+RewriteRule ^health$ /api/health [R=301,L]
+RewriteCond %{REQUEST_URI} ^/api/
+RewriteRule ^api/(.*)$ http://127.0.0.1:3001/api/\$1 [P,L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.html [L]
+EOT
+
+# 8. Redémarrage Backend
+echo "🔄 8. Redémarrage PM2..."
+# On force le rechargement des variables restaurées
+pm2 delete hcuniversity-app 2>/dev/null || true
+pm2 start server.js --name "hcuniversity-app"
+pm2 save
+
+echo "✅ DÉPLOIEMENT TERMINÉ ET SÉCURISÉ !"
+DEPLOY_EOF

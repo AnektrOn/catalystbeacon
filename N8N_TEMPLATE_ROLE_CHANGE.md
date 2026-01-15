@@ -130,7 +130,7 @@ Vérifiez la boîte mail de l'utilisateur :
 - **Design cohérent** : Le template utilise le même design que l'email de bienvenue
 - **Mobile friendly** : Styles responsive inclus
 - **Variables dynamiques** : `oldRole` et `newRole` sont automatiquement remplis
-- **From Name** : Utilise `siteName` pour afficher "The Human Catalyst University"
+- **From Name** : Utilise `siteName` pour afficher "The Human Catalyst Beacon"
 
 ---
 

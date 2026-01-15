@@ -2,7 +2,7 @@
 
 ## ❌ Problème
 
-L'email affiche "contact" au lieu de "HUMAN CATALYST" ou "The Human Catalyst University".
+L'email affiche "contact" au lieu de "HUMAN CATALYST" ou "The Human Catalyst Beacon".
 
 ## ✅ Solution
 
@@ -34,11 +34,11 @@ return {
 
 Si vous préférez configurer directement dans le SMTP Node :
 
-1. **From Email** : `The Human Catalyst University <noreply@humancatalystbeacon.com>`
+1. **From Email** : `The Human Catalyst Beacon <noreply@humancatalystbeacon.com>`
    - Format : `"Nom" <email@domain.com>`
-   - OU : `HC UNIVERSITY <noreply@humancatalystbeacon.com>`
+   - OU : `HC BEACON <noreply@humancatalystbeacon.com>`
 
-2. **From Name** (si le node le supporte) : `The Human Catalyst University`
+2. **From Name** (si le node le supporte) : `The Human Catalyst Beacon`
 
 ---
 
@@ -79,7 +79,7 @@ Le template a été amélioré pour être mobile friendly :
 
 1. Envoyez un email de test
 2. Vérifiez dans votre boîte mail
-3. Le "From" devrait afficher : **"The Human Catalyst University"** ou **"HC UNIVERSITY"**
+3. Le "From" devrait afficher : **"The Human Catalyst Beacon"** ou **"HC BEACON"**
 
 ### Test 2 : Vérifier Mobile
 
@@ -107,7 +107,7 @@ Le template a été amélioré pour être mobile friendly :
 ### Paramètres Recommandés
 
 1. **From Email** : `{{ $json.from }}` (depuis Function Node)
-   - OU directement : `"The Human Catalyst University" <noreply@humancatalystbeacon.com>`
+   - OU directement : `"The Human Catalyst Beacon" <noreply@humancatalystbeacon.com>`
 
 2. **To Email** : `{{ $json.to }}`
 

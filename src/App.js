@@ -9,6 +9,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import AppShell from './components/AppShell'
 import ProtectedSubscriptionRoute from './components/ProtectedSubscriptionRoute'
 import CosmicLoader from './components/ui/CosmicLoader'
+import WelcomeModal from './components/WelcomeModal'
 import './styles/glassmorphism.css'
 import './styles/mobile-responsive.css'
 
@@ -332,6 +333,8 @@ function App() {
                 }}
               >
                 <AppRoutes />
+                {/* First-time welcome modal - shows globally on first visit */}
+                <WelcomeModal />
                 <Toaster
                   position={isMobile ? 'top-center' : 'top-right'}
                   toastOptions={{

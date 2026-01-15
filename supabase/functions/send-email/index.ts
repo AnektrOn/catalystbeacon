@@ -7,7 +7,7 @@ const corsHeaders = {
 }
 
 // Site configuration
-const SITE_NAME = Deno.env.get('SITE_NAME') || 'The Human Catalyst University'
+const SITE_NAME = Deno.env.get('SITE_NAME') || 'The Human Catalyst Beacon'
 const SITE_URL = Deno.env.get('SITE_URL') || 'https://humancatalystbeacon.com'
 const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@humancatalystbeacon.com'
 const FROM_NAME = Deno.env.get('FROM_NAME') || SITE_NAME

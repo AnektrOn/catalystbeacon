@@ -102,8 +102,8 @@ SUPABASE_SERVICE_ROLE_KEY=votre_service_role_key_ici
 
 # Email Configuration
 FROM_EMAIL=noreply@humancatalystbeacon.com
-FROM_NAME=The Human Catalyst University
-SITE_NAME=The Human Catalyst University
+FROM_NAME=The Human Catalyst Beacon
+SITE_NAME=The Human Catalyst Beacon
 SITE_URL=https://humancatalystbeacon.com
 
 # Server Configuration

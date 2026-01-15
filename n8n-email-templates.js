@@ -6,13 +6,13 @@
  */
 
 // ============================================
-// 1. SIGN UP EMAIL TEMPLATE (HC University - Ethereal Design)
+// 1. SIGN UP EMAIL TEMPLATE (HC Beacon - Ethereal Design)
 // ============================================
 const signUpTemplate = `
 // Sign Up Email Template
 const emailData = $input.item.json;
 const siteUrl = $env.SITE_URL || 'https://humancatalystbeacon.com';
-const siteName = $env.SITE_NAME || 'The Human Catalyst University';
+const siteName = $env.SITE_NAME || 'The Human Catalyst Beacon';
 
 const html = \`<!DOCTYPE html>
 <html lang="en">
@@ -65,7 +65,7 @@ const html = \`<!DOCTYPE html>
                         <td align="center" style="padding: 40px 0 20px 0;">
                             <!-- Logo Text -->
                             <div style="font-family: 'Cinzel', serif; font-size: 28px; font-weight: 600; letter-spacing: 4px; color: #ffffff; text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);">
-                                HC <span style="color: #a5f3fc; text-shadow: 0 0 10px rgba(165, 243, 252, 0.5);">UNIVERSITY</span>
+                                HC <span style="color: #a5f3fc; text-shadow: 0 0 10px rgba(165, 243, 252, 0.5);">BEACON</span>
                             </div>
                             <div style="font-family: 'Rajdhani', sans-serif; font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 3px; margin-top: 8px;">
                                 The Catalyst Path
@@ -177,7 +177,7 @@ const html = \`<!DOCTYPE html>
                             <table width="100%" cellpadding="0" cellspacing="0" border="0">
                                 <tr>
                                     <td align="center" style="color: #6b7280; font-size: 11px; font-family: 'Rajdhani', Arial, sans-serif; line-height: 1.6; text-transform: uppercase; letter-spacing: 1px;">
-                                        <p style="margin: 0 0 10px 0;">HC University &copy; 2024. The Awakening.</p>
+                                        <p style="margin: 0 0 10px 0;">HC Beacon &copy; 2024. The Awakening.</p>
                                         <p style="margin: 0;">
                                             <a href="\${siteUrl}/unsubscribe?email=\${emailData.email}" style="color: #6b7280; text-decoration: underline;">Unsubscribe</a> &nbsp;•&nbsp; 
                                             <a href="\${siteUrl}/support" style="color: #6b7280; text-decoration: underline;">Guide</a>
@@ -218,7 +218,7 @@ return {
 const subscriptionPurchasedTemplate = `
 const emailData = $input.item.json;
 const siteUrl = $env.SITE_URL || 'https://humancatalystbeacon.com';
-const siteName = $env.SITE_NAME || 'The Human Catalyst University';
+const siteName = $env.SITE_NAME || 'The Human Catalyst Beacon';
 const formattedAmount = new Intl.NumberFormat('en-US', {
   style: 'currency',
   currency: emailData.currency || 'USD',
@@ -266,7 +266,7 @@ return {
 const levelUpTemplate = `
 const emailData = $input.item.json;
 const siteUrl = $env.SITE_URL || 'https://humancatalystbeacon.com';
-const siteName = $env.SITE_NAME || 'The Human Catalyst University';
+const siteName = $env.SITE_NAME || 'The Human Catalyst Beacon';
 
 const html = \`
 <!DOCTYPE html>
@@ -311,7 +311,7 @@ return {
 const lessonCompletedTemplate = `
 const emailData = $input.item.json;
 const siteUrl = $env.SITE_URL || 'https://humancatalystbeacon.com';
-const siteName = $env.SITE_NAME || 'The Human Catalyst University';
+const siteName = $env.SITE_NAME || 'The Human Catalyst Beacon';
 
 const html = \`
 <!DOCTYPE html>
@@ -358,7 +358,7 @@ return {
 const achievementUnlockedTemplate = `
 const emailData = $input.item.json;
 const siteUrl = $env.SITE_URL || 'https://humancatalystbeacon.com';
-const siteName = $env.SITE_NAME || 'The Human Catalyst University';
+const siteName = $env.SITE_NAME || 'The Human Catalyst Beacon';
 
 const html = \`
 <!DOCTYPE html>
@@ -403,7 +403,7 @@ return {
 const subscriptionCancelledTemplate = `
 const emailData = $input.item.json;
 const siteUrl = $env.SITE_URL || 'https://humancatalystbeacon.com';
-const siteName = $env.SITE_NAME || 'The Human Catalyst University';
+const siteName = $env.SITE_NAME || 'The Human Catalyst Beacon';
 
 const html = \`
 <!DOCTYPE html>
@@ -448,7 +448,7 @@ return {
 const roleChangeTemplate = `
 const emailData = $input.item.json;
 const siteUrl = $env.SITE_URL || 'https://humancatalystbeacon.com';
-const siteName = $env.SITE_NAME || 'The Human Catalyst University';
+const siteName = $env.SITE_NAME || 'The Human Catalyst Beacon';
 
 const html = \`
 <!DOCTYPE html>

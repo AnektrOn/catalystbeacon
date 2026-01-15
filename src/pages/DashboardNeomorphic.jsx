@@ -530,7 +530,7 @@ const DashboardNeomorphic = () => {
   return (
     <div className="dashboard-neomorphic">
       <SEOHead
-        title="Dashboard | HC University"
+        title="Dashboard | HC Beacon"
         description="Your personalized learning dashboard"
       />
 

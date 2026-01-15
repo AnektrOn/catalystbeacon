@@ -63,7 +63,7 @@ const AppShellMobile = () => {
     if (path.startsWith('/stellar')) return 'Stellar Map';
     if (path.startsWith('/profile')) return 'Profile';
     if (path.startsWith('/settings')) return 'Settings';
-    return 'HC University';
+    return 'HC Beacon';
   }, [location.pathname]);
 
   // Load notification count from Supabase
