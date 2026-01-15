@@ -558,30 +558,55 @@ class RoadmapService {
    * @private
    */
   _sortLessons(lessons, masterSkill = null) {
+    // Custom skill order based on Genesis Protocol phases
+    const SKILL_ORDER = {
+      // Phase I: DECONDITIONING
+      'critical_thinking': 10,
+      'Cognitive & Theoretical': 20,
+      
+      // Phase II: REORIENTATION
+      'Inner Awareness': 30,
+      
+      // Phase III: INTEGRATION
+      'Physical Mastery': 40,
+      'emotional_regulation': 50,
+      'shadow_work_habit': 60,
+      'breathwork_habit': 70,
+      
+      // Phase IV: EXPANSION
+      'neuroscience_habit': 80,
+      'ritual_discipline_habit': 90,
+      
+      // Default / Others
+      'General': 100,
+      'ZZZ': 1000
+    };
+
     return lessons.sort((a, b) => {
-      // First, sort by difficulty
+      // 1. Sort by master_skill_linked weight (Genesis Protocol Phase)
+      const aWeight = SKILL_ORDER[a.master_skill_linked] || 100;
+      const bWeight = SKILL_ORDER[b.master_skill_linked] || 100;
+      
+      if (aWeight !== bWeight) {
+        return aWeight - bWeight;
+      }
+
+      // 2. Then by difficulty
       if (a.difficulty_numeric !== b.difficulty_numeric) {
         return a.difficulty_numeric - b.difficulty_numeric;
       }
 
-      // Then by master_skill_linked (alphabetically)
-      const aSkill = a.master_skill_linked || 'ZZZ'; // Put undefined at end
-      const bSkill = b.master_skill_linked || 'ZZZ';
-      if (aSkill !== bSkill) {
-        return aSkill.localeCompare(bSkill);
-      }
-
-      // Then by course_id
+      // 3. Then by course_id
       if (a.course_id !== b.course_id) {
         return a.course_id - b.course_id;
       }
 
-      // Then by chapter_number
+      // 4. Then by chapter_number
       if (a.chapter_number !== b.chapter_number) {
         return a.chapter_number - b.chapter_number;
       }
 
-      // Finally by lesson_number
+      // 5. Finally by lesson_number
       return a.lesson_number - b.lesson_number;
     });
   }

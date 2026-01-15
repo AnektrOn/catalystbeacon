@@ -97,8 +97,8 @@ const EnhancedLandingPage = () => {
     // Random glitch effect (Frequency: Every 2 seconds)
     const glitchInterval = setInterval(() => {
       setGlitchActive(true);
-      setTimeout(() => setGlitchActive(false), 800);
-    }, 2000);
+      setTimeout(() => setGlitchActive(false), 1200); // Increased duration to 1.2s
+    }, 2500); // Every 2.5 seconds to balance the longer duration
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
@@ -153,25 +153,24 @@ const EnhancedLandingPage = () => {
     }
     .glitch::before {
       left: 2px;
-      text-shadow: -1px 0 #a5f3fc;
-      clip-path: inset(10% 0 60% 0);
-      animation: glitch-anim 0.3s infinite linear alternate-reverse;
+      text-shadow: -2px 0 black;
+      clip-path: inset(0 0 50% 0);
+      animation: glitch-anim 0.6s infinite linear alternate-reverse;
     }
     .glitch::after {
       left: -2px;
-      text-shadow: -1px 0 #a78bfa;
-      clip-path: inset(70% 0 10% 0);
-      animation: glitch-anim 0.3s infinite linear alternate-reverse;
+      text-shadow: 2px 0 black;
+      clip-path: inset(50% 0 0 0);
+      animation: glitch-anim 0.6s infinite linear alternate-reverse;
       animation-delay: 0.1s;
     }
 
     @keyframes glitch-anim {
-      0% { clip-path: inset(10% 0 85% 0); transform: translate(0); }
-      20% { clip-path: inset(85% 0 5% 0); transform: translate(-2px, 2px); }
-      40% { clip-path: inset(5% 0 90% 0); transform: translate(2px, -2px); }
-      60% { clip-path: inset(70% 0 10% 0); transform: translate(-1px, 1px); }
-      80% { clip-path: inset(40% 0 50% 0); transform: translate(1px, -1px); }
-      100% { clip-path: inset(15% 0 70% 0); transform: translate(0); }
+      0% { clip-path: inset(0 0 60% 0); transform: translate(2px, -1px); }
+      25% { clip-path: inset(40% 0 0 0); transform: translate(-2px, 1px); }
+      50% { clip-path: inset(0 0 30% 0); transform: translate(-1px, -2px); }
+      75% { clip-path: inset(60% 0 0 0); transform: translate(1px, 2px); }
+      100% { clip-path: inset(0 0 50% 0); transform: translate(0, 0); }
     }
 
     /* Restored Button Styles */
