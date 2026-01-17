@@ -83,117 +83,62 @@ const HabitsTabCompact = () => {
       setError(null);
       
       try {
-        // Load skills first
+        // Load skills
         const { data: skillsData, error: skillsError } = await skillsService.getAllSkills();
         let skillsMap = new Map();
         if (!skillsError && skillsData) {
           skillsMap = new Map(skillsData.map(skill => [skill.id, skill]));
-        } else {
         }
 
-        // Load habits library from database (always load this)
-        const { data: libraryHabits, error: libraryError } = await supabase
-          .from('habits_library')
-          .select('*');
-
-        if (libraryError) {
-          setError('Failed to load habits library');
-          return;
-        }
-
-
-        // Load user habits from database (only if user exists)
-        let userHabits = [];
-        if (user && user.id) {
-          
-          const { data: userData, error: userHabitsError } = await supabase
-            .from('user_habits')
-            .select('*')
-            .eq('user_id', user.id);
-
-          if (userHabitsError) {
-            // Don't fail completely, just use empty user habits
-            userHabits = [];
-          } else {
-            userHabits = userData || [];
-          }
-        } else {
-        }
-
-        // Transform user habits to include completion data and UI properties
-        const transformedHabits = await Promise.all(
-          (userHabits || []).map(async (habit) => {
-            // Get completions for the current month
-            const today = new Date();
-            const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-            const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-            
-            // Try to get completions, but don't fail if table doesn't exist or no user
-            let completions = [];
-            if (user && user.id) {
-              try {
-                const { data: completionData } = await supabase
-                  .from('user_habit_completions')
-                  .select('completed_at')
-                  .eq('user_id', user.id)
-                  .eq('habit_id', habit.id)
-                  .gte('completed_at', `${firstDayOfMonth.toISOString().split('T')[0]}T00:00:00`)
-                  .lte('completed_at', `${lastDayOfMonth.toISOString().split('T')[0]}T23:59:59`);
-                
-                completions = completionData || [];
-              } catch (completionError) {
-                completions = [];
-              }
-            }
-
-            const completedDates = completions.map(c => c.completed_at.split('T')[0]);
-            const currentStreak = calculateCurrentStreak(completedDates);
-            const { icon: Icon, color } = getHabitIconAndColor(habit.title);
-
-            // Get skills for this habit from library
-            let habitSkills = [];
-            // Only query habits_library if habit_id is not null
-            if (habit.habit_id) {
-              try {
-                const { data: libraryHabit } = await supabase
-                  .from('habits_library')
-                  .select('skill_tags')
-                  .eq('id', habit.habit_id)
-                  .maybeSingle();
-                
-                if (libraryHabit && libraryHabit.skill_tags) {
-                  habitSkills = libraryHabit.skill_tags
-                    .map(skillId => skillsMap.get(skillId))
-                    .filter(Boolean);
-                }
-              } catch (skillError) {
-                // Silently fail if library habit not found
-              }
-            }
-
-            return {
-              ...habit,
-              completedDates,
-              currentStreak,
-              Icon,
-              color,
-              progressGrid: generateProgressGrid(completedDates, color),
-              skills: habitSkills
-            };
-          })
+        // Get date range for the current month
+        const today = new Date();
+        const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        
+        // Use consolidated mastery data RPC
+        const { data: consolidatedData, error: consolidatedError } = await masteryService.getMasteryDataConsolidated(
+          user.id,
+          firstDayOfMonth.toISOString().split('T')[0],
+          lastDayOfMonth.toISOString().split('T')[0]
         );
 
+        if (consolidatedError) throw consolidatedError;
+
+        const userHabits = consolidatedData.user_habits || [];
+        const completions = consolidatedData.completions || [];
+        const libraryHabits = consolidatedData.habits_library || [];
+
+        // Transform user habits to include completion data and UI properties
+        const transformedHabits = userHabits.map((habit) => {
+          const habitCompletions = completions.filter(c => c.habit_id === habit.id);
+          const completedDates = habitCompletions.map(c => c.completed_at.split('T')[0]);
+          const currentStreak = calculateCurrentStreak(completedDates);
+          const { icon: Icon, color } = getHabitIconAndColor(habit.title);
+
+          // Get skills for this habit from library data (included in consolidated response)
+          let habitSkills = [];
+          if (habit.library_skill_tags) {
+            habitSkills = habit.library_skill_tags
+              .map(skillId => skillsMap.get(skillId))
+              .filter(Boolean);
+          }
+
+          return {
+            ...habit,
+            completedDates,
+            currentStreak,
+            Icon,
+            color,
+            progressGrid: generateProgressGrid(completedDates, color),
+            skills: habitSkills
+          };
+        });
+
         // Enrich library habits with skill information
-        const enrichedLibraryHabits = (libraryHabits || []).map(habit => {
+        const enrichedLibraryHabits = libraryHabits.map(habit => {
           const habitSkills = (habit.skill_tags || [])
-            .map(skillId => {
-              const skill = skillsMap.get(skillId);
-              if (!skill) {
-              }
-              return skill;
-            })
+            .map(skillId => skillsMap.get(skillId))
             .filter(Boolean);
-          
           
           return {
             ...habit,
@@ -204,16 +149,7 @@ const HabitsTabCompact = () => {
         setPersonalHabits(transformedHabits);
         setHabitsLibrary(enrichedLibraryHabits);
       } catch (error) {
-        // Try to at least load the library data as fallback
-        try {
-          const { data: fallbackLibrary } = await supabase
-            .from('habits_library')
-            .select('*');
-          setHabitsLibrary(fallbackLibrary || []);
-          setPersonalHabits([]);
-        } catch (fallbackError) {
-          setError('Failed to load habits data');
-        }
+        setError('Failed to load habits data');
       }
     };
 

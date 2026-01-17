@@ -146,7 +146,7 @@
     --ethereal-card-radius-large: 28px;
     
     /* Card Blur - Shared across all modes */
-    --ethereal-card-blur: 20px;
+    --ethereal-card-blur: 12px;
     
     /* Ambient Light - Uses primary color from active palette */
     --ethereal-light-color: hsl(var(--primary) / 0.08);
@@ -186,7 +186,7 @@
     --ethereal-card-radius-large: 28px;
     
     /* Card Blur */
-    --ethereal-card-blur: 20px;
+    --ethereal-card-blur: 12px;
     
     /* Ambient Light - Uses primary color from active palette */
     --ethereal-light-color: hsl(var(--primary) / 0.08);

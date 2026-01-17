@@ -2,7 +2,7 @@
 .xp-chart-card {
   position: relative;
   overflow: hidden;
-  min-height: 180px;
+  max-height: 50%!important;
 }
 
 .xp-chart-loading {

@@ -89,6 +89,18 @@ module.exports = function override(config, env) {
   config.optimization.usedExports = true;
   config.optimization.sideEffects = false;
 
+  // Add a rule to handle .ts and .tsx files
+  config.module.rules.push({
+    test: /\.(ts|tsx)$/,
+    loader: require.resolve('babel-loader'),
+    options: {
+      presets: [require.resolve('babel-preset-react-app')],
+    },
+  });
+
+  // Add .ts and .tsx to the file extensions Webpack resolves
+  config.resolve.extensions.push('.ts', '.tsx');
+
   return config;
 };
 

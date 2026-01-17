@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { useMasteryRefresh } from '../../pages/Mastery';
 import masteryService from '../../services/masteryService';
+import SkeletonLoader from '../ui/SkeletonLoader';
 
 /**
  * Modern Mobile-First Toolbox Component
@@ -29,15 +30,22 @@ const ToolboxTabMobile = () => {
 
       setLoading(true);
       try {
-        // Load library
-        const { data: library } = await supabase.from('toolbox_library').select('*');
-        setToolboxLibrary(library || []);
+        const today = new Date();
+        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+        const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        
+        const { data, error } = await masteryService.getMasteryDataConsolidated(
+          user.id,
+          firstDay.toISOString().split('T')[0],
+          lastDay.toISOString().split('T')[0]
+        );
 
-        // Load user toolbox
-        const { data: userTools } = await masteryService.getUserToolboxItems(user.id);
-        setUserToolbox(userTools || []);
+        if (error) throw error;
+
+        setToolboxLibrary(data.toolbox_library || []);
+        setUserToolbox(data.user_toolbox || []);
       } catch (err) {
-        // Error logged above
+        // Error logged in service
       } finally {
         setLoading(false);
       }
@@ -211,11 +219,7 @@ const ToolboxTabMobile = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
-      </div>
-    );
+    return <SkeletonLoader type="page" />;
   }
 
   return (

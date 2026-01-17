@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import CreatePostModal from '../components/social/CreatePostModal'
 import socialService from '../services/socialService'
+import SkeletonLoader from '../components/ui/SkeletonLoader'
 import {
   Users,
   MessageCircle,
@@ -20,20 +21,25 @@ import {
 } from 'lucide-react'
 
 const CommunityPage = () => {
-  const { user, profile } = useAuth()
+  const { user, profile, loading: authLoading } = useAuth()
   const [activeTab, setActiveTab] = useState('feed')
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(false)
-  const [showCreatePost, setShowCreatePost] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [filterType, setFilterType] = useState('all')
   const [leaderboard, setLeaderboard] = useState([])
   const [challenges, setChallenges] = useState([])
-
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filterType, setFilterType] = useState('all')
+  const [showCreatePost, setShowCreatePost] = useState(false)
 
   useEffect(() => {
-    loadData()
-  }, [])
+    if (!authLoading) {
+      loadData()
+    }
+  }, [authLoading])
+
+  if (authLoading || (loading && posts.length === 0)) {
+    return <SkeletonLoader type="page" />
+  }
 
   const loadData = async () => {
     setLoading(true)

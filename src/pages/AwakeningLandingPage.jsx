@@ -140,7 +140,7 @@ const EnhancedLandingPage = () => {
     .glitch::before, .glitch::after {
       content: attr(data-text);
       position: absolute;
-      top: 0; left: 0; width: 100%; height: 100%;
+      top: 0; left: 0; width: 100%; height: 150%;
       background: #020202;
       opacity: 0.8;
       display: flex;
@@ -243,7 +243,7 @@ const EnhancedLandingPage = () => {
       </nav>
 
       {/* --- HERO SECTION --- */}
-      <section className="relative flex items-center justify-center px-4 pt-80 pb-40 w-full">
+      <section className="relative flex items-center justify-center px-4 pt-40 pb-40 w-full">
         
         {/* Orbital Rings Background */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-20 pointer-events-none z-0">
@@ -260,40 +260,43 @@ const EnhancedLandingPage = () => {
             {/* Badge */}
             <div className="mb-10 flex justify-center">
                 <div className="px-6 py-2 border border-cyan-200/20 bg-cyan-900/5 backdrop-blur-md rounded-full text-cyan-100 text-xs font-cinzel font-semibold tracking-[0.3em] uppercase shadow-[0_0_30px_rgba(165,243,252,0.1)]">
-                  ✦ QUANTUM KERNEL: ACCESSED ✦
+                [ ! ] SYSTEM NOTIFICATION: NEW QUEST ARRIVED
                 </div>
             </div>
 
             {/* Main Headline with JS Glitch Trigger */}
             <h1 className="text-6xl md:text-9xl font-bold mb-10 leading-tight font-rajdhani text-white">
-                <span className="font-light text-5xl md:text-7xl block mb-3 text-gray-300 tracking-wide">REWRITE THE</span>
-                <span className={`block text-6xl md:text-9xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 via-white to-violet-300 filter drop-shadow-[0_0_30px_rgba(165,243,252,0.5)] ${glitchActive ? 'glitch' : ''}`} data-text="MATRIX">
-                  SOURCE CODE
+                <span className="font-light text-5xl md:text-7xl block mb-3 text-gray-300 tracking-wide">SYSTEM SCAN :</span>
+                <span className={`block relative py-2 leading-tight text-6xl md:text-9xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 via-white to-violet-300 filter drop-shadow-[0_0_30px_rgba(165,243,252,0.5)] ${glitchActive ? 'glitch' : ''}`} data-text="BECOME THE PLAYER">
+                NPC DETECTED
                 </span>
             </h1>
 
             {/* Subheadline (RESTAURÉ) */}
             <p className="text-xl md:text-2xl text-gray-400 mb-12 max-w-3xl mx-auto font-light font-rajdhani tracking-wide leading-relaxed">
-                Most lives run on autopilot. This is a manual override.
+                You keep trying to be somebody else. You want what they tell you to want. You think what they tell you to think.
                 <br className="hidden md:block" />
-                Not motivation. Not content. 
-                <span className="text-cyan-200 drop-shadow-[0_0_8px_rgba(165,243,252,0.5)] font-medium"> A complete framework for human evolution.</span>
+                You might say you 'know' this already, but you are wrong. Look at your triggers.  
+                <span className="text-cyan-200 drop-shadow-[0_0_8px_rgba(165,243,252,0.5)] font-medium"> If you still react, you are still an NPC.</span>
             </p>
 
             {/* Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-8 mb-24">
                 <Button asChild className="group relative px-12 py-6 btn-ethereal-primary text-xl rounded-full h-auto">
                     <Link to="/signup" className="flex items-center gap-3">
-                        INITIATE SEQUENCE
+                    LOG IN
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 transition-transform group-hover:translate-x-1"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                     </Link>
                 </Button>
                 
-                <Button asChild variant="ghost" className="px-10 py-6 text-gray-400 font-rajdhani text-xl tracking-widest uppercase hover:text-[#a5f3fc] transition-colors duration-300 flex items-center gap-2 hover:drop-shadow-[0_0_10px_rgba(165,243,252,0.5)] h-auto">
-                    <Link to="/courses">
-                        EXPLORE THE ARCHITECTURE
-                    </Link>
-                </Button>
+                <Button 
+  variant="ghost" 
+  className="px-10 py-6 text-gray-400 font-rajdhani text-xl tracking-widest uppercase hover:text-[#a5f3fc] transition-colors duration-300 flex items-center gap-2 hover:drop-shadow-[0_0_10px_rgba(165,243,252,0.5)] h-auto"
+  onClick={() => window.location.replace("about:blank")}
+>
+    NAH, TAKE ME TO TIKTOK
+</Button>
+
             </div>
 
             {/* Stats Bar */}
@@ -313,10 +316,10 @@ const EnhancedLandingPage = () => {
                 <div className="text-center group cursor-default">
                     <div className="flex items-center justify-center gap-2 mb-2 text-gray-600 group-hover:text-cyan-200 transition-colors duration-500">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
-                        <span className="text-xs font-cinzel tracking-[0.2em] uppercase">Genesis Cycle</span>
+                        <span className="text-xs font-cinzel tracking-[0.2em] uppercase">Awakening</span>
                     </div>
                     <div className="text-3xl font-light font-rajdhani text-white text-shadow-glow tracking-widest">
-                        001
+                        PENDING
                     </div>
                 </div>
 
@@ -359,10 +362,10 @@ const EnhancedLandingPage = () => {
               </div>
               <ul className="space-y-6 font-rajdhani text-lg text-gray-500">
                 {[
-                  "Conditioned perception",
-                  "Reactive behavior",
-                  "Fragmented identity",
-                  "External influence"
+                  "Scripted Behavior",
+                  "Borrowed Dreams",
+                  "Low Energy",
+                  "Status: DISPOSABLE"
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-4">
                     <div className="w-1.5 h-1.5 rounded-full bg-red-900" />
@@ -406,7 +409,7 @@ const EnhancedLandingPage = () => {
         <div className="container mx-auto max-w-4xl relative z-10">
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-bold mb-6 font-cinzel text-white">
-              WHAT THIS IS <span className="text-cyan-200 drop-shadow-[0_0_12px_rgba(165,243,252,0.5)]">(AND IS NOT)</span>
+            SPECIFICATIONS <span className="text-cyan-200 drop-shadow-[0_0_12px_rgba(165,243,252,0.5)]">(WARNING: THIS IS NOT A GAME.)</span>
             </h2>
           </div>
 
@@ -414,13 +417,13 @@ const EnhancedLandingPage = () => {
             <div className="space-y-8">
               <div className="space-y-6">
                 <p className="text-xl md:text-2xl font-rajdhani text-gray-300 leading-relaxed">
-                  This is not another app.
+                This is not a meditation app. 
                 </p>
                 <p className="text-lg md:text-xl font-rajdhani text-gray-400 leading-relaxed">
-                  Human Catalyst is not designed to make you feel better for a moment.
+                We didn't build this to give you a cheap dopamine hit.
                 </p>
                 <p className="text-lg md:text-xl font-rajdhani text-cyan-200 leading-relaxed font-semibold">
-                  It is designed to change how you function.
+                It is designed to Force-Evolve your character.
                 </p>
               </div>
 
@@ -429,7 +432,7 @@ const EnhancedLandingPage = () => {
                   Not content to consume.
                 </p>
                 <p className="text-base md:text-lg font-rajdhani text-gray-400">
-                  Not techniques to collect.
+                Not motivation to fake.
                 </p>
                 <p className="text-base md:text-lg font-rajdhani text-gray-400">
                   Not beliefs to adopt.
@@ -438,7 +441,7 @@ const EnhancedLandingPage = () => {
 
               <div className="pt-6 border-t border-white/10">
                 <p className="text-lg md:text-xl font-rajdhani text-white leading-relaxed">
-                  A system to reconfigure perception, behavior, and identity — over time.
+                A complete framework to hack biology, rewrite psychology, and Level Up in Real Life.
                 </p>
               </div>
             </div>
@@ -450,10 +453,10 @@ const EnhancedLandingPage = () => {
             </h3>
             <div className="grid md:grid-cols-2 gap-6 md:gap-10">
               {[
-                "Structured progression, not random practices",
-                "Integration into daily life, not isolated experiences",
-                "Inner mechanics, not surface habits",
-                "Long-term coherence, not short-term relief"
+                "Structured progression. No random actions",
+                "Grind XP while you work. Not isolated tasks.",
+                "Inner mechanics. We rewrite the OS, not the apps.",
+                "Long-term evolution. No temporary relief."
               ].map((item, i) => (
                 <NeomorphicCard key={i} className="flex items-start gap-4" size="small">
                   <div className="w-2 h-2 rounded-full bg-cyan-200 mt-2 flex-shrink-0 shadow-[0_0_8px_rgba(165,243,252,0.5)]" />
@@ -468,7 +471,7 @@ const EnhancedLandingPage = () => {
               You don't escape reality.
             </p>
             <p className="text-lg md:text-xl font-rajdhani text-cyan-200 font-semibold">
-              You learn to operate within it consciously.
+            You learn to bend it to your will.
             </p>
           </div>
 
@@ -490,7 +493,7 @@ const EnhancedLandingPage = () => {
               ASCENSION <span className="text-violet-300 drop-shadow-[0_0_15px_rgba(167,139,250,0.6)]">PATHWAY</span>
             </h2>
             <p className="font-rajdhani text-lg md:text-xl text-gray-400">
-              The sequence of evolution.
+            THE SYSTEM EVOLUTION SEQUENCE : FROM NPC TO APEX.
             </p>
           </div>
 
@@ -500,60 +503,60 @@ const EnhancedLandingPage = () => {
 
             {[
               {
-                stage: "01. Initialize",
-                subtitle: "Stabilize awareness. Interrupt autopilot.",
-                desc: "You begin by observing how your mind actually works.",
+                stage: "01. THE INTERRUPTION",
+                subtitle: "Stabilize awareness. Stop autopilot.",
+                desc: "You begin by observing the machine instead of being the machine.",
                 details: [
-                  "Where attention goes.",
-                  "How reactions arise.",
+                  "Where attention leaks.",
+                  "How triggers fire.",
                   "What runs automatically."
                 ],
-                conclusion: "This phase creates space. Without it, nothing changes.",
+                conclusion: "This creates the gap. You stop being a slave to the script.",
                 icon: Zap,
                 color: "text-cyan-200"
               },
               {
-                stage: "02. Awakening",
-                subtitle: "Recognize patterns as they happen.",
-                desc: "You stop noticing patterns after the fact.",
+                stage: "02. THE DECODING",
+                subtitle: "Recognize patterns. See the invisible walls.",
+                desc: "You stop repeating loops after the fact.",
                 details: [
-                  "You start noticing them in real time.",
-                  "Thoughts, emotions, decisions become visible.",
-                  "Choice becomes possible."
+                  "You catch them in real time.",
+                  "Thoughts become data, not commands..",
+                  "The illusion breaks.."
                 ],
-                conclusion: null,
+                conclusion: "Choice becomes possible for the first time.",
                 icon: Eye,
                 color: "text-blue-300"
               },
               {
-                stage: "03. Ascension",
-                subtitle: "Act from clarity instead of habit.",
-                desc: "Understanding becomes applied.",
+                stage: "03. THE ASCENSION",
+                subtitle: "Act from clarity. Overwrite the habit..",
+                desc: "Understanding becomes applied force.",
                 details: [
                   "You respond instead of reacting.",
                   "Decisions align with intention.",
-                  "This is where daily life begins to shift:"
+                  "This is where reality shifts."
                 ],
                 shiftAreas: [
-                  "relationships",
-                  "work",
-                  "direction",
-                  "energy"
+                  "focus",
+                  "drive",
+                  "presence",
+                  "power"
                 ],
                 conclusion: null,
                 icon: TrendingUp,
                 color: "text-violet-300"
               },
               {
-                stage: "04. Mastery",
-                subtitle: "Sustain coherence over time.",
-                desc: "Awareness is no longer an effort.",
+                stage: "04. THE AUTHORITY",
+                subtitle: "Sustain coherence. Command your state.",
+                desc: "Awareness is no longer an effort, it is your default mode.",
                 details: [
-                  "It becomes a stable mode of operation.",
-                  "You don't need constant tools or guidance.",
-                  "You operate with internal authority."
+                  "You operate with internal validation only.",
+                  "You don't need content or guidance.",
+                  "You are no longer the simulation."
                 ],
-                conclusion: null,
+                conclusion: "You are the Architect.",
                 icon: Infinity,
                 color: "text-white"
               }
@@ -607,10 +610,10 @@ const EnhancedLandingPage = () => {
           <div className="mt-20 text-center">
             <NeomorphicCard className="max-w-3xl mx-auto">
               <p className="text-xl md:text-2xl font-rajdhani text-gray-300 leading-relaxed mb-2">
-                This is not a quick fix.
+              There is no bypass.
               </p>
               <p className="text-xl md:text-2xl font-rajdhani text-cyan-200 font-semibold">
-                It is a change in how you function.
+              It is a permanent rewrite of your operating system.
               </p>
             </NeomorphicCard>
           </div>
@@ -634,7 +637,7 @@ const EnhancedLandingPage = () => {
               GENESIS <span className="text-cyan-200 drop-shadow-[0_0_12px_rgba(165,243,252,0.5)]">PROTOCOL</span>
             </h2>
             <p className="text-lg md:text-xl font-rajdhani text-gray-400 mb-8">
-              The core structure behind the system.
+            THE CORE ARCHITECTURE BEHIND THE SYSTEM.
             </p>
           </div>
 
@@ -648,7 +651,7 @@ const EnhancedLandingPage = () => {
                 Not motivation.
               </p>
               <p className="text-xl md:text-2xl font-rajdhani text-cyan-200 font-semibold">
-                A practical architecture for conscious change.
+              A tactical framework to override your default settings.
               </p>
             </div>
           </NeomorphicCard>
@@ -656,21 +659,21 @@ const EnhancedLandingPage = () => {
           {/* How the protocol works */}
           <div className="mb-20">
             <h3 className="text-2xl md:text-3xl font-bold mb-8 font-cinzel text-white text-center">
-              How the protocol works
+            LE PRINCIPE
             </h3>
             <NeomorphicCard className="max-w-3xl mx-auto" size="medium">
               <p className="text-lg md:text-xl font-rajdhani text-gray-300 mb-4">
-                The system follows a simple principle:
+              The System follows one law:
               </p>
               <p className="text-xl md:text-2xl font-rajdhani text-cyan-200 font-semibold mb-6 italic">
-                real change requires sequence, integration, and time.
+              You cannot play God with the mind of a slave.
               </p>
               <div className="space-y-3 pt-4 border-t border-white/10">
                 <p className="text-base md:text-lg font-rajdhani text-gray-400">
-                  Each phase prepares the next.
+                First we wake up.
                 </p>
                 <p className="text-base md:text-lg font-rajdhani text-gray-400">
-                  Skipping steps creates confusion, not growth.
+                Then we ascend.
                 </p>
               </div>
             </NeomorphicCard>
@@ -688,13 +691,14 @@ const EnhancedLandingPage = () => {
               {[
                 {
                   phaseNum: "I",
-                  phase: "DECONDITIONING",
-                  shortDesc: "Reduce noise. Restore signal.",
-                  fullDesc: "You identify unconscious habits that distort perception.",
+                  phase: "REAWAKENING",
+                  shortDesc: "Expose the lie. Shatter the cage.",
+                  fullDesc: "You open your eyes to the massive manipulation designed to keep you stuck.",
                   details: [
-                    "Mental overload, emotional loops, automatic narratives."
+                    "You realize you forgot who you were.",
+                    "You recognize that your limitations were installed by design."
                   ],
-                  conclusion: "This phase is about seeing clearly, not fixing yourself.",
+                  conclusion: "This phase is the ignition. The simulation begins to crack.",
                   color: "text-cyan-200",
                   bgColor: "bg-cyan-200/10",
                   borderColor: "border-cyan-200/30",
@@ -702,14 +706,14 @@ const EnhancedLandingPage = () => {
                 },
                 {
                   phaseNum: "II",
-                  phase: "REORIENTATION",
-                  shortDesc: "Realign perception and intention.",
-                  fullDesc: "Once noise is reduced, direction becomes visible.",
+                  phase: "REBRANDING",
+                  shortDesc: "Redefine the Self. Map the escape.",
+                  fullDesc: "Now that you see the trap, you acquire the practical solutions to dismantle it.",
                   details: [
-                    "You learn to orient attention deliberately.",
-                    "Thoughts, emotions, and actions begin to align."
+                    "You redefine your identity from scratch.",
+                    "Vital mechanics to change yourself and your world."
                   ],
-                  conclusion: "This is where coherence starts.",
+                  conclusion: "Insight replaces confusion. The new Avatar is born.",
                   color: "text-blue-300",
                   bgColor: "bg-blue-300/10",
                   borderColor: "border-blue-300/30",
@@ -717,13 +721,14 @@ const EnhancedLandingPage = () => {
                 },
                 {
                   phaseNum: "III",
-                  phase: "INTEGRATION",
-                  shortDesc: "Translate awareness into daily life.",
-                  fullDesc: "Understanding becomes behavior.",
+                  phase: "TRANSFORMATION",
+                  shortDesc: "Neuro-quantum override. Total rewrite.",
+                  fullDesc: "We apply the heavy artillery: Neuroscience, Quantum Mechanics, Metaphysics.",
                   details: [
-                    "Clarity is applied to work, relationships, and decisions."
+                    "No holding back. We attack the root of reality.",
+                    "You understand where the problem was, now you execute the solution."
                   ],
-                  conclusion: "The system stops being something you \"use\". It becomes something you live.",
+                  conclusion: "This is the shift from knowing to becoming.",
                   color: "text-violet-300",
                   bgColor: "bg-violet-300/10",
                   borderColor: "border-violet-300/30",
@@ -731,17 +736,17 @@ const EnhancedLandingPage = () => {
                 },
                 {
                   phaseNum: "IV",
-                  phase: "EXPANSION",
-                  shortDesc: "Stabilize and extend capacity.",
-                  fullDesc: "Growth is no longer accidental.",
+                  phase: "GOD MODE",
+                  shortDesc: "Master the resonance. Walk with Source.",
+                  fullDesc: "You enter the realm of Energy Healing and Quantum Manipulation.",
                   details: [
-                    "You maintain clarity under pressure and complexity."
+                    "You distinguish between lower and higher vibrations. You learn to bypass the brain and command the field."
                   ],
                   expansionNote: "This phase prepares you to:",
                   expansionItems: [
-                    "handle more responsibility",
-                    "sustain long-term direction",
-                    "influence without force"
+                    "manipulate reality",
+                    "align with Source",
+                    "operate as a creator"
                   ],
                   color: "text-white",
                   bgColor: "bg-white/10",
@@ -858,10 +863,10 @@ const EnhancedLandingPage = () => {
           <div className="mt-20 text-center">
             <NeomorphicCard className="max-w-3xl mx-auto" size="medium">
               <p className="text-xl md:text-2xl font-rajdhani text-gray-300 leading-relaxed">
-                The protocol doesn't add layers.
+                The protocol is not a lesson.
               </p>
               <p className="text-xl md:text-2xl font-rajdhani text-cyan-200 font-semibold mt-2">
-                It removes interference.
+              It is an initiation.
               </p>
             </NeomorphicCard>
           </div>
@@ -870,7 +875,7 @@ const EnhancedLandingPage = () => {
           <div className="text-center mt-16">
             <Button asChild size="lg" className="btn-ethereal-primary rounded-full px-14 py-7 text-xl font-semibold shadow-[0_0_35px_rgba(165,243,252,0.35)] hover:shadow-[0_0_55px_rgba(165,243,252,0.55)] hover:scale-105 transition-all duration-300">
               <Link to="/signup">
-                → Initialize Access
+              → Secure Your Clearance
               </Link>
             </Button>
           </div>
@@ -894,7 +899,7 @@ const EnhancedLandingPage = () => {
                 <div className="text-5xl font-light font-rajdhani text-white">€0 <span className="text-lg font-normal text-gray-500">/ forever</span></div>
               </div>
               <ul className="space-y-5 mb-10 flex-1">
-                {["Basic Neural Map", "Habit Tracker", "Public Forum"].map((f, i) => (
+                {["Neural Map Access", "Daily Mastery Tracker", "Command Dashboard","Live Profile Statistics","XP & Leveling System"].map((f, i) => (
                   <li key={i} className="flex items-center gap-4 text-gray-400 font-rajdhani">
                     <div className="w-1.5 h-1.5 rounded-full bg-gray-600" /> {f}
                   </li>
@@ -909,7 +914,7 @@ const EnhancedLandingPage = () => {
 
             {/* Paid Tier */}
             <NeomorphicCard className="flex flex-col border-cyan-200/40 relative overflow-visible bg-[rgba(165,243,252,0.05)] shadow-[0_40px_90px_rgba(0,0,0,0.8),inset_0_0_120px_rgba(165,243,252,0.12)]" elevated>
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-cyan-900/80 text-cyan-200 text-xs font-bold font-rajdhani tracking-[0.2em] rounded-full border border-cyan-500/30 shadow-[0_0_15px_rgba(165,243,252,0.2)]">
+              <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-10 py-1 bg-cyan-900/80 text-cyan-200 text-xs font-bold font-rajdhani tracking-[0.2em] rounded-full border border-cyan-500/30 shadow-[0_0_15px_rgba(165,243,252,0.2)]">
                 FULL ACCESS
               </div>
               <div className="mb-8">
@@ -918,11 +923,12 @@ const EnhancedLandingPage = () => {
               </div>
               <ul className="space-y-5 mb-10 flex-1">
                 {[
-                  "Complete Course Library",
-                  "Interactive 3D Stellar Map",
-                  "XP & Leveling System",
-                  "Priority Network Access",
-                  "Certificates of Mastery"
+                  "All Initiate Features",
+                  "The Genesis Protocol (Full Library)",
+                  "Interactive 3D Stellar Map(incoming)",
+                  "Inner Circle Network",
+                  "Toolbox Item Creation"
+                  
                 ].map((f, i) => (
                   <li key={i} className="flex items-center gap-4 text-white font-rajdhani">
                     <Sparkles className="w-4 h-4 text-cyan-200" /> {f}
@@ -931,7 +937,7 @@ const EnhancedLandingPage = () => {
               </ul>
               <Button asChild className="w-full btn-ethereal-primary py-7 rounded-full text-xl font-semibold shadow-[0_0_30px_rgba(165,243,252,0.3)] hover:shadow-[0_0_50px_rgba(165,243,252,0.5)] hover:scale-105 transition-all duration-300">
                   <Link to="/signup" className="w-full">
-                  Upgrade System
+                  [ BECOME THE ARCHITECT ]
                 </Link>
               </Button>
             </NeomorphicCard>

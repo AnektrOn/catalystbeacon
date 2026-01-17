@@ -4,6 +4,7 @@ import { Calendar, Target, Wrench, Clock, Trophy, LayoutDashboard } from 'lucide
 import { useAuth } from '../contexts/AuthContext';
 import { usePageTransition } from '../contexts/PageTransitionContext';
 import useSubscription from '../hooks/useSubscription';
+import SkeletonLoader from '../components/ui/SkeletonLoader';
 
 // Import components
 import CalendarTab from '../components/mastery/CalendarTab';
@@ -48,13 +49,17 @@ const Mastery = () => {
   }, [location.pathname, navigate]);
 
   // Use global loader instead of local loading state
-  useEffect(() => {
-    if (authLoading) {
-      startTransition();
-    } else {
-      endTransition();
-    }
-  }, [authLoading, startTransition, endTransition]);
+  // useEffect(() => {
+  //   if (authLoading) {
+  //     startTransition();
+  //   } else {
+  //     endTransition();
+  //   }
+  // }, [authLoading, startTransition, endTransition]);
+
+  if (authLoading) {
+    return <SkeletonLoader type="page" />;
+  }
 
   // Only show Calendar, Habits, and Toolbox tabs
   const allTabs = [

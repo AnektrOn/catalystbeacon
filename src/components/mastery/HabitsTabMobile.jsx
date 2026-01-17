@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { useMasteryRefresh } from '../../pages/Mastery';
 import masteryService from '../../services/masteryService';
+import SkeletonLoader from '../ui/SkeletonLoader';
 
 /**
  * Modern Mobile-First Habits Component
@@ -29,46 +30,41 @@ const HabitsTabMobile = () => {
 
       setLoading(true);
       try {
-        // Load library
-        const { data: library } = await supabase.from('habits_library').select('*');
-        setHabitsLibrary(library || []);
-
-        // Load user habits (only active ones)
-        const { data: userHabits } = await supabase
-          .from('user_habits')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('is_active', true);
-
-        // Transform with completion data
-        const transformed = await Promise.all(
-          (userHabits || []).map(async (habit) => {
-            const today = new Date();
-            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-            
-            const { data: completions } = await masteryService.getHabitCompletions(
-              user.id,
-              habit.id,
-              firstDay.toISOString().split('T')[0],
-              lastDay.toISOString().split('T')[0]
-            );
-
-            const completedDates = (completions || []).map(c => c.completed_at.split('T')[0]);
-            const todayStr = today.toISOString().split('T')[0];
-
-            return {
-              ...habit,
-              completed_dates: completedDates,
-              completed_today: completedDates.includes(todayStr),
-              streak: completedDates.length
-            };
-          })
+        const today = new Date();
+        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+        const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        
+        const { data, error } = await masteryService.getMasteryDataConsolidated(
+          user.id,
+          firstDay.toISOString().split('T')[0],
+          lastDay.toISOString().split('T')[0]
         );
+
+        if (error) throw error;
+
+        setHabitsLibrary(data.habits_library || []);
+
+        const todayStr = today.toISOString().split('T')[0];
+        
+        // Transform user habits with completion data from consolidated response
+        const userHabits = data.user_habits || [];
+        const completions = data.completions || [];
+
+        const transformed = userHabits.map((habit) => {
+          const habitCompletions = completions.filter(c => c.habit_id === habit.id);
+          const completedDates = habitCompletions.map(c => c.completed_at.split('T')[0]);
+
+          return {
+            ...habit,
+            completed_dates: completedDates,
+            completed_today: completedDates.includes(todayStr),
+            streak: completedDates.length // Simple streak for mobile view
+          };
+        });
 
         setPersonalHabits(transformed);
       } catch (err) {
-        // Error logged above
+        // Error logged in service
       } finally {
         setLoading(false);
       }
@@ -309,11 +305,7 @@ const HabitsTabMobile = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
-      </div>
-    );
+    return <SkeletonLoader type="page" />;
   }
 
   return (

@@ -7,6 +7,7 @@ import SEOHead from '../components/SEOHead';
 import courseService from '../services/courseService';
 import schoolService from '../services/schoolService';
 import { BookOpen, Lock, Play, Clock, Search, Grid, List, ChevronLeft, ChevronRight, X, Layers, ChevronDown } from 'lucide-react';
+import SkeletonLoader from '../components/ui/SkeletonLoader';
 
 const CourseCatalogPage = () => {
   const { user, loading: authLoading } = useAuth();
@@ -53,7 +54,7 @@ const CourseCatalogPage = () => {
     let timeoutId = null;
     
     try {
-      // Avoid re-blocking the entire page if we already have data (mobile UX: keep content visible).
+      // Avoid re-blocking the entire page if we already have data
       const hasExistingData = coursesBySchool && Object.keys(coursesBySchool).length > 0;
       if (!hasExistingData) setLoading(true);
       setError(null);
@@ -63,191 +64,103 @@ const CourseCatalogPage = () => {
         setLoading(false);
       }, 30000); // 30 second timeout
 
-      // Load schools with unlock status
-      let schoolsData = [];
-      let unlockMap = {};
-      
+      // Use the consolidated RPC if user is logged in
       if (user?.id) {
-        // Fail-safe: do not let schools/profile queries block course rendering.
-        // If this times out or errors, we continue with empty schools and treat as unlocked.
-        const schoolsRes = await withTimeout(
-          schoolService.getSchoolsWithUnlockStatus(user.id),
-          8000,
-          'getSchoolsWithUnlockStatus'
+        const { data: consolidatedData, error: consolidatedError } = await courseService.getCourseCatalogDataConsolidated(user.id);
+        
+        if (consolidatedError) throw consolidatedError;
+
+        const userXp = consolidatedData.user_xp || 0;
+        const schoolsData = (consolidatedData.schools || []).map(s => ({
+          ...s,
+          isUnlocked: userXp >= (s.unlock_xp || 0),
+          userXp,
+          requiredXp: s.unlock_xp || 0
+        }));
+
+        const unlockMap = {};
+        schoolsData.forEach((school) => {
+          unlockMap[school.name] = !!school.isUnlocked;
+        });
+
+        // Group courses by masterschool
+        const grouped = {};
+        const allCourses = consolidatedData.courses || [];
+        const progressMap = new Map();
+        (consolidatedData.user_progress || []).forEach(p => {
+          progressMap.set(p.course_id, {
+            status: p.status,
+            progressPercentage: p.progress_percentage,
+            lastAccessedAt: p.last_accessed_at
+          });
+        });
+
+        allCourses.forEach(course => {
+          // Normalize masterschool name
+          let school = course.masterschool || 'Other';
+          if (school.toLowerCase() === 'god mode' || school.toLowerCase() === 'godmode') {
+            school = 'God Mode';
+          } else if (school) {
+            school = school.charAt(0).toUpperCase() + school.slice(1).toLowerCase();
+          }
+
+          if (!grouped[school]) {
+            grouped[school] = [];
+          }
+          
+          // Attach progress
+          const progress = progressMap.get(parseInt(course.course_id));
+          course.userProgress = progress || null;
+          
+          grouped[school].push(course);
+        });
+
+        setSchools(schoolsData);
+        setSchoolUnlockStatus(unlockMap);
+        setCoursesBySchool(grouped);
+
+        // Extract unique school_name values
+        const uniqueSchoolNames = new Set();
+        allCourses.forEach(course => {
+          if (course.school_name) uniqueSchoolNames.add(course.school_name);
+        });
+        setSchoolNames(Array.from(uniqueSchoolNames).sort());
+
+      } else {
+        // Fallback for non-logged in users (traditional way)
+        const schoolsRes = await withTimeout(schoolService.getAllSchools(), 8000, 'getAllSchools').catch((err) => {
+          return { data: null, error: err };
+        });
+        const schoolsData = (schoolsRes?.data || []).map(s => ({ ...s, isUnlocked: true }));
+        const unlockMap = {};
+        schoolsData.forEach(s => unlockMap[s.name] = true);
+
+        const coursesRes = await withTimeout(
+          courseService.getCoursesBySchool({}),
+          20000,
+          'getCoursesBySchool'
         ).catch((err) => {
           return { data: null, error: err };
         });
 
-        schoolsData = schoolsRes?.data || [];
-
-        // Create a map of school unlock status
-        schoolsData.forEach((school) => {
-          unlockMap[school.name] = !!school.isUnlocked;
-        });
-      } else {
-        // If no user, just get all schools
-        const schoolsRes = await withTimeout(schoolService.getAllSchools(), 8000, 'getAllSchools').catch((err) => {
-          return { data: null, error: err };
-        });
-        schoolsData = schoolsRes?.data || [];
+        const data = coursesRes?.data || {};
         
-        // All schools unlocked for non-logged-in users
-        schoolsData.forEach(school => {
-          unlockMap[school.name] = true;
-        });
-      }
+        setSchools(schoolsData);
+        setSchoolUnlockStatus(unlockMap);
+        setCoursesBySchool(data);
 
-      // Load courses (filtered by unlocked schools if user is logged in)
-      const filters = user?.id ? { userId: user.id } : {};
-      const coursesRes = await withTimeout(
-        courseService.getCoursesBySchool(filters),
-        20000, // Increased timeout to 20s to handle larger datasets
-        'getCoursesBySchool'
-      ).catch((err) => {
-        return { data: null, error: err };
-      });
-
-      const { data, error: fetchError } = coursesRes || {};
-      
-      // If courses failed to load, show error but don't block the page
-      if (fetchError) {
-        setError('Failed to load courses. Please refresh the page.');
-        setCoursesBySchool({});
-        setLoading(false);
-        return;
-      }
-      
-      // If no data, set empty state
-      if (!data || Object.keys(data).length === 0) {
-        setCoursesBySchool({});
-        setLoading(false);
-        return;
-      }
-
-      // Merge schools from courses with schools from database
-      // This ensures all masterschool values from courses appear as filters
-      if (data && Object.keys(data).length > 0) {
-        const courseSchoolNames = Object.keys(data);
-        const existingSchoolNames = new Set(schoolsData.map(s => typeof s === 'string' ? s : s.name));
-        
-        // Add any schools from courses that aren't in the schools table
-        courseSchoolNames.forEach(schoolName => {
-          if (!existingSchoolNames.has(schoolName)) {
-            schoolsData.push({
-              name: schoolName,
-              display_name: schoolName,
-              isUnlocked: true, // Default to unlocked if not in schools table
-              requiredXp: 0,
-              order_index: 999 // Put at end
-            });
-            // Also add to unlock status map
-            unlockMap[schoolName] = true;
-          }
-        });
-      }
-      
-      // Update state with merged schools
-      setSchools(schoolsData);
-      setSchoolUnlockStatus(unlockMap);
-
-      // Load user progress for all courses in batch if user is logged in
-      if (user?.id && data) {
-        const coursesWithProgress = { ...data };
-        
-        // Collect all course IDs
-        const allCourseIds = [];
-        for (const schoolName in coursesWithProgress) {
-          const courses = coursesWithProgress[schoolName];
-          courses.forEach(course => {
-            if (course.course_id) {
-              allCourseIds.push(parseInt(course.course_id));
-            }
-          });
-        }
-
-        // Batch load all progress in a single query
-        if (allCourseIds.length > 0) {
-          try {
-            const progressQuery = supabase
-              .from('user_course_progress')
-              .select('course_id, status, progress_percentage, last_accessed_at')
-              .eq('user_id', user.id)
-              .in('course_id', allCourseIds);
-            
-            const progressRes = await withTimeout(
-              progressQuery,
-              8000,
-              'user_course_progress'
-            ).catch((err) => {
-              return { data: null, error: err };
-            });
-            const { data: allProgress, error: progressError } = progressRes || {};
-
-            if (!progressError && allProgress) {
-              // Create a map for quick lookup
-              const progressMap = new Map();
-              allProgress.forEach(progress => {
-                progressMap.set(progress.course_id, {
-                  status: progress.status,
-                  progressPercentage: progress.progress_percentage,
-                  lastAccessedAt: progress.last_accessed_at
-                });
-              });
-
-              // Attach progress to courses
-              for (const schoolName in coursesWithProgress) {
-                const courses = coursesWithProgress[schoolName];
-                courses.forEach(course => {
-                  if (course.course_id) {
-                    const progress = progressMap.get(parseInt(course.course_id));
-                    course.userProgress = progress || null;
-                  }
-                });
-              }
-            }
-          } catch (err) {
-            // Continue without progress - courses will still display
-          }
-        }
-        
-        setCoursesBySchool(coursesWithProgress);
-        
-        // Extract unique school_name values from courses
         const uniqueSchoolNames = new Set();
-        Object.values(coursesWithProgress).forEach(courses => {
+        Object.values(data).forEach(courses => {
           courses.forEach(course => {
-            if (course.school_name) {
-              uniqueSchoolNames.add(course.school_name);
-            }
+            if (course.school_name) uniqueSchoolNames.add(course.school_name);
           });
         });
-        const sortedSchoolNames = Array.from(uniqueSchoolNames).sort();
-        setSchoolNames(sortedSchoolNames);
-        
-        // Log school_name values for reference
-      } else {
-        setCoursesBySchool(data || {});
-        
-        // Extract unique school_name values from courses
-        const uniqueSchoolNames = new Set();
-        Object.values(data || {}).forEach(courses => {
-          courses.forEach(course => {
-            if (course.school_name) {
-              uniqueSchoolNames.add(course.school_name);
-            }
-          });
-        });
-        const sortedSchoolNames = Array.from(uniqueSchoolNames).sort();
-        setSchoolNames(sortedSchoolNames);
-        
-        // Log school_name values for reference
+        setSchoolNames(Array.from(uniqueSchoolNames).sort());
       }
     } catch (err) {
-      setError('Failed to load courses. Please try again.');
+      setError('Failed to load courses. Please refresh the page.');
     } finally {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
+      if (timeoutId) clearTimeout(timeoutId);
       setLoading(false);
     }
   };
@@ -467,13 +380,17 @@ const CourseCatalogPage = () => {
   };
 
   // Use global loader instead of local loading state
-  useEffect(() => {
-    if (authLoading || loading) {
-      startTransition();
-    } else {
-      endTransition();
-    }
-  }, [authLoading, loading, startTransition, endTransition]);
+  // useEffect(() => {
+  //   if (authLoading || loading) {
+  //     startTransition();
+  //   } else {
+  //     endTransition();
+  //   }
+  // }, [authLoading, loading, startTransition, endTransition]);
+
+  if (authLoading || (loading && !Object.keys(coursesBySchool).length)) {
+    return <SkeletonLoader type="page" />;
+  }
 
   if (error) {
     return (

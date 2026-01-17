@@ -34,7 +34,7 @@ const CalendarTabMobile = () => {
     return computedStyle.getPropertyValue('--text-secondary').trim() || '#6B7280';
   };
 
-  // Load habits and events - Optimized to load all completions in parallel
+  // Load habits and events - Optimized to load all data in a single RPC
   useEffect(() => {
     const loadData = async () => {
       if (!user) {
@@ -45,15 +45,6 @@ const CalendarTabMobile = () => {
       setLoading(true);
       
       try {
-        const { data: userHabits, error: habitsError } = await masteryService.getUserHabits(user.id);
-        if (habitsError) throw habitsError;
-
-        if (!userHabits || userHabits.length === 0) {
-          setHabits([]);
-          setLoading(false);
-          return;
-        }
-
         // Get date range for the visible month (based on currentDate)
         const baseDate = currentDate || new Date();
         const firstDay = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
@@ -61,27 +52,31 @@ const CalendarTabMobile = () => {
         const startDate = firstDay.toISOString().split('T')[0];
         const endDate = lastDay.toISOString().split('T')[0];
 
-        // Load all completions in parallel
-        const completionPromises = userHabits.map(habit => 
-          masteryService.getHabitCompletions(user.id, habit.id, startDate, endDate)
-            .then(({ data }) => ({
-              habitId: habit.id,
-              completedDates: (data || []).map(c => c.completed_at.split('T')[0])
-            }))
-            .catch(() => ({ habitId: habit.id, completedDates: [] }))
+        const { data, error } = await masteryService.getMasteryDataConsolidated(
+          user.id,
+          startDate,
+          endDate
         );
 
-        const completionsData = await Promise.all(completionPromises);
-        const completionsMap = new Map(completionsData.map(c => [c.habitId, c.completedDates]));
+        if (error) throw error;
 
-        const transformedHabits = userHabits.map(habit => ({
-          ...habit,
-          completed_dates: completionsMap.get(habit.id) || [],
-          color: getHabitColor(habit.title)
-        }));
+        const userHabits = data.user_habits || [];
+        const completions = data.completions || [];
+
+        const transformedHabits = userHabits.map(habit => {
+          const habitCompletions = completions.filter(c => c.habit_id === habit.id);
+          const completedDates = habitCompletions.map(c => c.completed_at.split('T')[0]);
+          
+          return {
+            ...habit,
+            completed_dates: completedDates,
+            color: getHabitColor(habit.title)
+          };
+        });
 
         setHabits(transformedHabits);
       } catch (error) {
+        // Error logged in service
       } finally {
         setLoading(false);
       }

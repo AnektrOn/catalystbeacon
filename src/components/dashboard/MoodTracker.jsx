@@ -1,33 +1,37 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-  Dot
-} from 'recharts'
 import ModernCard from './ModernCard'
 import { Heart, Moon, AlertCircle, Plus } from 'lucide-react'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { supabase } from '../../lib/supabaseClient'
 import toast from 'react-hot-toast'
 import { getLocalDateString, getFirstDayOfMonth, getLastDayOfMonth, isToday } from '../../utils/dateUtils'
 import './MoodTracker.css'
 
-/**
- * Daily Tracker - Premium Ethereal Chart
- * Tracks mood, sleep, and stress (1-10 scale) daily using Recharts
- */
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="mood-tracker-tooltip">
+        <p className="mood-tracker-tooltip-label">{label}</p>
+        {payload.map((entry, index) => (
+          <p key={index} style={{ color: entry.color }}>
+            {entry.name}: <span style={{ fontWeight: 'bold' }}>{entry.value}</span>
+          </p>
+        ))}
+      </div>
+    )
+  }
+  return null
+}
+
 const MoodTracker = ({ userId }) => {
   const [entries, setEntries] = useState({})
   const [loading, setLoading] = useState(true)
   const [showInputModal, setShowInputModal] = useState(false)
-  const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 })
   const cardRef = useRef(null)
+  const chartContainerRef = useRef(null)
+  const [chartWidth, setChartWidth] = useState(800)
+  const [timeRange, setTimeRange] = useState('month') // 'week', 'month', 'year'
   const [todayEntry, setTodayEntry] = useState({
     mood: 5,
     sleep: 5,
@@ -35,456 +39,341 @@ const MoodTracker = ({ userId }) => {
   })
   const [editingDate, setEditingDate] = useState(null)
 
-  // Get current month days
-  const getCurrentMonthDays = () => {
+  // Mesure la largeur du conteneur
+  useEffect(() => {
+    const updateWidth = () => {
+      if (chartContainerRef.current) {
+        setChartWidth(chartContainerRef.current.offsetWidth)
+      }
+    }
+    
+    updateWidth()
+    window.addEventListener('resize', updateWidth)
+    return () => window.removeEventListener('resize', updateWidth)
+  }, [])
+
+  const getCurrentRangeDays = () => {
     const days = []
     const today = new Date()
-    const currentMonth = today.getMonth()
-    const currentYear = today.getFullYear()
     
-    // Get first day of current month
-    const firstDay = new Date(currentYear, currentMonth, 1)
-    // Get last day of current month
-    const lastDay = new Date(currentYear, currentMonth + 1, 0)
-    
-    // Create array of all days in current month
-    for (let day = 1; day <= lastDay.getDate(); day++) {
-      const date = new Date(currentYear, currentMonth, day)
-      days.push({
-        date: getLocalDateString(date),
-        day: day,
-        dayLabel: date.toLocaleDateString('en-US', { weekday: 'short' })
-      })
+    if (timeRange === 'week') {
+      // Last 7 days ending today
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(today)
+        date.setDate(today.getDate() - i)
+        const dateStr = getLocalDateString(date)
+        days.push({
+          date: dateStr,
+          day: date.getDate(),
+          dayLabel: date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+        })
+      }
+    } else {
+      // Current month from day 1 to last day
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+      const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+      
+      for (let day = 1; day <= lastDay.getDate(); day++) {
+        const date = new Date(today.getFullYear(), today.getMonth(), day)
+        const dateStr = getLocalDateString(date)
+        days.push({
+          date: dateStr,
+          day: day,
+          dayLabel: date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
+        })
+      }
     }
     
     return days
   }
 
-  const days = getCurrentMonthDays()
+  const days = getCurrentRangeDays()
 
-  // Transform data for Recharts
+  // Transform data for the chart - Ne PAS filtrer les null
   const chartData = days.map(day => {
     const entry = entries[day.date]
     return {
-      day: day.day,
-      dayLabel: day.dayLabel,
-      date: day.date,
-      mood: entry?.mood ?? null,
-      sleep: entry?.sleep ?? null,
-      stress: entry?.stress ?? null
+      date: day.dayLabel,
+      Mood: entry?.mood ?? null,
+      Sleep: entry?.sleep ?? null,
+      Stress: entry?.stress ?? null
     }
   })
+
+  const hasData = Object.keys(entries).length > 0
+
+  // DEBUG - Vérifie ce qui est passé au graphique
+  console.log('Entries:', entries)
+  console.log('Chart Data:', chartData)
+  console.log('Has Data:', hasData)
+  
+  // Pour la vue semaine : ne garder que les jours avec données
+  // Pour la vue mois : garder TOUS les jours du mois
+  const displayData = timeRange === 'week' 
+    ? chartData.filter(item => item.Mood !== null || item.Sleep !== null || item.Stress !== null)
+    : chartData  // Afficher tous les jours du mois même sans données
+  
+  console.log('Display Data:', displayData)
 
   const loadEntries = useCallback(async () => {
     try {
       setLoading(true)
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) return
       
-      // Verify user is authenticated - RLS requires auth.uid() to match user_id
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      
-      if (sessionError) {
-        throw new Error(`Authentication error: ${sessionError.message}`)
-      }
-      
-      if (!session?.user) {
-        setEntries({})
-        setLoading(false)
-        return
-      }
-      
-      // Use authenticated user ID to ensure RLS policy matches
       const authenticatedUserId = session.user.id
       
-      // Verify userId prop matches authenticated user (for security)
-      if (userId && userId !== authenticatedUserId) {
-        // Still proceed with authenticated user ID for RLS compliance
+      // Calculate date range based on timeRange
+      const today = new Date()
+      let startDate, endDate
+      
+      if (timeRange === 'week') {
+        // Last 7 days ending today
+        startDate = new Date(today)
+        startDate.setDate(today.getDate() - 6)
+        endDate = today
+      } else {
+        // Current month from first to last day
+        startDate = new Date(today.getFullYear(), today.getMonth(), 1)
+        endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0)
       }
       
-      // Get current month date range using local timezone
-      const firstDayOfMonthStr = getFirstDayOfMonth()
-      const lastDayOfMonthStr = getLastDayOfMonth()
+      const startDateStr = getLocalDateString(startDate)
+      const endDateStr = getLocalDateString(endDate)
 
       const { data, error } = await supabase
         .from('user_daily_tracking')
         .select('*')
         .eq('user_id', authenticatedUserId)
-        .gte('date', firstDayOfMonthStr)
-        .lte('date', lastDayOfMonthStr)
+        .gte('date', startDateStr)
+        .lte('date', endDateStr)
         .order('date', { ascending: true })
 
-      if (error) {
-        throw error
-      }
+      if (error) throw error
 
-      // Create a map for quick lookup
       const entriesMap = {}
       data?.forEach(entry => {
-        entriesMap[entry.date] = {
-          mood: entry.mood || null,
-          sleep: entry.sleep || null,
-          stress: entry.stress || null
+        const localDateKey = getLocalDateString(new Date(entry.date)) || entry.date;
+        entriesMap[localDateKey] = {
+          mood: entry.mood,
+          sleep: entry.sleep,
+          stress: entry.stress
         }
       })
-
       setEntries(entriesMap)
     } catch (error) {
-      
-      // Provide more specific error messages
-      let errorMessage = 'Failed to load mood tracker data'
-      if (error?.code === 'PGRST301' || error?.message?.includes('network')) {
-        errorMessage = 'Network error. Please check your connection.'
-      } else if (error?.code === '42501' || error?.message?.includes('permission')) {
-        errorMessage = 'Permission denied. Please refresh the page.'
-      } else if (error?.code === '42P01' || error?.message?.includes('does not exist')) {
-        errorMessage = 'Mood tracker table not found. Please contact support.'
-      } else if (error?.message) {
-        errorMessage = `Failed to load: ${error.message}`
-      }
-      
-      toast.error(errorMessage)
-      setEntries({}) // Set empty entries on error to prevent UI issues
+      console.error('Error loading mood entries:', error)
     } finally {
       setLoading(false)
     }
-  }, [userId])
+  }, [userId, timeRange])
 
   useEffect(() => {
-    if (!userId) return
-    loadEntries()
-  }, [userId, loadEntries])
+    if (userId) loadEntries()
+  }, [userId, loadEntries, timeRange])
 
   const handleSaveEntry = async (date) => {
     try {
-      // Verify user is authenticated
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      
-      if (sessionError || !session?.user) {
-        toast.error('Please sign in to save entries')
-        return
-      }
-      
-      const authenticatedUserId = session.user.id
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) return
 
       const { error } = await supabase
         .from('user_daily_tracking')
         .upsert({
-          user_id: authenticatedUserId,
+          user_id: session.user.id,
           date: date,
           mood: todayEntry.mood,
           sleep: todayEntry.sleep,
           stress: todayEntry.stress,
           updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'user_id,date'
-        })
+        }, { onConflict: 'user_id,date' })
 
-      if (error) {
-        throw error
-      }
-
+      if (error) throw error
       toast.success('Entry saved!')
       setShowInputModal(false)
-      setEditingDate(null)
       loadEntries()
     } catch (error) {
-      let errorMessage = 'Failed to save entry'
-      if (error?.message) {
-        errorMessage = `Failed to save: ${error.message}`
-      }
-      toast.error(errorMessage)
+      toast.error('Failed to save entry')
     }
   }
 
   const handleDayClick = (day) => {
     const existingEntry = entries[day.date]
-    if (existingEntry) {
-      setTodayEntry({
-        mood: existingEntry.mood || 5,
-        sleep: existingEntry.sleep || 5,
-        stress: existingEntry.stress || 5
-      })
-      setEditingDate(day.date)
-    } else {
-      setTodayEntry({ mood: 5, sleep: 5, stress: 5 })
-      setEditingDate(day.date)
-    }
-    
-    // Calculate modal position relative to card (for desktop)
-    if (cardRef.current && window.innerWidth > 768) {
-      const rect = cardRef.current.getBoundingClientRect()
-      const modalHeight = 400 // Approximate modal height
-      const modalWidth = 400
-      
-      // Position modal above the card, centered horizontally
-      const top = rect.top - modalHeight - 16
-      const left = rect.left + (rect.width / 2) - (modalWidth / 2)
-      
-      setModalPosition({ 
-        top: Math.max(16, top), 
-        left: Math.max(16, Math.min(left, window.innerWidth - modalWidth - 16))
-      })
-    } else {
-      // Mobile: center on screen
-      setModalPosition({ top: 0, left: 0 })
-    }
-    
+    setTodayEntry(existingEntry ? {
+      mood: existingEntry.mood || 5,
+      sleep: existingEntry.sleep || 5,
+      stress: existingEntry.stress || 5
+    } : { mood: 5, sleep: 5, stress: 5 })
+    setEditingDate(day.date)
     setShowInputModal(true)
-  }
-
-  const getTodayDate = () => {
-    return getLocalDateString()
-  }
-
-  // Custom dot component - only show for entries with data
-  const CustomDot = (props) => {
-    const { cx, cy, payload, dataKey } = props
-    const value = payload[dataKey]
-    
-    // Only show dot if value exists
-    if (value === null || value === undefined) {
-      return null
-    }
-    
-    return (
-      <circle
-        cx={cx}
-        cy={cy}
-        r={4}
-        fill={props.stroke}
-        stroke="#fff"
-        strokeWidth={2}
-      />
-    )
-  }
-
-  // Custom tooltip
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="mood-tracker-tooltip">
-          <p className="mood-tracker-tooltip-label">Day {label}</p>
-          {payload.map((entry, index) => {
-            if (entry.value === null || entry.value === undefined) return null
-            return (
-              <p key={index} style={{ color: entry.color }}>
-                {entry.name}: {entry.value}
-              </p>
-            )
-          })}
-        </div>
-      )
-    }
-    return null
   }
 
   if (loading) {
     return (
-      <ModernCard className="mood-tracker-card">
-        <div className="mood-tracker-loading" style={{ color: 'var(--ethereal-text)' }}>Loading mood tracker...</div>
+      <ModernCard className="mood-tracker-card min-h-[400px]">
+        <div className="mood-tracker-loading">Loading mood tracker...</div>
       </ModernCard>
     )
   }
 
   return (
-    <>
-      <div ref={cardRef} className="mood-tracker-wrapper">
-        <ModernCard className="mood-tracker-card">
-          {/* Header */}
-          <div className="mood-tracker-header">
-            <h3 className="mood-tracker-title">
-              DAILY TRACKER
-            </h3>
-            <div className="mood-tracker-legend">
-              <div className="mood-tracker-legend-item">
-                <div className="mood-tracker-legend-line mood-tracker-line-mood"></div>
-                <Heart size={12} />
-                <span>Mood</span>
-              </div>
-              <div className="mood-tracker-legend-item">
-                <div className="mood-tracker-legend-line mood-tracker-line-sleep"></div>
-                <Moon size={12} />
-                <span>Sleep</span>
-              </div>
-              <div className="mood-tracker-legend-item">
-                <div className="mood-tracker-legend-line mood-tracker-line-stress"></div>
-                <AlertCircle size={12} />
-                <span>Stress</span>
-              </div>
+    <div ref={cardRef} className="mood-tracker-wrapper">
+      <ModernCard className="mood-tracker-card min-h-[400px]">
+        <div className="mood-tracker-header flex justify-between items-center mb-6">
+          <h3 className="mood-tracker-title font-heading tracking-widest text-sm uppercase">
+            DAILY TRACKER
+          </h3>
+          
+          <div className="flex items-center gap-4">
+            {/* Time Range Filter */}
+            <div className="flex items-center gap-1 bg-zinc-800/50 rounded-lg p-1">
+              {['week', 'month'].map(range => (
+                <button
+                  key={range}
+                  onClick={() => setTimeRange(range)}
+                  className={`px-3 py-1 text-xs uppercase tracking-wider rounded transition-all ${
+                    timeRange === range 
+                      ? 'bg-primary text-primary-foreground font-semibold' 
+                      : 'text-gray-500 hover:text-gray-300'
+                  }`}
+                >
+                  {range === 'week' ? '7D' : '1M'}
+                </button>
+              ))}
+            </div>
+            
+            <div className="hidden sm:flex items-center gap-3 text-[10px] uppercase tracking-wider text-gray-500">
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#10B981]"></div> Mood</div>
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#3B82F6]"></div> Sleep</div>
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#EF4444]"></div> Stress</div>
             </div>
             <button
-              className="mood-tracker-add-btn"
-              onClick={() => handleDayClick({ date: getTodayDate() })}
-              aria-label="Add today's entry"
+              className="mood-tracker-add-btn p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+              onClick={() => handleDayClick({ date: getLocalDateString() })}
             >
               <Plus size={18} />
             </button>
           </div>
+        </div>
 
-          {/* Chart Area */}
-          <div className="mood-tracker-chart-wrapper">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-              <LineChart
-                data={chartData}
-                margin={{ top: 10, right: 10, left: 10, bottom: 10 }}
+        <div ref={chartContainerRef} className="mood-tracker-chart-wrapper w-full" style={{ height: '320px', overflow: 'hidden' }}>
+          {hasData ? (
+            <div style={{ width: '100%', height: '100%' }}>
+              <LineChart 
+                data={displayData} 
+                width={chartWidth}
+                height={320}
+                margin={{ top: 20, right: 30, left: 0, bottom: 20 }}
               >
                 <CartesianGrid 
-                  vertical={false} 
-                  stroke="var(--ethereal-border)" 
-                  strokeOpacity={0.2} 
+                  strokeDasharray="3 3" 
+                  className="mood-tracker-grid-line"
                 />
-                <XAxis
-                  dataKey="day"
-                  stroke="var(--ethereal-text)"
-                  tick={{ 
-                    fontSize: 12, 
-                    fontFamily: "'Cinzel', serif", 
-                    fill: 'var(--ethereal-text)',
-                    opacity: 0.7
-                  }}
-                  style={{ 
-                    fontSize: '12px', 
-                    fontFamily: "'Cinzel', serif" 
-                  }}
+                <XAxis 
+                  dataKey="date" 
+                  tick={{ fontSize: 11 }}
+                  tickLine={false}
+                  interval="preserveStartEnd"
                 />
-                <YAxis
+                <YAxis 
+                  tick={{ fontSize: 11 }}
+                  tickLine={false}
                   domain={[0, 10]}
-                  stroke="var(--ethereal-text)"
-                  tick={{ 
-                    fontSize: 12, 
-                    fontFamily: "'Cinzel', serif", 
-                    fill: 'var(--ethereal-text)',
-                    opacity: 0.7
-                  }}
-                  style={{ 
-                    fontSize: '12px', 
-                    fontFamily: "'Cinzel', serif" 
-                  }}
+                  ticks={[0, 2, 4, 6, 8, 10]}
+                  allowDataOverflow={false}
                 />
                 <Tooltip content={<CustomTooltip />} />
-                <Line
-                  type="monotone"
-                  dataKey="mood"
-                  stroke="#10B981"
-                  strokeWidth={2}
-                  dot={<CustomDot />}
-                  strokeDasharray="2 2"
-                  connectNulls={false}
+                <Legend 
+                  wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
+                  iconType="circle"
                 />
-                <Line
-                  type="monotone"
-                  dataKey="sleep"
-                  stroke="#3B82F6"
+                <Line 
+                  type="monotone" 
+                  dataKey="Mood" 
+                  stroke="#10b981" 
                   strokeWidth={2}
-                  dot={<CustomDot />}
-                  connectNulls={false}
+                  dot={{ fill: '#10b981', r: 4, className: 'mood-tracker-dot-mood' }}
+                  activeDot={{ r: 6 }}
+                  className="mood-tracker-line-mood"
+                  connectNulls
                 />
-                <Line
-                  type="monotone"
-                  dataKey="stress"
-                  stroke="#EF4444"
+                <Line 
+                  type="monotone" 
+                  dataKey="Sleep" 
+                  stroke="#3b82f6" 
                   strokeWidth={2}
-                  dot={<CustomDot />}
-                  strokeDasharray="4 2"
-                  connectNulls={false}
+                  dot={{ fill: '#3b82f6', r: 4, className: 'mood-tracker-dot-sleep' }}
+                  activeDot={{ r: 6 }}
+                  className="mood-tracker-line-sleep"
+                  connectNulls
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="Stress" 
+                  stroke="#ef4444" 
+                  strokeWidth={2}
+                  dot={{ fill: '#ef4444', r: 4, className: 'mood-tracker-dot-stress' }}
+                  activeDot={{ r: 6 }}
+                  className="mood-tracker-line-stress"
+                  connectNulls
                 />
               </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </ModernCard>
-      </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20 text-gray-500 text-sm italic">
+              <div className="mb-2 opacity-20"><Plus size={40} /></div>
+              No data for this month. Start tracking your journey!
+            </div>
+          )}
+        </div>
+      </ModernCard>
 
       {/* Input Modal */}
       {showInputModal && createPortal(
         <div className="mood-tracker-modal-overlay" onClick={() => setShowInputModal(false)}>
-          <div 
-            className="mood-tracker-modal" 
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mood-tracker-modal-header">
-              <h3>
-                {isToday(editingDate) ? "Today's Entry" : new Date(editingDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+          <div className="mood-tracker-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="mood-tracker-modal-header border-b border-white/5 p-5 flex justify-between items-center">
+              <h3 className="font-bold text-lg">
+                {isToday(editingDate) ? "Today's Status" : new Date(editingDate + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
               </h3>
-              <button
-                className="mood-tracker-modal-close"
-                onClick={() => setShowInputModal(false)}
-                aria-label="Close"
-              >
-                ×
-              </button>
+              <button onClick={() => setShowInputModal(false)} className="opacity-50 hover:opacity-100">×</button>
             </div>
 
-            <div className="mood-tracker-modal-content">
-              {/* Mood */}
-              <div className="mood-tracker-input-group">
-                <label className="mood-tracker-input-label">
-                  <Heart size={16} />
-                  <span>Mood</span>
-                </label>
-                <div className="mood-tracker-slider-container">
+            <div className="mood-tracker-modal-content p-6 space-y-8">
+              {[
+                { label: 'Mood', icon: Heart, key: 'mood', color: '#10B981' },
+                { label: 'Sleep', icon: Moon, key: 'sleep', color: '#3B82F6' },
+                { label: 'Stress', icon: AlertCircle, key: 'stress', color: '#EF4444' }
+              ].map(item => (
+                <div key={item.key} className="mood-tracker-input-group space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <item.icon size={16} style={{ color: item.color }} />
+                    {item.label}
+                    <span className="ml-auto text-lg font-bold" style={{ color: item.color }}>{todayEntry[item.key]}</span>
+                  </div>
                   <input
-                    type="range"
-                    min="1"
-                    max="10"
-                    value={todayEntry.mood}
-                    onChange={(e) => setTodayEntry({ ...todayEntry, mood: parseInt(e.target.value) })}
-                    className="mood-tracker-slider mood-tracker-slider-mood"
+                    type="range" min="1" max="10"
+                    value={todayEntry[item.key]}
+                    onChange={(e) => setTodayEntry({ ...todayEntry, [item.key]: parseInt(e.target.value) })}
+                    className={`mood-tracker-slider mood-tracker-slider-${item.key} w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer`}
                   />
-                  <span className="mood-tracker-value">{todayEntry.mood}</span>
                 </div>
-              </div>
-
-              {/* Sleep */}
-              <div className="mood-tracker-input-group">
-                <label className="mood-tracker-input-label">
-                  <Moon size={16} />
-                  <span>Sleep</span>
-                </label>
-                <div className="mood-tracker-slider-container">
-                  <input
-                    type="range"
-                    min="1"
-                    max="10"
-                    value={todayEntry.sleep}
-                    onChange={(e) => setTodayEntry({ ...todayEntry, sleep: parseInt(e.target.value) })}
-                    className="mood-tracker-slider mood-tracker-slider-sleep"
-                  />
-                  <span className="mood-tracker-value">{todayEntry.sleep}</span>
-                </div>
-              </div>
-
-              {/* Stress */}
-              <div className="mood-tracker-input-group">
-                <label className="mood-tracker-input-label">
-                  <AlertCircle size={16} />
-                  <span>Stress</span>
-                </label>
-                <div className="mood-tracker-slider-container">
-                  <input
-                    type="range"
-                    min="1"
-                    max="10"
-                    value={todayEntry.stress}
-                    onChange={(e) => setTodayEntry({ ...todayEntry, stress: parseInt(e.target.value) })}
-                    className="mood-tracker-slider mood-tracker-slider-stress"
-                  />
-                  <span className="mood-tracker-value">{todayEntry.stress}</span>
-                </div>
-              </div>
+              ))}
             </div>
 
-            <div className="mood-tracker-modal-actions">
+            <div className="mood-tracker-modal-actions p-6 pt-0">
               <button
-                className="mood-tracker-save-btn"
+                className="mood-tracker-save-btn w-full py-3 rounded-xl bg-primary text-primary-foreground font-bold hover:brightness-110 transition-all shadow-lg"
                 onClick={() => handleSaveEntry(editingDate)}
               >
-                Save Entry
+                Save Daily Entry
               </button>
             </div>
           </div>
         </div>,
         document.body
       )}
-    </>
+    </div>
   )
 }
 

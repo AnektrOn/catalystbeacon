@@ -9,6 +9,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import AppShell from './components/AppShell'
 import ProtectedSubscriptionRoute from './components/ProtectedSubscriptionRoute'
 import CosmicLoader from './components/ui/CosmicLoader'
+import SkeletonLoader from './components/ui/SkeletonLoader'
 import WelcomeModal from './components/WelcomeModal'
 import './styles/glassmorphism.css'
 import './styles/mobile-responsive.css'
@@ -35,15 +36,9 @@ const PrivacyPage = React.lazy(() => import('./pages/PrivacyPage'))
 const AwakeningLandingPage = React.lazy(() => import('./pages/AwakeningLandingPage'))
 const RoadmapIgnition = React.lazy(() => import('./pages/RoadmapIgnition'))
 
-// Loading component - Now using Cosmic Loader
-// Désactivé: Ne plus montrer de loader pour éviter l'impression de rechargement
-// Les composants lazy-loaded sont mis en cache par React, donc pas besoin de loader à chaque navigation
+// Loading component - Now using Skeleton Loader for perceived speed
 const LoadingScreen = () => {
-  // Retourner null pour éviter l'affichage du loader
-  // Les composants se chargeront en arrière-plan sans bloquer l'UI
-  return null
-  // Alternative: Si vous voulez garder un loader très discret:
-  // return <div style={{ minHeight: '200px' }} /> // Placeholder invisible
+  return <SkeletonLoader type="page" />
 }
 
 // Protected Route component

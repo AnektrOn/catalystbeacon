@@ -122,7 +122,7 @@ html, body {
 }
 
 .grid-mood-tracker {
-  grid-column: span 6;
+  grid-column: span 8;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;

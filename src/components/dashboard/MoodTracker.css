@@ -131,6 +131,7 @@
 .mood-tracker-chart-wrapper {
   flex: 1;
   width: 100%;
+  height: 100%; /* Ensure full height for Recharts ResponsiveContainer */
   min-height: 0;
   position: relative;
   box-sizing: border-box;

@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { usePageTransition } from '../contexts/PageTransitionContext';
 import { Trophy, Star, Zap, BookOpen, Clock, Award } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import SkeletonLoader from '../components/ui/SkeletonLoader';
 
 const Achievements = () => {
     const { user, profile } = useAuth();
@@ -120,13 +121,17 @@ const Achievements = () => {
     }, [user, profile, getBadgeIcon]);
 
     // Use global loader instead of local loading state
-    useEffect(() => {
-        if (loading) {
-            startTransition();
-        } else {
-            endTransition();
-        }
-    }, [loading, startTransition, endTransition]);
+    // useEffect(() => {
+    //     if (loading) {
+    //         startTransition();
+    //     } else {
+    //         endTransition();
+    //     }
+    // }, [loading, startTransition, endTransition]);
+
+    if (loading) {
+        return <SkeletonLoader type="page" />;
+    }
 
     return (
         <div className="min-h-screen pb-20 pt-6 px-4 lg:px-8">

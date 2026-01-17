@@ -220,13 +220,14 @@ const XPCircleWidgetV2 = ({
     @keyframes rotate-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     @keyframes rotate-rev { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
     
-    .orbit-1 { transform-origin: center; animation: rotate-slow 60s linear infinite; opacity: 0.3; }
-    .orbit-2 { transform-origin: center; animation: rotate-rev 45s linear infinite; opacity: 0.2; }
-    .orbit-3 { transform-origin: center; animation: rotate-slow 30s linear infinite; opacity: 0.1; }
+    .orbit-1 { transform-origin: center; animation: rotate-slow 60s linear infinite; opacity: 0.3; will-change: transform; }
+    .orbit-2 { transform-origin: center; animation: rotate-rev 45s linear infinite; opacity: 0.2; will-change: transform; }
+    .orbit-3 { transform-origin: center; animation: rotate-slow 30s linear infinite; opacity: 0.1; will-change: transform; }
 
     .progress-glow {
-      filter: drop-shadow(0 0 8px var(--ethereal-cyan));
+      filter: drop-shadow(0 0 5px var(--ethereal-cyan));
       transition: stroke-dashoffset 1.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+      will-change: stroke-dashoffset;
     }
 
     /* --- FOOTER --- */
@@ -252,6 +253,7 @@ const XPCircleWidgetV2 = ({
       align-items: center;
       gap: 6px;
       backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
       color: var(--ethereal-text);
       opacity: 1;
     }
@@ -260,6 +262,18 @@ const XPCircleWidgetV2 = ({
       color: var(--ethereal-text);
       opacity: 1;
       font-weight: 500;
+    }
+
+    @media (max-width: 640px) {
+      .orbit-1, .orbit-2, .orbit-3 {
+        animation-duration: 120s; /* Slower on mobile to save CPU */
+      }
+      .gauge-center {
+        animation: none; /* Disable floating on mobile */
+      }
+      .particles {
+        display: none; /* Hide particles on mobile */
+      }
     }
 
   `

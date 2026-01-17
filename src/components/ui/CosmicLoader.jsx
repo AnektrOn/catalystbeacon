@@ -21,7 +21,7 @@ const CosmicLoader = ({ fullScreen = true, message = "Loading your journey..." }
     fpsLimit: 60,
     particles: {
       number: {
-        value: 80,
+        value: 40,
         density: {
           enable: true,
           value_area: 800
@@ -44,32 +44,32 @@ const CosmicLoader = ({ fullScreen = true, message = "Loading your journey..." }
         }
       },
       size: {
-        value: 3,
+        value: 2,
         random: true,
         anim: {
           enable: true,
-          speed: 2,
+          speed: 1,
           size_min: 0.5,
           sync: false
         }
       },
       line_linked: {
         enable: true,
-        distance: 150,
+        distance: 120,
         color: "#10b981",
-        opacity: 0.3,
-        width: 1.5
+        opacity: 0.2,
+        width: 1
       },
       move: {
         enable: true,
-        speed: 2,
+        speed: 1.2,
         direction: "none",
         random: false,
         straight: false,
         out_mode: "out",
         bounce: false,
         attract: {
-          enable: true,
+          enable: false,
           rotateX: 600,
           rotateY: 1200
         }

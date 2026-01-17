@@ -17,7 +17,7 @@ const GlobalBackground = () => {
       {/* Layer 2: Aurora Orbs */}
       {/* Orb 1 - Primary Color */}
       <div
-        className="absolute top-0 left-0 w-[400px] h-[400px] rounded-full bg-primary opacity-60 blur-[120px] animate-aurora"
+        className="absolute top-0 left-0 w-[400px] h-[400px] rounded-full bg-primary opacity-60 blur-[100px] animate-aurora will-change-transform"
         style={{
           animationDelay: '0s',
           mixBlendMode: 'multiply',
@@ -26,7 +26,7 @@ const GlobalBackground = () => {
       
       {/* Orb 2 - Secondary Color */}
       <div
-        className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full bg-secondary opacity-60 blur-[120px] animate-aurora"
+        className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full bg-secondary opacity-60 blur-[100px] animate-aurora will-change-transform"
         style={{
           animationDelay: '5s',
           mixBlendMode: 'multiply',
@@ -35,7 +35,7 @@ const GlobalBackground = () => {
       
       {/* Orb 3 - Accent Color */}
       <div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[450px] rounded-full bg-accent opacity-60 blur-[120px] animate-aurora"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[450px] rounded-full bg-accent opacity-60 blur-[100px] animate-aurora will-change-transform"
         style={{
           animationDelay: '10s',
           mixBlendMode: 'multiply',

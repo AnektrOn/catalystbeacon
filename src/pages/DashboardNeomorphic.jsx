@@ -7,9 +7,12 @@ import SEOHead from '../components/SEOHead'
 import levelsService from '../services/levelsService'
 import courseService from '../services/courseService'
 import socialService from '../services/socialService'
+import dashboardService from '../services/dashboardService'
 import useSubscription from '../hooks/useSubscription'
 import UpgradeModal from '../components/UpgradeModal'
 import OnboardingModal from '../components/dashboard/OnboardingModal'
+import BreathworkModal from '../components/dashboard/BreathworkModal'
+import SkeletonLoader from '../components/ui/SkeletonLoader'
 import toast from 'react-hot-toast'
 import { getTodayStartISO } from '../utils/dateUtils'
 
@@ -19,10 +22,8 @@ import XPProgressChart from '../components/dashboard/XPProgressChart'
 import MoodTracker from '../components/dashboard/MoodTracker'
 import SchoolProgressAreaChartMobile from '../components/dashboard/SchoolProgressAreaChartMobile'
 import SchoolProgressAreaChartDesktop from '../components/dashboard/SchoolProgressAreaChartDesktop'
-import AllLessonsCard from '../components/dashboard/AllLessonsCard'
 import HabitsCompletedCard from '../components/dashboard/HabitsCompletedCard'
 import ConstellationNavigatorWidget from '../components/dashboard/ConstellationNavigatorWidget'
-import TeacherFeedWidget from '../components/dashboard/TeacherFeedWidget'
 import EtherealStatsCards from '../components/dashboard/EtherealStatsCards'
 
 import './DashboardNeomorphic.css'
@@ -61,9 +62,6 @@ const DashboardNeomorphic = () => {
         name: '',
         nodes: []
       }
-    },
-    teacherFeed: {
-      posts: []
     },
     stats: {
       learningTime: 0, // hours
@@ -363,35 +361,6 @@ const DashboardNeomorphic = () => {
     }
   }, [user, profile])
 
-  // Load teacher feed (posts from teachers/admins)
-  const loadTeacherFeed = useCallback(async () => {
-    try {
-      const { data: posts, error: postsError } = await socialService.getPosts(5)
-      
-      if (postsError) {
-        setDashboardData(prev => ({
-          ...prev,
-          teacherFeed: { posts: [] }
-        }))
-        return
-      }
-      
-      const teacherPosts = posts?.filter(post => {
-        const userRole = post.profiles?.role
-        return userRole === 'Teacher' || userRole === 'Admin' || userRole === 'teacher' || userRole === 'admin'
-      }) || []
-      
-      setDashboardData(prev => ({
-        ...prev,
-        teacherFeed: { posts: teacherPosts }
-      }))
-    } catch (error) {
-      setDashboardData(prev => ({
-        ...prev,
-        teacherFeed: { posts: [] }
-      }))
-    }
-  }, [])
 
   // Load stats data (learning time and lessons completed)
   const loadStatsData = useCallback(async () => {
@@ -497,15 +466,67 @@ const DashboardNeomorphic = () => {
       
       setLoading(true)
       try {
+        const { data, error } = await dashboardService.getDashboardData(user.id)
+        
+        if (error || !data) {
+          // Fallback to legacy loading if RPC fails (e.g. migration not applied yet)
+          await Promise.all([
+            loadLevelData(),
+            loadRitualData(),
+            loadConstellationData(),
+            loadStatsData()
+          ])
+          return
+        }
+
+        // Map RPC data to state
+        if (data.level_info) {
+          const { currentLevel, nextLevel } = data.level_info
+          setLevelData({
+            level: currentLevel?.level_number || 0,
+            levelTitle: currentLevel?.title || `Level ${currentLevel?.level_number || 0}`,
+            currentXP: profile.current_xp || 0,
+            nextLevelXP: nextLevel?.xp_threshold || 1000,
+            xpToNext: Math.max(0, (nextLevel?.xp_threshold || 1000) - (profile.current_xp || 0))
+          })
+        }
+
+        if (data.ritual_info) {
+          setDashboardData(prev => ({
+            ...prev,
+            ritual: data.ritual_info
+          }))
+        }
+
+        if (data.constellation_info) {
+          setDashboardData(prev => ({
+            ...prev,
+            constellation: data.constellation_info
+          }))
+        }
+
+        if (data.stats_info) {
+          setDashboardData(prev => ({
+            ...prev,
+            stats: {
+              learningTime: data.stats_info.learningTime,
+              lessonsCompleted: data.stats_info.lessonsCompleted,
+              averageScore: data.stats_info.averageScore
+            },
+            achievements: {
+              total: data.stats_info.achievementsUnlocked
+            }
+          }))
+        }
+
+      } catch (error) {
+        // Fallback on catch
         await Promise.all([
           loadLevelData(),
           loadRitualData(),
           loadConstellationData(),
-          loadTeacherFeed(),
           loadStatsData()
         ])
-      } catch (error) {
-        // Don't show error toast - just continue
       } finally {
         setLoading(false)
       }
@@ -516,16 +537,13 @@ const DashboardNeomorphic = () => {
     } else {
       setLoading(false)
     }
-  }, [user, profile, loadLevelData, loadRitualData, loadConstellationData, loadTeacherFeed, loadStatsData])
+  }, [user, profile, loadLevelData, loadRitualData, loadConstellationData, loadStatsData])
 
-  // Use global loader instead of local loading state
-  useEffect(() => {
-    if (loading) {
-      startTransition()
-    } else {
-      endTransition()
-    }
-  }, [loading, startTransition, endTransition])
+  // Dashboard data loading handled by useEffect below
+
+  if (loading && !profile) {
+    return <SkeletonLoader type="dashboard" />;
+  }
 
   return (
     <div className="dashboard-neomorphic">
@@ -583,11 +601,6 @@ const DashboardNeomorphic = () => {
           <XPProgressChart userId={profile?.id} />
         </div>
 
-        {/* 6. All Lessons Card */}
-        <div className="grid-chart">
-          <AllLessonsCard />
-        </div>
-
         {/* 7. Habits Completed Card */}
         <div className="grid-chart">
           <HabitsCompletedCard />
@@ -610,13 +623,6 @@ const DashboardNeomorphic = () => {
               currentSchool={dashboardData.constellation.currentSchool}
               currentConstellation={dashboardData.constellation.currentConstellation}
             />
-          </div>
-        )}
-
-        {/* 13. Teacher Feed - Only show for paid users and admins */}
-        {(!isFreeUser || isAdmin) && (
-          <div className="grid-full-width">
-            <TeacherFeedWidget posts={dashboardData.teacherFeed.posts} />
           </div>
         )}
       </div>

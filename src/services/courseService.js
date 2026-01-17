@@ -1034,6 +1034,23 @@ class CourseService {
     }
   }
 
+  /**
+   * Get consolidated course catalog data in a single request (optimized)
+   */
+  async getCourseCatalogDataConsolidated(userId) {
+    try {
+      const { data, error } = await supabase.rpc('get_course_catalog_data_v1', {
+        p_user_id: userId
+      });
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      logError(error, 'courseService - Error fetching consolidated course catalog data');
+      return { data: null, error };
+    }
+  }
+
   // ===== COURSE CREATION (TEACHER) =====
   // Note: Course creation would need to be updated to work with denormalized structure
   // This is a placeholder for future implementation

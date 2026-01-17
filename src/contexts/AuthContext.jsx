@@ -103,84 +103,25 @@ export const AuthProvider = ({ children }) => {
     try {
       logDebug('📥 fetchProfile: Starting profile fetch for user:', userId)
       
-      // Try to get cache context dynamically (if available)
-      let dataCache = null
-      try {
-        // Can't call hook here, so we'll check sessionStorage directly for cache
-        const cacheKey = `profile_${userId}`
-        const stored = sessionStorage.getItem('app_data_cache')
-        if (stored && !forceRefresh) {
-          try {
-            const parsed = JSON.parse(stored)
-            const cached = parsed?.data?.[cacheKey]
-            if (cached?.data) {
-              const age = Date.now() - cached.timestamp
-              if (age < cached.ttl) {
-                logDebug('✅ fetchProfile: Using cached profile from sessionStorage')
-                setProfile(cached.data)
-                return
-              }
-            }
-          } catch (e) {
-            // Ignore cache parse errors
-          }
-        }
-      } catch (e) {
-        // Cache not available, continue with direct fetch
-      }
-      
-      // Try to get from cache first (unless forcing refresh) - legacy code path
-      if (dataCache && !forceRefresh) {
-        const cacheKey = `profile_${userId}`
-        const cached = dataCache.getCached(cacheKey)
-        if (cached?.data) {
-          const age = Date.now() - cached.timestamp
-          if (age < cached.ttl) {
-            logDebug('✅ fetchProfile: Using cached profile data')
-            setProfile(cached.data)
-            return
-          }
-        }
-        
-        // Use cache fetch function
+      // Try to get cache from sessionStorage first
+      const cacheKey = `profile_${userId}`
+      const stored = sessionStorage.getItem('app_data_cache') || localStorage.getItem('app_data_cache')
+      if (stored && !forceRefresh) {
         try {
-          const result = await dataCache.fetchWithCache(
-            cacheKey,
-            async () => {
-              const withTimeout = (promise, ms = 5000) => {
-                return Promise.race([
-                  promise,
-                  new Promise((_, reject) => setTimeout(() => reject(new Error('PROFILE_FETCH_TIMEOUT')), ms))
-                ])
-              }
-
-              const { data, error } = await withTimeout(
-                supabase
-                  .from('profiles')
-                  .select('*')
-                  .eq('id', userId)
-                  .single()
-              )
-              
-              if (error) throw error
-              return { data }
-            },
-            { force: forceRefresh, ttl: 300000 } // 5 minute TTL for profile
-          )
-          
-          if (result?.data) {
-            setProfile(result.data)
+          const parsed = JSON.parse(stored)
+          const cached = parsed?.data?.[cacheKey]
+          if (cached?.data) {
+            logDebug('✅ fetchProfile: Using cached profile')
+            setProfile(cached.data)
+            // If we have a cached profile, we can clear loading earlier
+            setLoading(false)
             return
           }
-        } catch (cacheError) {
-          logWarn('📦 fetchProfile: Cache fetch failed, falling back to direct fetch:', cacheError)
-          // Fall through to direct fetch
-        }
+        } catch (e) {}
       }
       
-      // Direct fetch (no cache or cache failed)
-      // Increased timeout to 10s for production environments with slower connections
-      const withTimeout = (promise, ms = 10000) => {
+      // Direct fetch with 5s timeout
+      const withTimeout = (promise, ms = 5000) => {
         return Promise.race([
           promise,
           new Promise((_, reject) => setTimeout(() => reject(new Error('PROFILE_FETCH_TIMEOUT')), ms))
@@ -245,11 +186,6 @@ export const AuthProvider = ({ children }) => {
           }
         }
       }
-      
-      // Cache the profile if cache is available
-      if (dataCache && data) {
-        dataCache.setCached(`profile_${userId}`, data, 300000) // 5 minute TTL
-      }
     } catch (error) {
       if (error && error.message === 'PROFILE_FETCH_TIMEOUT') {
         // Retry on timeout
@@ -274,11 +210,11 @@ export const AuthProvider = ({ children }) => {
     
     logDebug('🔍 AuthContext: Starting authentication check...')
 
-    // Force timeout to prevent infinite loading (15 seconds max - enough for session + profile fetch in production)
+    // Force timeout to prevent infinite loading (8 seconds max - reduced from 15s)
     const forceTimeout = setTimeout(() => {
       logWarn('⏰ AuthContext: Force timeout reached, setting loading to false')
       setLoading(false)
-    }, 15000)
+    }, 8000)
 
     let loadingCleared = false
     const clearLoadingSafely = () => {
@@ -290,8 +226,8 @@ export const AuthProvider = ({ children }) => {
     }
 
     // Helper to wrap promises with timeout
-    // Increased timeout to 5s for production environments
-    const withTimeout = (promise, ms = 5000) => {
+    // Reduced timeout to 3s for session check - should be fast
+    const withTimeout = (promise, ms = 3000) => {
       return Promise.race([
         promise,
         new Promise((_, reject) => 
@@ -300,39 +236,48 @@ export const AuthProvider = ({ children }) => {
       ])
     }
 
+    // Try to get last user from storage for optimistic profile fetch
+    try {
+      const lastUser = localStorage.getItem('supabase.auth.token');
+      if (lastUser) {
+        const parsed = JSON.parse(lastUser);
+        const userId = parsed?.currentSession?.user?.id;
+        if (userId && !profile) {
+          logDebug('🚀 AuthContext: Optimistic profile fetch for:', userId);
+          fetchProfile(userId);
+        }
+      }
+    } catch (e) {
+      // Ignore errors in optimistic fetch
+    }
+
     // Get initial session with timeout
     withTimeout(supabase.auth.getSession())
       .then(({ data: { session }, error: sessionError }) => {
         logDebug('👤 AuthContext: Initial session check:', session?.user ? 'User found' : 'No user')
-        // Use functional update to prevent unnecessary re-renders when user ID hasn't changed
+        
         setUser(prevUser => {
           const newUser = session?.user ?? null;
-          // If IDs match, return the OLD reference to prevent re-renders
           if (prevUser?.id === newUser?.id) return prevUser;
           return newUser;
         })
+
         if (session?.user) {
           logDebug('📥 AuthContext: Fetching profile for user:', session.user.id)
-          // Fetch profile with its own timeout, but ensure loading is cleared ONLY after profile is loaded
+          // Fetch profile without blocking loading if we already have it optimistically
           fetchProfile(session.user.id)
             .then(() => {
-              logDebug('✅ AuthContext: Profile fetch completed - user data fully loaded')
+              logDebug('✅ AuthContext: Profile fetch completed')
               isInitializedRef.current = true
-              // Wait a bit to ensure profile state is updated before clearing loading
-              setTimeout(() => {
-                clearLoadingSafely()
-              }, 200)
+              clearLoadingSafely()
             })
             .catch((err) => {
               logError(err, 'AuthContext - Profile fetch error')
-              // Even on error, wait a bit to ensure state is stable
-              setTimeout(() => {
-                clearLoadingSafely()
-              }, 500)
+              clearLoadingSafely()
             })
         } else {
           logDebug('✅ AuthContext: No user, setting loading to false')
-          isInitializedRef.current = true // Mark as initialized even without user
+          isInitializedRef.current = true
           clearLoadingSafely()
         }
       })

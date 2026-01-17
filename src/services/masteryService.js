@@ -640,6 +640,25 @@ class MasteryService {
     }
   }
 
+  /**
+   * Get consolidated mastery data in a single request (optimized)
+   */
+  async getMasteryDataConsolidated(userId, startDate, endDate) {
+    try {
+      const { data, error } = await supabase.rpc('get_mastery_data_v1', {
+        p_user_id: userId,
+        p_start_date: startDate,
+        p_end_date: endDate
+      });
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      logError(error, 'masteryService - Error fetching consolidated mastery data');
+      return { data: null, error };
+    }
+  }
+
 
   // ===== TOOLBOX =====
 
