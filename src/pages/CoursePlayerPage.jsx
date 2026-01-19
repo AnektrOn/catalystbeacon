@@ -62,7 +62,6 @@ const CoursePlayerPage = () => {
     const fromRoadmapParam = params.get('fromRoadmap');
     const returnParam = params.get('return');
     
-    
     // If fromRoadmap=true OR if return param contains roadmap path, consider it as from roadmap
     const isFromRoadmap = fromRoadmapParam === 'true' || (returnParam && (returnParam.includes('roadmap') || returnParam.includes('/roadmap/')));
     
@@ -87,11 +86,14 @@ const CoursePlayerPage = () => {
       setReturnUrl(null);
     }
   }, [courseId, chapterNum, lessonNum]);
+
+  // Derived state for restricted mode
+  const isRestrictedMode = fromRoadmap && isFreeUser;
   
   // Validate lesson access when in roadmap mode (only for free users)
   useEffect(() => {
     // Only apply restrictions for free users - paid users have full access
-    if (fromRoadmap && allowedLesson && isFreeUser) {
+    if (isRestrictedMode && allowedLesson) {
       const currentLessonKey = `${courseId}-${chapterNum}-${lessonNum}`;
       if (currentLessonKey !== allowedLesson) {
         // User tried to access a different lesson - redirect back
@@ -385,7 +387,7 @@ const CoursePlayerPage = () => {
   const handleNavigateLesson = (targetChapterNum, targetLessonNum) => {
     // Block navigation if accessed from roadmap (only for free users)
     // Paid users can navigate freely
-    if (fromRoadmap && isFreeUser) {
+    if (isRestrictedMode) {
       toast.error('Access restricted. This lesson is only available through the roadmap.');
       return;
     }
@@ -437,7 +439,7 @@ const CoursePlayerPage = () => {
     <div className={`flex h-[calc(100vh-80px)] overflow-hidden transition-all duration-500 ${cinemaMode ? 'fixed inset-0 z-50 overflow-y-auto' : ''}`} style={cinemaMode ? { backgroundColor: 'var(--bg-secondary, #0f0f0f)', width: '100vw', height: '100vh' } : {}}>
 
       {/* Mobile Menu Overlay - Disabled in roadmap mode only for free users */}
-      {showMobileMenu && (!fromRoadmap || !isFreeUser) ? createPortal(
+      {showMobileMenu && !isRestrictedMode ? createPortal(
         <div 
           className="fixed inset-0 z-40 lg:hidden"
           onClick={() => setShowMobileMenu(false)}
@@ -500,7 +502,7 @@ const CoursePlayerPage = () => {
       ) : null}
 
       {/* Sidebar - Course Structure (Desktop) - Hidden in roadmap mode only for free users */}
-      {(!fromRoadmap || !isFreeUser) && (
+      {!isRestrictedMode && (
       <div
         className={`glass-effect border-r border-white/10 transition-all duration-300 flex-col
           ${cinemaMode ? (showSidebar ? 'w-80 flex' : 'w-0 opacity-0 overflow-hidden hidden') : 'hidden lg:flex lg:w-80'}
@@ -553,7 +555,7 @@ const CoursePlayerPage = () => {
       )}
 
       {/* Roadmap Mode Notice - Only for free users */}
-      {fromRoadmap && isFreeUser && (
+      {isRestrictedMode && (
         <div className="hidden lg:flex lg:w-80 flex-col items-center justify-center p-6 text-center border-r border-white/10">
           <div className="glass-panel-floating p-6 max-w-xs">
             <div className="text-4xl mb-4">🔒</div>
@@ -579,7 +581,7 @@ const CoursePlayerPage = () => {
         <div className={`flex items-center justify-between px-3 sm:px-6 py-3 ${cinemaMode ? 'backdrop-blur-md' : ''}`} style={cinemaMode ? { backgroundColor: 'color-mix(in srgb, var(--bg-secondary, #0f0f0f) 80%, transparent)' } : {}}>
           <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
             {/* Mobile Menu Button - Disabled in roadmap mode for free users only */}
-            {(!fromRoadmap || !isFreeUser) && (
+            {!isRestrictedMode && (
             <button
               onClick={() => setShowMobileMenu(true)}
               className="lg:hidden p-2 hover:bg-white/10 rounded-lg text-gray-500 dark:text-gray-400 dark:hover:text-white transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
@@ -654,7 +656,7 @@ const CoursePlayerPage = () => {
               <div className="meta-text inline-flex items-center gap-2 px-3 py-1 rounded-full mb-6" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 10%, transparent)', color: 'var(--color-primary)', borderColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)', borderWidth: '1px', borderStyle: 'solid' }}>
                 Chapter {chapterNum} • Lesson {lessonNum}
               </div>
-              {fromRoadmap && isFreeUser && (
+              {isRestrictedMode && (
                 <div className="mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
                   <span>🔓</span>
                   <span>Free Preview Mode - Roadmap Access</span>
@@ -853,7 +855,7 @@ const CoursePlayerPage = () => {
                     </div>
                     
                     {/* Next Lesson Button - Show after completion (disabled in roadmap mode) */}
-                    {nextLesson && !fromRoadmap && (
+                    {nextLesson && !isRestrictedMode && (
                       <button
                         onClick={() => handleNavigateLesson(nextLesson.lesson.chapter_number, nextLesson.lesson.lesson_number)}
                         className="group relative px-8 py-4 text-white rounded-full font-bold text-lg shadow-lg transition-all transform hover:scale-105 active:scale-95 overflow-hidden"
@@ -878,7 +880,7 @@ const CoursePlayerPage = () => {
                       </button>
                     )}
                     {/* Roadmap mode - return to roadmap after completion (free users only) */}
-                    {fromRoadmap && isCompleted && isFreeUser && (
+                    {isRestrictedMode && isCompleted && (
                       <button
                         onClick={() => returnUrl ? navigate(returnUrl) : navigate('/roadmap/ignition')}
                         className="group relative px-8 py-4 text-white rounded-full font-bold text-lg shadow-lg transition-all transform hover:scale-105 active:scale-95 overflow-hidden"
@@ -936,7 +938,7 @@ const CoursePlayerPage = () => {
                 )}
 
                 {/* Navigation Buttons - Disabled in roadmap mode for free users only */}
-                {(!fromRoadmap || !isFreeUser) && (
+                {!isRestrictedMode && (
                 <div className="flex items-center gap-4 mt-8 w-full max-w-md justify-between">
                   {previousLesson ? (
                     <button

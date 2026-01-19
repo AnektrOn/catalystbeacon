@@ -275,7 +275,7 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition' }) => {
     // Always add fromRoadmap=true when coming from roadmap (for both free and paid users)
     // This allows the modal to redirect back to roadmap after completion
     // Free users will have restricted access, paid users will have full access
-    navigate(`/courses/${lesson.course_id}/chapters/${lesson.chapter_number}/lessons/${lesson.lesson_number}?return=${returnUrl}&fromRoadmap=true`);
+    navigate(`/courses/${lesson.course_id}/chapters/${lesson.chapter_number}/lessons/${lesson.lesson_number}?return=${returnUrl}&fromRoadmap=true&isFreeUser=${isFreeUser}`);
     setIsModalOpen(false);
   };
 
