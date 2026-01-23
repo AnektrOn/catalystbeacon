@@ -1,0 +1,107 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap');
+
+.onboarding-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9998; /* Below modals, above regular content */
+  pointer-events: none; /* Allows interaction with elements behind by default */
+  animation: fadeIn 0.3s ease-out;
+}
+
+.onboarding-spotlight {
+  position: absolute;
+  border-radius: 8px; /* Match target element border-radius if applicable */
+  transition: all 0.5s ease-in-out; /* Smooth transition for spotlight */
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.85); /* The "Keyhole" effect */
+  pointer-events: none; /* Do not block clicks on the spotlight area */
+  z-index: 9999; /* Above the overlay, below the card */
+  mix-blend-mode: screen; /* Optional: for a different blend effect */
+  outline: 2px solid #a5f3fc; /* Neon Cyan outline */
+  outline-offset: 4px;
+}
+
+.onboarding-tour-card {
+  position: absolute;
+  background-color: rgba(29, 30, 31, 0.95); /* Dark background with slight transparency */
+  border: 2px solid #a5f3fc; /* Neon Cyan border */
+  border-radius: 12px;
+  padding: 25px;
+  color: #E0FFFF; /* Light cyan text for contrast */
+  text-align: center;
+  max-width: 400px; /* Adjust as needed */
+  z-index: 10000; /* Above everything */
+  pointer-events: auto; /* Re-enable pointer events for the card */
+  box-shadow: 0 0 20px rgba(165, 243, 252, 0.6); /* Neon glow effect */
+  transition: all 0.5s ease-in-out;
+  animation: fadeIn 0.3s ease-out, pulseEffect 2s infinite alternate;
+}
+
+.onboarding-card-title {
+  font-size: 1.8em;
+  margin-bottom: 15px;
+  color: #a5f3fc; /* Neon Cyan for titles */
+  text-shadow: 0 0 8px rgba(165, 243, 252, 0.7);
+  font-family: 'Cinzel', serif; /* Apply Cinzel font */
+}
+
+.onboarding-card-content {
+  font-size: 1.1em;
+  line-height: 1.6;
+  margin-bottom: 25px;
+  color: #B2FFFF; /* Slightly softer cyan for body text */
+}
+
+.onboarding-card-actions button {
+  padding: 12px 25px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1em;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  margin: 0 10px;
+  font-family: 'Cinzel', serif; /* Apply Cinzel font */
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.onboarding-card-actions .primary {
+  background-color: #a5f3fc; /* Neon Cyan for primary action */
+  color: #1a1a1a;
+  box-shadow: 0 0 15px rgba(165, 243, 252, 0.5);
+}
+
+.onboarding-card-actions .primary:hover {
+  background-color: #7ee7ee;
+  box-shadow: 0 0 25px rgba(165, 243, 252, 0.8);
+  transform: translateY(-2px);
+}
+
+.onboarding-card-actions .secondary {
+  background-color: transparent;
+  color: #a5f3fc; /* Neon Cyan for secondary action */
+  border: 2px solid #a5f3fc;
+}
+
+.onboarding-card-actions .secondary:hover {
+  background-color: rgba(165, 243, 252, 0.1);
+  color: #7ee7ee;
+  transform: translateY(-2px);
+}
+
+/* Keyframe Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pulseEffect {
+  0% { box-shadow: 0 0 20px rgba(165, 243, 252, 0.6); }
+  50% { box-shadow: 0 0 30px rgba(165, 243, 252, 0.9); }
+  100% { box-shadow: 0 0 20px rgba(165, 243, 252, 0.6); }
+}
+
+
