@@ -11,6 +11,8 @@ import ProtectedSubscriptionRoute from './components/ProtectedSubscriptionRoute'
 import CosmicLoader from './components/ui/CosmicLoader'
 import SkeletonLoader from './components/ui/SkeletonLoader'
 import WelcomeModal from './components/WelcomeModal'
+import { OnboardingProvider } from './contexts/OnboardingContext'
+import OnboardingTour from './components/Onboarding/OnboardingTour'
 import './styles/glassmorphism.css'
 import './styles/mobile-responsive.css'
 
@@ -312,24 +314,26 @@ function App() {
   return (
     <ThemeProvider>
       <DataCacheProvider>
-        <AuthProvider>
-          <Router
-            future={{
-              v7_startTransition: true,
-              v7_relativeSplatPath: true
-            }}
-          >
-            <PageTransitionProvider>
-              <div 
-                className="App font-sans antialiased min-h-screen"
-                style={{
-                  color: 'var(--text-primary)',
-                  backgroundColor: 'transparent'
-                }}
-              >
-                <AppRoutes />
-                {/* First-time welcome modal - shows globally on first visit */}
-                <WelcomeModal />
+          <AuthProvider>
+            <Router
+              future={{
+                v7_startTransition: true,
+                v7_relativeSplatPath: true
+              }}
+            >
+              <OnboardingProvider>
+                <PageTransitionProvider>
+                  <div 
+                    className="App font-sans antialiased min-h-screen"
+                    style={{
+                      color: 'var(--text-primary)',
+                      backgroundColor: 'transparent'
+                    }}
+                  >
+                    <AppRoutes />
+                    <OnboardingTour />
+                    {/* First-time welcome modal - shows globally on first visit */}
+                    <WelcomeModal />
                 <Toaster
                   position={isMobile ? 'top-center' : 'top-right'}
                   toastOptions={{
@@ -341,9 +345,10 @@ function App() {
                   }}
                 />
               </div>
-            </PageTransitionProvider>
-          </Router>
-        </AuthProvider>
+                </PageTransitionProvider>
+              </OnboardingProvider>
+            </Router>
+          </AuthProvider>
       </DataCacheProvider>
     </ThemeProvider>
   )

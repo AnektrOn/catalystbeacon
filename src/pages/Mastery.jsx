@@ -91,23 +91,27 @@ const Mastery = () => {
     } else if (path === '/mastery/habits') {
       return (
         <>
+          <div id="habit-tracker-container" className="w-full">
           <div className="lg:hidden">
             <HabitsTabMobile key={`habits-mobile-${refreshKey}`} />
           </div>
           <div className="hidden lg:block">
             <HabitsTabCompact key={`habits-desktop-${refreshKey}`} />
           </div>
+        </div>
         </>
       );
     } else if (path === '/mastery/toolbox') {
       return (
         <>
+         <div id="toolbox-container" className="w-full">
           <div className="lg:hidden">
             <ToolboxTabMobile key={`toolbox-mobile-${refreshKey}`} />
           </div>
           <div className="hidden lg:block">
             <ToolboxTabCompact key={`toolbox-desktop-${refreshKey}`} />
           </div>
+        </div>
         </>
       );
     }
@@ -125,7 +129,7 @@ const Mastery = () => {
   };
 
   return (
-    <div className="min-h-full w-full pb-safe">
+    <div id="mastery-container" className="min-h-full w-full pb-safe">
       {/* Mobile-First Header - Clean & Minimal */}
       <div className="mb-6 overflow-x-auto pb-2 scrollbar-hide">
         {/* Tab Navigation - Clean Pills */}

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
+import { useLocation } from 'react-router-dom'
 import { Button } from './ui/button'
 
 /**
@@ -19,21 +20,25 @@ const WelcomeModal = () => {
   const modalRef = useRef(null)
   const firstFocusableRef = useRef(null)
   const lastFocusableRef = useRef(null)
+  const location = useLocation()
 
   // Handle modal dismissal
   const handleDismiss = useCallback(() => {
     setIsOpen(false)
   }, [])
 
-  // Show modal on every mount/load
-  // Small delay to ensure smooth rendering
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsOpen(true)
-    }, 100)
-    
-    return () => clearTimeout(timer)
-  }, [])
+    // Only show the modal on the landing page ('/')
+    if (location.pathname === '/') {
+      const timer = setTimeout(() => {
+        setIsOpen(true)
+      }, 100)
+      
+      return () => clearTimeout(timer)
+    } else {
+      setIsOpen(false) // Ensure it's closed on other pages
+    }
+  }, [location.pathname])
 
   // Focus trap implementation for accessibility
   useEffect(() => {

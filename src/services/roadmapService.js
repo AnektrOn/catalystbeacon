@@ -8,13 +8,27 @@ class RoadmapService {
   /**
    * Fetch all lessons for a masterschool, sorted by difficulty and stat link
    * @param {string} masterschool - 'Ignition', 'Insight', or 'Transformation'
-   * @param {string|null} statLink - Optional: filter by specific stat link
+   * @param {string} userId - User UUID to fetch personalized data
    * @returns {Promise<Array>} Sorted array of lessons
    */
-  async getRoadmapLessons(masterschool) {
+  async getRoadmapLessons(masterschool, userId) {
     try {
+      // Fetch user's institute priority
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('institute_priority')
+        .eq('id', userId)
+        .single();
+
+      if (profileError) {
+        console.error('Error fetching user profile for institute priority:', profileError.message);
+        // Fallback to empty array if no priority is set or error occurs
+      }
+
+      const userPriority = profileData?.institute_priority || [];
+
       // Query course_content and course_metadata directly (more reliable)
-      
+
       // Get courses for this masterschool
       const { data: courses, error: coursesError } = await supabase
         .from('course_metadata')
@@ -32,7 +46,7 @@ class RoadmapService {
       const courseIds = courses.map(c => c.course_id);
 
       // Get all lessons for these courses
-      const { data: lessons, error: lessonsError } = await supabase
+      const { data: lessonsData, error: lessonsError } = await supabase
         .from('course_content')
         .select('*')
         .in('course_id', courseIds)
@@ -40,20 +54,42 @@ class RoadmapService {
         .order('chapter_number', { ascending: true })
         .order('lesson_number', { ascending: true });
 
+
       if (lessonsError) {
         throw lessonsError;
       }
 
-      if (!lessons || lessons.length === 0) {
+      if (!lessonsData || lessonsData.length === 0) {
         return [];
       }
 
+      // Fetch user lesson progress separately
+      const { data: progressData, error: progressError } = await supabase
+        .from('user_lesson_progress')
+        .select('course_id, chapter_number, lesson_number, is_completed')
+        .eq('user_id', userId)
+        .in('course_id', courseIds);
 
-      // Merge course and lesson data
-      const merged = (lessons || []).map(lesson => {
+      if (progressError) {
+        console.error('Error fetching user lesson progress:', progressError.message);
+        // Continue without progress if error
+      }
+
+      const progressMap = new Map();
+      if (progressData) {
+        progressData.forEach(p => {
+          const key = `${p.course_id}-${p.chapter_number}-${p.lesson_number}`;
+          progressMap.set(key, p.is_completed);
+        });
+      }
+
+      // Merge course, lesson, and progress data
+      const merged = lessonsData.map(lesson => {
         const course = courses.find(c => c.course_id === lesson.course_id);
         const difficultyNumeric = course?.difficulty_numeric || 5;
-        
+        const progressKey = `${lesson.course_id}-${lesson.chapter_number}-${lesson.lesson_number}`;
+        const isCompleted = progressMap.get(progressKey) || false;
+
         return {
           ...lesson,
           course_title: course?.course_title || 'Unknown Course',
@@ -61,17 +97,15 @@ class RoadmapService {
           difficulty_numeric: difficultyNumeric,
           stats_linked: course?.stats_linked || [],
           master_skill_linked: course?.master_skill_linked || 'General',
-          lesson_xp_reward: difficultyNumeric * 10
+          lesson_xp_reward: difficultyNumeric * 10,
+          is_completed: isCompleted
         };
       });
 
-      // Sort by difficulty, master skill, then course/chapter/lesson
-      const sorted = this._sortLessons(merged);
-      
-      if (sorted.length > 0) {
-      }
-      
-      return sorted;
+      // Sort by user priority, then filter to show only completed + first incomplete
+      const sortedAndFiltered = this._sortAndFilterLessons(merged, userPriority);
+
+      return sortedAndFiltered;
     } catch (error) {
       throw new Error(`Failed to fetch roadmap lessons: ${error.message}`);
     }
@@ -85,18 +119,20 @@ class RoadmapService {
    */
   async getRoadmapByStatLink(masterschool) {
     try {
-      const lessons = await this.getRoadmapLessons(masterschool);
-      
+      // This method now needs to be re-evaluated as getRoadmapLessons will return filtered results.
+      // For now, it will use the filtered list, but this might need adjustment depending on UI.
+      const lessons = await this.getRoadmapLessons(masterschool, null); // userId is null here, so priority won't apply
+
       // Group lessons by master_skill_linked (singular, no duplicates)
       const grouped = {};
-      
+
       lessons.forEach(lesson => {
         const masterSkill = lesson.master_skill_linked || 'General';
-        
+
         if (!grouped[masterSkill]) {
           grouped[masterSkill] = [];
         }
-        
+
         grouped[masterSkill].push(lesson);
       });
 
@@ -181,11 +217,11 @@ class RoadmapService {
   async isLessonUnlocked(userId, masterschool, lessonId) {
     try {
       // Get all lessons in order
-      const allLessons = await this.getRoadmapLessons(masterschool);
-      
+      const allLessons = await this.getRoadmapLessons(masterschool, userId);
+
       // Find the index of the target lesson
       const lessonIndex = allLessons.findIndex(l => l.lesson_id === lessonId);
-      
+
       if (lessonIndex === -1) {
         return false;
       }
@@ -366,6 +402,17 @@ class RoadmapService {
 
       if (roadmapError) throw roadmapError;
 
+      // Explicitly mark the lesson as completed in user_lesson_progress
+      const { error: updateProgressError } = await supabase
+        .from('user_lesson_progress')
+        .update({ is_completed: true, completed_at: new Date().toISOString() })
+        .eq('user_id', userId)
+        .eq('course_id', courseId)
+        .eq('chapter_number', chapterNumber)
+        .eq('lesson_number', lessonNumber);
+
+      if (updateProgressError) throw updateProgressError;
+
       // Send lesson completion email via Supabase (non-blocking)
       try {
         // Get user profile for email
@@ -374,11 +421,11 @@ class RoadmapService {
           .select('email, full_name, current_xp')
           .eq('id', userId)
           .single();
-        
+
         if (profileData?.email && lessonTitle) {
           const { emailService } = await import('./emailService')
           const xpEarned = rewardsData?.xp_earned || 50
-          
+
           await emailService.sendLessonCompletion(
             profileData.email,
             profileData.full_name || 'there',
@@ -466,8 +513,8 @@ class RoadmapService {
       // For now, it's a placeholder for the notification system
       
       // Get current roadmap state
-      const currentLessons = await this.getRoadmapLessons(masterschool);
-      
+      const currentLessons = await this.getRoadmapLessons(masterschool, null); // userId is null here
+
       // In a real implementation, you would:
       // 1. Compare with a stored snapshot of the roadmap
       // 2. Detect new lessons at lower difficulty levels
@@ -492,23 +539,12 @@ class RoadmapService {
   async getNextLesson(userId, masterschool) {
     let allLessons = [];
     try {
-      allLessons = await this.getRoadmapLessons(masterschool);
+      allLessons = await this.getRoadmapLessons(masterschool, userId);
 
-      // Find first incomplete lesson using user_lesson_progress
+      // Find first incomplete lesson using is_completed flag from merged data
       for (const lesson of allLessons) {
-        const { data } = await supabase
-          .from('user_lesson_progress')
-          .select('is_completed')
-          .eq('user_id', userId)
-          .eq('course_id', lesson.course_id)
-          .eq('chapter_number', lesson.chapter_number)
-          .eq('lesson_number', lesson.lesson_number)
-          .single();
-        
-        const isCompleted = data?.is_completed === true;
-        
-        if (!isCompleted) {
-          // Check if it's unlocked
+        if (!lesson.is_completed) {
+          // Check if it's unlocked (this will use the already sorted and filtered list)
           const isUnlocked = await this.isLessonUnlocked(userId, masterschool, lesson.lesson_id);
           if (isUnlocked) {
             return lesson;
@@ -518,7 +554,9 @@ class RoadmapService {
 
       return null; // All lessons completed or none unlocked
     } catch (error) {
-      return allLessons[0] || null; // Fallback to first lesson
+      // Fallback to the first lesson if an error occurs, as a safe default
+      const firstLesson = (await this.getRoadmapLessons(masterschool, userId))[0];
+      return firstLesson || null;
     }
   }
 
@@ -554,10 +592,59 @@ class RoadmapService {
   // ===== PRIVATE HELPER METHODS =====
 
   /**
-   * Sort lessons by difficulty, master skill, and course/chapter/lesson order
+   * Sort and filter lessons based on user priority.
+   * Returns all completed lessons + the first incomplete lesson according to priority.
+   * @private
+   * @param {Array} lessons - Array of all lessons
+   * @param {Array} userPriority - Array of institute names in user's preferred order
+   * @returns {Array} Sorted and filtered lessons
+   */
+  _sortAndFilterLessons(lessons, userPriority) {
+    if (!userPriority || userPriority.length === 0) {
+      // Fallback to default sort if no priority is set
+      return this._sortLessons(lessons);
+    }
+
+    // Create a map for quick lookup of institute priority index
+    const priorityMap = new Map();
+    userPriority.forEach((instituteName, index) => {
+      priorityMap.set(instituteName, index);
+    });
+
+    const sortedLessons = [...lessons].sort((a, b) => {
+      // Get priority for master_skill_linked, default to Infinity if not in priority list
+      const aPriority = priorityMap.has(a.master_skill_linked) ? priorityMap.get(a.master_skill_linked) : Infinity;
+      const bPriority = priorityMap.has(b.master_skill_linked) ? priorityMap.get(b.master_skill_linked) : Infinity;
+
+      if (aPriority !== bPriority) {
+        return aPriority - bPriority;
+      }
+
+      // Fallback to default sort for lessons within the same priority or if institute not in priority list
+      return this._sortLessons([a, b])[0] === a ? -1 : 1;
+    });
+
+    const completedLessons = [];
+    const filteredLessons = [];
+    let firstIncompleteFound = false;
+
+    for (const lesson of sortedLessons) {
+      if (lesson.is_completed) {
+        completedLessons.push(lesson);
+      } else if (!firstIncompleteFound) {
+        filteredLessons.push(lesson);
+        firstIncompleteFound = true;
+      }
+    }
+
+    return [...completedLessons, ...filteredLessons];
+  }
+
+  /**
+   * Default sort lessons by difficulty, master skill, and course/chapter/lesson order
    * @private
    */
-  _sortLessons(lessons, masterSkill = null) {
+  _sortLessons(lessons) {
     // Custom skill order based on Genesis Protocol phases
     const SKILL_ORDER = {
       // Phase I: DECONDITIONING
@@ -615,4 +702,3 @@ class RoadmapService {
 // Export singleton instance
 const roadmapService = new RoadmapService();
 export default roadmapService;
-

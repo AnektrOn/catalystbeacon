@@ -224,7 +224,6 @@ const corsOptions = {
   optionsSuccessStatus: 200
 }
 app.use(cors(corsOptions))
-app.use(express.json())
 
 // Add CSP header that allows Stripe scripts (only for HTML pages, not API)
 app.use((req, res, next) => {
@@ -876,6 +875,7 @@ app.post('/api/create-portal-session', paymentLimiter, async (req, res) => {
 
 // Stripe webhook
 app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+app.use(express.json())
   const sig = req.headers['stripe-signature']
   let event
 

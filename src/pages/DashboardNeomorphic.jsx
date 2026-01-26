@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import './DashboardNeomorphic.css'
+import React, { useEffect, useState, useCallback, Suspense, lazy } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { usePageTransition } from '../contexts/PageTransitionContext'
@@ -10,30 +11,30 @@ import socialService from '../services/socialService'
 import dashboardService from '../services/dashboardService'
 import useSubscription from '../hooks/useSubscription'
 import UpgradeModal from '../components/UpgradeModal'
-import OnboardingModal from '../components/dashboard/OnboardingModal'
 import BreathworkModal from '../components/dashboard/BreathworkModal'
 import SkeletonLoader from '../components/ui/SkeletonLoader'
 import toast from 'react-hot-toast'
-import { getTodayStartISO } from '../utils/dateUtils'
 
-// Import Dashboard Components
-import XPCircleWidgetV2 from '../components/dashboard/XPCircleWidgetV2'
-import XPProgressChart from '../components/dashboard/XPProgressChart'
-import MoodTracker from '../components/dashboard/MoodTracker'
-import SchoolProgressAreaChartMobile from '../components/dashboard/SchoolProgressAreaChartMobile'
-import SchoolProgressAreaChartDesktop from '../components/dashboard/SchoolProgressAreaChartDesktop'
-import HabitsCompletedCard from '../components/dashboard/HabitsCompletedCard'
-import ConstellationNavigatorWidget from '../components/dashboard/ConstellationNavigatorWidget'
-import EtherealStatsCards from '../components/dashboard/EtherealStatsCards'
+const XPCircleWidgetV2 = lazy(() => import('../components/dashboard/XPCircleWidgetV2'))
+const XPProgressChart = lazy(() => import('../components/dashboard/XPProgressChart'))
+const MoodTracker = lazy(() => import('../components/dashboard/MoodTracker'))
+const SchoolProgressAreaChartMobile = lazy(() => import('../components/dashboard/SchoolProgressAreaChartMobile'))
+const SchoolProgressAreaChartDesktop = lazy(() => import('../components/dashboard/SchoolProgressAreaChartDesktop'))
+const HabitsCompletedCard = lazy(() => import('../components/dashboard/HabitsCompletedCard'))
+const ConstellationNavigatorWidget = lazy(() => import('../components/dashboard/ConstellationNavigatorWidget'))
+const EtherealStatsCards = lazy(() => import('../components/dashboard/EtherealStatsCards'))
 
-import './DashboardNeomorphic.css'
+let dashboardCache = {
+  data: null,
+  timestamp: 0,
+  ttl: 5 * 60 * 1000 // 5 minutes
+}
 
 const DashboardNeomorphic = () => {
   const { user, profile, fetchProfile } = useAuth()
   const { isFreeUser, isAdmin } = useSubscription()
   const { startTransition, endTransition } = usePageTransition()
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
-  const [showOnboardingModal, setShowOnboardingModal] = useState(false)
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [loading, setLoading] = useState(true)
@@ -81,21 +82,6 @@ const DashboardNeomorphic = () => {
     
     const upgradePrompt = searchParams.get('upgradePrompt')
     const isNewUser = searchParams.get('new_user')
-
-    // Check onboarding: URL param OR database flag (100% reliable)
-    const shouldShowOnboarding = isNewUser === 'true' || 
-                                 (profile.has_completed_onboarding === false && 
-                                  profile.created_at && 
-                                  new Date(profile.created_at) > new Date(Date.now() - 24 * 60 * 60 * 1000)) // Created in last 24 hours
-
-    if (shouldShowOnboarding && !profile.has_completed_onboarding) {
-      setShowOnboardingModal(true)
-    } else if (upgradePrompt === 'true' && !isAdmin) {
-      setShowUpgradeModal(true)
-      navigate('/dashboard', { replace: true })
-    } else if (upgradePrompt === 'true' && isAdmin) {
-      navigate('/dashboard', { replace: true })
-    }
   }, [searchParams, navigate, isAdmin, user, profile])
 
   // Handle payment success redirect - PRIMARY: Use API server directly
@@ -188,275 +174,6 @@ const DashboardNeomorphic = () => {
     }
   }, [searchParams, user, profile, fetchProfile, navigate, paymentProcessed])
 
-  // Load level data
-  const loadLevelData = useCallback(async () => {
-    if (!profile || !user) return
-
-    try {
-      const currentXP = profile.current_xp || 0
-
-      // Prefer DB-provided rank/level when available
-      let level = profile.level || 0
-      let levelTitle = profile.rank || ''
-      let nextLevelXP = (level + 1) * 1000
-      let xpToNext = Math.max(0, nextLevelXP - currentXP)
-
-      // If we have xp_to_next_level from DB triggers, use it for accuracy
-      if (profile.xp_to_next_level !== undefined && profile.xp_to_next_level !== null) {
-        xpToNext = Math.max(0, profile.xp_to_next_level)
-        nextLevelXP = currentXP + xpToNext
-      }
-
-      // Fetch canonical level titles/thresholds from levels table when possible
-      const { data: levelInfo, error } = await levelsService.getCurrentAndNextLevel(currentXP)
-      if (!error && levelInfo?.currentLevel) {
-        level = levelInfo.currentLevel.level_number ?? level
-        levelTitle = levelInfo.currentLevel.title || levelTitle
-        if (levelInfo.nextLevel?.xp_threshold !== undefined && levelInfo.nextLevel?.xp_threshold !== null) {
-          nextLevelXP = levelInfo.nextLevel.xp_threshold
-          xpToNext = Math.max(0, nextLevelXP - currentXP)
-        } else {
-          xpToNext = 0
-        }
-      }
-
-      setLevelData({
-        level: level || 0,
-        levelTitle: levelTitle || `Level ${level || 0}`,
-        currentXP,
-        nextLevelXP,
-        xpToNext
-      })
-    } catch (error) {
-      // Don't show error toast - just continue
-    }
-  }, [profile, user])
-
-
-  // Load daily ritual data (habits completion streak)
-  const loadRitualData = useCallback(async () => {
-    if (!user || !profile) return
-    
-    try {
-      const streak = profile.completion_streak || 0
-      
-      // Check if ritual completed today (any habit completed today)
-      const todayStart = getTodayStartISO()
-      
-      // Check habit completions for today
-      const { data: completions, error: completionsError } = await supabase
-        .from('user_habit_completions')
-        .select('id')
-        .eq('user_id', user.id)
-        .gte('completed_at', todayStart)
-        .limit(1)
-      
-      if (completionsError && completionsError.code !== 'PGRST116') {
-        // Error loading habit completions
-      }
-      
-      const completed = completions && completions.length > 0
-
-      setDashboardData(prev => ({
-        ...prev,
-        ritual: {
-          completed,
-          streak,
-          xpReward: 50
-        }
-      }))
-    } catch (error) {
-      // Error loading ritual data
-    }
-  }, [user, profile])
-
-
-  // Load constellation data (current school and progress)
-  const loadConstellationData = useCallback(async () => {
-    if (!user || !profile) return
-    
-    try {
-      const { data: schools, error: schoolsError } = await supabase
-        .from('schools')
-        .select('*')
-        .order('unlock_xp', { ascending: true })
-
-      if (schoolsError && schoolsError.code !== 'PGRST116') {
-        // Error loading schools
-      }
-
-      const userXp = profile.current_xp || 0
-      let currentSchool = 'Ignition'
-      
-      if (schools && schools.length > 0) {
-        for (const school of schools) {
-          if (userXp >= school.unlock_xp) {
-            currentSchool = school.name
-          } else {
-            break
-          }
-        }
-      }
-
-      const { data: courses, error: coursesError } = await courseService.getAllCourses({
-        masterschool: currentSchool,
-        userId: user.id
-      })
-
-      if (coursesError) {
-        // Error loading courses
-      }
-
-      if (!courses || courses.length === 0) {
-        setDashboardData(prev => ({
-          ...prev,
-          constellation: {
-            currentSchool,
-            currentConstellation: { name: `${currentSchool} Courses`, nodes: [] }
-          }
-        }))
-        return
-      }
-
-      const nodes = await Promise.all(
-        courses.slice(0, 5).map(async (course, index) => {
-          try {
-            if (!course.course_id) {
-              return null;
-            }
-            const { data: progress, error: progressError } = await courseService.getUserCourseProgress(user.id, course.course_id)
-            // Progress errors are non-critical - just continue without progress data
-            if (progressError) {
-              // Error loading course progress (non-critical)
-            }
-            const isCompleted = progress?.status === 'completed'
-            const isCurrent = index === 0 && progress?.status === 'in_progress'
-
-            return {
-              id: course.id,
-              name: course.title,
-              completed: isCompleted,
-              isCurrent
-            }
-          } catch (err) {
-            return null
-          }
-        })
-      )
-
-      const validNodes = nodes.filter(n => n !== null)
-
-      setDashboardData(prev => ({
-        ...prev,
-        constellation: {
-          currentSchool,
-          currentConstellation: {
-            name: `${currentSchool} Path`,
-            nodes: validNodes
-          }
-        }
-      }))
-    } catch (error) {
-      // Error loading constellation data
-    }
-  }, [user, profile])
-
-
-  // Load stats data (learning time and lessons completed)
-  const loadStatsData = useCallback(async () => {
-    if (!user || !profile) return
-    
-    try {
-      const oneWeekAgo = new Date()
-      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
-      
-      let xpLogs = []
-      let xpError = null
-      try {
-        const result = await supabase
-          .from('xp_logs')
-          .select('xp_earned, created_at')
-          .eq('user_id', user.id)
-          .gte('created_at', oneWeekAgo.toISOString())
-        xpLogs = result.data || []
-        xpError = result.error
-      } catch (err) {
-        xpError = err
-      }
-
-      if (xpError && xpError.code !== 'PGRST116') {
-        // Error loading XP logs
-      }
-
-      const totalXP = xpLogs?.reduce((sum, log) => sum + (log.xp_earned || 0), 0) || 0
-      const learningTime = Math.floor(totalXP / 50)
-
-      let lessonsCount = 0
-      let lessonsError = null
-      try {
-        const result = await supabase
-          .from('user_lesson_progress')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .eq('is_completed', true)
-        lessonsCount = result.count || 0
-        lessonsError = result.error
-      } catch (err) {
-        lessonsError = err
-      }
-
-      if (lessonsError && lessonsError.code !== 'PGRST116') {
-        // Error loading lessons completed
-      }
-
-      // Get achievements count
-      const { count: achievementsCount, error: achievementsError } = await supabase
-        .from('user_badges')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-
-      if (achievementsError && achievementsError.code !== 'PGRST116') {
-        // Error loading achievements
-      }
-
-      let averageScore = 0
-      try {
-        const { data: lessonProgress, error: progressError } = await supabase
-          .from('user_lesson_progress')
-          .select('score')
-          .eq('user_id', user.id)
-          .eq('is_completed', true)
-          .not('score', 'is', null)
-
-        if (!progressError && lessonProgress && lessonProgress.length > 0) {
-          const scores = lessonProgress.map(lp => lp.score || 0).filter(s => s > 0)
-          if (scores.length > 0) {
-            averageScore = scores.reduce((sum, score) => sum + score, 0) / scores.length
-          }
-        } else if (progressError) {
-          // 400 error might be due to column name or syntax - just continue
-        }
-      } catch (err) {
-        // Error calculating average score
-      }
-
-      setDashboardData(prev => ({
-        ...prev,
-        stats: {
-          learningTime,
-          lessonsCompleted: lessonsCount || 0,
-          averageScore
-        },
-        achievements: {
-          total: achievementsCount || 0
-        }
-      }))
-    } catch (error) {
-      // Error loading stats data
-    }
-  }, [user, profile])
-
-  // Load all data - only when both user and profile are ready
   useEffect(() => {
     const loadAllData = async () => {
       if (!user || !profile) {
@@ -466,67 +183,87 @@ const DashboardNeomorphic = () => {
       
       setLoading(true)
       try {
-        const { data, error } = await dashboardService.getDashboardData(user.id)
-        
-        if (error || !data) {
-          // Fallback to legacy loading if RPC fails (e.g. migration not applied yet)
-          await Promise.all([
-            loadLevelData(),
-            loadRitualData(),
-            loadConstellationData(),
-            loadStatsData()
-          ])
-          return
-        }
-
-        // Map RPC data to state
-        if (data.level_info) {
-          const { currentLevel, nextLevel } = data.level_info
-          setLevelData({
-            level: currentLevel?.level_number || 0,
-            levelTitle: currentLevel?.title || `Level ${currentLevel?.level_number || 0}`,
+        // Check cache first
+        if (dashboardCache.data && (Date.now() - dashboardCache.timestamp < dashboardCache.ttl)) {
+          console.log("Fetching dashboard data from cache");
+          const cachedData = dashboardCache.data;
+          // Map RPC data to state
+          const newLevelData = {
+            level: cachedData.level_info?.currentLevel?.level_number || 0,
+            levelTitle: cachedData.level_info?.currentLevel?.title || `Level ${cachedData.level_info?.currentLevel?.level_number || 0}`,
             currentXP: profile.current_xp || 0,
-            nextLevelXP: nextLevel?.xp_threshold || 1000,
-            xpToNext: Math.max(0, (nextLevel?.xp_threshold || 1000) - (profile.current_xp || 0))
-          })
-        }
+            nextLevelXP: cachedData.level_info?.nextLevel?.xp_threshold || 1000,
+            xpToNext: Math.max(0, (cachedData.level_info?.nextLevel?.xp_threshold || 1000) - (profile.current_xp || 0))
+          };
 
-        if (data.ritual_info) {
-          setDashboardData(prev => ({
-            ...prev,
-            ritual: data.ritual_info
-          }))
-        }
-
-        if (data.constellation_info) {
-          setDashboardData(prev => ({
-            ...prev,
-            constellation: data.constellation_info
-          }))
-        }
-
-        if (data.stats_info) {
-          setDashboardData(prev => ({
-            ...prev,
+          const newDashboardData = {
+            ritual: cachedData.ritual_info || { completed: false, streak: 0, xpReward: 50 },
+            constellation: cachedData.constellation_info || {
+              currentSchool: 'Ignition',
+              currentConstellation: { name: '', nodes: [] }
+            },
             stats: {
-              learningTime: data.stats_info.learningTime,
-              lessonsCompleted: data.stats_info.lessonsCompleted,
-              averageScore: data.stats_info.averageScore
+              learningTime: cachedData.stats_info?.learningTime || 0,
+              lessonsCompleted: cachedData.stats_info?.lessonsCompleted || 0,
+              averageScore: cachedData.stats_info?.averageScore || 0
             },
             achievements: {
-              total: data.stats_info.achievementsUnlocked
+              total: cachedData.stats_info?.achievementsUnlocked || 0
             }
-          }))
+          };
+
+          setLevelData(newLevelData);
+          setDashboardData(newDashboardData);
+          setLoading(false);
+          return;
         }
 
+        const { data, error } = await dashboardService.getDashboardData(user.id)
+
+        if (error || !data) {
+          console.error("Error fetching dashboard data via RPC:", error);
+          // If RPC fails, we still set loading to false to prevent infinite spinner
+          setLoading(false);
+          return;
+        }
+
+        // Update cache
+        dashboardCache = {
+          data: data,
+          timestamp: Date.now(),
+          ttl: 5 * 60 * 1000
+        };
+
+        // Map RPC data to state
+        const newLevelData = {
+          level: data.level_info?.currentLevel?.level_number || 0,
+          levelTitle: data.level_info?.currentLevel?.title || `Level ${data.level_info?.currentLevel?.level_number || 0}`,
+          currentXP: profile.current_xp || 0,
+          nextLevelXP: data.level_info?.nextLevel?.xp_threshold || 1000,
+          xpToNext: Math.max(0, (data.level_info?.nextLevel?.xp_threshold || 1000) - (profile.current_xp || 0))
+        };
+
+        const newDashboardData = {
+          ritual: data.ritual_info || { completed: false, streak: 0, xpReward: 50 },
+          constellation: data.constellation_info || {
+            currentSchool: 'Ignition',
+            currentConstellation: { name: '', nodes: [] }
+          },
+          stats: {
+            learningTime: data.stats_info?.learningTime || 0,
+            lessonsCompleted: data.stats_info?.lessonsCompleted || 0,
+            averageScore: data.stats_info?.averageScore || 0
+          },
+          achievements: {
+            total: data.stats_info?.achievementsUnlocked || 0
+          }
+        };
+
+        setLevelData(newLevelData);
+        setDashboardData(newDashboardData);
+
       } catch (error) {
-        // Fallback on catch
-        await Promise.all([
-          loadLevelData(),
-          loadRitualData(),
-          loadConstellationData(),
-          loadStatsData()
-        ])
+        console.error("Exception fetching dashboard data via RPC:", error);
       } finally {
         setLoading(false)
       }
@@ -537,9 +274,7 @@ const DashboardNeomorphic = () => {
     } else {
       setLoading(false)
     }
-  }, [user, profile, loadLevelData, loadRitualData, loadConstellationData, loadStatsData])
-
-  // Dashboard data loading handled by useEffect below
+  }, [user, profile, fetchProfile])
 
   if (loading && !profile) {
     return <SkeletonLoader type="dashboard" />;
@@ -568,61 +303,77 @@ const DashboardNeomorphic = () => {
       </header>
 
       {/* Main Grid */}
-      <div className="dashboard-grid">
+      <div id="dashboard-widgets" className="dashboard-grid">
         {/* 1. Hero - XP Circle */}
-        <div className="grid-hero">
-          <XPCircleWidgetV2
-            currentXP={levelData.currentXP}
-            levelXP={levelData.nextLevelXP}
-            level={levelData.level}
-            nextLevel={levelData.level + 1}
-            levelTitle={levelData.levelTitle}
-            isActive={true}
-          />
+        <div id="dashboard-xp-circle" className="grid-hero">
+          <Suspense fallback={<div>Loading XP Circle...</div>}>
+            <XPCircleWidgetV2
+              currentXP={levelData.currentXP}
+              levelXP={levelData.nextLevelXP}
+              level={levelData.level}
+              nextLevel={levelData.level + 1}
+              levelTitle={levelData.levelTitle}
+              isActive={true}
+            />
+          </Suspense>
         </div>
 
         {/* 17. Ethereal Stats Cards */}
-        <div className="grid-stats">
-          <EtherealStatsCards
-            streak={dashboardData.ritual.streak}
-            lessonsCompleted={dashboardData.stats.lessonsCompleted}
-            learningTime={dashboardData.stats.learningTime}
-            achievementsUnlocked={dashboardData.achievements.total}
-          />
+        <div id="dashboard-stats-cards" className="grid-stats">
+          <Suspense fallback={<div>Loading Stats...</div>}>
+            <EtherealStatsCards
+              streak={dashboardData.ritual.streak}
+              lessonsCompleted={dashboardData.stats.lessonsCompleted}
+              learningTime={dashboardData.stats.learningTime}
+              achievementsUnlocked={dashboardData.achievements.total}
+            />
+          </Suspense>
         </div>
 
         {/* 4. Mood Tracker */}
         <div className="grid-mood-tracker">
-          <MoodTracker userId={profile?.id} />
+          <Suspense fallback={<div>Loading Mood Tracker...</div>}>
+            <MoodTracker userId={profile?.id} />
+          </Suspense>
         </div>
 
         {/* 5. XP Progress Chart */}
         <div className="grid-chart">
-          <XPProgressChart userId={profile?.id} />
+          <Suspense fallback={<div>Loading XP Chart...</div>}>
+            <XPProgressChart userId={profile?.id} />
+          </Suspense>
         </div>
 
         {/* 7. Habits Completed Card */}
         <div className="grid-chart">
-          <HabitsCompletedCard />
+          <Suspense fallback={<div>Loading Habits Card...</div>}>
+            <HabitsCompletedCard />
+          </Suspense>
         </div>
 
         {/* School Progress Area Chart */}
         <div className="grid-chart">
           <div className="lg:hidden">
-            <SchoolProgressAreaChartMobile userId={profile?.id} />
+            <Suspense fallback={<div>Loading Mobile Chart...</div>}>
+              <SchoolProgressAreaChartMobile userId={profile?.id} />
+            </Suspense>
           </div>
           <div className="hidden lg:block">
-            <SchoolProgressAreaChartDesktop userId={profile?.id} />
+            <Suspense fallback={<div>Loading Desktop Chart...</div>}>
+              <SchoolProgressAreaChartDesktop userId={profile?.id} />
+            </Suspense>
           </div>
         </div>
 
         {/* 12. Constellation Navigator - Only show for paid users and admins */}
         {(!isFreeUser || isAdmin) && (
           <div className="grid-full-width">
-            <ConstellationNavigatorWidget
-              currentSchool={dashboardData.constellation.currentSchool}
-              currentConstellation={dashboardData.constellation.currentConstellation}
-            />
+            <Suspense fallback={<div>Loading Constellation...</div>}>
+              <ConstellationNavigatorWidget
+                currentSchool={dashboardData.constellation.currentSchool}
+                currentConstellation={dashboardData.constellation.currentConstellation}
+              />
+            </Suspense>
           </div>
         )}
       </div>
@@ -652,53 +403,8 @@ const DashboardNeomorphic = () => {
         />
       )}
 
-      {/* Onboarding Modal - Show for new users */}
-      <OnboardingModal 
-        isOpen={showOnboardingModal} 
-        onClose={async () => {
-          setShowOnboardingModal(false)
-          
-          // Mark onboarding as completed in database
-          if (user && profile && !profile.has_completed_onboarding) {
-            try {
-              const { error: updateError } = await supabase
-                .from('profiles')
-                .update({ 
-                  has_completed_onboarding: true,
-                  onboarding_completed_at: new Date().toISOString()
-                })
-                .eq('id', user.id)
-              
-              if (updateError) {
-                // Retry once after 1 second
-                setTimeout(async () => {
-                  await supabase
-                    .from('profiles')
-                    .update({ 
-                      has_completed_onboarding: true,
-                      onboarding_completed_at: new Date().toISOString()
-                    })
-                    .eq('id', user.id)
-                }, 1000)
-              } else {
-                await fetchProfile(user.id)
-              }
-            } catch (error) {
-              localStorage.setItem(`onboarding_completed_${user.id}`, 'true')
-            }
-          }
-          
-          // Clean up URL when closing
-          const newParams = new URLSearchParams(searchParams)
-          if (newParams.get('new_user')) {
-            newParams.delete('new_user')
-            navigate({ search: newParams.toString() }, { replace: true })
-          }
-        }} 
-      />
     </div>
   )
 }
 
 export default DashboardNeomorphic
-

@@ -104,9 +104,9 @@ const HabitsTabCompact = () => {
 
         if (consolidatedError) throw consolidatedError;
 
-        const userHabits = consolidatedData.user_habits || [];
-        const completions = consolidatedData.completions || [];
-        const libraryHabits = consolidatedData.habits_library || [];
+        const userHabits = consolidatedData[0]?.user_habits || [];
+        const completions = consolidatedData[0]?.completions || [];
+        const libraryHabits = consolidatedData[0]?.habits_library || [];
 
         // Transform user habits to include completion data and UI properties
         const transformedHabits = userHabits.map((habit) => {

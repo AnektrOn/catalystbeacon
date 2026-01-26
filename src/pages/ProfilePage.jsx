@@ -24,6 +24,8 @@ import skillsService from '../services/skillsService'
 import levelsService from '../services/levelsService'
 import useSubscription from '../hooks/useSubscription'
 import SkeletonLoader from '../components/ui/SkeletonLoader'
+import { useOnboarding } from '../contexts/OnboardingContext'
+import ONBOARDING_STEPS from '../constants/onboardingSteps'
 
 const ProfilePage = () => {
   const { user, profile, updateProfile, loading: authLoading } = useAuth()
@@ -63,13 +65,8 @@ const ProfilePage = () => {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
   const [avatarPreview, setAvatarPreview] = useState(profile?.avatar_url || null)
   const avatarInputRef = useRef(null)
+  const { setShowTour, setCurrentStepIndex } = useOnboarding()
 
-  // Redirect free users to settings immediately (admins have full access)
-  useEffect(() => {
-    if (!authLoading && isFreeUser && !isAdmin && user) {
-      navigate('/settings', { replace: true })
-    }
-  }, [isFreeUser, isAdmin, user, navigate, authLoading])
 
   // Update form data when profile changes
   useEffect(() => {
@@ -192,6 +189,31 @@ const ProfilePage = () => {
       setLoading(false)
     }
   }
+
+  const handleRetriggerOnboarding = async () => {
+    if (user) {
+      try {
+        setLoading(true);
+        const { error } = await supabase
+          .from('profiles')
+          .update({ has_completed_onboarding: false })
+          .eq('id', user.id);
+        if (error) {
+          toast.error('Error re-triggering onboarding: ' + error.message);
+        } else {
+          toast.success('Onboarding re-triggered!');
+          setShowTour(true);
+          setCurrentStepIndex(0);
+          navigate(ONBOARDING_STEPS[0].route); // Navigate to the first step's route
+        }
+      } catch (err) {
+        console.error('A critical error occurred while re-triggering onboarding:', err);
+        toast.error('Failed to re-trigger onboarding due to a critical error.');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -378,7 +400,7 @@ const ProfilePage = () => {
         {/* Top Row - Character Info & Key Stats */}
         <div className="profile-stats-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Character Card - Left */}
-          <div className="bg-ethereal-glass backdrop-blur-ethereal rounded-ethereal p-4 sm:p-6 border border-ethereal-border shadow-ethereal-base sm:col-span-2 lg:col-span-1">
+          <div id="profile-stats-card" className="bg-ethereal-glass backdrop-blur-ethereal rounded-ethereal p-4 sm:p-6 border border-ethereal-border shadow-ethereal-base sm:col-span-2 lg:col-span-1">
             <div className="flex items-center space-x-3 sm:space-x-4">
               <div className="relative flex-shrink-0">
                 {profile?.avatar_url ? (
@@ -464,7 +486,7 @@ const ProfilePage = () => {
         {/* Middle Row - Core Stats & Master Stats */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Radar Chart - Left */}
-          <Card className="bg-ethereal-glass backdrop-blur-ethereal border-ethereal-border shadow-ethereal-base rounded-ethereal">
+          <Card id="profile-core-stats" className="bg-ethereal-glass backdrop-blur-ethereal border-ethereal-border shadow-ethereal-base rounded-ethereal">
             <CardHeader className="items-center pb-4">
               <CardTitle className="text-ethereal-text flex items-center">
                 Core Stats
@@ -651,7 +673,14 @@ const ProfilePage = () => {
             />
           </div>
 
-          <div className="md:col-span-2 flex justify-end">
+          <div className="md:col-span-2 flex justify-end items-center gap-4">
+            <button
+              type="button"
+              onClick={handleRetriggerOnboarding}
+              className="px-8 py-3 bg-gradient-to-r from-ethereal-violet to-ethereal-cyan hover:from-ethereal-violet/80 hover:to-ethereal-cyan/80 text-white font-bold rounded-xl transition-all duration-200 shadow-ethereal-base hover:shadow-ethereal-hover font-heading uppercase tracking-widest"
+            >
+              Retrigger Onboarding
+            </button>
             <button
               type="submit"
               disabled={loading}

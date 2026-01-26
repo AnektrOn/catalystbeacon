@@ -21,29 +21,31 @@ const MissionModal = ({ isOpen, node, masterschool, onClose, onStart, onComplete
     
     setLoadingChapter(true);
     try {
-      // Try to get chapter title from course_structure
+      // 1. CORRECTION ICI : Utilisation de maybeSingle()
       const { data: structure } = await supabase
         .from('course_structure')
         .select(`chapter_title_${node.lesson.chapter_number}`)
         .eq('course_id', node.lesson.course_id)
-        .single();
+        .maybeSingle(); // <--- REMPLACÉ (Avant: .single())
 
       if (structure) {
         const chapterKey = `chapter_title_${node.lesson.chapter_number}`;
         setChapterTitle(structure[chapterKey] || `Chapter ${node.lesson.chapter_number}`);
       } else {
         // Fallback: check if course_content has attached_to_chapter
+        // 2. CORRECTION ICI AUSSI : Utilisation de maybeSingle() par sécurité
         const { data: content } = await supabase
           .from('course_content')
           .select('attached_to_chapter')
           .eq('course_id', node.lesson.course_id)
           .eq('chapter_number', node.lesson.chapter_number)
           .eq('lesson_number', node.lesson.lesson_number)
-          .single();
+          .maybeSingle(); // <--- REMPLACÉ (Avant: .single())
 
         setChapterTitle(content?.attached_to_chapter || `Chapter ${node.lesson.chapter_number}`);
       }
     } catch (err) {
+      console.warn("Erreur lors du chargement du chapitre:", err);
       setChapterTitle(`Chapter ${node.lesson.chapter_number}`);
     } finally {
       setLoadingChapter(false);
@@ -74,6 +76,7 @@ const MissionModal = ({ isOpen, node, masterschool, onClose, onStart, onComplete
   if (!isOpen || !node) return null;
 
   const { lesson } = node;
+  // Node ID est un index (0, 1, 2...), on ajoute 1 pour l'affichage
   const level = node.id + 1;
 
   return createPortal(

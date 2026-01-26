@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import useSubscription from '../hooks/useSubscription'
@@ -12,17 +12,24 @@ const ProtectedSubscriptionRoute = ({ children, requiredFeature = null }) => {
   const { profile, loading } = useAuth()
   const { isFreeUser, isAdmin } = useSubscription()
   const location = useLocation()
-  
+  const searchParams = new URLSearchParams(location.search)
+  const fromRoadmap = searchParams.get('fromRoadmap') === 'true'
+
   // Early admin check from profile (before subscription hook finishes loading)
   const role = profile?.role || 'Free'
   const isAdminUser = role === 'Admin' || role === 'admin'
 
-  // Debug logging for admin access
-  if (profile) {
-  }
-
+  // Show toast message (only once when conditions are met and not from roadmap)
+  useEffect(() => {
+    if (isFreeUser && profile && !isAdminUser && !isAdmin && !fromRoadmap) {
+      toast.error('This feature requires an active subscription', {
+        duration: 4000,
+        icon: '🔒'
+      });
+    }
+  }, [isFreeUser, profile, isAdminUser, isAdmin, fromRoadmap]);
+  
   // Admin users have access to everything - allow immediately (check both sources)
-  // Check profile role directly first, then fallback to hook result
   if (isAdminUser && profile) {
     return children
   }
@@ -32,7 +39,6 @@ const ProtectedSubscriptionRoute = ({ children, requiredFeature = null }) => {
   }
 
   // Show loading while checking auth (but only if not admin and pas de profile)
-  // Ne pas bloquer si on a déjà un profile (évite rechargement lors de TOKEN_REFRESHED)
   if (loading && !isAdminUser && !profile) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -45,22 +51,12 @@ const ProtectedSubscriptionRoute = ({ children, requiredFeature = null }) => {
   }
 
   // If user is free and trying to access restricted route, redirect to dashboard (admins already handled above)
-  if (isFreeUser && profile && !isAdminUser && !isAdmin) {
-    // Show toast message
-    toast.error('This feature requires an active subscription', {
-      duration: 4000,
-      icon: '🔒'
-    })
-    
-    // Build redirect URL
+  // EXCEPT if coming from roadmap
+  if (isFreeUser && profile && !isAdminUser && !isAdmin && !fromRoadmap) {
     const redirectUrl = `/dashboard?upgradePrompt=true&restrictedFeature=${requiredFeature || ''}`
-    
-    // Redirect to dashboard with upgrade prompt
     return <Navigate to={redirectUrl} replace />
   }
   
-  // If still loading AND no profile, show loading state
-  // Si on a déjà un profile, on ignore le loading (évite rechargement lors de TOKEN_REFRESHED)
   if (!profile) {
     // Seulement bloquer si vraiment pas de profile
     return (
@@ -77,4 +73,3 @@ const ProtectedSubscriptionRoute = ({ children, requiredFeature = null }) => {
 }
 
 export default ProtectedSubscriptionRoute
-

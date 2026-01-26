@@ -89,7 +89,8 @@ const CoursePlayerPage = () => {
 
   // Derived state for restricted mode
   const isRestrictedMode = fromRoadmap && isFreeUser;
-  
+
+
   // Validate lesson access when in roadmap mode (only for free users)
   useEffect(() => {
     // Only apply restrictions for free users - paid users have full access
@@ -97,7 +98,7 @@ const CoursePlayerPage = () => {
       const currentLessonKey = `${courseId}-${chapterNum}-${lessonNum}`;
       if (currentLessonKey !== allowedLesson) {
         // User tried to access a different lesson - redirect back
-        toast.error('Access restricted. You can only access the lesson you selected from the roadmap.');
+        // toast.error('Access restricted. You can only access the lesson you selected from the roadmap.');
         if (returnUrl) {
           navigate(returnUrl);
         } else {
@@ -288,7 +289,7 @@ const CoursePlayerPage = () => {
         .eq('course_id', course.course_id)
         .eq('chapter_number', chapterNum)
         .eq('lesson_number', lessonNum)
-        .single();
+        .maybeSingle();
 
       if (!progressCheck?.is_completed) {
         throw new Error('Lesson completion not confirmed in database');
@@ -388,7 +389,7 @@ const CoursePlayerPage = () => {
     // Block navigation if accessed from roadmap (only for free users)
     // Paid users can navigate freely
     if (isRestrictedMode) {
-      toast.error('Access restricted. This lesson is only available through the roadmap.');
+      // toast.error('Access restricted. This lesson is only available through the roadmap.');
       return;
     }
     navigate(`/courses/${courseId}/chapters/${targetChapterNum}/lessons/${targetLessonNum}`);

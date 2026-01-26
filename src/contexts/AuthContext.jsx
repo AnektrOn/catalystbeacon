@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import toast from 'react-hot-toast'
-import { logDebug, logInfo, logWarn, logError } from '../utils/logger'
+// import { logDebug, logInfo, logWarn, logError } from '../utils/logger'
 
 // Safe cache access - returns null if DataCacheProvider is not available
 let dataCacheContext = null
@@ -16,7 +16,7 @@ export const useAuth = () => {
   return context
 }
 
-export const AuthProvider = ({ children }) => {
+const AuthProviderComponent = ({ children }) => {
   // Use refs to track initialization and prevent state loss on remounts
   const isInitializedRef = React.useRef(false)
   const [user, setUser] = useState(null)
@@ -29,18 +29,18 @@ export const AuthProvider = ({ children }) => {
 
   const createDefaultProfile = useCallback(async (userId) => {
     try {
-      logDebug('📝 createDefaultProfile: Starting profile creation for user:', userId)
+      // logDebug('📝 createDefaultProfile: Starting profile creation for user:', userId)
       
       // Get user email from auth
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user?.email) {
-        logError(new Error('No user email found for profile creation'), 'createDefaultProfile')
+        // logError(new Error('No user email found for profile creation'), 'createDefaultProfile')
         setProfile(null)
         return
       }
 
-      logDebug('📧 createDefaultProfile: User email found:', user.email)
+      // logDebug('📧 createDefaultProfile: User email found:', user.email)
 
       // Check if profile already exists
       const { data: existingProfile } = await supabase
@@ -50,12 +50,12 @@ export const AuthProvider = ({ children }) => {
         .single()
 
       if (existingProfile) {
-        logDebug('✅ createDefaultProfile: Profile already exists:', existingProfile)
+        // logDebug('✅ createDefaultProfile: Profile already exists:', existingProfile)
         setProfile(existingProfile)
         return
       }
 
-      logDebug('🆕 createDefaultProfile: Creating new profile...')
+      // logDebug('🆕 createDefaultProfile: Creating new profile...')
 
       // Create new profile (insert only safe, guaranteed columns to avoid schema mismatches)
       const { data, error } = await supabase
@@ -68,13 +68,13 @@ export const AuthProvider = ({ children }) => {
         .single()
 
       if (error) {
-        logError(error, 'createDefaultProfile - Error creating profile')
-        logDebug('Error details:', error.message, error.code, error.details)
+        // logError(error, 'createDefaultProfile - Error creating profile')
+        // logDebug('Error details:', error.message, error.code, error.details)
         setProfile(null)
         return
       }
 
-      logDebug('✅ createDefaultProfile: Profile created successfully:', data)
+      // logDebug('✅ createDefaultProfile: Profile created successfully:', data)
       setProfile(data)
       
       // Check if we've already sent welcome email for this user in this session
@@ -87,13 +87,13 @@ export const AuthProvider = ({ children }) => {
         // Send welcome email for new OAuth users (non-blocking)
         sendWelcomeEmailForNewUser(user.email, user.user_metadata?.full_name || user.email?.split('@')[0] || 'there')
           .catch(err => {
-            logDebug('Welcome email send failed (non-critical):', err)
+            // logDebug('Welcome email send failed (non-critical):', err)
           })
       } else {
-        logDebug('📧 createDefaultProfile: Welcome email already sent for this user in this session')
+        // logDebug('📧 createDefaultProfile: Welcome email already sent for this user in this session')
       }
     } catch (error) {
-      logError(error, 'createDefaultProfile - Exception')
+      // logError(error, 'createDefaultProfile - Exception')
       setProfile(null)
     }
   }, [])
@@ -101,7 +101,7 @@ export const AuthProvider = ({ children }) => {
   const fetchProfile = useCallback(async (userId, retryCount = 0, forceRefresh = false) => {
     const MAX_RETRIES = 2
     try {
-      logDebug('📥 fetchProfile: Starting profile fetch for user:', userId)
+      // logDebug('📥 fetchProfile: Starting profile fetch for user:', userId)
       
       // Try to get cache from sessionStorage first
       const cacheKey = `profile_${userId}`
@@ -111,7 +111,7 @@ export const AuthProvider = ({ children }) => {
           const parsed = JSON.parse(stored)
           const cached = parsed?.data?.[cacheKey]
           if (cached?.data) {
-            logDebug('✅ fetchProfile: Using cached profile')
+            // logDebug('✅ fetchProfile: Using cached profile')
             setProfile(cached.data)
             // If we have a cached profile, we can clear loading earlier
             setLoading(false)
@@ -139,25 +139,25 @@ export const AuthProvider = ({ children }) => {
       if (error) {
         if (error.code === 'PGRST116') {
           // Profile doesn't exist, create a default one
-          logDebug('📝 fetchProfile: Profile not found, creating default profile for user:', userId)
+          // logDebug('📝 fetchProfile: Profile not found, creating default profile for user:', userId)
           await createDefaultProfile(userId)
           return
         }
         
         // Retry on transient errors (network issues, temporary failures)
         if (retryCount < MAX_RETRIES && (error.code === 'PGRST301' || error.message?.includes('network') || error.message?.includes('timeout'))) {
-          logWarn(`⏳ fetchProfile: Retrying (${retryCount + 1}/${MAX_RETRIES})...`)
+          // logWarn(`⏳ fetchProfile: Retrying (${retryCount + 1}/${MAX_RETRIES})...`)
           await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)))
           return fetchProfile(userId, retryCount + 1)
         }
         
-        logError(error, 'fetchProfile - Error fetching profile')
-        logDebug('Error details:', error.message, error.code, error.details)
+        // logError(error, 'fetchProfile - Error fetching profile')
+        // logDebug('Error details:', error.message, error.code, error.details)
         // Don't clear profile on error - preserve existing state to prevent UI flicker
         return
       }
 
-      logDebug('✅ fetchProfile: Profile fetched successfully:', data)
+      // logDebug('✅ fetchProfile: Profile fetched successfully:', data)
       setProfile(data)
       
       // Check if this is a new profile (created in the last 30 seconds)
@@ -173,16 +173,16 @@ export const AuthProvider = ({ children }) => {
           const alreadySent = sessionStorage.getItem(welcomeEmailSentKey)
           
           if (!alreadySent) {
-            logDebug('🆕 fetchProfile: New profile detected (created', secondsSinceCreation.toFixed(1), 'seconds ago)')
+            // logDebug('🆕 fetchProfile: New profile detected (created', secondsSinceCreation.toFixed(1), 'seconds ago)')
             // Mark as sent to avoid duplicate emails
             sessionStorage.setItem(welcomeEmailSentKey, 'true')
             // This is a new profile, send welcome email (non-blocking)
             sendWelcomeEmailForNewUser(data.email, data.full_name || data.email?.split('@')[0] || 'there')
               .catch(err => {
-                logDebug('Welcome email send failed (non-critical):', err)
+                // logDebug('Welcome email send failed (non-critical):', err)
               })
           } else {
-            logDebug('📧 fetchProfile: Welcome email already sent for this user in this session')
+            // logDebug('📧 fetchProfile: Welcome email already sent for this user in this session')
           }
         }
       }
@@ -190,13 +190,13 @@ export const AuthProvider = ({ children }) => {
       if (error && error.message === 'PROFILE_FETCH_TIMEOUT') {
         // Retry on timeout
         if (retryCount < MAX_RETRIES) {
-          logWarn(`⏳ fetchProfile: Timeout, retrying (${retryCount + 1}/${MAX_RETRIES})...`)
+          // logWarn(`⏳ fetchProfile: Timeout, retrying (${retryCount + 1}/${MAX_RETRIES})...`)
           await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)))
           return fetchProfile(userId, retryCount + 1)
         }
-        logWarn('⏳ fetchProfile: Timed out after retries; proceeding without blocking UI')
+        // logWarn('⏳ fetchProfile: Timed out after retries; proceeding without blocking UI')
       } else {
-        logError(error, 'fetchProfile - Exception')
+        // logError(error, 'fetchProfile - Exception')
       }
       // Don't clear profile on error - preserve existing state to prevent UI flicker
     }
@@ -208,11 +208,11 @@ export const AuthProvider = ({ children }) => {
       return // Skip re-initialization if we already have valid state
     }
     
-    logDebug('🔍 AuthContext: Starting authentication check...')
+    // logDebug('🔍 AuthContext: Starting authentication check...')
 
     // Force timeout to prevent infinite loading (8 seconds max - reduced from 15s)
     const forceTimeout = setTimeout(() => {
-      logWarn('⏰ AuthContext: Force timeout reached, setting loading to false')
+      // logWarn('⏰ AuthContext: Force timeout reached, setting loading to false')
       setLoading(false)
     }, 8000)
 
@@ -243,7 +243,7 @@ export const AuthProvider = ({ children }) => {
         const parsed = JSON.parse(lastUser);
         const userId = parsed?.currentSession?.user?.id;
         if (userId && !profile) {
-          logDebug('🚀 AuthContext: Optimistic profile fetch for:', userId);
+          // logDebug('🚀 AuthContext: Optimistic profile fetch for:', userId);
           fetchProfile(userId);
         }
       }
@@ -254,7 +254,7 @@ export const AuthProvider = ({ children }) => {
     // Get initial session with timeout
     withTimeout(supabase.auth.getSession())
       .then(({ data: { session }, error: sessionError }) => {
-        logDebug('👤 AuthContext: Initial session check:', session?.user ? 'User found' : 'No user')
+        // logDebug('👤 AuthContext: Initial session check:', session?.user ? 'User found' : 'No user')
         
         setUser(prevUser => {
           const newUser = session?.user ?? null;
@@ -263,29 +263,29 @@ export const AuthProvider = ({ children }) => {
         })
 
         if (session?.user) {
-          logDebug('📥 AuthContext: Fetching profile for user:', session.user.id)
+          // logDebug('📥 AuthContext: Fetching profile for user:', session.user.id)
           // Fetch profile without blocking loading if we already have it optimistically
           fetchProfile(session.user.id)
             .then(() => {
-              logDebug('✅ AuthContext: Profile fetch completed')
+              // logDebug('✅ AuthContext: Profile fetch completed')
               isInitializedRef.current = true
               clearLoadingSafely()
             })
             .catch((err) => {
-              logError(err, 'AuthContext - Profile fetch error')
+              // logError(err, 'AuthContext - Profile fetch error')
               clearLoadingSafely()
             })
         } else {
-          logDebug('✅ AuthContext: No user, setting loading to false')
+          // logDebug('✅ AuthContext: No user, setting loading to false')
           isInitializedRef.current = true
           clearLoadingSafely()
         }
       })
       .catch((error) => {
         if (error && error.message === 'SESSION_CHECK_TIMEOUT') {
-          logWarn('⏰ AuthContext: Session check timed out, proceeding without blocking UI')
+          // logWarn('⏰ AuthContext: Session check timed out, proceeding without blocking UI')
         } else {
-          logError(error, 'AuthContext - Error getting session')
+          // logError(error, 'AuthContext - Error getting session')
         }
         clearLoadingSafely()
       })
@@ -295,13 +295,13 @@ export const AuthProvider = ({ children }) => {
     try {
       const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(
         async (event, session) => {
-        logDebug('🔄 AuthContext: Auth state changed:', event, session?.user ? 'User found' : 'No user')
+        // logDebug('🔄 AuthContext: Auth state changed:', event, session?.user ? 'User found' : 'No user')
         
         // Handle INITIAL_SESSION first - this fires immediately when the app loads
         // If there's no session, we can immediately clear loading without waiting
         if (event === 'INITIAL_SESSION') {
           if (!session?.user) {
-            logDebug('✅ AuthContext: INITIAL_SESSION with no user - clearing loading immediately')
+            // logDebug('✅ AuthContext: INITIAL_SESSION with no user - clearing loading immediately')
             setLoading(false)
             isInitializedRef.current = true
             return
@@ -322,8 +322,7 @@ export const AuthProvider = ({ children }) => {
               if (key.startsWith('welcome_email_sent_')) {
                 sessionStorage.removeItem(key)
               }
-            })
-          } catch (e) {
+            })          } catch (e) {
             // Ignore errors when clearing sessionStorage
           }
           return
@@ -349,11 +348,11 @@ export const AuthProvider = ({ children }) => {
           // Only fetch profile if we don't already have it for this user
           // This prevents unnecessary fetches during navigation
           if (!profile || profile.id !== session.user.id) {
-            logDebug('📥 AuthContext: Fetching profile after auth change for user:', session.user.id)
+            // logDebug('📥 AuthContext: Fetching profile after auth change for user:', session.user.id)
             await fetchProfile(session.user.id)
           } else {
             // Si on a déjà le profile, on ne fait rien - pas besoin de recharger
-            logDebug('✅ AuthContext: Profile already loaded, skipping fetch')
+            // logDebug('✅ AuthContext: Profile already loaded, skipping fetch')
           }
           isInitializedRef.current = true
         }
@@ -362,29 +361,29 @@ export const AuthProvider = ({ children }) => {
         // Cela évite l'impression de rechargement lors des événements TOKEN_REFRESHED
         // qui se déclenchent quand on change de fenêtre
         if (isInitializedRef.current && profile && user) {
-          logDebug('✅ AuthContext: Already initialized with profile, keeping loading false')
+          // logDebug('✅ AuthContext: Already initialized with profile, keeping loading false')
           // Ne pas toucher à loading - on garde l'état actuel
           return
         }
         
-        logDebug('✅ AuthContext: Auth state change completed, setting loading to false')
+        // logDebug('✅ AuthContext: Auth state change completed, setting loading to false')
         setLoading(false)
       }
       )
       
       subscription = authSubscription
     } catch (error) {
-      logError(error, 'AuthContext - Error setting up auth listener')
+      // logError(error, 'AuthContext - Error setting up auth listener')
     }
 
     return () => {
-      logDebug('🧹 AuthContext: Cleaning up auth subscription and timeout')
+      // logDebug('🧹 AuthContext: Cleaning up auth subscription and timeout')
       clearTimeout(forceTimeout)
       if (subscription) {
         try {
           subscription.unsubscribe()
         } catch (error) {
-          logError(error, 'AuthContext - Error unsubscribing from auth')
+          // logError(error, 'AuthContext - Error unsubscribing from auth')
         }
       }
     }
@@ -393,7 +392,7 @@ export const AuthProvider = ({ children }) => {
 
   const signUp = async (email, password, userData = {}) => {
     try {
-      logDebug('Starting signup process for:', email)
+      // logDebug('Starting signup process for:', email)
       
       // Single signup attempt - let the database trigger handle profile creation
       const { data, error } = await supabase.auth.signUp({
@@ -405,11 +404,11 @@ export const AuthProvider = ({ children }) => {
       })
       
       if (error) {
-        logError(error, 'Signup failed')
+        // logError(error, 'Signup failed')
         throw error
       }
       
-      logDebug('Signup successful:', data)
+      // logDebug('Signup successful:', data)
       
       // Send sign-up confirmation email (non-blocking)
       // Try Supabase Edge Function first, then fall back to server API
@@ -420,41 +419,45 @@ export const AuthProvider = ({ children }) => {
         // Skip Supabase Edge Function - it doesn't exist (404 error)
         // Go directly to server API using relative URL
         
-        try {
-          const response = await fetch('/api/send-signup-email', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              email,
-              userName
-            }),
-            // Add timeout to prevent hanging
-            signal: AbortSignal.timeout(10000) // 10 second timeout
+        fetch('/api/send-signup-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email,
+            userName
+          }),
+          signal: AbortSignal.timeout(10000) // 10 second timeout
+        })
+          .then(response => {
+            if (!response.ok && response.status !== 503) {
+              response.json().then(errorData => {
+                // logWarn('Failed to send welcome email (async):', errorData);
+              }).catch(() => {
+                // logWarn('Failed to send welcome email (async): Unknown error');
+              });
+            } else if (response.ok) {
+              response.json().then(result => {
+                if (!result.success) {
+                  // logWarn('Welcome email send returned success: false (async):', result);
+                } else {
+                  // logDebug('✅ Welcome email sent successfully (async)');
+                }
+              }).catch(() => {
+                // logWarn('Failed to parse welcome email response (async):');
+              });
+            }
           })
-          
-          if (!response.ok) {
-            // If 503, server is not available - this is OK, email is non-critical
-            if (response.status === 503) {
+          .catch(fetchError => {
+            if (fetchError.name === 'AbortError' || fetchError.message?.includes('timeout')) {
+              // logDebug('Welcome email request timed out (non-critical, async)');
+            } else if (fetchError.message?.includes('Failed to fetch') || fetchError.message?.includes('NetworkError')) {
+              // logDebug('Network error sending welcome email (non-critical, async)');
             } else {
-              const errorData = await response.json().catch(() => ({ error: 'Failed to send email' }))
-              if (errorData.warning) {
-              }
+              // logWarn('Error sending welcome email (non-critical, async):', fetchError);
             }
-          } else {
-            const result = await response.json()
-            if (result.success) {
-            } else {
-            }
-          }
-        } catch (fetchError) {
-          // Network errors are OK - email is non-critical
-          if (fetchError.name === 'AbortError' || fetchError.message?.includes('timeout')) {
-          } else if (fetchError.message?.includes('Failed to fetch') || fetchError.message?.includes('NetworkError')) {
-          } else {
-          }
-        }
+          });
       } catch (emailError) {
         // Handle timeout and network errors gracefully
         if (emailError.name === 'AbortError' || emailError.message?.includes('timeout')) {
@@ -467,19 +470,19 @@ export const AuthProvider = ({ children }) => {
       // Handle successful signup
       if (data.user && data.session) {
         // User is immediately signed in
-        logDebug('User created and signed in immediately')
+        // logDebug('User created and signed in immediately')
         toast.success('Account created successfully!')
         return { data, error: null }
       } else if (data.user && !data.session) {
         // Email confirmation is required
-        logDebug('User created, email confirmation required')
+        // logDebug('User created, email confirmation required')
         toast.success('Account created! Please check your email to verify your account.')
         return { data, error: null }
       } else {
         throw new Error('Unexpected signup response')
       }
     } catch (error) {
-      logError(error, 'Sign up error')
+      // logError(error, 'Sign up error')
       toast.error(error.message)
       return { data: null, error }
     }
@@ -497,31 +500,27 @@ export const AuthProvider = ({ children }) => {
       toast.success('Welcome back!')
       
       // Send sign-in confirmation email via Supabase (non-blocking)
-      try {
-        const { emailService } = await import('../services/emailService')
-        const loginTime = new Date().toLocaleString()
-        const userName = profile?.full_name || data.user?.user_metadata?.full_name || null
-        
-        // Get IP address if available (from headers or client)
-        const ipAddress = null // Can be enhanced to get from request
-        
-        await emailService.sendSignInConfirmation(
-          email,
-          userName,
-          loginTime,
-          ipAddress
-        ).catch(err => {
-          logDebug('Sign-in email send failed (non-critical):', err)
-          // Don't fail sign-in if email fails
+      import('../services/emailService')
+        .then(({ emailService }) => {
+          const loginTime = new Date().toLocaleString()
+          const userName = profile?.full_name || data.user?.user_metadata?.full_name || null
+          const ipAddress = null // Can be enhanced to get from request
+          emailService.sendSignInConfirmation(
+            email,
+            userName,
+            loginTime,
+            ipAddress
+          ).catch(err => {
+            // logDebug('Sign-in email send failed (non-critical, async):', err)
+          })
         })
-      } catch (emailError) {
-        logDebug('Sign-in email error (non-critical):', emailError)
-        // Don't fail sign-in if email fails
-      }
+        .catch(emailError => {
+          // logDebug('Sign-in email import/send error (non-critical, async):', emailError)
+        })
       
       return { data, error: null }
     } catch (error) {
-      logError(error, 'Sign in error')
+      // logError(error, 'Sign in error')
       toast.error(error.message)
       return { data: null, error }
     }
@@ -529,22 +528,22 @@ export const AuthProvider = ({ children }) => {
 
   const signOut = async () => {
     try {
-      logDebug('🔓 signOut: Starting sign out process...')
+      // logDebug('🔓 signOut: Starting sign out process...')
       
       const { error } = await supabase.auth.signOut()
       if (error) throw error
       
       // Explicitly clear local state immediately
-      logDebug('🔓 signOut: Clearing local state...')
+      // logDebug('🔓 signOut: Clearing local state...')
       setUser(null)
       setProfile(null)
       setLoading(false)
       
-      logDebug('✅ signOut: Sign out successful')
+      // logDebug('✅ signOut: Sign out successful')
       toast.success('Signed out successfully')
       return { error: null }
     } catch (error) {
-      logError(error, 'signOut - Sign out error')
+      // logError(error, 'signOut - Sign out error')
       toast.error(error.message)
       return { error }
     }
@@ -561,7 +560,7 @@ export const AuthProvider = ({ children }) => {
       toast.success('Password reset email sent!')
       return { error: null }
     } catch (error) {
-      logError(error, 'Reset password error')
+      // logError(error, 'Reset password error')
       toast.error(error.message)
       return { error }
     }
@@ -571,7 +570,7 @@ export const AuthProvider = ({ children }) => {
     if (!user) return { error: new Error('No user logged in') }
 
     try {
-      logDebug('🔄 AuthContext: Updating profile with:', updates)
+      // logDebug('🔄 AuthContext: Updating profile with:', updates)
       const { data, error } = await supabase
         .from('profiles')
         .update(updates)
@@ -581,12 +580,12 @@ export const AuthProvider = ({ children }) => {
 
       if (error) throw error
 
-      logDebug('✅ AuthContext: Profile updated, new data:', data)
+      // logDebug('✅ AuthContext: Profile updated, new data:', data)
       setProfile(data)
       // Don't show toast here - let the caller handle it
       return { data, error: null }
     } catch (error) {
-      logError(error, 'AuthContext - Update profile error')
+      // logError(error, 'AuthContext - Update profile error')
       toast.error(error.message)
       return { data: null, error }
     }
@@ -594,7 +593,7 @@ export const AuthProvider = ({ children }) => {
 
   const signInWithGoogle = async () => {
     try {
-      logDebug('🔐 signInWithGoogle: Starting Google OAuth flow...')
+      // logDebug('🔐 signInWithGoogle: Starting Google OAuth flow...')
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -605,13 +604,13 @@ export const AuthProvider = ({ children }) => {
 
       if (error) throw error
       
-      logDebug('✅ signInWithGoogle: OAuth flow initiated successfully')
+      // logDebug('✅ signInWithGoogle: OAuth flow initiated successfully')
       // Note: The user will be redirected to Google, then back to the app
       // The auth state change listener will handle the rest
       // Welcome email will be sent if it's a new user (detected in fetchProfile)
       return { data, error: null }
     } catch (error) {
-      logError(error, 'Sign in with Google error')
+      // logError(error, 'Sign in with Google error')
       toast.error(error.message || 'Failed to sign in with Google')
       return { data: null, error }
     }
@@ -620,14 +619,14 @@ export const AuthProvider = ({ children }) => {
   // Helper function to send welcome email for new users (OAuth or regular signup)
   const sendWelcomeEmailForNewUser = async (email, userName) => {
     if (!email) {
-      logWarn('sendWelcomeEmailForNewUser: No email provided')
+      // logWarn('sendWelcomeEmailForNewUser: No email provided')
       return
     }
 
     try {
-      logDebug('📧 sendWelcomeEmailForNewUser: Sending welcome email to:', email)
+      // logDebug('📧 sendWelcomeEmailForNewUser: Sending welcome email to:', email)
       
-      const response = await fetch('/api/send-signup-email', {
+      fetch('/api/send-signup-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -638,30 +637,42 @@ export const AuthProvider = ({ children }) => {
         }),
         signal: AbortSignal.timeout(10000) // 10 second timeout
       })
-
-      if (!response.ok) {
-        if (response.status === 503) {
-          logDebug('Email service not available (503)')
-        } else {
-          const errorData = await response.json().catch(() => ({ error: 'Failed to send email' }))
-          logWarn('Failed to send welcome email:', errorData)
-        }
-      } else {
-        const result = await response.json()
-        if (result.success) {
-          logDebug('✅ Welcome email sent successfully')
-        } else {
-          logWarn('Welcome email send returned success: false:', result)
-        }
-      }
+        .then(response => {
+          if (!response.ok && response.status !== 503) {
+            response.json().then(errorData => {
+              // logWarn('Failed to send welcome email (async):', errorData);
+            }).catch(() => {
+              // logWarn('Failed to send welcome email (async): Unknown error');
+            });
+          } else if (response.ok) {
+            response.json().then(result => {
+              if (!result.success) {
+                // logWarn('Welcome email send returned success: false (async):', result);
+              } else {
+                // logDebug('✅ Welcome email sent successfully (async)');
+              }
+            }).catch(() => {
+              // logWarn('Failed to parse welcome email response (async):');
+            });
+          }
+        })
+        .catch(fetchError => {
+          if (fetchError.name === 'AbortError' || fetchError.message?.includes('timeout')) {
+            // logDebug('Welcome email request timed out (non-critical, async)');
+          } else if (fetchError.message?.includes('Failed to fetch') || fetchError.message?.includes('NetworkError')) {
+            // logDebug('Network error sending welcome email (non-critical, async)');
+          } else {
+            // logWarn('Error sending welcome email (non-critical, async):', fetchError);
+          }
+        });
     } catch (fetchError) {
       // Network errors are OK - email is non-critical
       if (fetchError.name === 'AbortError' || fetchError.message?.includes('timeout')) {
-        logDebug('Welcome email request timed out (non-critical)')
+        // logDebug('Welcome email request timed out (non-critical)')
       } else if (fetchError.message?.includes('Failed to fetch') || fetchError.message?.includes('NetworkError')) {
-        logDebug('Network error sending welcome email (non-critical)')
+        // logDebug('Network error sending welcome email (non-critical)')
       } else {
-        logWarn('Error sending welcome email (non-critical):', fetchError)
+        // logWarn('Error sending welcome email (non-critical):', fetchError)
       }
     }
   }
@@ -685,3 +696,5 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   )
 }
+
+export { AuthProviderComponent as AuthProvider }

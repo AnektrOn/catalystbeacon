@@ -19,8 +19,8 @@ const NeuralNode = ({ id, node, onClick }) => {
 
   return (
     <div
-      id={id}
-      className={`node-wrapper ${node.status} ${node.isBoss ? 'boss' : ''} ${isShaking ? 'shake' : ''}`}
+      id={node.status === 'active' ? 'active-roadmap-node' : id}
+      className={`node-wrapper ${node.status} ${node.isBoss ? 'boss' : ''} ${isShaking ? 'shake' : ''} ${node.is_completed ? 'completed' : ''}`}
       style={{
         left: `calc(50% + ${node.x}px)`,
         top: `${node.y}px`,
@@ -28,8 +28,9 @@ const NeuralNode = ({ id, node, onClick }) => {
       onClick={handleClick}
     >
       <div className="node-halo"></div>
-      <div className="node-core"></div>
+      <div className="node-core" id={node.status === 'active' ? 'active-roadmap-node' : undefined}></div>
       <div className="node-label">{getNodeLabel()}</div>
+      {node.is_completed && <div className="node-tooltip">Completed</div>}
     </div>
   );
 };

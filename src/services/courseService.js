@@ -255,9 +255,6 @@ class CourseService {
    */
   async getCourseStructure(courseId) {
     try {
-      
-      // Handle duplicates by getting the most recent one (or first if multiple)
-      const queryStart = Date.now()
       const { data, error } = await supabase
         .from('course_structure')
         .select('*')
@@ -267,23 +264,21 @@ class CourseService {
         .limit(1)
         .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
-        // If there are multiple rows, try to get the first one
-        const { data: allData, error: allError } = await supabase
-          .from('course_structure')
-          .select('*')
-          .eq('course_id', parseInt(courseId))
-          .limit(1)
-          .maybeSingle();
-        
-        if (allError) throw allError;
-        return { data: allData, error: null };
+      // PGRST116 = not found, which is OK - return null data
+      if (error && error.code === 'PGRST116') {
+        return { data: null, error: null };
+      }
+      
+      // Handle other errors gracefully
+      if (error) {
+        logError('Error fetching course structure:', error);
+        return { data: null, error: null };
       }
 
       return { data: data || null, error: null };
     } catch (error) {
-      logError('Error fetching course structure:', error);
-      return { data: null, error };
+      logError('Exception fetching course structure:', error);
+      return { data: null, error: null };
     }
   }
 
@@ -374,7 +369,7 @@ class CourseService {
 
       // Get course structure
       const { data: structure, error: structureError } = await this.getCourseStructure(course.course_id);
-      if (structureError) {
+      if (structureError || !structure) {
         // Structure might not exist yet, return course with empty chapters
         return { data: { ...course, chapters: [] }, error: null };
       }
@@ -474,13 +469,16 @@ class CourseService {
         .from('course_description')
         .select('*')
         .eq('course_id', parseInt(courseId))
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error && error.code !== 'PGRST116') {
+        logError('Error fetching course descriptions:', error);
+        throw error;
+      }
       return { data: data || null, error: null };
     } catch (error) {
-      logError('Error fetching course descriptions:', error);
-      return { data: null, error };
+      logError('Exception fetching course descriptions:', error);
+      return { data: null, error: null };
     }
   }
 
@@ -699,13 +697,22 @@ class CourseService {
         .eq('course_id', parseInt(courseId))
         .eq('chapter_number', chapterNumber)
         .eq('lesson_number', lessonNumber)
-        .single();
+        .maybeSingle(); // Use maybeSingle to handle cases where progress might not exist
 
-      if (error && error.code !== 'PGRST116') throw error;
+      // PGRST116 = not found, which is OK - return null data
+      if (error && error.code === 'PGRST116') {
+        return { data: null, error: null };
+      }
+      
+      if (error) {
+        logWarn('Error fetching user lesson progress (non-critical):', error);
+        return { data: null, error: null }; // Don't block on progress errors
+      }
+
       return { data: data || null, error: null };
     } catch (error) {
-      logError('Error fetching user lesson progress:', error);
-      return { data: null, error };
+      logError('Exception fetching user lesson progress (non-critical):', error);
+      return { data: null, error: null };
     }
   }
 

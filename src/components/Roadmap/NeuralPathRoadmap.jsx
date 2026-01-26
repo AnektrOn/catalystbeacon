@@ -8,6 +8,7 @@ import useSubscription from '../../hooks/useSubscription';
 import NeuralNode from './NeuralNode';
 import NeuralCanvas from './NeuralCanvas';
 import MissionModal from './MissionModal';
+import InstituteSorterModal from '../InstituteSorterModal';
 import CompletionAnimation from './CompletionAnimation';
 import './NeuralPathRoadmap.css';
 
@@ -35,7 +36,9 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition' }) => {
   const [lessons, setLessons] = useState([]);
   const [nodes, setNodes] = useState([]);
   const [currentLevel, setCurrentLevel] = useState(0);
-  const [completedSet, setCompletedSet] = useState(new Set());
+  const [institutePriority, setInstitutePriority] = useState(null);
+  const [showInstituteSorter, setShowInstituteSorter] = useState(false); // This will control the modal visibility
+  //const [completedSet, setCompletedSet] = useState(new Set());
   const [selectedNode, setSelectedNode] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userXP, setUserXP] = useState(0);
@@ -43,47 +46,52 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition' }) => {
   const [showCompletion, setShowCompletion] = useState(false);
   const [completedLesson, setCompletedLesson] = useState(null);
 
-  // Load user XP
+  // Load user XP and institute_priority
   useEffect(() => {
-    const loadUserXP = async () => {
+    const loadUserData = async () => {
       if (!user) return;
-      
+
       const { data: profile } = await supabase
         .from('profiles')
-        .select('current_xp, total_xp_earned')
+        .select('current_xp, total_xp_earned, institute_priority')
         .eq('id', user.id)
         .single();
-      
+
       if (profile) {
         setUserXP(profile.current_xp || profile.total_xp_earned || 0);
+        setInstitutePriority(profile.institute_priority);
+        // Show sorter if priority is null or empty
+        if (!profile.institute_priority || profile.institute_priority.length === 0) {
+          setShowInstituteSorter(true);
+        }
       }
     };
-    
-    loadUserXP();
+
+    loadUserData();
   }, [user]);
 
   // Check for completion from URL params
   useEffect(() => {
     if (!lessons.length) return;
-    
+
     const params = new URLSearchParams(window.location.search);
     const completed = params.get('completed');
     const lessonId = params.get('lessonId');
     const xp = params.get('xp');
-    
+
     if (completed === 'true' && lessonId) {
       // Find the completed lesson
-      const lesson = lessons.find(l => 
+      const lesson = lessons.find(l =>
         `${l.course_id}-${l.chapter_number}-${l.lesson_number}` === lessonId
       );
-      
+
       if (lesson) {
         setCompletedLesson({
           lesson,
           xp: parseInt(xp) || lesson.lesson_xp_reward || 0
         });
         setShowCompletion(true);
-        
+
         // Clean URL
         window.history.replaceState({}, '', window.location.pathname);
       }
@@ -124,120 +132,73 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition' }) => {
   }, [loading, lessons, nodes, endTransition]);
 
   // Load roadmap data
+  // Load roadmap data (NOUVELLE VERSION LÉGÈRE)
   const loadRoadmap = async () => {
     try {
       setLoading(true);
-      
-      // Get lessons
-      const allLessons = await roadmapService.getRoadmapLessons(masterschool);
-      setLessons(allLessons);
 
-      // Get roadmap progress from roadmap_progress table
-      const roadmapProgress = await roadmapService.getUserRoadmapProgress(user.id, masterschool);
-      
-      // Extract completed lessons from roadmap_progress
-      const completedFromRoadmap = new Set();
-      if (roadmapProgress?.lessons_completed && Array.isArray(roadmapProgress.lessons_completed)) {
-        roadmapProgress.lessons_completed.forEach((lesson) => {
-          const key = `${lesson.course_id}-${lesson.chapter_number}-${lesson.lesson_number}`;
-          completedFromRoadmap.add(key);
-        });
-      }
+      // 1. On appelle ta nouvelle fonction RPC via le service
+      // Elle ne renvoie que les quelques leçons de la couche actuelle
+      const layerLessons = await roadmapService.getRoadmapLessons(masterschool, user.id);
 
-      // Also check user_lesson_progress as fallback
-      const { data: lessonProgressData } = await supabase
-        .from('user_lesson_progress')
-        .select('course_id, chapter_number, lesson_number, is_completed')
-        .eq('user_id', user.id)
-        .eq('is_completed', true);
+      setLessons(layerLessons);
 
-      const completedFromProgress = new Set(
-        (lessonProgressData || []).map(c => `${c.course_id}-${c.chapter_number}-${c.lesson_number}`)
-      );
+      // 2. On génère les nœuds directement
+      // Plus besoin de calculer "currentIndex" ou "completedSet"
+      createNodes(layerLessons);
 
-      // Merge both sets (roadmap_progress is authoritative)
-      const completed = new Set([...completedFromRoadmap, ...completedFromProgress]);
-      setCompletedSet(completed);
-
-      // Find current level based on roadmap_progress current_lesson_id or first incomplete
-      let currentIndex = -1;
-      if (roadmapProgress?.current_lesson_id) {
-        // Find lesson by lesson_id from roadmap_progress
-        currentIndex = allLessons.findIndex(l => l.lesson_id === roadmapProgress.current_lesson_id);
-      }
-      
-      // If not found, find first incomplete lesson
-      if (currentIndex === -1) {
-        currentIndex = allLessons.findIndex((lesson) => {
-          const key = `${lesson.course_id}-${lesson.chapter_number}-${lesson.lesson_number}`;
-          return !completed.has(key);
-        });
-      }
-
-      // If all completed, set to last lesson
-      if (currentIndex === -1) {
-        currentIndex = allLessons.length - 1;
-      }
-
-      setCurrentLevel(currentIndex);
-
-      // Create nodes - use roadmap_progress to determine unlocked status
-      createNodes(allLessons, completed, currentIndex);
-
-      // Update user XP
+      // Update user XP and institute priority
       const { data: profile } = await supabase
         .from('profiles')
-        .select('current_xp, total_xp_earned')
+        .select('current_xp, total_xp_earned, institute_priority')
         .eq('id', user.id)
         .single();
-      
+
       if (profile) {
         setUserXP(profile.current_xp || profile.total_xp_earned || 0);
+        setInstitutePriority(profile.institute_priority);
       }
 
     } catch (err) {
-      // Even on error, end transition to prevent infinite loading
+      console.error(err);
+      // Safety timeout
       setTimeout(() => {
         endTransition();
       }, 500);
     } finally {
       setLoading(false);
+      // Ensure nodes are re-created after loading new lessons
+      if (user && masterschool) { // Only reload if user and masterschool are available
+        const latestLessons = await roadmapService.getRoadmapLessons(masterschool, user.id);
+        setLessons(latestLessons);
+        createNodes(latestLessons);
+      }
     }
   };
 
   // Create nodes from lessons - determine unlock status from roadmap_progress
-  const createNodes = (lessonsList, completed, currentIdx) => {
+  // Create nodes from lessons (NOUVELLE VERSION SIMPLIFIÉE)
+  const createNodes = (lessonsList) => {
     const nodeList = [];
-    
+
+    // On parcourt juste la petite liste renvoyée par la RPC
     for (let i = 0; i < lessonsList.length; i++) {
       const lesson = lessonsList[i];
-      const key = `${lesson.course_id}-${lesson.chapter_number}-${lesson.lesson_number}`;
-      const isCompleted = completed.has(key);
-      const isActive = i === currentIdx;
-      
-      // Determine if lesson is unlocked based on roadmap_progress
-      // First lesson is always unlocked, others require previous lesson completion
-      let isUnlocked = false;
-      if (i === 0) {
-        isUnlocked = true; // First lesson always unlocked
-      } else {
-        // Check if previous lesson is completed
-        const prevLesson = lessonsList[i - 1];
-        const prevKey = `${prevLesson.course_id}-${prevLesson.chapter_number}-${prevLesson.lesson_number}`;
-        isUnlocked = completed.has(prevKey);
-      }
-      
-      const isLocked = !isUnlocked && !isCompleted;
+
+      // La RPC nous donne directement l'info !
+      const isCompleted = lesson.is_completed;
+
+      // Logique simple : Si c'est dans la liste mais pas fini, c'est "Active" (à faire)
+      // Si c'est fini, c'est "Completed".
+      let status = 'active';
+      if (isCompleted) status = 'completed';
+
       const isBoss = (i + 1) % CONFIG.bossInterval === 0;
 
+      // Positionnement (Garde ton algo visuel pour l'instant)
       const irregularity = Math.sin(i * 1.5) * 30;
       const x = (Math.sin(i * 0.45) * CONFIG.amplitude) + irregularity;
       const y = CONFIG.paddingTop + (i * CONFIG.spacing);
-
-      let status = 'locked';
-      if (isCompleted) status = 'completed';
-      else if (isActive && isUnlocked) status = 'active';
-      else if (isUnlocked) status = 'unlocked';
 
       nodeList.push({
         id: i,
@@ -246,7 +207,8 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition' }) => {
         y,
         status,
         isBoss,
-        isLocked: !isUnlocked
+        isLocked: false, // Plus rien n'est verrouillé visuellement car on n'affiche que le disponible
+        is_completed: isCompleted // Add is_completed directly to the node object
       });
     }
 
@@ -267,11 +229,11 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition' }) => {
   // Start level
   const startLevel = () => {
     if (!selectedNode) return;
-    
+
     const { lesson } = selectedNode;
     // Add return URL for completion detection
     const returnUrl = encodeURIComponent(`/roadmap/ignition?completed=true&lessonId=${lesson.course_id}-${lesson.chapter_number}-${lesson.lesson_number}&xp=${lesson.lesson_xp_reward || 0}`);
-    
+
     // Always add fromRoadmap=true when coming from roadmap (for both free and paid users)
     // This allows the modal to redirect back to roadmap after completion
     // Free users will have restricted access, paid users will have full access
@@ -303,7 +265,7 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition' }) => {
       if (nodeElement) {
         const rect = nodeElement.getBoundingClientRect();
         const viewHeight = window.innerHeight;
-        
+
         if (rect.top < -200 || rect.top > viewHeight + 200) {
           recenterBtnRef.current.classList.add('visible');
         } else {
@@ -325,6 +287,19 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition' }) => {
     }
   }, [nodes, loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const handleSavePriority = (newPriority) => {
+    setInstitutePriority(newPriority);
+    setShowInstituteSorter(false); // Hide the modal
+    loadRoadmap(); // Reload roadmap with new priority
+  };
+
+  const handleCloseSorter = () => {
+    // If user closes without saving, and priority is still empty, keep modal open
+    // Or handle this case based on UX requirements (e.g., force them to choose)
+    // For now, let's just close it. If institutePriority is null/empty, it will reappear next load.
+    setShowInstituteSorter(false);
+  };
+
   if (loading) {
     return (
       <div className="neural-path-loading">
@@ -334,12 +309,12 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition' }) => {
     );
   }
 
-  const containerHeight = nodes.length > 0 
-    ? nodes[nodes.length - 1].y + 300 
+  const containerHeight = nodes.length > 0
+    ? nodes[nodes.length - 1].y + 300
     : CONFIG.paddingTop + 500;
 
   return (
-    <div className="neural-path-container">
+    <div id="roadmap-container" className="neural-path-container">
       {/* HUD */}
       <div className="neural-hud">
         <div className="hud-item">
@@ -353,8 +328,8 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition' }) => {
       </div>
 
       {/* Map Container */}
-      <div 
-        className="map-container" 
+      <div
+        className="map-container"
         id="mapContainer"
         ref={mapContainerRef}
         style={{ minHeight: `${containerHeight}px` }}
@@ -395,9 +370,11 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition' }) => {
         masterschool={masterschool}
         onClose={() => setIsModalOpen(false)}
         onStart={startLevel}
-        onComplete={() => {
-          // Reload roadmap to update progress
-          loadRoadmap();
+        onComplete={async () => { // Make onComplete async
+          await loadRoadmap(); // Ensure roadmap is reloaded
+          setTimeout(() => {
+            scrollToActive(true); // Scroll to active node after reload
+          }, 500);
         }}
       />
 
@@ -406,16 +383,21 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition' }) => {
         isVisible={showCompletion}
         xpEarned={completedLesson?.xp || 0}
         lessonTitle={completedLesson?.lesson?.lesson_title || ''}
-        onComplete={() => {
+        onComplete={async () => { // Make onComplete async
           setShowCompletion(false);
-          // Reload roadmap and scroll to next active node
-          loadRoadmap().then(() => {
-            setTimeout(() => {
-              scrollToActive(true);
-            }, 500);
-          });
+          await loadRoadmap(); // Reload roadmap and then scroll to next active node
+          setTimeout(() => {
+            scrollToActive(true);
+          }, 500);
         }}
       />
+      {/* Institute Sorter Modal */}
+      {showInstituteSorter && (
+        <InstituteSorterModal
+          onClose={handleCloseSorter}
+          onSave={handleSavePriority}
+        />
+      )}
     </div>
   );
 };
