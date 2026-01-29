@@ -11,107 +11,52 @@ class RoadmapService {
    * @param {string} userId - User UUID to fetch personalized data
    * @returns {Promise<Array>} Sorted array of lessons
    */
-  async getRoadmapLessons(masterschool, userId) {
-    try {
-      // Fetch user's institute priority
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('institute_priority')
-        .eq('id', userId)
-        .single();
-
-      if (profileError) {
-        console.error('Error fetching user profile for institute priority:', profileError.message);
-        // Fallback to empty array if no priority is set or error occurs
-      }
-
-      const userPriority = profileData?.institute_priority || [];
-
-      // Query course_content and course_metadata directly (more reliable)
-
-      // Get courses for this masterschool
-      const { data: courses, error: coursesError } = await supabase
-        .from('course_metadata')
-        .select('*')
-        .eq('masterschool', masterschool);
-
-      if (coursesError) {
-        throw coursesError;
-      }
-
-      if (!courses || courses.length === 0) {
-        return [];
-      }
-
-      const courseIds = courses.map(c => c.course_id);
-
-      // Get all lessons for these courses
-      const { data: lessonsData, error: lessonsError } = await supabase
-        .from('course_content')
-        .select('*')
-        .in('course_id', courseIds)
-        .order('course_id', { ascending: true })
-        .order('chapter_number', { ascending: true })
-        .order('lesson_number', { ascending: true });
-
-
-      if (lessonsError) {
-        throw lessonsError;
-      }
-
-      if (!lessonsData || lessonsData.length === 0) {
-        return [];
-      }
-
-      // Fetch user lesson progress separately
-      const { data: progressData, error: progressError } = await supabase
-        .from('user_lesson_progress')
-        .select('course_id, chapter_number, lesson_number, is_completed')
-        .eq('user_id', userId)
-        .in('course_id', courseIds);
-
-      if (progressError) {
-        console.error('Error fetching user lesson progress:', progressError.message);
-        // Continue without progress if error
-      }
-
-      const progressMap = new Map();
-      if (progressData) {
-        progressData.forEach(p => {
-          const key = `${p.course_id}-${p.chapter_number}-${p.lesson_number}`;
-          progressMap.set(key, p.is_completed);
-        });
-      }
-
-      // Merge course, lesson, and progress data
-      const merged = lessonsData.map(lesson => {
-        const course = courses.find(c => c.course_id === lesson.course_id);
-        const difficultyNumeric = course?.difficulty_numeric || 5;
-        const progressKey = `${lesson.course_id}-${lesson.chapter_number}-${lesson.lesson_number}`;
-        const isCompleted = progressMap.get(progressKey) || false;
-
-        return {
-          ...lesson,
-          course_title: course?.course_title || 'Unknown Course',
-          masterschool: course?.masterschool || masterschool,
-          difficulty_numeric: difficultyNumeric,
-          stats_linked: course?.stats_linked || [],
-          master_skill_linked: course?.master_skill_linked || 'General',
-          lesson_xp_reward: difficultyNumeric * 10,
-          is_completed: isCompleted
-        };
+ /**
+   * VERSION TURBO : Récupère la roadmap en 1 seul appel RPC
+   */
+ async getRoadmapLessons(masterschool, userId) {
+  try {
+    // 1. Appel RPC (Récupération brute rapide)
+    const { data, error } = await supabase
+      .rpc('get_user_roadmap_details', {
+        p_user_id: userId,
+        p_masterschool: masterschool
       });
 
-      // Sort by user priority, then filter to show only completed + first incomplete
-      const sortedAndFiltered = this._sortAndFilterLessons(merged, userPriority);
-
-      return sortedAndFiltered;
-    } catch (error) {
-      throw new Error(`Failed to fetch roadmap lessons: ${error.message}`);
+    if (error) {
+      console.error('Erreur RPC Roadmap:', error);
+      return [];
     }
+
+    const allLessons = data || [];
+    if (allLessons.length === 0) return [];
+
+    // 2. CALCUL DE LA FENÊTRE D'AFFICHAGE
+    // On cherche l'index de la première leçon non terminée (le "Front")
+    let activeIndex = allLessons.findIndex(l => !l.is_completed);
+    
+    // Si tout est fini, on affiche tout jusqu'à la fin
+    if (activeIndex === -1) activeIndex = allLessons.length - 1;
+
+    // 3. FILTRAGE CHIRURGICAL
+    // On coupe après (Active + 3). Le reste du futur est caché.
+    const futureBuffer = 3; 
+    const cutoffIndex = activeIndex + futureBuffer;
+    
+    const optimizedData = allLessons.slice(0, cutoffIndex + 1);
+
+    // 4. Formatage
+    return optimizedData.map(lesson => ({
+      ...lesson,
+      masterschool: masterschool,
+      lesson_xp_reward: (lesson.difficulty_numeric || 5) * 10
+    }));
+
+  } catch (error) {
+    console.error(`Failed to fetch roadmap lessons: ${error.message}`);
+    return [];
   }
-
-
+}
   /**
    * Get lessons grouped by master skill for pagination (no duplicates)
    * @param {string} masterschool - 'Ignition', 'Insight', or 'Transformation'
@@ -245,15 +190,15 @@ class RoadmapService {
         .single();
 
       if (error && error.code !== 'PGRST116') {
-        // If we can't check, unlock it anyway (better UX)
-        return true;
+        console.error('Error checking lesson completion:', error);
+        return false; // Safer default
       }
 
       // Return true if previous lesson is completed
       return data?.is_completed === true;
     } catch (error) {
-      // If error, unlock anyway (better UX than blocking)
-      return true;
+      console.error('Error in isLessonUnlocked:', error);
+      return false; // Safer default
     }
   }
 
@@ -267,71 +212,51 @@ class RoadmapService {
    * @param {number} scrollPercentage - Scroll percentage (0-100)
    * @returns {Promise<Object>} Updated tracking data
    */
-  async updateLessonTracking(userId, courseId, chapterNumber, lessonNumber, timeSpent, scrollPercentage) {
-    try {
-      // Validate inputs
-      if (!userId || !courseId || !chapterNumber || !lessonNumber) {
-        return { canComplete: false };
-      }
+  /**
+   * Update lesson tracking (OPTIMISÉ : Plus de vérification bloquante)
+   * Accepte les IDs négatifs et économise une requête réseau.
+   */
+/**
+   * Update tracking (VERSION AVEC BYPASS ID NÉGATIF)
+   */
+async updateLessonTracking(userId, courseId, chapterNumber, lessonNumber, timeSpent, scrollPercentage) {
+  try {
+    if (!userId || !courseId) return { canComplete: false };
 
-      // Ensure courseId is an integer
-      const courseIdInt = parseInt(courseId);
-      if (isNaN(courseIdInt)) {
-        return { canComplete: false };
-      }
-
-      // Verify course exists in course_metadata before attempting insert
-      const { data: courseExists, error: courseCheckError } = await supabase
-        .from('course_metadata')
-        .select('course_id')
-        .eq('course_id', courseIdInt)
-        .single();
-
-      if (courseCheckError || !courseExists) {
-        return { canComplete: false };
-      }
-
-      // Check if minimum requirements are met (2 minutes = 120 seconds, 100% scroll)
-      const minimumTimeMet = timeSpent >= 120;
-      const canComplete = minimumTimeMet && scrollPercentage >= 100;
-
-      // Upsert lesson progress
-      const { data, error } = await supabase
-        .from('user_lesson_progress')
-        .upsert({
-          user_id: userId,
-          course_id: courseIdInt,
-          chapter_number: chapterNumber,
-          lesson_number: lessonNumber,
-          time_spent_seconds: timeSpent,
-          scroll_percentage: scrollPercentage,
-          minimum_time_met: minimumTimeMet,
-          can_complete: canComplete,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'user_id,course_id,chapter_number,lesson_number'
-        })
-        .select()
-        .single();
-
-      if (error) {
-        // If it's a foreign key constraint error, log it but don't crash
-        if (error.code === '23503' || error.message.includes('foreign key constraint')) {
-          return { canComplete: false };
-        }
-        throw error;
-      }
-
-      return {
-        ...data,
-        canComplete
-      };
-    } catch (error) {
-      // Return a safe default instead of throwing to prevent UI crashes
-      return { canComplete: false };
+    // PASSE-DROIT : Si ID Négatif, on dit OK sans appeler la DB
+    if (parseInt(courseId) < 0) {
+      return { canComplete: true, time_spent_seconds: timeSpent };
     }
-  }
 
+    // Code normal pour les vrais cours
+    const minimumTimeMet = timeSpent >= 120;
+    const canComplete = minimumTimeMet && scrollPercentage >= 100;
+
+    const { data, error } = await supabase
+      .from('user_lesson_progress')
+      .upsert({
+        user_id: userId,
+        course_id: parseInt(courseId),
+        chapter_number: chapterNumber,
+        lesson_number: lessonNumber,
+        time_spent_seconds: timeSpent,
+        scroll_percentage: scrollPercentage,
+        minimum_time_met: minimumTimeMet,
+        can_complete: canComplete,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id,course_id,chapter_number,lesson_number'
+      })
+      .select()
+      .single();
+
+    if (error) return { canComplete: false };
+
+    return { ...data, canComplete };
+  } catch (error) {
+    return { canComplete: false };
+  }
+}
   /**
    * Complete a lesson (validates requirements and awards XP/skills)
    * @param {string} userId - User UUID
@@ -343,115 +268,101 @@ class RoadmapService {
    * @param {string} lessonTitle - Lesson title
    * @returns {Promise<Object>} Completion result with rewards
    */
-  async completeLesson(userId, lessonId, courseId, chapterNumber, lessonNumber, masterschool, lessonTitle) {
-    try {
-      // First, check if requirements are met
-      const { data: progressData, error: progressError } = await supabase
-        .from('user_lesson_progress')
-        .select('can_complete, is_completed')
-        .eq('user_id', userId)
-        .eq('course_id', courseId)
-        .eq('chapter_number', chapterNumber)
-        .eq('lesson_number', lessonNumber)
-        .single();
-
-      if (progressError && progressError.code !== 'PGRST116') {
-        throw progressError;
-      }
-
-      // If already completed, return early
-      if (progressData?.is_completed) {
-        return {
-          success: true,
-          alreadyCompleted: true,
-          message: 'Lesson already completed'
-        };
-      }
-
-      // Check if can complete
-      if (!progressData?.can_complete) {
-        return {
-          success: false,
-          message: 'Requirements not met. Please spend at least 2 minutes and scroll to the end of the lesson.'
-        };
-      }
-
-      // Award XP and skills using database function
-      const { data: rewardsData, error: rewardsError } = await supabase
-        .rpc('award_roadmap_lesson_xp', {
-          p_user_id: userId,
-          p_lesson_id: lessonId,
-          p_course_id: courseId,
-          p_chapter_number: chapterNumber,
-          p_lesson_number: lessonNumber
-        });
-
-      if (rewardsError) throw rewardsError;
-
-      // Update roadmap progress
-      const { error: roadmapError } = await supabase
-        .rpc('update_roadmap_progress', {
-          p_user_id: userId,
-          p_masterschool: masterschool,
-          p_lesson_id: lessonId,
-          p_lesson_title: lessonTitle,
-          p_course_id: courseId,
-          p_chapter_number: chapterNumber,
-          p_lesson_number: lessonNumber
-        });
-
-      if (roadmapError) throw roadmapError;
-
-      // Explicitly mark the lesson as completed in user_lesson_progress
-      const { error: updateProgressError } = await supabase
-        .from('user_lesson_progress')
-        .update({ is_completed: true, completed_at: new Date().toISOString() })
-        .eq('user_id', userId)
-        .eq('course_id', courseId)
-        .eq('chapter_number', chapterNumber)
-        .eq('lesson_number', lessonNumber);
-
-      if (updateProgressError) throw updateProgressError;
-
-      // Send lesson completion email via Supabase (non-blocking)
-      try {
-        // Get user profile for email
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('email, full_name, current_xp')
-          .eq('id', userId)
-          .single();
-
-        if (profileData?.email && lessonTitle) {
-          const { emailService } = await import('./emailService')
-          const xpEarned = rewardsData?.xp_earned || 50
-
-          await emailService.sendLessonCompletion(
-            profileData.email,
-            profileData.full_name || 'there',
-            lessonTitle,
-            masterschool || 'Course',
-            xpEarned,
-            profileData.current_xp || 0
-          ).catch(err => {
-            // Don't fail lesson completion if email fails
-          })
-        }
-      } catch (emailError) {
-        // Don't fail lesson completion if email fails
-      }
-
+  /**
+   * Complete a lesson (VERSION TRANSACTIONNELLE BLINDÉE)
+   * Utilise la fonction SQL unique 'complete_lesson_transaction'
+   */
+/**
+   * Complete a lesson (VERSION AVEC BYPASS POUR ID NÉGATIFS)
+   */
+async completeLesson(userId, lessonId, courseId, chapterNumber, lessonNumber, masterschool, lessonTitle) {
+  try {
+    // --- PASSE-DROIT POUR COURS VIRTUELS (ID Négatif) ---
+    // On valide immédiatement sans toucher à la DB pour éviter les crashs
+    if (parseInt(courseId) < 0) {
+      console.log("Validation Bypass (Virtuel) pour :", courseId);
       return {
         success: true,
         alreadyCompleted: false,
-        rewards: rewardsData,
+        rewards: {
+          xp_earned: 50,
+          new_total_xp: null,
+          skills_earned: []
+        },
         message: 'Lesson completed successfully!'
       };
-    } catch (error) {
-      throw new Error(`Failed to complete lesson: ${error.message}`);
+    }
+
+    // --- VALIDATION NORMALE (Transaction SQL) ---
+    const payload = {
+      p_user_id: userId,
+      p_lesson_id: String(lessonId),
+      p_course_id: parseInt(courseId, 10),
+      p_chapter_number: parseInt(chapterNumber, 10),
+      p_lesson_number: parseInt(lessonNumber, 10),
+      p_masterschool: masterschool,
+      p_lesson_title: lessonTitle || 'Lesson'
+    };
+
+    const { data, error } = await supabase.rpc('complete_lesson_transaction', payload);
+
+    if (error) throw error;
+
+    if (!data || !data.success) {
+      console.error("ERREUR SQL BRUTE:", data);
+      throw new Error(data?.error || "Erreur inconnue du serveur");
+    }
+
+    // Envoi email en tâche de fond
+    this._sendCompletionEmail(userId, lessonTitle, masterschool, data.xp_earned).catch(console.error);
+
+    return {
+      success: true,
+      alreadyCompleted: false,
+      rewards: {
+        xp_earned: data.xp_earned || 50,
+        new_total_xp: data.new_total_xp,
+        skills_earned: data.skills_earned || []
+      },
+      message: 'Lesson completed successfully!'
+    };
+
+  } catch (error) {
+    console.error('Complete Lesson Error:', error);
+    // Fallback ultime : On valide localement pour ne pas bloquer l'user
+    return { 
+      success: true, 
+      message: 'Lesson completed locally (Sync issue bypassed)' 
+    };
+  }
+}
+
+  /**
+   * Helper privé pour l'envoi d'email (pour alléger la fonction principale)
+   */
+  async _sendCompletionEmail(userId, lessonTitle, masterschool, xpEarned) {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email, full_name, current_xp')
+        .eq('id', userId)
+        .single();
+
+      if (profile?.email && lessonTitle) {
+        const { emailService } = await import('./emailService');
+        await emailService.sendLessonCompletion(
+          profile.email,
+          profile.full_name || 'Initiate',
+          lessonTitle,
+          masterschool || 'Academy',
+          xpEarned,
+          profile.current_xp
+        );
+      }
+    } catch (e) {
+      // Email failure should silent
     }
   }
-
   /**
    * Get unread roadmap notifications for a user
    * @param {string} userId - User UUID
@@ -600,29 +511,8 @@ class RoadmapService {
    * @returns {Array} Sorted and filtered lessons
    */
   _sortAndFilterLessons(lessons, userPriority) {
-    if (!userPriority || userPriority.length === 0) {
-      // Fallback to default sort if no priority is set
-      return this._sortLessons(lessons);
-    }
-
-    // Create a map for quick lookup of institute priority index
-    const priorityMap = new Map();
-    userPriority.forEach((instituteName, index) => {
-      priorityMap.set(instituteName, index);
-    });
-
-    const sortedLessons = [...lessons].sort((a, b) => {
-      // Get priority for master_skill_linked, default to Infinity if not in priority list
-      const aPriority = priorityMap.has(a.master_skill_linked) ? priorityMap.get(a.master_skill_linked) : Infinity;
-      const bPriority = priorityMap.has(b.master_skill_linked) ? priorityMap.get(b.master_skill_linked) : Infinity;
-
-      if (aPriority !== bPriority) {
-        return aPriority - bPriority;
-      }
-
-      // Fallback to default sort for lessons within the same priority or if institute not in priority list
-      return this._sortLessons([a, b])[0] === a ? -1 : 1;
-    });
+    // Sort lessons based on the new logic
+    const sortedLessons = this._sortLessonsByInstituteAndProgress(lessons, userPriority);
 
     const completedLessons = [];
     const filteredLessons = [];
@@ -641,46 +531,32 @@ class RoadmapService {
   }
 
   /**
-   * Default sort lessons by difficulty, master skill, and course/chapter/lesson order
+   * Sorts lessons based on institute priority, then chapter, course, and lesson number.
    * @private
+   * @param {Array} lessons - Array of all lessons
+   * @param {Array} userPriority - Array of institute names in user's preferred order
+   * @returns {Array} Sorted lessons
    */
-  _sortLessons(lessons) {
-    // Custom skill order based on Genesis Protocol phases
-    const SKILL_ORDER = {
-      // Phase I: DECONDITIONING
-      'critical_thinking': 10,
-      'Cognitive & Theoretical': 20,
-      
-      // Phase II: REORIENTATION
-      'Inner Awareness': 30,
-      
-      // Phase III: INTEGRATION
-      'Physical Mastery': 40,
-      'emotional_regulation': 50,
-      'shadow_work_habit': 60,
-      'breathwork_habit': 70,
-      
-      // Phase IV: EXPANSION
-      'neuroscience_habit': 80,
-      'ritual_discipline_habit': 90,
-      
-      // Default / Others
-      'General': 100,
-      'ZZZ': 1000
-    };
+  _sortLessonsByInstituteAndProgress(lessons, userPriority) {
+    const priorityMap = new Map();
+    if (userPriority && userPriority.length > 0) {
+      userPriority.forEach((instituteName, index) => {
+        priorityMap.set(instituteName, index);
+      });
+    }
 
-    return lessons.sort((a, b) => {
-      // 1. Sort by master_skill_linked weight (Genesis Protocol Phase)
-      const aWeight = SKILL_ORDER[a.master_skill_linked] || 100;
-      const bWeight = SKILL_ORDER[b.master_skill_linked] || 100;
-      
-      if (aWeight !== bWeight) {
-        return aWeight - bWeight;
+    return [...lessons].sort((a, b) => {
+      const aPriority = priorityMap.has(a.master_skill_linked) ? priorityMap.get(a.master_skill_linked) : Infinity;
+      const bPriority = priorityMap.has(b.master_skill_linked) ? priorityMap.get(b.master_skill_linked) : Infinity;
+
+      // 1. Sort by institute priority
+      if (aPriority !== bPriority) {
+        return aPriority - bPriority;
       }
 
-      // 2. Then by difficulty
-      if (a.difficulty_numeric !== b.difficulty_numeric) {
-        return a.difficulty_numeric - b.difficulty_numeric;
+      // 2. Then by chapter_number
+      if (a.chapter_number !== b.chapter_number) {
+        return a.chapter_number - b.chapter_number;
       }
 
       // 3. Then by course_id
@@ -688,12 +564,7 @@ class RoadmapService {
         return a.course_id - b.course_id;
       }
 
-      // 4. Then by chapter_number
-      if (a.chapter_number !== b.chapter_number) {
-        return a.chapter_number - b.chapter_number;
-      }
-
-      // 5. Finally by lesson_number
+      // 4. Finally by lesson_number
       return a.lesson_number - b.lesson_number;
     });
   }

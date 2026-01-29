@@ -147,10 +147,10 @@ const BreathworkModal = ({ isOpen, onClose, userId }) => {
             {/* Breathing Animation */}
             <div className="relative flex items-center justify-center h-48 mb-8">
               {/* Outer Glow */}
-              <div className={`absolute w-32 h-32 rounded-full bg-cyan-500/20 blur-2xl transition-all duration-[4000ms] ${phase === 'Inhale' ? 'scale-150 opacity-100' : 'scale-100 opacity-50'}`}></div>
+              <div className={`absolute w-32 h-32 rounded-full bg-cyan-500/20 blur-2xl transition-all duration-4000 ${phase === 'Inhale' ? 'scale-150 opacity-100' : 'scale-100 opacity-50'}`}></div>
               
               {/* Central Circle */}
-              <div className={`relative w-32 h-32 rounded-full border-2 border-cyan-400/30 flex items-center justify-center transition-all duration-[4000ms] ease-in-out ${phase === 'Inhale' ? 'scale-150' : 'scale-100'}`}>
+              <div className={`relative w-32 h-32 rounded-full border-2 border-cyan-400/30 flex items-center justify-center transition-all duration-4000 ease-in-out ${phase === 'Inhale' ? 'scale-150' : 'scale-100'}`}>
                 <div className="text-cyan-400 font-bold text-xl uppercase tracking-widest">{phase}</div>
               </div>
               

@@ -133,82 +133,108 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition' }) => {
 
   // Load roadmap data
   // Load roadmap data (NOUVELLE VERSION LÉGÈRE)
-  const loadRoadmap = async () => {
-    try {
-      setLoading(true);
+ // 1. MODIFIER la fonction loadRoadmap pour calculer le niveau
+ const loadRoadmap = async () => {
+  try {
+    setLoading(true);
 
-      // 1. On appelle ta nouvelle fonction RPC via le service
-      // Elle ne renvoie que les quelques leçons de la couche actuelle
-      const layerLessons = await roadmapService.getRoadmapLessons(masterschool, user.id);
+    // Récupération des leçons
+    const layerLessons = await roadmapService.getRoadmapLessons(masterschool, user.id);
+    setLessons(layerLessons);
 
-      setLessons(layerLessons);
+    // --- LE FIX EST ICI : CALCUL DU NIVEAU ACTUEL ---
+    // On cherche l'index de la première leçon qui n'est PAS complétée.
+    // Si toutes sont finies (findIndex renvoie -1), on prend la dernière.
+    const firstIncompleteIndex = layerLessons.findIndex(l => !l.is_completed);
+    const calculatedLevel = firstIncompleteIndex === -1 ? layerLessons.length - 1 : firstIncompleteIndex;
+    
+    // On met à jour l'état pour que le Canvas sache où dessiner le Halo
+    setCurrentLevel(calculatedLevel);
+    // -----------------------------------------------
 
-      // 2. On génère les nœuds directement
-      // Plus besoin de calculer "currentIndex" ou "completedSet"
-      createNodes(layerLessons);
+    createNodes(layerLessons);
 
-      // Update user XP and institute priority
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('current_xp, total_xp_earned, institute_priority')
-        .eq('id', user.id)
-        .single();
+    // Mise à jour XP (inchangé)
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('current_xp, total_xp_earned, institute_priority')
+      .eq('id', user.id)
+      .single();
 
-      if (profile) {
-        setUserXP(profile.current_xp || profile.total_xp_earned || 0);
-        setInstitutePriority(profile.institute_priority);
-      }
-
-    } catch (err) {
-      console.error(err);
-      // Safety timeout
-      setTimeout(() => {
-        endTransition();
-      }, 500);
-    } finally {
-      setLoading(false);
-      // Ensure nodes are re-created after loading new lessons
-      if (user && masterschool) { // Only reload if user and masterschool are available
-        const latestLessons = await roadmapService.getRoadmapLessons(masterschool, user.id);
-        setLessons(latestLessons);
-        createNodes(latestLessons);
-      }
+    if (profile) {
+      setUserXP(profile.current_xp || profile.total_xp_earned || 0);
+      setInstitutePriority(profile.institute_priority);
     }
-  };
+
+  } catch (err) {
+    console.error(err);
+    setTimeout(() => { endTransition(); }, 500);
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Create nodes from lessons - determine unlock status from roadmap_progress
   // Create nodes from lessons (NOUVELLE VERSION SIMPLIFIÉE)
-  const createNodes = (lessonsList) => {
-    const nodeList = [];
+// 2. MODIFIER createNodes pour passer le bon statut aux nœuds
+// DANS src/components/Roadmap/NeuralPathRoadmap.jsx
 
-    // On parcourt juste la petite liste renvoyée par la RPC
+  const createNodes = (lessonsList, activeLevel) => {
+    const nodeList = [];
+    
+    // Configuration "Géométrie Sacrée"
+    const HEX_RADIUS = 120; // Rayon de l'hexagone
+    const VERTICAL_STEP = 100; // Espace vertical entre chaque ligne
+
     for (let i = 0; i < lessonsList.length; i++) {
       const lesson = lessonsList[i];
-
-      // La RPC nous donne directement l'info !
       const isCompleted = lesson.is_completed;
-
-      // Logique simple : Si c'est dans la liste mais pas fini, c'est "Active" (à faire)
-      // Si c'est fini, c'est "Completed".
-      let status = 'active';
+      
+      let status = 'locked';
       if (isCompleted) status = 'completed';
+      else if (i === activeLevel) status = 'active';
+
+      // --- NOUVELLE MATHÉMATIQUE : LE CADUCÉE HEXAGONAL ---
+      // Cela crée un motif qui oscille comme une double hélice d'ADN ou une fleur de vie verticale.
+      
+      // Cycle de 6 positions (comme une fleur)
+      // 0: Centre
+      // 1: Droite
+      // 2: Droite Extrême (ou retour centre)
+      // 3: Centre
+      // 4: Gauche
+      // 5: Gauche Extrême
+      
+      const cycle = i % 4; // Cycle de 4 pour une symétrie parfaite
+      let x = 0;
+      
+      // Motif : Centre -> Droite -> Centre -> Gauche (Le Serpent/Caducée)
+      if (cycle === 0) x = 0;                // Centre (Chakra)
+      else if (cycle === 1) x = HEX_RADIUS;  // Droite (Pingala)
+      else if (cycle === 2) x = 0;           // Centre (Retour)
+      else if (cycle === 3) x = -HEX_RADIUS; // Gauche (Ida)
+
+      // Ajout d'une petite variation "Organique" pour ne pas faire trop rigide
+      const organicDrift = Math.sin(i * 0.5) * 10;
+      x += organicDrift;
+
+      // Position Y : Descend régulièrement
+      const y = CONFIG.paddingTop + (i * VERTICAL_STEP);
 
       const isBoss = (i + 1) % CONFIG.bossInterval === 0;
 
-      // Positionnement (Garde ton algo visuel pour l'instant)
-      const irregularity = Math.sin(i * 1.5) * 30;
-      const x = (Math.sin(i * 0.45) * CONFIG.amplitude) + irregularity;
-      const y = CONFIG.paddingTop + (i * CONFIG.spacing);
+      // Si c'est un Boss, on le force au CENTRE pour marquer une étape
+      if (isBoss) x = 0;
 
       nodeList.push({
         id: i,
         lesson,
-        x,
-        y,
+        x, // Position X calculée géométriquement
+        y, // Position Y stricte
         status,
         isBoss,
-        isLocked: false, // Plus rien n'est verrouillé visuellement car on n'affiche que le disponible
-        is_completed: isCompleted // Add is_completed directly to the node object
+        isLocked: status === 'locked',
+        is_completed: isCompleted
       });
     }
 
@@ -298,6 +324,32 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition' }) => {
     // Or handle this case based on UX requirements (e.g., force them to choose)
     // For now, let's just close it. If institutePriority is null/empty, it will reappear next load.
     setShowInstituteSorter(false);
+  };
+
+  const handleJumpToNextInstitute = async () => {
+    if (!institutePriority || institutePriority.length < 2) {
+      // Or show a message that there's no next institute
+      return;
+    }
+
+    // Create the next priority order
+    const nextPriority = [...institutePriority.slice(1), institutePriority[0]];
+
+    // Update in Supabase
+    const { error } = await supabase
+      .from('profiles')
+      .update({ institute_priority: nextPriority })
+      .eq('id', user.id);
+
+    if (error) {
+      console.error('Failed to update institute priority:', error);
+      // Optionally show an error to the user
+      return;
+    }
+
+    // Reload the roadmap with the new priority
+    setInstitutePriority(nextPriority);
+    loadRoadmap();
   };
 
   if (loading) {
@@ -397,6 +449,16 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition' }) => {
           onClose={handleCloseSorter}
           onSave={handleSavePriority}
         />
+      )}
+
+      {/* Jump to Next Institute Button */}
+      {nodes.some(node => node.isLocked) && (
+        <button
+          className="jump-institute-btn"
+          onClick={handleJumpToNextInstitute}
+        >
+          Jump to Institute Priority 2
+        </button>
       )}
     </div>
   );
