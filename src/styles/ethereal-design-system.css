@@ -5,12 +5,13 @@
  */
 
 /* === ETHEREAL CARD BASE CLASS === */
+/* Uses --glass-blur-amount (0 on mobile/low-power) and HSL alpha for dynamic theming */
 .ethereal-card {
-  /* Glassmorphism Base */
-  background: var(--ethereal-bg-glass);
-  backdrop-filter: blur(var(--ethereal-card-blur));
-  -webkit-backdrop-filter: blur(var(--ethereal-card-blur));
-  border: 1px solid var(--ethereal-border);
+  /* Glassmorphism Base - variable blur for performance toggle */
+  background: var(--color-primary-glass);
+  backdrop-filter: blur(var(--glass-blur-amount));
+  -webkit-backdrop-filter: blur(var(--glass-blur-amount));
+  border: 1px solid var(--color-primary-border);
   border-radius: var(--ethereal-card-radius);
   
   /* Typography */
@@ -25,29 +26,33 @@
   box-sizing: border-box;
   overflow: hidden;
   
-  /* Transitions */
-  transition: all 0.5s ease;
+  /* Scoped transition - .transition-snappy intent (no global * transition) */
+  transition: box-shadow var(--transition-snappy, 150ms cubic-bezier(0.4, 0, 0.2, 1)),
+              border-color var(--transition-snappy, 150ms cubic-bezier(0.4, 0, 0.2, 1)),
+              background var(--transition-snappy, 150ms cubic-bezier(0.4, 0, 0.2, 1));
   
-  /* Shadows */
-  box-shadow: var(--ethereal-shadow-base);
+  /* Shadows - HSL alpha */
+  box-shadow: 0 8px 32px 0 hsl(var(--primary) / 0.3);
   
   /* Centering */
   margin-left: auto;
   margin-right: auto;
 }
 
-/* Ambient Light Source */
-.ethereal-card::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle at 50% 50%, var(--ethereal-light-color), transparent 60%);
-  pointer-events: none;
-  z-index: 0;
-  animation: breathe-light 8s ease-in-out infinite;
+/* Ambient Light Source - respect reduced motion */
+@media (prefers-reduced-motion: no-preference) {
+  .ethereal-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 50% 50%, hsl(var(--primary) / 0.08), transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+    animation: breathe-light 8s ease-in-out infinite;
+  }
 }
 
 @keyframes breathe-light {
@@ -63,9 +68,9 @@
 
 /* Hover State */
 .ethereal-card:hover {
-  box-shadow: var(--ethereal-shadow-hover);
-  border-color: var(--ethereal-border-hover);
-  background: var(--ethereal-bg-hover);
+  box-shadow: 0 20px 60px 0 hsl(var(--primary) / 0.25);
+  border-color: hsl(var(--primary) / 0.3);
+  background: hsl(var(--primary) / 0.15);
 }
 
 /* Elevated Variant */
@@ -101,9 +106,10 @@
   }
 }
 
-/* Floating Particles (optional) */
+/* Floating Particles - controlled by --particle-display (none on mobile/low-power) */
 .ethereal-card.with-particles::after {
   content: '';
+  display: var(--particle-display, block);
   position: absolute;
   top: 0;
   left: 0;

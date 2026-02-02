@@ -24,12 +24,6 @@ const HabitsCompletedCard = lazy(() => import('../components/dashboard/HabitsCom
 const ConstellationNavigatorWidget = lazy(() => import('../components/dashboard/ConstellationNavigatorWidget'))
 const EtherealStatsCards = lazy(() => import('../components/dashboard/EtherealStatsCards'))
 
-let dashboardCache = {
-  data: null,
-  timestamp: 0,
-  ttl: 5 * 60 * 1000 // 5 minutes
-}
-
 const DashboardNeomorphic = () => {
   const { user, profile, fetchProfile } = useAuth()
   const { isFreeUser, isAdmin } = useSubscription()
@@ -180,95 +174,23 @@ const DashboardNeomorphic = () => {
         setLoading(false)
         return
       }
-      
       setLoading(true)
       try {
-        // Check cache first
-        if (dashboardCache.data && (Date.now() - dashboardCache.timestamp < dashboardCache.ttl)) {
-          console.log("Fetching dashboard data from cache");
-          const cachedData = dashboardCache.data;
-          // Map RPC data to state
-          const newLevelData = {
-            level: cachedData.level_info?.currentLevel?.level_number || 0,
-            levelTitle: cachedData.level_info?.currentLevel?.title || `Level ${cachedData.level_info?.currentLevel?.level_number || 0}`,
-            currentXP: profile.current_xp || 0,
-            nextLevelXP: cachedData.level_info?.nextLevel?.xp_threshold || 1000,
-            xpToNext: Math.max(0, (cachedData.level_info?.nextLevel?.xp_threshold || 1000) - (profile.current_xp || 0))
-          };
-
-          const newDashboardData = {
-            ritual: cachedData.ritual_info || { completed: false, streak: 0, xpReward: 50 },
-            constellation: cachedData.constellation_info || {
-              currentSchool: 'Ignition',
-              currentConstellation: { name: '', nodes: [] }
-            },
-            stats: {
-              learningTime: cachedData.stats_info?.learningTime || 0,
-              lessonsCompleted: cachedData.stats_info?.lessonsCompleted || 0,
-              averageScore: cachedData.stats_info?.averageScore || 0
-            },
-            achievements: {
-              total: cachedData.stats_info?.achievementsUnlocked || 0
-            }
-          };
-
-          setLevelData(newLevelData);
-          setDashboardData(newDashboardData);
-          setLoading(false);
-          return;
-        }
-
-        const { data, error } = await dashboardService.getDashboardData(user.id)
-
+        const { data, error } = await dashboardService.getDashboardDataCached(user.id)
         if (error || !data) {
-          console.error("Error fetching dashboard data via RPC:", error);
-          // If RPC fails, we still set loading to false to prevent infinite spinner
-          setLoading(false);
-          return;
+          console.error('Error fetching dashboard data via RPC:', error)
+          setLoading(false)
+          return
         }
-
-        // Update cache
-        dashboardCache = {
-          data: data,
-          timestamp: Date.now(),
-          ttl: 5 * 60 * 1000
-        };
-
-        // Map RPC data to state
-        const newLevelData = {
-          level: data.level_info?.currentLevel?.level_number || 0,
-          levelTitle: data.level_info?.currentLevel?.title || `Level ${data.level_info?.currentLevel?.level_number || 0}`,
-          currentXP: profile.current_xp || 0,
-          nextLevelXP: data.level_info?.nextLevel?.xp_threshold || 1000,
-          xpToNext: Math.max(0, (data.level_info?.nextLevel?.xp_threshold || 1000) - (profile.current_xp || 0))
-        };
-
-        const newDashboardData = {
-          ritual: data.ritual_info || { completed: false, streak: 0, xpReward: 50 },
-          constellation: data.constellation_info || {
-            currentSchool: 'Ignition',
-            currentConstellation: { name: '', nodes: [] }
-          },
-          stats: {
-            learningTime: data.stats_info?.learningTime || 0,
-            lessonsCompleted: data.stats_info?.lessonsCompleted || 0,
-            averageScore: data.stats_info?.averageScore || 0
-          },
-          achievements: {
-            total: data.stats_info?.achievementsUnlocked || 0
-          }
-        };
-
-        setLevelData(newLevelData);
-        setDashboardData(newDashboardData);
-
+        const { levelData: newLevelData, dashboardData: newDashboardData } = dashboardService.mapDashboardRpcToState(data, profile)
+        setLevelData(newLevelData)
+        setDashboardData(newDashboardData)
       } catch (error) {
-        console.error("Exception fetching dashboard data via RPC:", error);
+        console.error('Exception fetching dashboard data via RPC:', error)
       } finally {
         setLoading(false)
       }
     }
-
     if (user && profile) {
       loadAllData()
     } else {

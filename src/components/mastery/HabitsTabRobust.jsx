@@ -53,7 +53,10 @@ const getHabitIconAndColor = (title) => {
   }
 };
 
-const HabitsTabRobust = () => {
+/**
+ * layout: 'default' | 'compact' | 'mobile' — controls wrapper styling for desktop/compact vs mobile-first.
+ */
+const HabitsTabRobust = ({ layout = 'default' }) => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('personal');
   const [personalHabits, setPersonalHabits] = useState([]);
@@ -309,8 +312,10 @@ const HabitsTabRobust = () => {
     );
   }
 
+  const layoutClass = layout === 'mobile' ? 'habits-tab-mobile space-y-4' : layout === 'compact' ? 'habits-tab-compact space-y-6' : 'space-y-6';
+
   return (
-    <div className="space-y-6">
+    <div className={layoutClass}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900">Habits</h2>

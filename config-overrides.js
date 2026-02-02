@@ -3,6 +3,15 @@
  */
 
 module.exports = function override(config, env) {
+  // Fix ESLint "Cannot set properties of undefined (setting 'defaultMeta')" error.
+  // ESLint's Ajv fails in child compilers (e.g. html-webpack-plugin). Disable ESLint during build;
+  // use "npm run lint" for linting.
+  if (config.plugins) {
+    config.plugins = config.plugins.filter(
+      (p) => !p || p.constructor.name !== 'ESLintWebpackPlugin'
+    );
+  }
+
   // For production builds, we can disable minification if needed
   // This helps with memory issues on low-resource servers
   if (env === 'production') {

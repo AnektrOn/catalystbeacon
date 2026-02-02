@@ -71,3 +71,20 @@ src/test-supabase.js
 
 # Generated screenshots
 screenshots/
+
+# Capacitor / Mobile builds
+ios/
+android/
+.capacitor/
+*.xcworkspace
+!default.xcworkspace
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+*.mobileprovision
+*.certSigningRequest
+*.p12
+*.keystore
+*.jks

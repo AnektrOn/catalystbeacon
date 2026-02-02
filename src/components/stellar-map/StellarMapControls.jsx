@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Menu, X } from 'lucide-react';
 
 /**
@@ -15,10 +15,11 @@ const StellarMapControls = ({
   showWhiteLines,
   onToggleWhiteLines
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true); // Open by default for better UX
   const [selectedSubnodeId, setSelectedSubnodeId] = useState('');
   const panelRef = useRef(null);
   const burgerRef = useRef(null);
+  const constellationSelectTimeoutRef = useRef(null);
 
   // Close panel when clicking outside
   useEffect(() => {
@@ -39,18 +40,32 @@ const StellarMapControls = ({
     }
   }, [isOpen]);
 
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (constellationSelectTimeoutRef.current) {
+        clearTimeout(constellationSelectTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const cores = ['Ignition', 'Insight', 'Transformation'];
 
   return (
     <>
-      {/* Hamburger Button */}
+      {/* Hamburger Button - More visible with active state */}
       <button
         ref={burgerRef}
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed top-4 left-4 z-[100] w-11 h-11 rounded-md bg-black/55 text-white shadow-lg hover:bg-white/18 transition-all duration-250 flex items-center justify-center"
+        className={`fixed top-4 left-4 z-[100] w-11 h-11 rounded-md text-white shadow-lg transition-all duration-250 flex items-center justify-center ${
+          isOpen 
+            ? 'bg-white/25 border-2 border-white/50' 
+            : 'bg-black/55 hover:bg-white/18 border-2 border-transparent'
+        }`}
         aria-label="Toggle menu"
         aria-expanded={isOpen}
         style={{ pointerEvents: 'auto' }}
+        title={isOpen ? 'Close controls' : 'Open controls'}
       >
         {isOpen ? (
           <X className="w-6 h-6" />
@@ -78,7 +93,7 @@ const StellarMapControls = ({
               key={core}
               onClick={() => {
                 onCoreChange(core); // Keep capitalized - database expects "Insight", "Transformation", etc.
-                setIsOpen(false);
+                // Keep menu open for better UX - user can see other options
               }}
               role="tab"
               aria-selected={currentCore === core || currentCore === core.toLowerCase()}
@@ -104,8 +119,14 @@ const StellarMapControls = ({
             onChange={(e) => {
               const value = e.target.value;
               if (value) {
-                const [familyAlias, constellationAlias] = value.split('|');
-                onConstellationSelect(familyAlias, constellationAlias);
+                // Debounce constellation selection
+                if (constellationSelectTimeoutRef.current) {
+                  clearTimeout(constellationSelectTimeoutRef.current);
+                }
+                constellationSelectTimeoutRef.current = setTimeout(() => {
+                  const [familyAlias, constellationAlias] = value.split('|');
+                  onConstellationSelect(familyAlias, constellationAlias);
+                }, 300);
               }
             }}
             aria-label="Select constellation to focus on"

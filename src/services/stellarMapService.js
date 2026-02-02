@@ -206,7 +206,8 @@ class StellarMapService {
   }
 
   /**
-   * Get all nodes for a level, grouped by family and constellation
+   * Get all nodes for a level, grouped by family and constellation.
+   * Uses RPC get_stellar_map_hierarchy_v1 when available (single round-trip); otherwise falls back to two queries.
    * @param {string} level - Level name
    * @param {number} userXP - User's current XP
    * @returns {Promise<{data: Object, error: Error|null}>}
@@ -217,221 +218,124 @@ class StellarMapService {
         return { data: null, error: new Error('Level parameter is required') };
       }
 
-      // Normalize level to match database format (capitalized)
-      const normalizedLevel = level 
+      const normalizedLevel = level
         ? level.charAt(0).toUpperCase() + level.slice(1).toLowerCase()
         : level;
-      
-      // Handle special case for "God Mode"
       const finalLevel = normalizedLevel === 'God mode' ? 'God Mode' : normalizedLevel;
-
       const xp = userXP || 0;
       const isDevelopment = process.env.NODE_ENV === 'development';
 
-      // First get families with constellations (pass normalized level)
-      const { data: families, error: familiesError } = await this.getFamiliesWithConstellations(finalLevel);
-      if (familiesError) {
-        logError(familiesError, 'StellarMapService - Failed to fetch families');
-        throw familiesError;
-      }
+      let families = null;
+      let nodes = null;
 
-      if (!families || families.length === 0) {
-        const warning = `[StellarMapService] No families found for level "${level}" (normalized: "${finalLevel}")`;
-        if (isDevelopment) {
-          // Check if level exists at all in database
-          const { data: allLevels } = await supabase
-            .from('constellation_families')
-            .select('level')
-            .order('level');
-          const uniqueLevels = [...new Set((allLevels || []).map(f => f.level))];
-        }
-        return { data: {}, error: null };
-      }
-
-      // Build validation maps: constellation_id -> { constellation, family }
-      const constellationIdMap = new Map();
-      const familyIdMap = new Map();
-      
-      families.forEach(family => {
-        if (!family.id || !family.name) {
-          if (isDevelopment) {
-          }
-          return;
-        }
-
-        familyIdMap.set(family.id, family);
-
-        if (family.constellations && Array.isArray(family.constellations)) {
-          family.constellations.forEach(constellation => {
-            if (!constellation.id || !constellation.name) {
-              if (isDevelopment) {
-              }
-              return;
-            }
-
-            // CRITICAL: Validate constellation level matches the requested level
-            if (constellation.level && constellation.level !== finalLevel) {
-              if (isDevelopment) {
-              }
-              return; // Skip this constellation - it's for a different level
-            }
-
-            // Validate constellation belongs to this family
-            if (constellation.family_id && constellation.family_id !== family.id) {
-              if (isDevelopment) {
-              }
-            }
-
-            constellationIdMap.set(constellation.id, {
-              constellation,
-              family
-            });
-          });
-        }
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_stellar_map_hierarchy_v1', {
+        p_level: finalLevel
       });
 
-      // Then get all nodes for this level (XP filter removed - show all nodes)
-      const { data: nodes, error: nodesError } = await supabase
-        .from('stellar_map_nodes')
-        .select(`
-          *,
-          constellations!inner (
-            id,
-            name,
-            level,
-            color_hex,
-            family_id
-          )
-        `)
-        .eq('constellations.level', finalLevel)
-        .order('difficulty', { ascending: true });
-
-      if (nodesError) {
-        logError(nodesError, 'StellarMapService - Failed to fetch nodes');
-        throw nodesError;
-      }
-
-      // Debug: Check if we got any nodes at all
-      if (isDevelopment) {
-        // Also check how many nodes exist without XP filter for this level
-        const { count: totalNodeCount } = await supabase
+      if (!rpcError && rpcData) {
+        families = Array.isArray(rpcData.families) ? rpcData.families : [];
+        nodes = Array.isArray(rpcData.nodes) ? rpcData.nodes : [];
+      } else if (rpcError?.code === 'PGRST202') {
+        if (isDevelopment) {
+          logDebug('[StellarMapService] get_stellar_map_hierarchy_v1 not in schema; using fallback');
+        }
+        const { data: familiesData, error: familiesError } = await this.getFamiliesWithConstellations(finalLevel);
+        if (familiesError) {
+          logError(familiesError, 'StellarMapService - Failed to fetch families');
+          throw familiesError;
+        }
+        families = familiesData || [];
+        const { data: nodesData, error: nodesError } = await supabase
           .from('stellar_map_nodes')
           .select(`
             *,
             constellations!inner (
               id,
-              level
+              name,
+              level,
+              color_hex,
+              family_id
             )
-          `, { count: 'exact', head: true })
-          .eq('constellations.level', level);
-        
-        logDebug(`[StellarMapService] Query results for level "${level}":`, {
-          totalNodesInLevel: totalNodeCount || 0,
-          nodesLoaded: nodes?.length || 0,
-          userXP: xp,
-          note: 'XP filter removed - all nodes are visible'
-        });
-
-        if ((nodes?.length || 0) === 0 && (totalNodeCount || 0) > 0) {
+          `)
+          .eq('constellations.level', finalLevel)
+          .order('difficulty', { ascending: true });
+        if (nodesError) {
+          logError(nodesError, 'StellarMapService - Failed to fetch nodes');
+          throw nodesError;
         }
-
-        if ((totalNodeCount || 0) === 0) {
-          // Check what levels have nodes
-          const { data: levelsWithNodes } = await supabase
-            .from('stellar_map_nodes')
-            .select(`
-              constellations!inner (level)
-            `);
-          if (levelsWithNodes && levelsWithNodes.length > 0) {
-            const availableLevels = [...new Set(levelsWithNodes.map(n => n.constellations?.level).filter(Boolean))];
-          } else {
-          }
-        }
+        nodes = nodesData || [];
+      } else if (rpcError) {
+        throw rpcError;
       }
 
-      // Validate and group nodes by family -> constellation
+      if (!families || families.length === 0) {
+        if (isDevelopment) {
+          const { data: allLevels } = await supabase
+            .from('constellation_families')
+            .select('level')
+            .order('level');
+        }
+        return { data: {}, error: null };
+      }
+
+      if (isDevelopment && nodes) {
+        logDebug(`[StellarMapService] Query results for level "${level}":`, {
+          nodesLoaded: nodes.length,
+          userXP: xp,
+          source: rpcData ? 'RPC' : 'fallback'
+        });
+      }
+
+      // Build validation maps: constellation_id -> { constellation, family }
+      const constellationIdMap = new Map();
+      families.forEach(family => {
+        if (!family.id || !family.name) return;
+        if (family.constellations && Array.isArray(family.constellations)) {
+          family.constellations.forEach(constellation => {
+            if (!constellation.id || !constellation.name) return;
+            if (constellation.level && constellation.level !== finalLevel) return;
+            constellationIdMap.set(constellation.id, { constellation, family });
+          });
+        }
+      });
+
       const grouped = {};
       const misgroupedNodes = [];
       const validatedNodes = [];
 
       if (families && nodes) {
-        // First pass: validate all nodes
         nodes.forEach(node => {
           if (!node.constellations || !node.constellations.id) {
-            if (isDevelopment) {
-            }
-            misgroupedNodes.push({
-              node,
-              reason: 'Missing constellation relationship'
-            });
+            if (isDevelopment) misgroupedNodes.push({ node, reason: 'Missing constellation relationship' });
             return;
           }
-
-          const constellationId = node.constellations.id;
-          const constellationData = constellationIdMap.get(constellationId);
-
+          const constellationData = constellationIdMap.get(node.constellations.id);
           if (!constellationData) {
-            if (isDevelopment) {
-            }
-            misgroupedNodes.push({
-              node,
-              reason: `Constellation ${constellationId} not found in level ${level}`
-            });
+            if (isDevelopment) misgroupedNodes.push({ node, reason: `Constellation not found in level ${level}` });
             return;
           }
-
           const { constellation, family } = constellationData;
-
-          // If constellation is in our map, it's correctly associated with the family for this level
-          // We trust that relationship. Only validate level to ensure we don't show wrong-level nodes.
-          // Note: The query already filters by level, but we double-check as a safety measure
           const nodeConstellationLevel = node.constellations?.level;
           if (nodeConstellationLevel && nodeConstellationLevel !== finalLevel) {
-            if (isDevelopment) {
-            }
-            misgroupedNodes.push({
-              node,
-              reason: `Level mismatch: constellation level is ${nodeConstellationLevel}, requested ${finalLevel}`
-            });
+            if (isDevelopment) misgroupedNodes.push({ node, reason: `Level mismatch: ${nodeConstellationLevel} vs ${finalLevel}` });
             return;
           }
-
-          // Optional: Log family_id mismatch for debugging but don't reject the node
-          // The constellation is in our map, so it's correctly associated
-          if (isDevelopment) {
-            const nodeConstellationFamilyId = node.constellations?.family_id;
-            if (nodeConstellationFamilyId && nodeConstellationFamilyId !== family.id) {
-            }
-          }
-
-          // Node passed all validations - add aliases for consistency with 3D view
-          const validatedNode = {
-            ...node,
-            familyAlias: family.name,
-            constellationAlias: constellation.name
-          };
-
           validatedNodes.push({
-            node: validatedNode,
+            node: { ...node, familyAlias: family.name, constellationAlias: constellation.name },
             family,
             constellation
           });
         });
 
-        // Second pass: group validated nodes
         families.forEach(family => {
           if (!family.name) return;
-
           grouped[family.name] = {};
-          
           if (family.constellations && Array.isArray(family.constellations)) {
             family.constellations.forEach(constellation => {
               if (!constellation.id || !constellation.name) return;
-
               const constellationNodes = validatedNodes
                 .filter(item => item.constellation.id === constellation.id)
                 .map(item => item.node);
-              
               if (constellationNodes.length > 0) {
                 grouped[family.name][constellation.name] = constellationNodes;
               }

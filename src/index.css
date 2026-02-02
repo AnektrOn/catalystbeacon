@@ -1,7 +1,5 @@
-/* Import Google Fonts - must be at the top */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+/* Fonts: Space Grotesk (UI 95%) + Cinzel (school/lore headers); font-display: swap to avoid invisible text */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -9,111 +7,77 @@
 
 @layer base {
   :root {
-    /* Shadcn/UI & Design System Core Colors (HSL) */
+    /* Raw HSL numbers only (dynamically set by colorPaletteSwitcher) */
+    /* Primary base */
+    --p-h: 36;
+    --p-s: 54%;
+    --p-l: 47%;
+    --primary: var(--p-h) var(--p-s) var(--p-l);
+
+    /* Shadcn/UI & Design System Core (HSL) - palette switcher sets these */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
-
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
-
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-
-    /* Primary: Dark Goldenrod #B4833D -> 36 54% 47% */
-    --primary: 36 54% 47%;
     --primary-foreground: 210 40% 98%;
-
-    /* Secondary: Coyote #81754B -> 48 27% 40% */
     --secondary: 48 27% 40%;
     --secondary-foreground: 210 40% 98%;
-
     --muted: 210 40% 96%;
     --muted-foreground: 215.4 16.3% 46.9%;
-
     --accent: 210 40% 96%;
     --accent-foreground: 222.2 84% 4.9%;
-
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 36 54% 47%;
-    /* Dark Goldenrod for focus rings */
-
     --radius: 0.5rem;
-
-    /* Semantic Colors (HSL) */
     --success: 151 55% 41.5%;
-    /* #10b981 */
     --warning: 38 92% 50%;
-    /* #f59e0b */
     --error: 0 84% 60%;
-    /* #ef4444 */
     --info: 217 91% 60%;
-    /* #3b82f6 */
 
-    /* Earth Tone Palette */
-    --color-old-lace: #F7F1E1;
-    --color-bone: #E3D8C1;
-    --color-dark-goldenrod: #B4833D;
-    --color-kobicha: #66371B;
-    --color-coyote: #81754B;
-    --color-earth-green: #3F3F2C;
-
-    /* Earth Tone HSL Values */
-    --old-lace: 42 47% 93%;
-    /* #F7F1E1 */
-    --bone: 42 35% 82%;
-    /* #E3D8C1 */
-    --dark-goldenrod: 36 54% 47%;
-    /* #B4833D */
-    --kobicha: 21 59% 25%;
-    /* #66371B */
-    --coyote: 48 27% 40%;
-    /* #81754B */
-    --earth-green: 60 11% 22%;
-    /* #3F3F2C */
-
-    /* Gradients - These will be dynamically updated by colorPaletteSwitcher */
-    --gradient-primary: linear-gradient(135deg, var(--color-primary) 0%, var(--color-kobicha) 100%);
-    --gradient-secondary: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-earth-green) 100%);
-    --gradient-warm: linear-gradient(135deg, var(--color-old-lace) 0%, var(--color-bone) 100%);
-    --gradient-earth: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 50%, var(--color-earth-green) 100%);
+    /* Gradients - HSL-based, no Hex */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--foreground)) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(var(--muted-foreground)) 100%);
+    --gradient-warm: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--muted)) 100%);
+    --gradient-earth: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 50%, hsl(var(--foreground)) 100%);
 
     /* Sidebar Dimensions */
     --sidebar-width-collapsed: 80px;
     --sidebar-width-expanded: 240px;
     --sidebar-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-snappy: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-ambient: 1000ms cubic-bezier(0.4, 0, 0.2, 1);
 
-    /* Custom Design System Colors (Updated) */
-    --color-primary: #B4833D;
-    --color-secondary: #81754B;
-    --color-success: #10b981;
-    --color-warning: #f59e0b;
-    --color-error: #ef4444;
-    
-    /* #region agent log */
-    /* Color palette system CSS variables - these should be dynamically updated by colorPaletteSwitcher */
-    --bg-primary: var(--color-old-lace);
-    --bg-secondary: var(--color-bone);
-    --text-primary: var(--color-kobicha);
-    --text-secondary: var(--color-coyote);
-    /* #endregion */
-
-    /* Glassmorphism Variables */
+    /* Glassmorphism & performance toggles: set --glass-blur-amount to 0px to disable all blurs globally */
     --glass-opacity: 0.08;
     --glass-border-opacity: 0.2;
-    --glass-blur: 16px;
+    --glass-blur: 12px;
+    --glass-blur-amount: var(--glass-blur);
+    --particle-display: block;
 
-    /* Font Families */
-    --font-family-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-family-heading: 'Space Grotesk', sans-serif;
-    --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
-    
-    /* Ethereal Design System Fonts - Serif for elegant typography */
-    --font-ethereal-body: 'Cinzel', serif;
+    /* Font Families - Space Grotesk UI (95%), Cinzel for school/lore headers only */
+    --font-family-primary: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-family-heading: 'Cinzel', serif;
+    --font-family-mono: ui-monospace, 'SF Mono', Monaco, monospace;
+
+    /* Ethereal Design System Fonts */
+    --font-ethereal-body: 'Space Grotesk', sans-serif;
     --font-ethereal-heading: 'Cinzel', serif;
+
+    /* Atomic primary: built from channels; functional aliases (no manual primary-20, primary-10) */
+    --color-primary: hsl(var(--primary));
+    --color-primary-glass: hsl(var(--primary) / 0.15);
+    --color-primary-border: hsl(var(--primary) / 0.3);
+
+    /* Legacy compat: derived from HSL so components can keep using --bg-primary etc. */
+    --bg-primary: hsl(var(--background));
+    --bg-secondary: hsl(var(--card));
+    --text-primary: hsl(var(--foreground));
+    --text-secondary: hsl(var(--muted-foreground));
     
     /* === ETHEREAL CARD DESIGN SYSTEM (Dynamic Theming Engine) === */
     /* Colors - Dynamically inherited from active color palette */
@@ -145,8 +109,8 @@
     --ethereal-card-radius-small: 20px;
     --ethereal-card-radius-large: 28px;
     
-    /* Card Blur - Shared across all modes */
-    --ethereal-card-blur: 12px;
+    /* Card Blur - Uses global --glass-blur-amount (set to 0 on mobile/low-power) */
+    --ethereal-card-blur: var(--glass-blur-amount);
     
     /* Ambient Light - Uses primary color from active palette */
     --ethereal-light-color: hsl(var(--primary) / 0.08);
@@ -184,12 +148,16 @@
     --ethereal-card-radius: 24px;
     --ethereal-card-radius-small: 20px;
     --ethereal-card-radius-large: 28px;
-    
-    /* Card Blur */
-    --ethereal-card-blur: 12px;
-    
-    /* Ambient Light - Uses primary color from active palette */
+    --ethereal-card-blur: var(--glass-blur-amount);
     --ethereal-light-color: hsl(var(--primary) / 0.08);
+  }
+
+  /* Performance: disable blur and particles on mobile / low power */
+  @media (max-width: 768px), (prefers-reduced-motion: reduce) {
+    :root {
+      --glass-blur: 0px;
+      --particle-display: none;
+    }
   }
 
   /* Dark mode variables are now set by colorPaletteSwitcher */
@@ -203,8 +171,8 @@
 
   body {
     background-color: transparent;
-    color: var(--text-primary);
-    font-family: 'Cinzel', serif;
+    color: hsl(var(--foreground));
+    font-family: 'Space Grotesk', sans-serif;
     font-size: 1rem; /* 16px - base lisible */
     line-height: 1.75; /* relaxed line-height */
     font-weight: 400;
@@ -234,12 +202,12 @@
   
   /* ============================================
      HIÉRARCHIE TYPOGRAPHIQUE STRICTE
-     Respect de la vision HC: Rajdhani par défaut, Cinzel pour l'accentuation
+     Space Grotesk UI (95%), Cinzel for school/lore headers only
      ============================================ */
   
-  /* Body Text - Rajdhani par défaut */
+  /* Body Text - Space Grotesk par défaut */
   body, p, li, span:not([class*="text-"]), div:not([class*="font-cinzel"]):not([class*="title"]):not([class*="meta"]):not([class*="text-"]) {
-    font-family: 'Rajdhani', sans-serif;
+    font-family: 'Space Grotesk', sans-serif;
     font-size: 1rem; /* 16px - base lisible */
     line-height: 1.75; /* relaxed pour lisibilité */
     font-weight: 400;
@@ -247,11 +215,11 @@
     text-rendering: optimizeLegibility;
   }
   
-  /* H1 - Rajdhani par défaut pour correspondre au nouveau Hero */
+  /* H1 - Cinzel for headings only */
   h1 {
-    font-family: 'Rajdhani', sans-serif;
+    font-family: 'Cinzel', serif;
     line-height: 1.1;
-    font-weight: 700;
+    font-weight: 600;
     letter-spacing: 0.02em;
     color: hsl(var(--foreground));
     margin-top: 2.5rem;
@@ -259,9 +227,9 @@
     text-rendering: optimizeLegibility;
   }
   
-  /* H2, H3 - Rajdhani par défaut */
+  /* H2–H6 - Cinzel for headings only */
   h2, h3, h4, h5, h6 {
-    font-family: 'Rajdhani', sans-serif;
+    font-family: 'Cinzel', serif;
     font-weight: 600;
     color: hsl(var(--foreground));
     text-rendering: optimizeLegibility;
@@ -272,13 +240,14 @@
     font-family: 'Cinzel', serif !important;
   }
 
-  .font-rajdhani {
-    font-family: 'Rajdhani', sans-serif !important;
+  .font-rajdhani,
+  .font-body {
+    font-family: 'Space Grotesk', sans-serif !important;
   }
   
-  /* Meta-data - Rajdhani mais petit et uppercase */
+  /* Meta-data - Space Grotesk mais petit et uppercase */
   .meta-text, [class*="meta"], time, .text-meta {
-    font-family: 'Rajdhani', sans-serif;
+    font-family: 'Space Grotesk', sans-serif;
     font-size: 0.75rem;
     line-height: 1.5;
     font-weight: 600;
@@ -306,19 +275,19 @@
 
   /* Dark mode text colors are now set by colorPaletteSwitcher */
   
-  /* Prose styles pour le contenu de cours (avec @tailwindcss/typography) - Rajdhani par défaut */
+  /* Prose styles pour le contenu de cours (avec @tailwindcss/typography) - Space Grotesk par défaut */
   .prose {
-    font-family: 'Rajdhani', sans-serif;
+    font-family: 'Space Grotesk', sans-serif;
     color: hsl(var(--muted-foreground));
   }
   
   .prose h1, .prose h2, .prose h3, .prose h4 {
-    font-family: 'Rajdhani', sans-serif;
+    font-family: 'Space Grotesk', sans-serif;
     color: hsl(var(--foreground));
   }
   
   .prose p, .prose ul, .prose ol, .prose li {
-    font-family: 'Rajdhani', sans-serif;
+    font-family: 'Space Grotesk', sans-serif;
   }
   
   .prose strong {
@@ -343,7 +312,7 @@
   
   /* Typography Utility Classes - Cinzel préservé, Approche Raffinée */
   .text-body {
-    font-family: 'Rajdhani', serif !important;
+    font-family: 'Space Grotesk', sans-serif !important;
     font-size: 1rem !important; /* 16px - lisible */
     line-height: 1.75 !important; /* relaxed */
     font-weight: 400 !important; /* Regular */
@@ -353,7 +322,7 @@
   }
   
   .text-body-sm {
-    font-family: 'Rajdhani', serif !important;
+    font-family: 'Space Grotesk', sans-serif !important;
     font-size: 0.875rem !important; /* 14px */
     line-height: 1.625 !important;
     font-weight: 400 !important; /* Regular */
@@ -446,11 +415,23 @@
   }
 }
 
-/* Smooth transitions for theme color palette changes */
-* {
-  transition-property: background-color, border-color, color, fill, stroke;
-  transition-timing-function: ease-in-out;
-  transition-duration: 500ms;
+/* Scoped transitions only for interactive elements (no global * transition) */
+button,
+a,
+.clickable,
+[role="button"] {
+  transition: transform var(--transition-snappy), opacity var(--transition-snappy);
+}
+
+/* Utility intent classes: apply only where needed */
+.transition-snappy {
+  transition: box-shadow var(--transition-snappy), border-color var(--transition-snappy),
+    background var(--transition-snappy), transform var(--transition-snappy),
+    opacity var(--transition-snappy);
+}
+.transition-ambient {
+  transition: background var(--transition-ambient), box-shadow var(--transition-ambient),
+    border-color var(--transition-ambient);
 }
 
 /* Custom Scrollbars - Ethereal Theme */
@@ -477,9 +458,9 @@
   background: rgba(255, 255, 255, 0.3);
 }
 
-  /* Buttons, inputs, and form elements - Rajdhani par défaut */
+  /* Buttons, inputs, and form elements - Space Grotesk */
   button, input, select, textarea, label, legend {
-    font-family: 'Rajdhani', sans-serif !important;
+    font-family: 'Space Grotesk', sans-serif !important;
     text-rendering: optimizeLegibility;
   }
 

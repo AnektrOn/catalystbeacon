@@ -1,0 +1,27 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAM_ID.com.hcuniversity.beacon",
+        "paths": [
+          "*",
+          "/",
+          "/dashboard",
+          "/courses/*",
+          "/roadmap/*",
+          "/profile",
+          "/mastery/*",
+          "/community",
+          "/stellar-map",
+          "/achievements"
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [
+      "TEAM_ID.com.hcuniversity.beacon"
+    ]
+  }
+}

@@ -74,6 +74,17 @@ try {
   emailService = null
 }
 
+// Push notification service
+let pushNotificationService
+try {
+  pushNotificationService = require('./server/pushNotificationService')
+  pushNotificationService.initializeFirebaseAdmin()
+  console.log('✅ Push notification service loaded')
+} catch (error) {
+  console.warn('⚠️ Push notification service not available:', error.message)
+  pushNotificationService = null
+}
+
 const app = express()
 const PORT = process.env.PORT || 3001
 
@@ -1898,6 +1909,76 @@ app.post('/api/email/app-update', generalLimiter, async (req, res) => {
     }
   } catch (error) {
     console.error('Error in app update endpoint:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// ============================================================================
+// PUSH NOTIFICATIONS API
+// ============================================================================
+
+// Send push notification to a user
+app.post('/api/push-notifications/send', async (req, res) => {
+  try {
+    const { userId, notification, data } = req.body
+
+    if (!userId || !notification || !notification.title || !notification.body) {
+      return res.status(400).json({ 
+        error: 'Missing required fields: userId, notification.title, notification.body' 
+      })
+    }
+
+    if (!pushNotificationService) {
+      return res.status(503).json({ 
+        error: 'Push notification service not available' 
+      })
+    }
+
+    await pushNotificationService.sendPushNotificationToUser(
+      userId,
+      notification,
+      data || {}
+    )
+
+    res.json({ success: true, message: 'Push notification sent' })
+  } catch (error) {
+    console.error('Error sending push notification:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Send push notification to multiple users
+app.post('/api/push-notifications/send-batch', async (req, res) => {
+  try {
+    const { userIds, notification, data } = req.body
+
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({ 
+        error: 'Missing required field: userIds (array)' 
+      })
+    }
+
+    if (!notification || !notification.title || !notification.body) {
+      return res.status(400).json({ 
+        error: 'Missing required fields: notification.title, notification.body' 
+      })
+    }
+
+    if (!pushNotificationService) {
+      return res.status(503).json({ 
+        error: 'Push notification service not available' 
+      })
+    }
+
+    await pushNotificationService.sendPushNotificationToUsers(
+      userIds,
+      notification,
+      data || {}
+    )
+
+    res.json({ success: true, message: 'Push notifications sent' })
+  } catch (error) {
+    console.error('Error sending batch push notifications:', error)
     res.status(500).json({ error: error.message })
   }
 })

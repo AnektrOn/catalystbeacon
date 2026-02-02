@@ -53,7 +53,10 @@ const getToolboxColor = (title) => {
   }
 };
 
-const ToolboxTabRobust = () => {
+/**
+ * layout: 'default' | 'compact' | 'mobile' — controls wrapper styling for desktop/compact vs mobile-first.
+ */
+const ToolboxTabRobust = ({ layout = 'default' }) => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('library');
   const [toolboxLibrary, setToolboxLibrary] = useState([]);
@@ -309,8 +312,10 @@ const ToolboxTabRobust = () => {
     );
   }
 
+  const layoutClass = layout === 'mobile' ? 'toolbox-tab-mobile space-y-4' : layout === 'compact' ? 'toolbox-tab-compact space-y-6' : 'space-y-6';
+
   return (
-    <div className="space-y-6">
+    <div className={layoutClass}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900">Toolbox</h2>

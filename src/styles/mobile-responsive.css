@@ -313,8 +313,8 @@
     right: 0;
     z-index: 50;
     background: var(--glass-bg-strong);
-    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    backdrop-filter: blur(var(--glass-blur-amount, var(--glass-blur))) saturate(var(--glass-sat));
+    -webkit-backdrop-filter: blur(var(--glass-blur-amount, var(--glass-blur))) saturate(var(--glass-sat));
     border-top: 1px solid var(--glass-border-strong);
     box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.12);
     padding: 0.5rem 0;

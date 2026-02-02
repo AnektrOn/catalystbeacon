@@ -32,7 +32,9 @@ import {
   Map
 } from 'lucide-react';
 
-const AppShellMobile = () => {
+const AppShellMobile = ({ navData: navDataProp } = {}) => {
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   // Initialize dark mode from localStorage or system preference
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -54,6 +56,35 @@ const AppShellMobile = () => {
   const { profile, signOut, user } = useAuth();
   const { isFreeUser, isAdmin } = useSubscription();
 
+  // Keyboard handling
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) {
+      return;
+    }
+
+    const showListener = Keyboard.addListener('keyboardWillShow', (info) => {
+      setKeyboardHeight(info.keyboardHeight);
+      setIsKeyboardVisible(true);
+    });
+
+    const hideListener = Keyboard.addListener('keyboardWillHide', () => {
+      setKeyboardHeight(0);
+      setIsKeyboardVisible(false);
+    });
+
+    return () => {
+      showListener.remove();
+      hideListener.remove();
+    };
+  }, []);
+
+  // Handle haptic feedback on navigation
+  const handleNavigation = useCallback((path) => {
+    hapticImpact('light');
+    navigate(path);
+    setIsMobileMenuOpen(false);
+  }, [navigate]);
+
   const getMobilePageTitle = useCallback(() => {
     const path = location.pathname || '/';
     if (path === '/' || path.startsWith('/dashboard')) return 'Dashboard';
@@ -66,12 +97,16 @@ const AppShellMobile = () => {
     return 'HC Beacon';
   }, [location.pathname]);
 
-  // Load notification count from Supabase
-  const [notificationCount, setNotificationCount] = useState(0);
-  
-  // XP and achievement state
-  const [totalXP, setTotalXP] = useState(0);
-  const [levelTitle, setLevelTitle] = useState(null);
+  // Local state when navData not provided (e.g. standalone mount)
+  const [notificationCount, setNotificationCount] = useState(navDataProp?.notificationCount ?? 0);
+  const [totalXP, setTotalXP] = useState(navDataProp?.totalXP ?? 0);
+  const [lastAchievement, setLastAchievement] = useState(navDataProp?.lastAchievement ?? null);
+  const [levelTitle, setLevelTitle] = useState(navDataProp?.levelTitle ?? null);
+
+  const notificationCountVal = navDataProp != null ? navDataProp.notificationCount : notificationCount;
+  const totalXPVal = navDataProp != null ? navDataProp.totalXP : totalXP;
+  const lastAchievementVal = navDataProp != null ? navDataProp.lastAchievement : lastAchievement;
+  const levelTitleVal = navDataProp != null ? navDataProp.levelTitle : levelTitle;
 
   const computeActionsMenuPos = useCallback(() => {
     const el = actionsBtnRef.current;
@@ -129,22 +164,19 @@ const AppShellMobile = () => {
   }, [isActionsMenuOpen, computeActionsMenuPos]);
   
   useEffect(() => {
+    if (navDataProp != null) return;
     const loadNotifications = async () => {
       if (!user) {
         setNotificationCount(0);
         return;
       }
-      
       try {
-        // Check if notifications table exists
         const { data, error } = await supabase
           .from('notifications')
           .select('id', { count: 'exact', head: true })
           .eq('user_id', user.id)
           .eq('is_read', false);
-        
         if (error && error.code !== 'PGRST116') {
-          // Table doesn't exist or other error - default to 0
           logWarn('Notifications table not available:', error.message);
           setNotificationCount(0);
         } else {
@@ -155,75 +187,53 @@ const AppShellMobile = () => {
         setNotificationCount(0);
       }
     };
-    
     loadNotifications();
-    
-    // Set up real-time subscription for notifications
     if (user) {
       const channel = supabase
         .channel('notifications-mobile')
-        .on('postgres_changes', 
-          { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
-          () => loadNotifications()
-        )
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, loadNotifications)
         .subscribe();
-      
-      return () => {
-        supabase.removeChannel(channel);
-      };
+      return () => supabase.removeChannel(channel);
     }
-  }, [user]);
+  }, [user, navDataProp]);
 
-  // Load level title based on XP
   useEffect(() => {
+    if (navDataProp != null) return;
     const loadLevelTitle = async () => {
       if (!user || !profile) {
         setLevelTitle(null);
         return;
       }
-
       try {
-        // First, try to use profile.rank if available (set by database trigger)
         if (profile.rank) {
           setLevelTitle(profile.rank);
           return;
         }
-
-        // Otherwise, fetch from levels table based on current XP
         const currentXP = profile.current_xp || 0;
         const { data: levelInfo, error } = await levelsService.getCurrentAndNextLevel(currentXP);
-        
-        if (!error && levelInfo?.currentLevel) {
-          setLevelTitle(levelInfo.currentLevel.title);
-        } else if (profile.level) {
-          // Fallback: get level by number
+        if (!error && levelInfo?.currentLevel) setLevelTitle(levelInfo.currentLevel.title);
+        else if (profile.level) {
           const { data: levelData } = await levelsService.getLevelByNumber(profile.level);
-          if (levelData?.title) {
-            setLevelTitle(levelData.title);
-          }
+          if (levelData?.title) setLevelTitle(levelData.title);
         }
       } catch (err) {
         logWarn('Error loading level title:', err);
         setLevelTitle(null);
       }
     };
-
     loadLevelTitle();
-  }, [user, profile]);
+  }, [user, profile, navDataProp]);
 
-  // Load XP and last achievement
   useEffect(() => {
+    if (navDataProp != null) return;
     const loadXPAndAchievement = async () => {
       if (!user) {
         setTotalXP(0);
+        setLastAchievement(null);
         return;
       }
-
       try {
-        // Get total XP from profile
-        if (profile?.current_xp !== undefined) {
-          setTotalXP(profile.current_xp);
-        }
+        if (profile?.current_xp !== undefined) setTotalXP(profile.current_xp);
 
         // Get most recent achievement (badge or lesson completion)
         const achievements = [];
@@ -285,15 +295,17 @@ const AppShellMobile = () => {
           });
         }
 
-        // Achievement data is fetched but not currently displayed in mobile shell
-        // This can be used in the future for displaying recent achievements
+        if (achievements.length > 0) {
+          achievements.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+          setLastAchievement(achievements[0]);
+        } else setLastAchievement(null);
       } catch (err) {
         logWarn('Error loading XP and achievements:', err);
       }
     };
 
     loadXPAndAchievement();
-  }, [user, profile]);
+  }, [user, profile, navDataProp]);
 
   // Debug: Log profile background image changes
   useEffect(() => {
@@ -347,11 +359,6 @@ const AppShellMobile = () => {
   const bottomNavItems = (isFreeUser && !isAdmin)
     ? allBottomNavItems.filter(item => !item.restricted)
     : allBottomNavItems;
-
-  const handleNavigation = (path) => {
-    navigate(path);
-    setIsMobileMenuOpen(false);
-  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -512,17 +519,17 @@ const AppShellMobile = () => {
                           // TODO: Navigate to notifications
                         }}
                         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-ethereal-text hover:bg-ethereal-glass-hover transition-colors min-h-[44px]"
-                        aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ''}`}
+                        aria-label={`Notifications${notificationCountVal > 0 ? ` (${notificationCountVal} unread)` : ''}`}
                       >
                         <div className="relative">
                           <Bell size={18} aria-hidden="true" />
-                          {notificationCount > 0 && (
+                          {notificationCountVal > 0 && (
                             <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
                           )}
                         </div>
                         <span>Notifications</span>
                         {notificationCount > 0 && (
-                          <span className="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{notificationCount}</span>
+                          <span className="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{notificationCountVal}</span>
                         )}
                       </button>
                       
@@ -556,7 +563,7 @@ const AppShellMobile = () => {
                 >
                   <Bell size={18} aria-hidden="true" />
                 </button>
-                <NotificationBadge count={notificationCount} />
+                <NotificationBadge count={notificationCountVal} />
               </div>
 
               <button
@@ -688,7 +695,7 @@ const AppShellMobile = () => {
                         {profile.full_name || 'User'}
                       </p>
                       <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                        {levelTitle || profile.rank || `Level ${profile.level || 1}`}
+                        {levelTitleVal || profile?.rank || `Level ${profile?.level || 1}`}
                       </p>
                     </div>
                   </div>
@@ -698,7 +705,7 @@ const AppShellMobile = () => {
                     <div className="flex-1">
                       <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Experience Points</p>
                       <p className="text-sm font-bold" style={{ color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
-                        {totalXP.toLocaleString()} XP
+                        {totalXPVal.toLocaleString()} XP
                       </p>
                     </div>
                   </div>
@@ -780,7 +787,12 @@ const AppShellMobile = () => {
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden safe-area-bottom mobile-bottom-nav">
+      <nav 
+        className="fixed bottom-0 left-0 right-0 z-50 lg:hidden safe-area-bottom mobile-bottom-nav"
+        style={{
+          paddingBottom: `max(env(safe-area-inset-bottom), ${keyboardHeight > 0 ? keyboardHeight + 'px' : '0px'})`
+        }}
+      >
         <div className="bg-ethereal-glass backdrop-blur-ethereal mx-4 mb-4 rounded-2xl border border-ethereal shadow-ethereal-elevated">
           <div className="flex items-center justify-around px-2 py-3">
             {bottomNavItems.map((item) => {

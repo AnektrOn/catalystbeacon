@@ -1,6 +1,67 @@
 import { supabase } from '../lib/supabaseClient';
 
 /**
+ * Per-school config for roadmap UI: display name, URL slug, colors, optional overrides.
+ * Used by SchoolRoadmap to dynamically render nodes, colors, and content.
+ */
+export const ROADMAP_SCHOOL_CONFIG = {
+  Ignition: {
+    displayName: 'Ignition',
+    slug: 'ignition',
+    primaryColor: 'hsl(var(--primary))',
+    accentColor: 'hsl(var(--primary) / 0.8)',
+  },
+  Insight: {
+    displayName: 'Insight',
+    slug: 'insight',
+    primaryColor: 'hsl(var(--primary))',
+    accentColor: 'hsl(var(--primary) / 0.8)',
+  },
+  Transformation: {
+    displayName: 'Transformation',
+    slug: 'transformation',
+    primaryColor: 'hsl(var(--primary))',
+    accentColor: 'hsl(var(--primary) / 0.8)',
+  },
+  'Stellar Ops': {
+    displayName: 'Stellar Ops',
+    slug: 'stellar-ops',
+    primaryColor: 'hsl(var(--primary))',
+    accentColor: 'hsl(var(--primary) / 0.8)',
+  },
+  'Neural RPG': {
+    displayName: 'Neural RPG',
+    slug: 'neural-rpg',
+    primaryColor: 'hsl(var(--primary))',
+    accentColor: 'hsl(var(--primary) / 0.8)',
+  },
+};
+
+/**
+ * Normalize URL slug to masterschool name (for useParams).
+ * @param {string} slug - e.g. 'ignition', 'stellar-ops'
+ * @returns {string} e.g. 'Ignition', 'Stellar Ops'
+ */
+export function normalizeMasterschoolSlug(slug) {
+  if (!slug || typeof slug !== 'string') return 'Ignition';
+  const lower = slug.trim().toLowerCase().replace(/-/g, ' ');
+  const bySlug = Object.fromEntries(
+    Object.entries(ROADMAP_SCHOOL_CONFIG).map(([name, c]) => [c.slug, name])
+  );
+  return bySlug[slug.trim().toLowerCase()] || lower.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/**
+ * Get config object for a masterschool (nodes, colors, display name).
+ * @param {string} masterschool - 'Ignition' | 'Insight' | 'Transformation' | 'Stellar Ops' | 'Neural RPG'
+ * @returns {Object} ROADMAP_SCHOOL_CONFIG entry or Ignition fallback
+ */
+export function getSchoolConfig(masterschool) {
+  const key = masterschool && ROADMAP_SCHOOL_CONFIG[masterschool] ? masterschool : 'Ignition';
+  return ROADMAP_SCHOOL_CONFIG[key] || ROADMAP_SCHOOL_CONFIG.Ignition;
+}
+
+/**
  * RoadmapService - Handles all roadmap-related operations
  * Manages lesson progression, tracking, and rewards for Ignition, Insight, and Transformation masterschools
  */

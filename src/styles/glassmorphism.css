@@ -8,8 +8,7 @@
   --radius-md: 16px;
   --radius-lg: 20px;
 
-  /* Glass rendering */
-  --glass-blur: 16px;
+  /* Glass rendering - --glass-blur set in index.css (0 on mobile/low-power) */
   --glass-sat: 170%;
   --glass-bg: color-mix(in srgb, var(--bg-primary, rgba(255, 255, 255, 0.95)) 16%, transparent);
   --glass-bg-strong: color-mix(in srgb, var(--bg-primary, rgba(255, 255, 255, 0.95)) 26%, transparent);
@@ -21,7 +20,7 @@
 }
 
 .dark {
-  --glass-blur: 22px;
+  /* --glass-blur inherited from index.css (performance toggle) */
   --glass-sat: 165%;
   --glass-bg: color-mix(in srgb, var(--bg-secondary, rgba(0, 0, 0, 0.7)) 55%, transparent);
   --glass-bg-strong: color-mix(in srgb, var(--bg-secondary, rgba(0, 0, 0, 0.75)) 70%, transparent);
@@ -39,12 +38,12 @@
   background-position: center;
 }
 
-/* Base glass effect - Enhanced blur and saturation */
+/* Base glass effect - Enhanced blur and saturation (--glass-blur-amount: 0 disables globally) */
 .glass-effect {
   position: relative;
   background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  backdrop-filter: blur(var(--glass-blur-amount, var(--glass-blur))) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(var(--glass-blur-amount, var(--glass-blur))) saturate(var(--glass-sat));
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
 }
@@ -374,8 +373,8 @@
   @apply overflow-auto;
   margin: 16px;
   padding:0!important;
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  backdrop-filter: blur(var(--glass-blur-amount, var(--glass-blur))) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(var(--glass-blur-amount, var(--glass-blur))) saturate(var(--glass-sat));
   background: var(--glass-bg-strong) !important;
   border: 1px solid var(--glass-border-strong) !important;
   box-shadow: var(--glass-shadow);

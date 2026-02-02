@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import toast from 'react-hot-toast'
+import { pushNotificationService } from '../services/pushNotificationService'
 // import { logDebug, logInfo, logWarn, logError } from '../utils/logger'
 
 // Safe cache access - returns null if DataCacheProvider is not available
@@ -263,6 +264,11 @@ const AuthProviderComponent = ({ children }) => {
         })
 
         if (session?.user) {
+          // Initialize push notifications for logged-in user
+          pushNotificationService.initialize(session.user.id).catch(err => {
+            console.error('Error initializing push notifications:', err)
+          })
+          
           // logDebug('📥 AuthContext: Fetching profile for user:', session.user.id)
           // Fetch profile without blocking loading if we already have it optimistically
           fetchProfile(session.user.id)
@@ -316,6 +322,10 @@ const AuthProviderComponent = ({ children }) => {
           setProfile(null)
           isInitializedRef.current = false
           setLoading(false)
+          // Cleanup push notifications
+          pushNotificationService.cleanup().catch(err => {
+            console.error('Error cleaning up push notifications:', err)
+          })
           // Clear welcome email flags from sessionStorage
           try {
             Object.keys(sessionStorage).forEach(key => {
@@ -345,6 +355,11 @@ const AuthProviderComponent = ({ children }) => {
         })
         
         if (session?.user) {
+          // Initialize push notifications for logged-in user
+          pushNotificationService.initialize(session.user.id).catch(err => {
+            console.error('Error initializing push notifications:', err)
+          })
+          
           // Only fetch profile if we don't already have it for this user
           // This prevents unnecessary fetches during navigation
           if (!profile || profile.id !== session.user.id) {

@@ -6,13 +6,11 @@ import { usePageTransition } from '../contexts/PageTransitionContext';
 import useSubscription from '../hooks/useSubscription';
 import SkeletonLoader from '../components/ui/SkeletonLoader';
 
-// Import components
+// Import components — single Habits/Toolbox with layout prop
 import CalendarTab from '../components/mastery/CalendarTab';
 import CalendarTabMobile from '../components/mastery/CalendarTabMobile';
-import HabitsTabCompact from '../components/mastery/HabitsTabCompact';
-import HabitsTabMobile from '../components/mastery/HabitsTabMobile';
-import ToolboxTabCompact from '../components/mastery/ToolboxTabCompact';
-import ToolboxTabMobile from '../components/mastery/ToolboxTabMobile';
+import HabitsTab from '../components/mastery/HabitsTab';
+import ToolboxTab from '../components/mastery/ToolboxTab';
 
 // Create a context for sharing refresh state
 const MasteryRefreshContext = createContext();
@@ -90,29 +88,25 @@ const Mastery = () => {
       );
     } else if (path === '/mastery/habits') {
       return (
-        <>
-          <div id="habit-tracker-container" className="w-full">
+        <div id="habit-tracker-container" className="w-full">
           <div className="lg:hidden">
-            <HabitsTabMobile key={`habits-mobile-${refreshKey}`} />
+            <HabitsTab key={`habits-mobile-${refreshKey}`} layout="mobile" />
           </div>
           <div className="hidden lg:block">
-            <HabitsTabCompact key={`habits-desktop-${refreshKey}`} />
+            <HabitsTab key={`habits-desktop-${refreshKey}`} layout="compact" />
           </div>
         </div>
-        </>
       );
     } else if (path === '/mastery/toolbox') {
       return (
-        <>
-         <div id="toolbox-container" className="w-full">
+        <div id="toolbox-container" className="w-full">
           <div className="lg:hidden">
-            <ToolboxTabMobile key={`toolbox-mobile-${refreshKey}`} />
+            <ToolboxTab key={`toolbox-mobile-${refreshKey}`} layout="mobile" />
           </div>
           <div className="hidden lg:block">
-            <ToolboxTabCompact key={`toolbox-desktop-${refreshKey}`} />
+            <ToolboxTab key={`toolbox-desktop-${refreshKey}`} layout="compact" />
           </div>
         </div>
-        </>
       );
     }
     // Fallback

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap');
+/* Cinzel loaded globally via index.css (display=swap) */
 
 .onboarding-overlay {
   position: fixed;

@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { DataCacheProvider } from './contexts/DataCacheContext'
@@ -13,30 +13,36 @@ import SkeletonLoader from './components/ui/SkeletonLoader'
 import WelcomeModal from './components/WelcomeModal'
 import { OnboardingProvider } from './contexts/OnboardingContext'
 import OnboardingTour from './components/Onboarding/OnboardingTour'
+import DevRouteElements from './routes/DevRoutes'
+import { deepLinkingService } from './utils/deepLinking'
+import { Capacitor } from '@capacitor/core'
+import { StatusBar } from '@capacitor/status-bar'
+import { SplashScreen } from '@capacitor/splash-screen'
+import { Keyboard } from '@capacitor/keyboard'
 import './styles/glassmorphism.css'
 import './styles/mobile-responsive.css'
 
 
-// Lazy load pages for code splitting
-const LoginPage = React.lazy(() => import('./pages/LoginPage'))
-const SignupPage = React.lazy(() => import('./pages/SignupPage'))
-const DashboardNeomorphic = React.lazy(() => import('./pages/DashboardNeomorphic'))
-const PricingPage = React.lazy(() => import('./pages/PricingPage'))
-const ProfilePage = React.lazy(() => import('./pages/ProfilePage'))
-const Mastery = React.lazy(() => import('./pages/Mastery'))
-const CommunityPage = React.lazy(() => import('./pages/CommunityPage'))
-const SettingsPage = React.lazy(() => import('./pages/SettingsPage'))
-const CourseCatalogPage = React.lazy(() => import('./pages/CourseCatalogPage'))
-const CourseDetailPage = React.lazy(() => import('./pages/CourseDetailPage'))
-const CoursePlayerPage = React.lazy(() => import('./pages/CoursePlayerPage'))
-const CourseCreationPage = React.lazy(() => import('./pages/CourseCreationPage'))
-const StellarMapPage = React.lazy(() => import('./pages/StellarMapPage'))
-const AchievementsPage = React.lazy(() => import('./pages/Achievements'))
-const ForgotPasswordPage = React.lazy(() => import('./pages/ForgotPasswordPage'))
-const TermsPage = React.lazy(() => import('./pages/TermsPage'))
-const PrivacyPage = React.lazy(() => import('./pages/PrivacyPage'))
-const AwakeningLandingPage = React.lazy(() => import('./pages/AwakeningLandingPage'))
-const RoadmapIgnition = React.lazy(() => import('./pages/RoadmapIgnition'))
+// Lazy load pages for code splitting (webpackChunkName enables intent-based prefetch)
+const LoginPage = React.lazy(() => import(/* webpackChunkName: "auth" */ './pages/LoginPage'))
+const SignupPage = React.lazy(() => import(/* webpackChunkName: "auth" */ './pages/SignupPage'))
+const DashboardNeomorphic = React.lazy(() => import(/* webpackChunkName: "dashboard-feature" */ './pages/DashboardNeomorphic'))
+const PricingPage = React.lazy(() => import(/* webpackChunkName: "pricing" */ './pages/PricingPage'))
+const ProfilePage = React.lazy(() => import(/* webpackChunkName: "profile" */ './pages/ProfilePage'))
+const Mastery = React.lazy(() => import(/* webpackChunkName: "mastery-feature" */ './pages/Mastery'))
+const CommunityPage = React.lazy(() => import(/* webpackChunkName: "community" */ './pages/CommunityPage'))
+const SettingsPage = React.lazy(() => import(/* webpackChunkName: "settings" */ './pages/SettingsPage'))
+const CourseCatalogPage = React.lazy(() => import(/* webpackChunkName: "courses-feature" */ './pages/CourseCatalogPage'))
+const CourseDetailPage = React.lazy(() => import(/* webpackChunkName: "courses-feature" */ './pages/CourseDetailPage'))
+const CoursePlayerPage = React.lazy(() => import(/* webpackChunkName: "courses-feature" */ './pages/CoursePlayerPage'))
+const CourseCreationPage = React.lazy(() => import(/* webpackChunkName: "courses-feature" */ './pages/CourseCreationPage'))
+const StellarMapPage = React.lazy(() => import(/* webpackChunkName: "stellar-map" */ './pages/StellarMapPage'))
+const AchievementsPage = React.lazy(() => import(/* webpackChunkName: "achievements" */ './pages/Achievements'))
+const ForgotPasswordPage = React.lazy(() => import(/* webpackChunkName: "auth" */ './pages/ForgotPasswordPage'))
+const TermsPage = React.lazy(() => import(/* webpackChunkName: "legal" */ './pages/TermsPage'))
+const PrivacyPage = React.lazy(() => import(/* webpackChunkName: "legal" */ './pages/PrivacyPage'))
+const AwakeningLandingPage = React.lazy(() => import(/* webpackChunkName: "landing" */ './pages/AwakeningLandingPage'))
+const SchoolRoadmap = React.lazy(() => import(/* webpackChunkName: "roadmap-feature" */ './pages/SchoolRoadmap'))
 
 // Loading component - Now using Skeleton Loader for perceived speed
 const LoadingScreen = () => {
@@ -94,32 +100,8 @@ const AppRoutes = () => {
         </React.Suspense>
       } />
       
-      {/* Test routes - only in development */}
-      {process.env.NODE_ENV === 'development' && (
-        <>
-          <Route path="/test" element={
-            <div style={{ padding: '20px', backgroundColor: 'lightblue' }}>
-              <h1>TEST ROUTE WORKS!</h1>
-              <p>If you can see this, routing is working.</p>
-            </div>
-          } />
-
-          {/* Mastery Test Component - lazy loaded only in development */}
-          <Route path="/mastery-test" element={
-            <ProtectedRoute>
-              {(() => {
-                // eslint-disable-next-line react-hooks/rules-of-hooks
-                const MasteryTestComponent = React.lazy(() => import('./components/test/MasteryTestComponent'))
-                return (
-                  <React.Suspense fallback={<LoadingScreen />}>
-                    <MasteryTestComponent />
-                  </React.Suspense>
-                )
-              })()}
-            </ProtectedRoute>
-          } />
-        </>
-      )}
+      {/* Dev-only routes: Fragment of Route elements so Routes accepts them */}
+      {process.env.NODE_ENV === 'development' && DevRouteElements}
      
 
       {/* Protected Routes (With AppShell) */}
@@ -174,13 +156,6 @@ const AppRoutes = () => {
             </React.Suspense>
           </ErrorBoundary>
         } />
-        <Route path="/mastery/achievements" element={
-          <ErrorBoundary>
-            <React.Suspense fallback={<LoadingScreen />}>
-              <Mastery />
-            </React.Suspense>
-          </ErrorBoundary>
-        } />
         <Route path="/mastery/timer" element={
           <ErrorBoundary>
             <React.Suspense fallback={<LoadingScreen />}>
@@ -188,9 +163,8 @@ const AppRoutes = () => {
             </React.Suspense>
           </ErrorBoundary>
         } />
-
-        {/* Redirect standalone calendar to mastery calendar for now */}
-        <Route path="/calendar" element={<Navigate to="/mastery/calendar" replace />} />
+        {/* Achievements: single source at /achievements; redirect legacy mastery subroute */}
+        <Route path="/mastery/achievements" element={<Navigate to="/achievements" replace />} />
 
         {/* Community Routes - Protected */}
         <Route path="/community" element={
@@ -203,8 +177,7 @@ const AppRoutes = () => {
           </ErrorBoundary>
         } />
 
-        {/* Tools Routes */}
-        <Route path="/timer" element={<Navigate to="/mastery/timer" replace />} />
+        {/* Settings */}
         <Route path="/settings" element={
           <ErrorBoundary>
             <React.Suspense fallback={<LoadingScreen />}>
@@ -213,23 +186,18 @@ const AppRoutes = () => {
           </ErrorBoundary>
         } />
 
-        {/* Roadmap Routes - Protected */}
-        {/* Remplace cette ligne : */}
-        {/* <Route path="/roadmap/ignition" element={<ErrorBoundary><React.Suspense...><RoadmapIgnition /></React.Suspense></ErrorBoundary>} /> */}
-
-        {/* Par celle-ci (Note le :masterschool) : */}
+        {/* Roadmap Routes - Protected; :masterschool drives content via SchoolRoadmap */}
         <Route path="/roadmap/:masterschool" element={
           <ErrorBoundary>
             <React.Suspense fallback={<LoadingScreen />}>
-              {/* On affiche toujours le même composant pour l'instant */}
-              <RoadmapIgnition />
+              <SchoolRoadmap />
             </React.Suspense>
           </ErrorBoundary>
         } />
         <Route path="/roadmap/ignition/:statLink" element={
           <ErrorBoundary>
             <React.Suspense fallback={<LoadingScreen />}>
-              <RoadmapIgnition />
+              <SchoolRoadmap />
             </React.Suspense>
           </ErrorBoundary>
         } />
@@ -308,6 +276,43 @@ const AppRoutes = () => {
   )
 }
 
+// Deep linking initialization component
+const DeepLinkingInitializer = () => {
+  const navigate = useNavigate()
+
+  React.useEffect(() => {
+    // Initialize deep linking
+    deepLinkingService.initialize(navigate).catch(err => {
+      console.error('Error initializing deep linking:', err)
+    })
+  }, [navigate])
+
+  return null
+}
+
+// Native (Capacitor) initialization: splash, status bar, keyboard
+const MobileNativeInitializer = () => {
+  React.useEffect(() => {
+    if (typeof Capacitor === 'undefined' || !Capacitor.isNativePlatform()) return
+
+    const init = async () => {
+      try {
+        await SplashScreen.hide()
+      } catch (e) {
+        // ignore if not available
+      }
+      try {
+        await Keyboard.setAccessoryBarVisible({ isVisible: false })
+      } catch (e) {
+        // ignore
+      }
+    }
+    init()
+  }, [])
+
+  return null
+}
+
 function App() {
   const isMobile = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 767px)').matches
 
@@ -321,6 +326,8 @@ function App() {
                 v7_relativeSplatPath: true
               }}
             >
+              <DeepLinkingInitializer />
+              <MobileNativeInitializer />
               <OnboardingProvider>
                 <PageTransitionProvider>
                   <div 

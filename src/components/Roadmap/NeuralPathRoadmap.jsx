@@ -23,7 +23,7 @@ const CONFIG = {
   bossInterval: 5
 };
 
-const NeuralPathRoadmap = ({ masterschool = 'Ignition' }) => {
+const NeuralPathRoadmap = ({ masterschool = 'Ignition', schoolConfig = null }) => {
   const { user } = useAuth();
   const { isFreeUser } = useSubscription();
   const { endTransition } = usePageTransition();

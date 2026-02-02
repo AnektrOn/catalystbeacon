@@ -1,5 +1,6 @@
 -- RPC for consolidating dashboard data queries into a single request
--- This significantly improves performance by reducing the number of roundtrips to Supabase
+-- Nested arrays are limited (e.g. teacher_feed LIMIT 5, constellation nodes LIMIT 5)
+-- to avoid MB-sized payloads as data grows. Use get_feed_paginated for more feed items.
 
 CREATE OR REPLACE FUNCTION get_dashboard_data_v3(p_user_id UUID)
 RETURNS JSONB
@@ -127,5 +128,38 @@ BEGIN
         'stats_info', v_stats_info,
         'teacher_feed', v_teacher_feed
     );
+END;
+$$;
+
+-- Paginated teacher feed for "load more" / infinite scroll (God-Mode pattern extension)
+CREATE OR REPLACE FUNCTION get_feed_paginated(p_page_number INT DEFAULT 1, p_page_size INT DEFAULT 10)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_feed JSONB;
+    v_offset INT;
+BEGIN
+    v_offset := GREATEST(0, (COALESCE(p_page_number, 1) - 1) * GREATEST(1, LEAST(COALESCE(p_page_size, 10), 50)));
+
+    SELECT COALESCE(jsonb_agg(posts_data ORDER BY sort_ts DESC), '[]'::jsonb) INTO v_feed
+    FROM (
+        SELECT jsonb_build_object(
+            'id', p.id,
+            'content', p.content,
+            'created_at', p.created_at,
+            'profiles', jsonb_build_object('role', pr.role, 'full_name', pr.full_name, 'avatar_url', pr.avatar_url)
+        ) AS posts_data,
+        p.created_at AS sort_ts
+        FROM public.posts p
+        JOIN public.profiles pr ON p.user_id = pr.id
+        WHERE lower(pr.role) IN ('teacher', 'admin') AND p.is_published = true AND p.is_public = true
+        ORDER BY p.created_at DESC
+        LIMIT LEAST(COALESCE(p_page_size, 10), 50)
+        OFFSET v_offset
+    ) sub;
+
+    RETURN jsonb_build_object('feed', v_feed, 'page', COALESCE(p_page_number, 1), 'page_size', LEAST(COALESCE(p_page_size, 10), 50));
 END;
 $$;

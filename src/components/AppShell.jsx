@@ -8,6 +8,7 @@ import NotificationBadge from './NotificationBadge';
 import ColorPaletteDropdown from './common/ColorPaletteDropdown';
 import AppShellMobile from './AppShellMobile';
 import useSubscription from '../hooks/useSubscription';
+import { useNavigationData } from '../hooks/useNavigationData';
 import UpgradeModal from './UpgradeModal';
 import { getCurrentPalette, switchTo } from '../utils/colorPaletteSwitcher';
 import GlobalBackground from './ui/GlobalBackground';
@@ -29,14 +30,28 @@ import {
   Map
 } from 'lucide-react';
 
-// Sidebar Navigation Item with hover tooltip
-const SidebarNavItem = ({ item, isActive, isSidebarExpanded, onClick }) => {
+// Intent-based prefetch: load chunk on hover so navigation feels instant
+const PREFETCH_MAP = {
+  '/dashboard': () => import(/* webpackChunkName: "dashboard-feature" */ '../pages/DashboardNeomorphic'),
+  '/mastery': () => import(/* webpackChunkName: "mastery-feature" */ '../pages/Mastery'),
+  '/roadmap/ignition': () => import(/* webpackChunkName: "roadmap-feature" */ '../pages/SchoolRoadmap'),
+  '/profile': () => import(/* webpackChunkName: "profile" */ '../pages/ProfilePage'),
+  '/community': () => import(/* webpackChunkName: "community" */ '../pages/CommunityPage'),
+  '/settings': () => import(/* webpackChunkName: "settings" */ '../pages/SettingsPage'),
+  '/courses': () => import(/* webpackChunkName: "courses-feature" */ '../pages/CourseCatalogPage'),
+  '/stellar-map': () => import(/* webpackChunkName: "stellar-map" */ '../pages/StellarMapPage'),
+  '/achievements': () => import(/* webpackChunkName: "achievements" */ '../pages/Achievements'),
+};
+
+// Sidebar Navigation Item with hover tooltip and prefetch
+const SidebarNavItem = ({ item, isActive, isSidebarExpanded, onClick, onPrefetch }) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const buttonRef = useRef(null);
   const Icon = item.icon;
 
   const handleMouseEnter = () => {
+    onPrefetch?.(item.path);
     if (!isSidebarExpanded && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
       setTooltipPosition({
@@ -119,10 +134,9 @@ const AppShell = () => {
   const { isFreeUser, isAdmin } = useSubscription();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [restrictedFeature, setRestrictedFeature] = useState(null);
-  
-  // XP and achievement state
-  const [totalXP, setTotalXP] = useState(0);
-  const [lastAchievement, setLastAchievement] = useState(null);
+
+  const navData = useNavigationData();
+  const { totalXP, lastAchievement, notificationCount } = navData;
 
   // Handle resize to switch between desktop and mobile shells
   useEffect(() => {
@@ -134,94 +148,10 @@ const AppShell = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Load XP and last achievement
-  useEffect(() => {
-    const loadXPAndAchievement = async () => {
-      if (!user) {
-        setTotalXP(0);
-        setLastAchievement(null);
-        return;
-      }
-
-      try {
-        // Get total XP from profile
-        if (profile?.current_xp !== undefined) {
-          setTotalXP(profile.current_xp);
-        }
-
-        // Get most recent achievement (badge or lesson completion)
-        const achievements = [];
-
-        // Get most recent badge
-        const { data: recentBadge, error: badgeError } = await supabase
-          .from('user_badges')
-          .select(`
-            awarded_at,
-            badges (
-              title,
-              badge_image_url
-            )
-          `)
-          .eq('user_id', user.id)
-          .order('awarded_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (!badgeError && recentBadge) {
-          achievements.push({
-            type: 'badge',
-            title: recentBadge.badges?.title || 'Achievement Unlocked',
-            iconUrl: recentBadge.badges?.badge_image_url,
-            timestamp: recentBadge.awarded_at
-          });
-        }
-
-        // Get most recent lesson completion
-        const { data: recentLesson, error: lessonError } = await supabase
-          .from('user_lesson_progress')
-          .select('completed_at, course_id, chapter_number, lesson_number')
-          .eq('user_id', user.id)
-          .eq('is_completed', true)
-          .not('completed_at', 'is', null)
-          .order('completed_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (!lessonError && recentLesson && recentLesson.completed_at) {
-          // Fetch course title separately
-          let courseTitle = 'Course';
-          if (recentLesson.course_id) {
-            const { data: courseData } = await supabase
-              .from('course_metadata')
-              .select('course_title')
-              .eq('course_id', recentLesson.course_id)
-              .maybeSingle();
-            if (courseData) {
-              courseTitle = courseData.course_title;
-            }
-          }
-
-          achievements.push({
-            type: 'lesson',
-            title: `Lesson Completed`,
-            subtitle: `${courseTitle} • Ch ${recentLesson.chapter_number} L ${recentLesson.lesson_number}`,
-            timestamp: recentLesson.completed_at
-          });
-        }
-
-        // Get the most recent achievement
-        if (achievements.length > 0) {
-          achievements.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-          setLastAchievement(achievements[0]);
-        } else {
-          setLastAchievement(null);
-        }
-      } catch (error) {
-      }
-    };
-
-    loadXPAndAchievement();
-  }, [user, profile]);
+  const handlePrefetch = (path) => {
+    const fn = PREFETCH_MAP[path] ?? PREFETCH_MAP[path?.split('/').slice(0, 2).join('/')];
+    if (typeof fn === 'function') fn().catch(() => {});
+  };
 
   // #region agent log
   useEffect(() => {
@@ -235,15 +165,10 @@ const AppShell = () => {
   }, [isDarkMode]);
   // #endregion
 
-  // Use AppShellMobile for smaller screens
+  // Use AppShellMobile for smaller screens; pass navData to avoid double-fetch on resize
   if (isMobile) {
-    return <AppShellMobile />;
+    return <AppShellMobile navData={navData} />;
   }
-
-  // Debug: Verify new version is loading
-
-  // Mock notification count - replace with actual data
-  const notificationCount = 3;
 
   const toggleTheme = () => {
     const newDarkMode = !isDarkMode;
@@ -412,6 +337,7 @@ const AppShell = () => {
                   isActive={isActive}
                   isSidebarExpanded={isSidebarExpanded}
                   onClick={() => handleNavigation(item.path, item)}
+                  onPrefetch={handlePrefetch}
                 />
               );
             })}

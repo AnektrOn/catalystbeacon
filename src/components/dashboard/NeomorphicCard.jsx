@@ -1,45 +1,38 @@
-import React from 'react'
-import ModernCard from './ModernCard'
-import './NeomorphicCard.css'
+import React from 'react';
+import BaseCard from '../common/BaseCard';
+import './NeomorphicCard.css';
+
+const NEO_SIZE_CLASS = {
+  small: 'neo-card-small',
+  medium: 'neo-card-medium',
+  large: 'neo-card-large',
+  xl: 'neo-card-xl'
+};
 
 /**
- * Base Neomorphic Card Component
- * Wrapper around ModernCard for backward compatibility
- * Foundation for all dashboard cards with consistent styling
+ * Neomorphic Card - BaseCard with data-variant="neomorphic" and size classes.
  */
-const NeomorphicCard = ({ 
-  children, 
-  size = 'medium', // small, medium, large, xl
+const NeomorphicCard = ({
+  children,
+  size = 'medium',
   className = '',
   elevated = false,
   interactive = false,
   onClick,
   style = {}
-}) => {
-  const sizeClasses = {
-    small: 'neo-card-small',
-    medium: 'neo-card-medium',
-    large: 'neo-card-large',
-    xl: 'neo-card-xl'
-  }
+}) => (
+  <BaseCard
+    variant="neomorphic"
+    size={size}
+    elevated={elevated}
+    interactive={interactive}
+    onClick={onClick}
+    className={`${NEO_SIZE_CLASS[size] || NEO_SIZE_CLASS.medium} ${className}`.trim()}
+    style={style}
+  >
+    {children}
+  </BaseCard>
+);
 
-  const classes = [
-    sizeClasses[size],
-    className
-  ].filter(Boolean).join(' ')
-
-  return (
-    <ModernCard
-      className={classes}
-      elevated={elevated}
-      interactive={interactive}
-      onClick={onClick}
-      style={style}
-    >
-      {children}
-    </ModernCard>
-  )
-}
-
-export default NeomorphicCard
+export default NeomorphicCard;
 

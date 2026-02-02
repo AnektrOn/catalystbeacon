@@ -1,0 +1,165 @@
+/**
+ * BaseCard - Shared layout and variant styling via data-variant.
+ * Single grid/layout; Ethereal vs Neomorphic differ only by token overrides.
+ */
+
+.base-card {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  margin-left: auto;
+  margin-right: auto;
+  display: grid;
+  grid-template-rows: 1fr;
+  grid-template-columns: 1fr;
+}
+
+.base-card__content {
+  position: relative;
+  z-index: 1;
+  min-height: 0;
+}
+
+/* Size variants - shared */
+.base-card--small {
+  padding: var(--ethereal-card-padding-small, 24px);
+  border-radius: var(--ethereal-card-radius-small, 20px);
+}
+
+.base-card--medium {
+  padding: var(--ethereal-card-padding-medium, 32px);
+  border-radius: var(--ethereal-card-radius, 24px);
+}
+
+.base-card--large {
+  padding: var(--ethereal-card-padding-large, 40px);
+  border-radius: var(--ethereal-card-radius-large, 28px);
+}
+
+.base-card--xl {
+  padding: 28px;
+  border-radius: var(--ethereal-card-radius-large, 28px);
+  min-height: 320px;
+}
+
+/* Transitions: intent classes only (no transition: all) */
+.base-card {
+  transition: box-shadow var(--transition-snappy, 150ms cubic-bezier(0.4, 0, 0.2, 1)),
+    border-color var(--transition-snappy, 150ms cubic-bezier(0.4, 0, 0.2, 1)),
+    background var(--transition-snappy, 150ms cubic-bezier(0.4, 0, 0.2, 1)),
+    transform var(--transition-snappy, 150ms cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+/* Ethereal variant - glass, blur, design system tokens */
+.base-card[data-variant="ethereal"] {
+  background: var(--color-primary-glass);
+  backdrop-filter: blur(var(--glass-blur-amount));
+  -webkit-backdrop-filter: blur(var(--glass-blur-amount));
+  border: 1px solid var(--color-primary-border);
+  color: var(--ethereal-text, hsl(var(--foreground)));
+  font-family: var(--font-ethereal-body);
+  box-shadow: 0 8px 32px 0 hsl(var(--primary) / 0.2);
+}
+
+.base-card[data-variant="ethereal"]:hover {
+  box-shadow: 0 20px 60px 0 hsl(var(--primary) / 0.25);
+  border-color: hsl(var(--primary) / 0.3);
+  background: hsl(var(--primary) / 0.15);
+}
+
+.base-card[data-variant="ethereal"].base-card--elevated {
+  box-shadow: var(--ethereal-shadow-elevated, 0 30px 70px rgba(0, 0, 0, 0.3));
+}
+
+/* Ambient glow - ethereal only, respect reduced motion */
+@media (prefers-reduced-motion: no-preference) {
+  .base-card[data-variant="ethereal"]::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 50% 50%, hsl(var(--primary) / 0.08), transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+    animation: base-card-breathe 8s ease-in-out infinite;
+  }
+}
+
+@keyframes base-card-breathe {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.6; }
+}
+
+/* Neomorphic variant - soft shadows, minimal blur */
+.base-card[data-variant="neomorphic"] {
+  background: var(--bg-secondary, hsl(var(--card)));
+  border: 1px solid var(--border);
+  color: hsl(var(--foreground));
+  box-shadow: var(--glass-shadow-soft, 0 6px 18px rgba(0, 0, 0, 0.1));
+}
+
+.base-card[data-variant="neomorphic"]:hover {
+  box-shadow: var(--glass-shadow, 0 10px 30px rgba(0, 0, 0, 0.12));
+}
+
+.base-card[data-variant="neomorphic"].base-card--elevated {
+  box-shadow: var(--glass-shadow);
+  border-color: var(--glass-border-strong, rgba(255, 255, 255, 0.38));
+}
+
+/* Interactive */
+.base-card--interactive {
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .base-card--interactive:hover {
+    transform: translateY(-2px);
+  }
+}
+
+.base-card--interactive:active {
+  transform: translateY(-1px);
+}
+
+/* Particles - controlled by --particle-display (none on mobile/low-power) */
+.base-card__particles {
+  display: var(--particle-display, none);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.base-card__particle {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  opacity: 0;
+  animation: base-card-float 12s infinite linear;
+}
+
+.base-card__particle--1 { width: 2px; height: 2px; top: 80%; left: 20%; animation-delay: 0s; }
+.base-card__particle--2 { width: 1px; height: 1px; top: 60%; left: 80%; animation-delay: 2s; animation-duration: 15s; }
+.base-card__particle--3 { width: 3px; height: 3px; top: 40%; left: 10%; animation-delay: 1s; animation-duration: 18s; }
+
+@keyframes base-card-float {
+  0% { transform: translateY(0) translateX(0); opacity: 0; }
+  20% { opacity: 0.6; }
+  80% { opacity: 0.6; }
+  100% { transform: translateY(-100px) translateX(20px); opacity: 0; }
+}
+
+@media (max-width: 768px) {
+  .base-card--small { padding: 16px; border-radius: 16px; }
+  .base-card--medium { padding: 24px; border-radius: 20px; }
+  .base-card--large { padding: 32px; border-radius: 24px; }
+}

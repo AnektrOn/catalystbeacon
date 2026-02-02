@@ -10,8 +10,7 @@ export const colorPalettes = {
     name: 'Earth Tone',
     description: 'Warm earth tone theme (default)',
     light: {
-      // Shadcn variables
-      '--primary': '36 54% 47%',
+      '--p-h': '36', '--p-s': '54%', '--p-l': '47%',
       '--primary-foreground': '42 47% 98%',
       '--secondary': '48 27% 40%',
       '--secondary-foreground': '42 47% 98%',
@@ -28,24 +27,13 @@ export const colorPalettes = {
       '--border': '42 25% 70%',
       '--input': '42 30% 75%',
       '--ring': '36 54% 47%',
-      
-      // Semantic colors
       '--success': '151 55% 41.5%',
       '--warning': '38 92% 50%',
       '--error': '0 84% 60%',
       '--info': '217 91% 60%',
-      
-      // Legacy support
-      '--color-primary': '#B4833D',
-      '--color-secondary': '#81754B',
-      '--bg-primary': '#F7F1E1',
-      '--bg-secondary': '#E3D8C1',
-      '--text-primary': '#66371B',
-      '--text-secondary': '#81754B',
     },
     dark: {
-      // Shadcn variables
-      '--primary': '36 54% 47%',
+      '--p-h': '36', '--p-s': '54%', '--p-l': '47%',
       '--primary-foreground': '42 47% 98%',
       '--secondary': '48 27% 40%',
       '--secondary-foreground': '42 47% 98%',
@@ -62,20 +50,10 @@ export const colorPalettes = {
       '--border': '21 15% 20%',
       '--input': '21 12% 25%',
       '--ring': '36 54% 47%',
-      
-      // Semantic colors (lighter for dark mode)
       '--success': '151 55% 50%',
       '--warning': '38 92% 60%',
       '--error': '0 84% 70%',
       '--info': '217 91% 70%',
-      
-      // Legacy support
-      '--color-primary': '#B4833D',
-      '--color-secondary': '#81754B',
-      '--bg-primary': '#1A1612',
-      '--bg-secondary': '#2A241F',
-      '--text-primary': '#F7F1E1',
-      '--text-secondary': '#E3D8C1',
     }
   },
   
@@ -83,7 +61,7 @@ export const colorPalettes = {
     name: 'Ocean Blue',
     description: 'Professional blue theme',
     light: {
-      '--primary': '217 91% 60%',
+      '--p-h': '217', '--p-s': '91%', '--p-l': '60%',
       '--primary-foreground': '210 40% 98%',
       '--secondary': '213 94% 68%',
       '--secondary-foreground': '210 40% 98%',
@@ -104,15 +82,9 @@ export const colorPalettes = {
       '--warning': '38 92% 50%',
       '--error': '0 84% 60%',
       '--info': '217 91% 60%',
-      '--color-primary': '#3B82F6',
-      '--color-secondary': '#60A5FA',
-      '--bg-primary': '#EFF6FF',
-      '--bg-secondary': '#DBEAFE',
-      '--text-primary': '#1E3A8A',
-      '--text-secondary': '#3B82F6',
     },
     dark: {
-      '--primary': '213 94% 68%',
+      '--p-h': '213', '--p-s': '94%', '--p-l': '68%',
       '--primary-foreground': '222 47% 11%',
       '--secondary': '217 91% 60%',
       '--secondary-foreground': '210 40% 98%',
@@ -133,12 +105,6 @@ export const colorPalettes = {
       '--warning': '38 92% 60%',
       '--error': '0 84% 70%',
       '--info': '217 91% 70%',
-      '--color-primary': '#60A5FA',
-      '--color-secondary': '#3B82F6',
-      '--bg-primary': '#0F172A',
-      '--bg-secondary': '#1E293B',
-      '--text-primary': '#E0E7FF',
-      '--text-secondary': '#A5B4FC',
     }
   },
   
@@ -146,7 +112,7 @@ export const colorPalettes = {
     name: 'Forest Green',
     description: 'Natural green theme',
     light: {
-      '--primary': '151 55% 42%',
+      '--p-h': '151', '--p-s': '55%', '--p-l': '42%',
       '--primary-foreground': '210 40% 98%',
       '--secondary': '151 70% 52%',
       '--secondary-foreground': '210 40% 98%',
@@ -167,15 +133,9 @@ export const colorPalettes = {
       '--warning': '38 92% 50%',
       '--error': '0 84% 60%',
       '--info': '217 91% 60%',
-      '--color-primary': '#10B981',
-      '--color-secondary': '#34D399',
-      '--bg-primary': '#ECFDF5',
-      '--bg-secondary': '#D1FAE5',
-      '--text-primary': '#065F46',
-      '--text-secondary': '#10B981',
     },
     dark: {
-      '--primary': '151 70% 52%',
+      '--p-h': '151', '--p-s': '70%', '--p-l': '52%',
       '--primary-foreground': '160 85% 9%',
       '--secondary': '151 55% 42%',
       '--secondary-foreground': '210 40% 98%',
@@ -196,12 +156,6 @@ export const colorPalettes = {
       '--warning': '38 92% 60%',
       '--error': '0 84% 70%',
       '--info': '217 91% 70%',
-      '--color-primary': '#34D399',
-      '--color-secondary': '#10B981',
-      '--bg-primary': '#022C22',
-      '--bg-secondary': '#064E3B',
-      '--text-primary': '#D1FAE5',
-      '--text-secondary': '#6EE7B7',
     }
   },
   
@@ -209,7 +163,7 @@ export const colorPalettes = {
     name: 'Sunset Orange',
     description: 'Warm orange theme',
     light: {
-      '--primary': '25 95% 53%',
+      '--p-h': '25', '--p-s': '95%', '--p-l': '53%',
       '--primary-foreground': '210 40% 98%',
       '--secondary': '25 95% 61%',
       '--secondary-foreground': '210 40% 98%',
@@ -230,15 +184,9 @@ export const colorPalettes = {
       '--warning': '38 92% 50%',
       '--error': '0 84% 60%',
       '--info': '217 91% 60%',
-      '--color-primary': '#F97316',
-      '--color-secondary': '#FB923C',
-      '--bg-primary': '#FFF7ED',
-      '--bg-secondary': '#FFEDD5',
-      '--text-primary': '#9A3412',
-      '--text-secondary': '#F97316',
     },
     dark: {
-      '--primary': '25 95% 61%',
+      '--p-h': '25', '--p-s': '95%', '--p-l': '61%',
       '--primary-foreground': '15 100% 5%',
       '--secondary': '25 95% 53%',
       '--secondary-foreground': '210 40% 98%',
@@ -259,12 +207,6 @@ export const colorPalettes = {
       '--warning': '38 92% 60%',
       '--error': '0 84% 70%',
       '--info': '217 91% 70%',
-      '--color-primary': '#FB923C',
-      '--color-secondary': '#F97316',
-      '--bg-primary': '#1C0A00',
-      '--bg-secondary': '#3A1A0A',
-      '--text-primary': '#FFEDD5',
-      '--text-secondary': '#FDBA74',
     }
   },
   
@@ -272,7 +214,7 @@ export const colorPalettes = {
     name: 'Royal Purple',
     description: 'Elegant purple theme',
     light: {
-      '--primary': '258 85% 66%',
+      '--p-h': '258', '--p-s': '85%', '--p-l': '66%',
       '--primary-foreground': '210 40% 98%',
       '--secondary': '258 85% 75%',
       '--secondary-foreground': '210 40% 98%',
@@ -293,15 +235,9 @@ export const colorPalettes = {
       '--warning': '38 92% 50%',
       '--error': '0 84% 60%',
       '--info': '217 91% 60%',
-      '--color-primary': '#8B5CF6',
-      '--color-secondary': '#A78BFA',
-      '--bg-primary': '#F5F3FF',
-      '--bg-secondary': '#EDE9FE',
-      '--text-primary': '#5B21B6',
-      '--text-secondary': '#8B5CF6',
     },
     dark: {
-      '--primary': '258 85% 75%',
+      '--p-h': '258', '--p-s': '85%', '--p-l': '75%',
       '--primary-foreground': '248 53% 20%',
       '--secondary': '258 85% 66%',
       '--secondary-foreground': '210 40% 98%',
@@ -322,12 +258,6 @@ export const colorPalettes = {
       '--warning': '38 92% 60%',
       '--error': '0 84% 70%',
       '--info': '217 91% 70%',
-      '--color-primary': '#A78BFA',
-      '--color-secondary': '#8B5CF6',
-      '--bg-primary': '#1E1B4B',
-      '--bg-secondary': '#312E81',
-      '--text-primary': '#E0E7FF',
-      '--text-secondary': '#C4B5FD',
     }
   },
   
@@ -335,7 +265,7 @@ export const colorPalettes = {
     name: 'Ocean Teal',
     description: 'Calming teal theme',
     light: {
-      '--primary': '173 81% 40%',
+      '--p-h': '173', '--p-s': '81%', '--p-l': '40%',
       '--primary-foreground': '210 40% 98%',
       '--secondary': '173 81% 65%',
       '--secondary-foreground': '210 40% 98%',
@@ -356,15 +286,9 @@ export const colorPalettes = {
       '--warning': '38 92% 50%',
       '--error': '0 84% 60%',
       '--info': '217 91% 60%',
-      '--color-primary': '#14B8A6',
-      '--color-secondary': '#5EEAD4',
-      '--bg-primary': '#F0FDFA',
-      '--bg-secondary': '#CCFBF1',
-      '--text-primary': '#134E4A',
-      '--text-secondary': '#14B8A6',
     },
     dark: {
-      '--primary': '173 81% 65%',
+      '--p-h': '173', '--p-s': '81%', '--p-l': '65%',
       '--primary-foreground': '178 75% 10%',
       '--secondary': '173 81% 40%',
       '--secondary-foreground': '210 40% 98%',
@@ -385,12 +309,6 @@ export const colorPalettes = {
       '--warning': '38 92% 60%',
       '--error': '0 84% 70%',
       '--info': '217 91% 70%',
-      '--color-primary': '#5EEAD4',
-      '--color-secondary': '#14B8A6',
-      '--bg-primary': '#042F2E',
-      '--bg-secondary': '#0D9488',
-      '--text-primary': '#CCFBF1',
-      '--text-secondary': '#99F6E4',
     }
   },
   
@@ -398,7 +316,7 @@ export const colorPalettes = {
     name: 'Rose Pink',
     description: 'Soft pink theme',
     light: {
-      '--primary': '330 85% 60%',
+      '--p-h': '330', '--p-s': '85%', '--p-l': '60%',
       '--primary-foreground': '210 40% 98%',
       '--secondary': '330 85% 70%',
       '--secondary-foreground': '210 40% 98%',
@@ -419,15 +337,9 @@ export const colorPalettes = {
       '--warning': '38 92% 50%',
       '--error': '0 84% 60%',
       '--info': '217 91% 60%',
-      '--color-primary': '#EC4899',
-      '--color-secondary': '#F472B6',
-      '--bg-primary': '#FDF2F8',
-      '--bg-secondary': '#FCE7F3',
-      '--text-primary': '#9F1239',
-      '--text-secondary': '#EC4899',
     },
     dark: {
-      '--primary': '330 85% 70%',
+      '--p-h': '330', '--p-s': '85%', '--p-l': '70%',
       '--primary-foreground': '340 50% 8%',
       '--secondary': '330 85% 60%',
       '--secondary-foreground': '210 40% 98%',
@@ -448,12 +360,6 @@ export const colorPalettes = {
       '--warning': '38 92% 60%',
       '--error': '0 84% 70%',
       '--info': '217 91% 70%',
-      '--color-primary': '#F472B6',
-      '--color-secondary': '#EC4899',
-      '--bg-primary': '#1F0A14',
-      '--bg-secondary': '#3A1525',
-      '--text-primary': '#FCE7F3',
-      '--text-secondary': '#F9A8D4',
     }
   },
   
@@ -461,7 +367,7 @@ export const colorPalettes = {
     name: 'Midnight Blue',
     description: 'Deep blue night theme',
     light: {
-      '--primary': '239 84% 67%',
+      '--p-h': '239', '--p-s': '84%', '--p-l': '67%',
       '--primary-foreground': '210 40% 98%',
       '--secondary': '239 84% 75%',
       '--secondary-foreground': '210 40% 98%',
@@ -482,15 +388,9 @@ export const colorPalettes = {
       '--warning': '38 92% 50%',
       '--error': '0 84% 60%',
       '--info': '217 91% 60%',
-      '--color-primary': '#6366F1',
-      '--color-secondary': '#818CF8',
-      '--bg-primary': '#F8FAFC',
-      '--bg-secondary': '#F1F5F9',
-      '--text-primary': '#0F172A',
-      '--text-secondary': '#475569',
     },
     dark: {
-      '--primary': '239 84% 75%',
+      '--p-h': '239', '--p-s': '84%', '--p-l': '75%',
       '--primary-foreground': '222 47% 11%',
       '--secondary': '239 84% 67%',
       '--secondary-foreground': '210 40% 98%',
@@ -511,19 +411,13 @@ export const colorPalettes = {
       '--warning': '38 92% 60%',
       '--error': '0 84% 70%',
       '--info': '217 91% 70%',
-      '--color-primary': '#818CF8',
-      '--color-secondary': '#6366F1',
-      '--bg-primary': '#0F172A',
-      '--bg-secondary': '#1E293B',
-      '--text-primary': '#E0E7FF',
-      '--text-secondary': '#A5B4FC',
     }
   },
   nebula: {
     name: 'Cosmic Nebula',
     description: 'Deep space purple and cyan',
     light: {
-      '--primary': '270 95% 60%',
+      '--p-h': '270', '--p-s': '95%', '--p-l': '60%',
       '--primary-foreground': '210 40% 98%',
       '--secondary': '190 90% 50%',
       '--secondary-foreground': '210 40% 98%',
@@ -540,25 +434,17 @@ export const colorPalettes = {
       '--border': '270 30% 85%',
       '--input': '270 20% 90%',
       '--ring': '270 95% 60%',
-      // Semantic
       '--success': '150 60% 45%',
       '--warning': '35 90% 50%',
       '--error': '0 80% 60%',
       '--info': '190 90% 50%',
-      // Legacy
-      '--color-primary': '#9F21E3',
-      '--color-secondary': '#06B6D4',
-      '--bg-primary': '#FAF5FF',
-      '--bg-secondary': '#F3E8FF',
-      '--text-primary': '#4C1D95',
-      '--text-secondary': '#8B5CF6',
     },
     dark: {
-      '--primary': '270 80% 65%',
+      '--p-h': '270', '--p-s': '80%', '--p-l': '65%',
       '--primary-foreground': '210 40% 98%',
       '--secondary': '190 80% 60%',
       '--secondary-foreground': '210 40% 98%',
-      '--background': '260 50% 8%', /* Fond très sombre violet */
+      '--background': '260 50% 8%',
       '--foreground': '270 20% 95%',
       '--card': '260 40% 12%',
       '--card-foreground': '270 20% 95%',
@@ -571,25 +457,17 @@ export const colorPalettes = {
       '--border': '260 40% 20%',
       '--input': '260 30% 20%',
       '--ring': '270 80% 65%',
-      // Semantic
       '--success': '150 60% 50%',
       '--warning': '35 90% 60%',
       '--error': '0 80% 65%',
       '--info': '190 80% 60%',
-      // Legacy
-      '--color-primary': '#C084FC',
-      '--color-secondary': '#22D3EE',
-      '--bg-primary': '#160826',
-      '--bg-secondary': '#2E1065',
-      '--text-primary': '#F3E8FF',
-      '--text-secondary': '#E9D5FF',
     }
   },
   slate: {
     name: 'Clean Slate',
     description: 'Minimalist tech grey',
     light: {
-      '--primary': '222 47% 11%', /* Almost black */
+      '--p-h': '222', '--p-s': '47%', '--p-l': '11%',
       '--primary-foreground': '210 40% 98%',
       '--secondary': '210 40% 96.1%',
       '--secondary-foreground': '222 47% 11%',
@@ -606,21 +484,13 @@ export const colorPalettes = {
       '--border': '214.3 31.8% 91.4%',
       '--input': '214.3 31.8% 91.4%',
       '--ring': '222 47% 11%',
-      // Semantic
       '--success': '142 76% 36%',
       '--warning': '45 93% 47%',
       '--error': '0 84% 60%',
       '--info': '217 91% 60%',
-      // Legacy
-      '--color-primary': '#0F172A',
-      '--color-secondary': '#F1F5F9',
-      '--bg-primary': '#FFFFFF',
-      '--bg-secondary': '#F8FAFC',
-      '--text-primary': '#0F172A',
-      '--text-secondary': '#64748B',
     },
     dark: {
-      '--primary': '210 40% 98%', /* White primary in dark mode */
+      '--p-h': '210', '--p-s': '40%', '--p-l': '98%',
       '--primary-foreground': '222 47% 11.2%',
       '--secondary': '217.2 32.6% 17.5%',
       '--secondary-foreground': '210 40% 98%',
@@ -637,25 +507,17 @@ export const colorPalettes = {
       '--border': '217.2 32.6% 17.5%',
       '--input': '217.2 32.6% 17.5%',
       '--ring': '213 27% 84%',
-      // Semantic
       '--success': '142 70% 50%',
       '--warning': '48 96% 53%',
       '--error': '0 84% 60%',
       '--info': '217 91% 60%',
-      // Legacy
-      '--color-primary': '#F8FAFC',
-      '--color-secondary': '#1E293B',
-      '--bg-primary': '#020617',
-      '--bg-secondary': '#0F172A',
-      '--text-primary': '#F8FAFC',
-      '--text-secondary': '#94A3B8',
     }
   },
   crimson: {
     name: 'Crimson Blade',
     description: 'Intense red and charcoal',
     light: {
-      '--primary': '0 72% 51%',
+      '--p-h': '0', '--p-s': '72%', '--p-l': '51%',
       '--primary-foreground': '0 85% 98%',
       '--secondary': '0 0% 20%',
       '--secondary-foreground': '0 85% 98%',
@@ -672,25 +534,17 @@ export const colorPalettes = {
       '--border': '0 0% 90%',
       '--input': '0 0% 90%',
       '--ring': '0 72% 51%',
-      // Semantic
       '--success': '142 76% 36%',
       '--warning': '45 93% 47%',
       '--error': '0 84% 60%',
       '--info': '217 91% 60%',
-      // Legacy
-      '--color-primary': '#DC2626',
-      '--color-secondary': '#1F2937',
-      '--bg-primary': '#FAFAFA',
-      '--bg-secondary': '#F5F5F5',
-      '--text-primary': '#171717',
-      '--text-secondary': '#EF4444',
     },
     dark: {
-      '--primary': '0 72% 51%',
+      '--p-h': '0', '--p-s': '72%', '--p-l': '51%',
       '--primary-foreground': '0 85% 98%',
       '--secondary': '0 0% 20%',
       '--secondary-foreground': '0 85% 98%',
-      '--background': '0 0% 5%', /* Noir presque pur */
+      '--background': '0 0% 5%',
       '--foreground': '0 0% 95%',
       '--card': '0 0% 9%',
       '--card-foreground': '0 0% 95%',
@@ -703,18 +557,10 @@ export const colorPalettes = {
       '--border': '0 0% 15%',
       '--input': '0 0% 15%',
       '--ring': '0 72% 51%',
-      // Semantic
       '--success': '142 70% 50%',
       '--warning': '48 96% 53%',
       '--error': '0 84% 60%',
       '--info': '217 91% 60%',
-      // Legacy
-      '--color-primary': '#EF4444',
-      '--color-secondary': '#374151',
-      '--bg-primary': '#0A0A0A',
-      '--bg-secondary': '#171717',
-      '--text-primary': '#F5F5F5',
-      '--text-secondary': '#F87171',
     }
   }
 };

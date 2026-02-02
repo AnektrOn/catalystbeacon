@@ -1,0 +1,65 @@
+/**
+ * Stellar Map Color Constants
+ * Centralized color definitions for families and constellations
+ */
+
+export const FAMILY_HALO_COLORS = {
+  "Veil Piercers": 0x301934,
+  "Mind Hackers": 0x203020,
+  "Persona Shifters": 0x102030,
+  "Reality Shatters": 0x303010,
+  "Thought Catchers": 0x301030,
+  "Heart Whisperers": 0x103030,
+  "Routine Architects": 0x302010,
+  "Safe Havens": 0x201020,
+  "Path Makers": 0x301820,
+  "Reality Tuners": 0x182030,
+  "Energy Architects": 0x203018,
+  "Inner Illuminators": 0x302810,
+  "Ritual Grid": 0x281830
+};
+
+export const CONSTELLATION_HALO_COLORS = {
+  "Puppet Masters": 0x600000,
+  "Smoke & Mirrors": 0x800000,
+  "Golden Shackles": 0xA00000,
+  "Panopticon": 0xC00000,
+  "Lesson Leashes": 0xE00000,
+  "Hidden Commands": 0x006000,
+  "Feed Puppets": 0x008000,
+  "Mind Traps": 0x00A000,
+  "Voice of Deception": 0x00C000,
+  "Mask Breakers": 0x000060,
+  "Avatar Illusions": 0x000080,
+  "I-Dissolvers": 0x0000A0,
+  "Numbers Don't Lie": 0x606000,
+  "Whistleblowers": 0x808000,
+  "Double-Speak": 0xA0A000,
+  "Pause Buttons": 0x301030,
+  "Mirror Moments": 0x501050,
+  "Grounding Gems": 0x701070,
+  "Feeling Detectors": 0x106010,
+  "Calm Cradles": 0x108010,
+  "Mood Markers": 0x10A010,
+  "Tiny Dawns": 0x606010,
+  "Signal Guards": 0x808010,
+  "Reset Pulses": 0xA0A010,
+  "Mind Sanctum": 0x101060,
+  "Breath Portals": 0x101080,
+  "Rhythm Reset": 0x1010A0,
+  "Thought Sculptors": 0x602000,
+  "Mind Cartographers": 0x802000,
+  "Body-Bridge": 0xA02000,
+  "Witness Protocols": 0x006020,
+  "Chance Benders": 0x008020,
+  "Aura Sync": 0x00A020,
+  "Wheel Harmonizers": 0x200060,
+  "Energy Highways": 0x200080,
+  "Prana Weaver": 0x2000A0,
+  "Core Miners": 0x600060,
+  "Voice Bridgers": 0x800080,
+  "Shadow Ledger": 0xA000A0,
+  "Dawn Circuit": 0x002060,
+  "Unity Pulse": 0x002080,
+  "Meta Map": 0x0020A0
+};

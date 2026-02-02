@@ -1042,7 +1042,9 @@ class CourseService {
   }
 
   /**
-   * Get consolidated course catalog data in a single request (optimized)
+   * Get consolidated course catalog data in a single request (optimized).
+   * Uses RPC get_course_catalog_data_v1 when available; falls back to parallel
+   * queries if the function is not yet deployed (e.g. PGRST202).
    */
   async getCourseCatalogDataConsolidated(userId) {
     try {
@@ -1050,11 +1052,69 @@ class CourseService {
         p_user_id: userId
       });
 
-      if (error) throw error;
-      return { data, error: null };
+      if (!error) {
+        return { data, error: null };
+      }
+
+      // RPC not found (e.g. function not deployed) — build same shape via existing APIs
+      if (error.code === 'PGRST202') {
+        logWarn('courseService - get_course_catalog_data_v1 not in schema; using fallback');
+        return this._getCourseCatalogDataFallback(userId);
+      }
+
+      throw error;
     } catch (error) {
       logError(error, 'courseService - Error fetching consolidated course catalog data');
       return { data: null, error };
+    }
+  }
+
+  /**
+   * Fallback when get_course_catalog_data_v1 RPC is not deployed.
+   * Returns the same shape: { user_xp, schools, courses, user_progress }.
+   * @private
+   */
+  async _getCourseCatalogDataFallback(userId) {
+    try {
+      const [profileRes, schoolsRes, coursesRes, progressRes] = await Promise.all([
+        supabase.from('profiles').select('current_xp').eq('id', userId).single(),
+        supabase.from('schools').select('*').order('order_index', { ascending: true }),
+        this.getAllCourses({}), // all published courses with structure (no user filter)
+        supabase
+          .from('user_course_progress')
+          .select('course_id, status, progress_percentage, last_accessed_at')
+          .eq('user_id', userId)
+      ]);
+
+      const userXp = profileRes?.data?.current_xp ?? 0;
+      const schoolsRaw = schoolsRes?.data ?? [];
+      const courses = coursesRes?.data ?? [];
+      const progressRows = progressRes?.data ?? [];
+
+      const schools = schoolsRaw.map((s) => ({
+        ...s,
+        is_unlocked: userXp >= (s.unlock_xp ?? 0)
+      }));
+
+      const user_progress = progressRows.map((p) => ({
+        course_id: p.course_id,
+        status: p.status,
+        progress_percentage: p.progress_percentage,
+        last_accessed_at: p.last_accessed_at
+      }));
+
+      return {
+        data: {
+          user_xp: userXp,
+          schools,
+          courses,
+          user_progress
+        },
+        error: null
+      };
+    } catch (err) {
+      logError(err, 'courseService - Fallback course catalog data failed');
+      return { data: null, error: err };
     }
   }
 
