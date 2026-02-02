@@ -1,20 +1,20 @@
 import React from 'react';
-import { SelectedPlanetProvider } from './contexts/SelectedPlanetContext';
+import { SelectedNodeProvider } from './contexts/SelectedNodeContext';
 import { SpeedControlProvider } from './contexts/SpeedControlContext';
-import { PlanetPositionsProvider } from './contexts/PlanetPositionsContext';
+import { NodePositionsProvider } from './contexts/NodePositionsContext';
 import { CameraProvider } from './contexts/CameraContext';
 import { NextUIProvider } from '@nextui-org/react';
 
 export default function Providers({ children }) {
   return (
     <NextUIProvider>
-      <SelectedPlanetProvider>
+      <SelectedNodeProvider>
         <SpeedControlProvider>
-          <PlanetPositionsProvider>
+          <NodePositionsProvider>
             <CameraProvider>{children}</CameraProvider>
-          </PlanetPositionsProvider>
+          </NodePositionsProvider>
         </SpeedControlProvider>
-      </SelectedPlanetProvider>
+      </SelectedNodeProvider>
     </NextUIProvider>
   );
 }

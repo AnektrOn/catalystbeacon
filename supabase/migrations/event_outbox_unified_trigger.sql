@@ -37,6 +37,8 @@ BEGIN
     WHEN 'profiles' THEN NEW.id
     WHEN 'user_badges' THEN NEW.user_id
     WHEN 'user_lesson_progress' THEN NEW.user_id
+    WHEN 'user_habit_completions' THEN NEW.user_id
+    WHEN 'user_habits' THEN NEW.user_id
     ELSE NULL
   END;
 
@@ -60,6 +62,9 @@ DROP TRIGGER IF EXISTS "lesson-completed-webhook" ON public.user_lesson_progress
 DROP TRIGGER IF EXISTS "new-user-webhook" ON public.profiles;
 DROP TRIGGER IF EXISTS "user-signup-webhook" ON public.profiles;
 DROP TRIGGER IF EXISTS "profiles-update-webhook" ON public.profiles;
+DROP TRIGGER IF EXISTS tr_habit_outbox ON public.habits;
+DROP TRIGGER IF EXISTS "habit-completed-webhook" ON public.user_habit_completions;
+DROP TRIGGER IF EXISTS "habit-completed-webhook" ON public.user_habits;
 
 -- 4. Consolidated triggers (insert into outbox only)
 CREATE TRIGGER tr_event_profile_update
@@ -85,3 +90,9 @@ CREATE TRIGGER tr_event_lesson_completed
     AND (OLD.is_completed IS NOT DISTINCT FROM false OR OLD.is_completed IS NULL)
   )
   EXECUTE FUNCTION public.fn_trigger_dispatch_event('lesson_completed');
+
+-- Habit completion: one row per completion (user_habit_completions INSERT)
+CREATE TRIGGER tr_event_habit_completed
+  AFTER INSERT ON public.user_habit_completions
+  FOR EACH ROW
+  EXECUTE FUNCTION public.fn_trigger_dispatch_event('habit_completed');

@@ -73,11 +73,13 @@ class RoadmapService {
    * @returns {Promise<Array>} Sorted array of lessons
    */
  /**
-   * VERSION TURBO : Récupère la roadmap en 1 seul appel RPC
+   * VERSION TURBO : Récupère la roadmap en 1 seul appel RPC, avec fallback si RPC absent/erreur/vide.
+   * is_completed vient de user_lesson_progress (source canonique) pour les utilisateurs déjà avancés.
    */
  async getRoadmapLessons(masterschool, userId) {
   try {
-    // 1. Appel RPC (Récupération brute rapide)
+    let allLessons = [];
+
     const { data, error } = await supabase
       .rpc('get_user_roadmap_details', {
         p_user_id: userId,
@@ -85,11 +87,16 @@ class RoadmapService {
       });
 
     if (error) {
-      console.error('Erreur RPC Roadmap:', error);
-      return [];
+      console.warn('RPC Roadmap non disponible, fallback manuel:', error.message);
+      allLessons = await this._getRoadmapLessonsFallback(masterschool, userId);
+    } else {
+      allLessons = data || [];
     }
 
-    const allLessons = data || [];
+    if (allLessons.length === 0) {
+      allLessons = await this._getRoadmapLessonsFallback(masterschool, userId);
+    }
+
     if (allLessons.length === 0) return [];
 
     // 2. CALCUL DE LA FENÊTRE D'AFFICHAGE
@@ -118,6 +125,79 @@ class RoadmapService {
     return [];
   }
 }
+
+  /**
+   * Fallback: construit la liste roadmap sans RPC (course_metadata + course_content + user_lesson_progress).
+   * Utilisé si le RPC est absent, en erreur, ou renvoie vide. is_completed = user_lesson_progress (source canonique).
+   */
+  async _getRoadmapLessonsFallback(masterschool, userId) {
+    try {
+      const { data: structures } = await supabase.from('course_structure').select('course_id');
+      const courseIds = [...new Set((structures || []).map(s => s.course_id).filter(Boolean))];
+      if (courseIds.length === 0) return [];
+
+      const { data: metadataRows } = await supabase
+        .from('course_metadata')
+        .select('course_id, difficulty_numeric, xp_threshold')
+        .eq('masterschool', masterschool)
+        .eq('status', 'published')
+        .in('course_id', courseIds)
+        .order('xp_threshold', { ascending: true })
+        .order('course_id', { ascending: true });
+      if (!metadataRows?.length) return [];
+
+      const metaByCourse = Object.fromEntries(metadataRows.map(m => [m.course_id, m]));
+
+      const { data: contentRows } = await supabase
+        .from('course_content')
+        .select('course_id, chapter_number, lesson_number, lesson_title')
+        .in('course_id', courseIds)
+        .order('course_id')
+        .order('chapter_number')
+        .order('lesson_number');
+      if (!contentRows?.length) return [];
+
+      let completedSet = new Set();
+      if (userId) {
+        const { data: progressRows } = await supabase
+          .from('user_lesson_progress')
+          .select('course_id, chapter_number, lesson_number, is_completed')
+          .eq('user_id', userId)
+          .eq('is_completed', true);
+        (progressRows || []).forEach(p => {
+          completedSet.add(`${p.course_id}-${p.chapter_number}-${p.lesson_number}`);
+        });
+      }
+
+      const orderedContent = contentRows.filter(cc => metaByCourse[cc.course_id]);
+      orderedContent.sort((a, b) => {
+        const ma = metaByCourse[a.course_id];
+        const mb = metaByCourse[b.course_id];
+        if ((ma?.xp_threshold ?? 0) !== (mb?.xp_threshold ?? 0)) return (ma?.xp_threshold ?? 0) - (mb?.xp_threshold ?? 0);
+        if (a.course_id !== b.course_id) return a.course_id - b.course_id;
+        if (a.chapter_number !== b.chapter_number) return a.chapter_number - b.chapter_number;
+        return a.lesson_number - b.lesson_number;
+      });
+
+      return orderedContent.map(cc => {
+        const meta = metaByCourse[cc.course_id] || {};
+        const key = `${cc.course_id}-${cc.chapter_number}-${cc.lesson_number}`;
+        return {
+          lesson_id: key,
+          course_id: cc.course_id,
+          chapter_number: cc.chapter_number,
+          lesson_number: cc.lesson_number,
+          lesson_title: cc.lesson_title || 'Lesson',
+          difficulty_numeric: meta.difficulty_numeric ?? 5,
+          is_completed: completedSet.has(key)
+        };
+      });
+    } catch (err) {
+      console.warn('Fallback roadmap failed:', err);
+      return [];
+    }
+  }
+
   /**
    * Get lessons grouped by master skill for pagination (no duplicates)
    * @param {string} masterschool - 'Ignition', 'Insight', or 'Transformation'

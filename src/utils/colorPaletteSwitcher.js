@@ -83,7 +83,7 @@ export function switchTo(paletteKey, save = true) {
   // Select appropriate variant
   const variant = isDark ? palette.dark : palette.light;
   
-  // Apply all CSS variables from the selected variant
+  // Apply all CSS variables from the selected variant (single global source for cards/theming)
   Object.entries(variant).forEach(([variable, value]) => {
     root.style.setProperty(variable, value);
   });

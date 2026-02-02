@@ -52,25 +52,25 @@
     transform var(--transition-snappy, 150ms cubic-bezier(0.4, 0, 0.2, 1));
 }
 
-/* Ethereal variant - glass, blur, design system tokens */
+/* Ethereal variant - single global token (same as EtherealStatsCards, XPCircleWidget) */
 .base-card[data-variant="ethereal"] {
-  background: var(--color-primary-glass);
+  background: var(--ethereal-bg-glass);
   backdrop-filter: blur(var(--glass-blur-amount));
   -webkit-backdrop-filter: blur(var(--glass-blur-amount));
-  border: 1px solid var(--color-primary-border);
+  border: 1px solid var(--ethereal-border);
   color: var(--ethereal-text, hsl(var(--foreground)));
   font-family: var(--font-ethereal-body);
-  box-shadow: 0 8px 32px 0 hsl(var(--primary) / 0.2);
+  box-shadow: var(--ethereal-shadow-base);
 }
 
 .base-card[data-variant="ethereal"]:hover {
-  box-shadow: 0 20px 60px 0 hsl(var(--primary) / 0.25);
-  border-color: hsl(var(--primary) / 0.3);
-  background: hsl(var(--primary) / 0.15);
+  background: var(--ethereal-bg-hover);
+  border-color: var(--ethereal-border-hover);
+  box-shadow: var(--ethereal-shadow-hover);
 }
 
 .base-card[data-variant="ethereal"].base-card--elevated {
-  box-shadow: var(--ethereal-shadow-elevated, 0 30px 70px rgba(0, 0, 0, 0.3));
+  box-shadow: var(--ethereal-shadow-elevated);
 }
 
 /* Ambient glow - ethereal only, respect reduced motion */

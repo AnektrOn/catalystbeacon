@@ -378,8 +378,13 @@ const AppShell = () => {
           boxSizing: 'border-box'
         }}
       >
-        <div className="bg-ethereal-glass backdrop-blur-ethereal border border-ethereal rounded-2xl shadow-ethereal-base h-full overflow-auto m-4 p-0">
-          <div className="p-4" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+        <div
+          className={`bg-ethereal-glass backdrop-blur-ethereal border border-ethereal rounded-2xl shadow-ethereal-base h-full m-4 p-0 ${location.pathname.startsWith('/stellar-map') ? 'overflow-hidden flex flex-col min-h-0' : 'overflow-auto'}`}
+        >
+          <div
+            className={location.pathname.startsWith('/stellar-map') ? 'flex-1 min-h-0 flex flex-col overflow-hidden p-0' : 'p-4'}
+            style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
+          >
             <Outlet />
           </div>
         </div>

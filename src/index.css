@@ -1,5 +1,5 @@
-/* Fonts: Space Grotesk (UI 95%) + Cinzel (school/lore headers); font-display: swap to avoid invisible text */
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+/* Fonts: Space Grotesk (UI 95%), Cinzel (headers/lore only) – minimal weights to reduce payload */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Space+Grotesk:wght@400;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -50,6 +50,7 @@
     --sidebar-width-expanded: 240px;
     --sidebar-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-snappy: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: 300ms ease;
     --transition-ambient: 1000ms cubic-bezier(0.4, 0, 0.2, 1);
 
     /* Glassmorphism & performance toggles: set --glass-blur-amount to 0px to disable all blurs globally */
@@ -72,6 +73,9 @@
     --color-primary: hsl(var(--primary));
     --color-primary-glass: hsl(var(--primary) / 0.15);
     --color-primary-border: hsl(var(--primary) / 0.3);
+    /* Hardware-accelerated alpha channels (use --primary-raw when set by palette switcher) */
+    --glass-bg: hsl(var(--primary) / 0.1);
+    --glass-border: hsl(var(--primary) / 0.2);
 
     /* Legacy compat: derived from HSL so components can keep using --bg-primary etc. */
     --bg-primary: hsl(var(--background));
@@ -227,8 +231,8 @@
     text-rendering: optimizeLegibility;
   }
   
-  /* H2–H6 - Cinzel for headings only */
-  h2, h3, h4, h5, h6 {
+  /* H2–H6 and lore text - Cinzel for headings only */
+  h2, h3, h4, h5, h6, .lore-text {
     font-family: 'Cinzel', serif;
     font-weight: 600;
     color: hsl(var(--foreground));
@@ -415,7 +419,7 @@
   }
 }
 
-/* Scoped transitions only for interactive elements (no global * transition) */
+/* Scoped transitions only – no global * transition (avoids main-thread cost on scroll/state) */
 button,
 a,
 .clickable,

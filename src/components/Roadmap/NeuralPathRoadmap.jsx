@@ -137,38 +137,20 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition', schoolConfig = null }) =
  const loadRoadmap = async () => {
   try {
     setLoading(true);
-
-    // Récupération des leçons
     const layerLessons = await roadmapService.getRoadmapLessons(masterschool, user.id);
     setLessons(layerLessons);
 
-    // --- LE FIX EST ICI : CALCUL DU NIVEAU ACTUEL ---
-    // On cherche l'index de la première leçon qui n'est PAS complétée.
-    // Si toutes sont finies (findIndex renvoie -1), on prend la dernière.
-    const firstIncompleteIndex = layerLessons.findIndex(l => !l.is_completed);
-    const calculatedLevel = firstIncompleteIndex === -1 ? layerLessons.length - 1 : firstIncompleteIndex;
+    // Calcul de l'index actif (la première leçon non terminée)
+    const activeIndex = layerLessons.findIndex(l => !l.is_completed);
+    const calculatedLevel = activeIndex === -1 ? layerLessons.length - 1 : activeIndex;
     
-    // On met à jour l'état pour que le Canvas sache où dessiner le Halo
     setCurrentLevel(calculatedLevel);
-    // -----------------------------------------------
 
-    createNodes(layerLessons);
-
-    // Mise à jour XP (inchangé)
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('current_xp, total_xp_earned, institute_priority')
-      .eq('id', user.id)
-      .single();
-
-    if (profile) {
-      setUserXP(profile.current_xp || profile.total_xp_earned || 0);
-      setInstitutePriority(profile.institute_priority);
-    }
+    // !!! FIX : ICI ON PASSE calculatedLevel À createNodes !!!
+    createNodes(layerLessons, calculatedLevel); 
 
   } catch (err) {
     console.error(err);
-    setTimeout(() => { endTransition(); }, 500);
   } finally {
     setLoading(false);
   }

@@ -2,10 +2,13 @@ import { useRef, useEffect } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls as DreiOrbitControls } from '@react-three/drei';
 import { Vector3 } from 'three';
-import { useSelectedPlanet } from '../../contexts/SelectedPlanetContext';
-import { usePlanetPositions } from '../../contexts/PlanetPositionsContext';
+import { useSelectedNode } from '../../contexts/SelectedNodeContext';
+import { useNodePositions } from '../../contexts/NodePositionsContext';
 import { useCameraContext } from '../../contexts/CameraContext';
 import { useCameraSetup } from '../../hooks/useCameraSetup';
+
+const NODE_VIEW_MIN_DISTANCE = 3;
+const NODE_VIEW_MAX_DISTANCE = 15;
 
 export default function CameraController() {
   useCameraSetup();
@@ -14,14 +17,12 @@ export default function CameraController() {
   const invisibleTargetRef = useRef(new Vector3()).current;
 
   const { camera } = useThree();
-  const [selectedPlanet] = useSelectedPlanet();
-  const { planetPositions } = usePlanetPositions();
+  const [selectedNode] = useSelectedNode();
+  const { nodePositions } = useNodePositions();
   const { cameraState, setCameraState } = useCameraContext();
-  const homePosition = useRef(new Vector3(11, 1, 1)).current;
-  const lerpFactor = 0.015;
-  const cameraPositionEpsilon = 0.1;
-  const detailViewMinDistance = useRef(2).current;
-  const detailViewMaxDistance = useRef(5).current;
+  const homePosition = useRef(new Vector3(0, 35, 55)).current;
+  const lerpFactor = 0.06;
+  const cameraPositionEpsilon = 0.5;
   const introAnimationCompleted = useRef(false);
 
   useEffect(() => {
@@ -44,13 +45,13 @@ export default function CameraController() {
         break;
 
       case 'DETAIL_VIEW':
-        if (selectedPlanet) {
+        if (selectedNode) {
           controls.enabled = true;
-          const currentPlanetPosition = planetPositions[selectedPlanet.name];
-          if (currentPlanetPosition) {
-            controls.target.set(...currentPlanetPosition);
-            controls.minDistance = selectedPlanet.radius * detailViewMinDistance;
-            controls.maxDistance = selectedPlanet.radius * detailViewMaxDistance;
+          const pos = nodePositions[selectedNode.id];
+          if (pos) {
+            controls.target.set(...pos);
+            controls.minDistance = NODE_VIEW_MIN_DISTANCE;
+            controls.maxDistance = NODE_VIEW_MAX_DISTANCE;
             controls.update();
           }
         }
@@ -59,9 +60,9 @@ export default function CameraController() {
       case 'INTRO_ANIMATION':
         if (!introAnimationCompleted.current) {
           controls.enabled = false;
-          camera.position.lerp(homePosition, 0.015);
+          camera.position.lerp(homePosition, 0.12);
           camera.lookAt(invisibleTargetRef);
-          if (camera.position.distanceTo(homePosition) < 0.01) {
+          if (camera.position.distanceTo(homePosition) < 0.5) {
             introAnimationCompleted.current = true;
             camera.position.copy(homePosition);
             setCameraState('FREE');
@@ -89,22 +90,18 @@ export default function CameraController() {
         break;
 
       case 'ZOOMING_IN':
-        if (selectedPlanet) {
-          const currentPlanetPosition = planetPositions[selectedPlanet.name];
-          if (currentPlanetPosition) {
+        if (selectedNode) {
+          const pos = nodePositions[selectedNode.id];
+          if (pos) {
             controls.enabled = false;
-            const planetPosition = new Vector3(...currentPlanetPosition);
-            const targetCameraPosition = planetPosition
-              .clone()
-              .add(new Vector3(1, 0, 0).multiplyScalar(selectedPlanet.radius * 3));
-            camera.position.lerp(targetCameraPosition, lerpFactor);
-            const fastLerpFactor = 0.04;
-            invisibleTargetRef.lerp(planetPosition, fastLerpFactor);
+            const nodePosition = new Vector3(...pos);
+            const targetCameraPosition = nodePosition.clone().add(new Vector3(1, 0, 0).multiplyScalar(5));
+            camera.position.lerp(targetCameraPosition, 0.08);
+            const fastLerpFactor = 0.1;
+            invisibleTargetRef.lerp(nodePosition, fastLerpFactor);
             camera.lookAt(invisibleTargetRef);
-            const reachedTargetPosition =
-              camera.position.distanceTo(targetCameraPosition) < selectedPlanet.radius * cameraPositionEpsilon;
-            const reachedTargetLookAt =
-              invisibleTargetRef.distanceTo(planetPosition) < selectedPlanet.radius * cameraPositionEpsilon;
+            const reachedTargetPosition = camera.position.distanceTo(targetCameraPosition) < cameraPositionEpsilon;
+            const reachedTargetLookAt = invisibleTargetRef.distanceTo(nodePosition) < cameraPositionEpsilon;
 
             if (reachedTargetPosition && reachedTargetLookAt) {
               controls.target.copy(invisibleTargetRef);

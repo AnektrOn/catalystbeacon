@@ -103,6 +103,21 @@ const ColorPaletteDropdown = () => {
   const listRef = useRef(null);
   const dropdownContainerRef = useRef(null);
 
+  // Palettes store primary as --p-h, --p-s, --p-l (no --color-primary). Build hsl string for swatches.
+  const getPrimaryHsl = (variant) => {
+    if (!variant || !variant['--p-h'] || !variant['--p-s'] || !variant['--p-l']) return null;
+    const h = variant['--p-h'];
+    const s = variant['--p-s'];
+    const l = variant['--p-l'];
+    return `hsl(${h}, ${s}, ${l})`;
+  };
+  const getSecondaryHsl = (variant) => {
+    if (!variant || !variant['--secondary']) return null;
+    const parts = String(variant['--secondary']).trim().split(/\s+/);
+    if (parts.length < 3) return null;
+    return `hsl(${parts[0]}, ${parts[1]}, ${parts[2]})`;
+  };
+
   const handlePaletteSelect = (paletteKey) => {
     colorPaletteSwitcher.switchTo(paletteKey);
     setIsOpen(false);
@@ -161,9 +176,9 @@ const ColorPaletteDropdown = () => {
               }
               
               const isSelected = key === currentPalette;
-              // Get primary color from light variant (for preview)
-              const primaryColor = palette.light['--color-primary'] || '#B4833D';
-              
+              const primaryColor = getPrimaryHsl(palette.light) || 'hsl(36, 54%, 47%)';
+              const secondaryColor = getSecondaryHsl(palette.light) || primaryColor;
+
               return (
                 <button
                   key={key}
@@ -185,7 +200,7 @@ const ColorPaletteDropdown = () => {
                     <div 
                       className="color-palette-preview-gradient" 
                       style={{ 
-                        background: `linear-gradient(135deg, ${primaryColor} 0%, ${palette.light['--color-secondary'] || primaryColor} 100%)` 
+                        background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)` 
                       }} 
                     />
                   </div>

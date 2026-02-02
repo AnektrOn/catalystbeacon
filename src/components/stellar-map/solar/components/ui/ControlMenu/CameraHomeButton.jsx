@@ -1,5 +1,5 @@
 import { useCameraContext } from '../../../contexts/CameraContext';
-import { useSelectedPlanet } from '../../../contexts/SelectedPlanetContext';
+import { useSelectedNode } from '../../../contexts/SelectedNodeContext';
 import { useSpeedControl } from '../../../contexts/SpeedControlContext';
 import { Button } from '@nextui-org/react';
 import { IconHome } from '@tabler/icons-react';
@@ -7,11 +7,11 @@ import { IconHome } from '@tabler/icons-react';
 export default function CameraHomeButton() {
   const { cameraState, setCameraState } = useCameraContext();
   const { restoreSpeedFactor } = useSpeedControl();
-  const [, setSelectedPlanet] = useSelectedPlanet();
+  const [, setSelectedNode] = useSelectedNode();
 
   const moveToHome = () => {
     setCameraState('MOVING_TO_HOME');
-    setSelectedPlanet(null);
+    setSelectedNode(null);
     restoreSpeedFactor();
   };
 

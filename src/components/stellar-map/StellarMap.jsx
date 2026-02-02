@@ -13,21 +13,20 @@ export default function StellarMap() {
   const navigate = useNavigate();
 
   return (
-    <div className="w-screen h-screen overflow-hidden bg-black relative">
-      <button
-        type="button"
-        onClick={() => navigate('/dashboard')}
-        className="fixed top-4 right-4 z-[100] w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition-colors"
-        aria-label="Retour"
-      >
-        <ArrowLeft className="w-5 h-5" />
-      </button>
-
-      <div className="absolute inset-0 w-full h-full">
+    <div className="w-full h-full min-h-0 flex-1 overflow-hidden bg-black relative">
+      <div className="absolute inset-0 w-full h-full z-0">
         <Providers>
           <SolarSystem />
         </Providers>
       </div>
+      <button
+        type="button"
+        onClick={() => navigate('/dashboard')}
+        className="absolute top-4 right-4 z-[100] w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition-colors pointer-events-auto"
+        aria-label="Retour"
+      >
+        <ArrowLeft className="w-5 h-5" />
+      </button>
     </div>
   );
 }

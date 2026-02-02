@@ -5,36 +5,25 @@
  */
 
 /* === ETHEREAL CARD BASE CLASS === */
-/* Uses --glass-blur-amount (0 on mobile/low-power) and HSL alpha for dynamic theming */
+/* Single global token: --ethereal-bg-glass (same as BaseCard, EtherealStatsCards, XPCircleWidget) */
 .ethereal-card {
-  /* Glassmorphism Base - variable blur for performance toggle */
-  background: var(--color-primary-glass);
+  background: var(--ethereal-bg-glass);
   backdrop-filter: blur(var(--glass-blur-amount));
   -webkit-backdrop-filter: blur(var(--glass-blur-amount));
-  border: 1px solid var(--color-primary-border);
+  border: 1px solid var(--ethereal-border);
   border-radius: var(--ethereal-card-radius);
-  
-  /* Typography */
   color: var(--ethereal-text);
   font-family: var(--font-ethereal-body);
-  
-  /* Layout */
   padding: var(--ethereal-card-padding-medium);
   position: relative;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
   overflow: hidden;
-  
-  /* Scoped transition - .transition-snappy intent (no global * transition) */
   transition: box-shadow var(--transition-snappy, 150ms cubic-bezier(0.4, 0, 0.2, 1)),
               border-color var(--transition-snappy, 150ms cubic-bezier(0.4, 0, 0.2, 1)),
               background var(--transition-snappy, 150ms cubic-bezier(0.4, 0, 0.2, 1));
-  
-  /* Shadows - HSL alpha */
-  box-shadow: 0 8px 32px 0 hsl(var(--primary) / 0.3);
-  
-  /* Centering */
+  box-shadow: var(--ethereal-shadow-base);
   margin-left: auto;
   margin-right: auto;
 }
@@ -68,9 +57,9 @@
 
 /* Hover State */
 .ethereal-card:hover {
-  box-shadow: 0 20px 60px 0 hsl(var(--primary) / 0.25);
-  border-color: hsl(var(--primary) / 0.3);
-  background: hsl(var(--primary) / 0.15);
+  background: var(--ethereal-bg-hover);
+  border-color: var(--ethereal-border-hover);
+  box-shadow: var(--ethereal-shadow-hover);
 }
 
 /* Elevated Variant */

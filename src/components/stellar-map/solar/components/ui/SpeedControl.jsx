@@ -9,7 +9,7 @@ export default function SpeedControl() {
   const { cameraState } = useCameraContext();
 
   useEffect(() => {
-    if (cameraState === 'FREE') {
+    if (cameraState === 'FREE' || cameraState === 'INTRO_ANIMATION') {
       controls.start('visible');
     } else {
       controls.start('hidden');
@@ -25,7 +25,7 @@ export default function SpeedControl() {
 
   return (
     <motion.div
-      className="fixed top-5 right-5 flex flex-col items-end gap-1"
+      className="absolute top-14 right-4 flex flex-col items-end gap-1 z-10"
       variants={speedControlVariants}
       initial="hidden"
       animate={controls}

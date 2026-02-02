@@ -4,6 +4,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabaseClient';
 import { logDebug, logWarn } from '../utils/logger';
+import { hapticImpact } from '../utils/haptics';
 import NotificationBadge from './NotificationBadge';
 import ColorPaletteDropdown from './common/ColorPaletteDropdown';
 import useSubscription from '../hooks/useSubscription';
@@ -779,10 +780,18 @@ const AppShellMobile = ({ navData: navDataProp } = {}) => {
       )}
 
       {/* Main Content Area */}
-      <main className="fixed lg:left-32 left-0 top-[52px] lg:top-20 right-0 bottom-[70px] lg:bottom-4 z-30 lg:right-4"
+      <main className="fixed lg:left-32 left-0 top-[52px] lg:top-20 right-0 bottom-[70px] lg:bottom-4 z-30 lg:right-4 flex flex-col min-h-0"
         style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
-        <div className="bg-ethereal-glass backdrop-blur-ethereal border border-ethereal rounded-2xl shadow-ethereal-base h-full overflow-auto m-0 lg:m-4 p-0">
-          <Outlet />
+        <div
+          className={`bg-ethereal-glass backdrop-blur-ethereal border border-ethereal rounded-2xl shadow-ethereal-base h-full m-0 lg:m-4 p-0 flex flex-col min-h-0 ${location.pathname.startsWith('/stellar-map') ? 'overflow-hidden' : 'overflow-auto'}`}
+        >
+          {location.pathname.startsWith('/stellar-map') ? (
+            <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+              <Outlet />
+            </div>
+          ) : (
+            <Outlet />
+          )}
         </div>
       </main>
 

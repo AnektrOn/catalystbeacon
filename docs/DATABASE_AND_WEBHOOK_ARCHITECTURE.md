@@ -7,19 +7,27 @@
 **Solution:** A single **event_outbox** table. Triggers only **insert** a row (~1ms). No HTTP from inside the transaction.
 
 - **Table:** `public.event_outbox`  
-  - `event_type`: `profile_update` | `user_signup` | `achievement_unlocked` | `lesson_completed`  
+  - `event_type`: `profile_update` | `user_signup` | `achievement_unlocked` | `lesson_completed` | `habit_completed`  
   - `user_id`, `payload` (jsonb), `processed` (boolean), `created_at`
 - **Triggers:**  
   - `tr_event_profile_update` (AFTER UPDATE ON profiles)  
   - `tr_event_profile_insert` (AFTER INSERT ON profiles) → `user_signup`  
   - `tr_event_achievement_unlocked` (AFTER INSERT ON user_badges)  
-  - `tr_event_lesson_completed` (AFTER UPDATE ON user_lesson_progress WHEN is_completed flips to true)
+  - `tr_event_lesson_completed` (AFTER UPDATE ON user_lesson_progress WHEN is_completed flips to true)  
+  - `tr_event_habit_completed` (AFTER INSERT ON user_habit_completions)
 
-**Worker / n8n:** One process (cron, Edge Function, or single n8n webhook) should:
+**Centralized processing:** The **process-event-outbox** Edge Function runs every 30 seconds (Supabase Cron):
 
-1. `SELECT * FROM event_outbox WHERE processed = false ORDER BY created_at LIMIT N`
-2. For each row: call your n8n webhook (or send email, etc.) with `event_type` and `payload`
-3. `UPDATE event_outbox SET processed = true WHERE id IN (...)`
+1. Calls RPC `get_event_outbox_batch(50)` to fetch unprocessed rows.
+2. POSTs a single batched payload `{ events: [...] }` to the n8n webhook URL.
+3. On 2xx response, calls RPC `mark_event_outbox_processed(ids)` so rows are not retried.
+
+**Setup:**
+
+- Set **N8N_WEBHOOK_URL** in Supabase Dashboard → Edge Functions → process-event-outbox → Secrets.
+- Schedule the function: Dashboard → Edge Functions → process-event-outbox → Cron. Standard cron is per-minute; use `* * * * *` (every minute) or an external scheduler (e.g. GitHub Actions, cron job) to POST to the function URL every 30 seconds if you need sub-minute batching.
+
+**RPCs:** `get_event_outbox_batch(p_limit)`, `mark_event_outbox_processed(p_ids uuid[])` — see `migrations/event_outbox_processor_rpc.sql`.
 
 This recovers ~99% of DB speed; UI no longer waits on webhooks.
 
@@ -40,6 +48,9 @@ This recovers ~99% of DB speed; UI no longer waits on webhooks.
 
 - **get_dashboard_data_v3:** Nested arrays are **limited** (e.g. teacher_feed LIMIT 5, constellation nodes LIMIT 5) so the RPC doesn’t grow to MBs as data grows.
 - **get_feed_paginated(page_number, page_size):** Use for "load more" / infinite scroll on the teacher feed. Call from `dashboardService.getFeedPaginated(pageNumber, pageSize)`.
+- **get_mastery_data_v1(user_id, start_date, end_date):** Single RPC for Mastery page — returns `user_habits`, `habits_library`, `completions`, `user_toolbox`, `toolbox_library`, `calendar_events`. Use `masteryService.getMasteryDataConsolidated()` so the Mastery screen populates all sections in one call (CalendarTabMobile already uses it).
+- **get_course_catalog_data_v1(user_id):** Single RPC for Course Catalog — returns `user_xp`, `schools`, `courses`, `user_progress`. Use `courseService.getCourseCatalogDataConsolidated()`.
+- **get_user_roadmap_details(user_id, masterschool):** Single RPC for Roadmap — returns lessons with `is_completed` derived from **user_lesson_progress** (canonical source). Ensures users who already had progress (before the new flow) see correct completion state; see `migrations/get_user_roadmap_details_rpc.sql`.
 
 ---
 

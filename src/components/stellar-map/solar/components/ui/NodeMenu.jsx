@@ -1,14 +1,12 @@
 import React, { useEffect } from 'react';
 import { motion, useAnimation } from 'framer-motion';
-import { useSpeedControl } from '../../contexts/SpeedControlContext';
-import { useSelectedPlanet } from '../../contexts/SelectedPlanetContext';
+import { useSelectedNode } from '../../contexts/SelectedNodeContext';
 import { useCameraContext } from '../../contexts/CameraContext';
 import { Button } from '@nextui-org/react';
 
-export default function PlanetMenu({ planets }) {
-  const [selectedPlanet, setSelectedPlanet] = useSelectedPlanet();
-  const { overrideSpeedFactor } = useSpeedControl();
-  const { cameraState, setCameraState } = useCameraContext();
+export default function NodeMenu({ nodesWithOrbits }) {
+  const [selectedNode, setSelectedNode] = useSelectedNode();
+  const { setCameraState, cameraState } = useCameraContext();
   const controls = useAnimation();
 
   useEffect(() => {
@@ -17,10 +15,8 @@ export default function PlanetMenu({ planets }) {
     }
   }, [cameraState, controls]);
 
-  const handleSelect = (planetName) => {
-    const selected = planets.find((p) => p.name === planetName);
-    setSelectedPlanet(selected ?? null);
-    overrideSpeedFactor();
+  const handleSelect = (node) => {
+    setSelectedNode(node);
     setCameraState('ZOOMING_IN');
   };
 
@@ -29,6 +25,9 @@ export default function PlanetMenu({ planets }) {
     visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 100 } },
   };
 
+  const nodes = nodesWithOrbits?.map((item) => item.node) ?? [];
+  const uniqueByTitle = nodes.filter((n, i, arr) => arr.findIndex((x) => x.id === n.id) === i);
+
   return (
     <motion.div
       className="absolute bottom-5 left-5 right-5 z-10"
@@ -36,17 +35,17 @@ export default function PlanetMenu({ planets }) {
       initial="hidden"
       animate={controls}
     >
-      <div className="flex flex-wrap gap-2 justify-center">
-        {planets.map((planet) => (
+      <div className="flex flex-wrap gap-2 justify-center max-h-24 overflow-y-auto">
+        {uniqueByTitle.map((node) => (
           <Button
-            key={planet.id}
+            key={node.id}
             variant="flat"
             size="sm"
-            onPress={() => handleSelect(planet.name)}
-            isDisabled={selectedPlanet?.id === planet.id}
+            onPress={() => handleSelect(node)}
+            isDisabled={selectedNode?.id === node.id}
             className="bg-white/20 text-white border border-white/40 hover:bg-white/30 data-[hover=true]:bg-white/30 backdrop-blur-sm"
           >
-            {planet.name}
+            <span className="truncate max-w-[140px]">{node.title || node.constellation_name || node.id?.slice(0, 8)}</span>
           </Button>
         ))}
       </div>

@@ -27,7 +27,7 @@ export default function PlanetDetail() {
       {shouldDisplayDetails && (
         <motion.div
           key={displayedPlanet ? displayedPlanet.name : 'empty'}
-          className="absolute left-5 right-5 top-20 mt-4 w-[400px]"
+          className="absolute left-5 right-5 top-20 mt-4 w-[400px] z-10"
           initial="hidden"
           animate="visible"
           exit="exit"

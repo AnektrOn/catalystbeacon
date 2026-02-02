@@ -1,21 +1,21 @@
-import { useSelectedPlanet } from '../../../contexts/SelectedPlanetContext';
+import { useSelectedNode } from '../../../contexts/SelectedNodeContext';
 import { useSpeedControl } from '../../../contexts/SpeedControlContext';
 import { useCameraContext } from '../../../contexts/CameraContext';
 import { Button } from '@nextui-org/react';
 import { IconX } from '@tabler/icons-react';
 
 export default function ExitViewButton() {
-  const [selectedPlanet, setSelectedPlanet] = useSelectedPlanet();
+  const [selectedNode, setSelectedNode] = useSelectedNode();
   const { restoreSpeedFactor } = useSpeedControl();
   const { setCameraState } = useCameraContext();
 
   const handleExitDetailMode = () => {
-    setSelectedPlanet(null);
+    setSelectedNode(null);
     restoreSpeedFactor();
     setCameraState('MOVING_TO_HOME');
   };
 
-  if (!selectedPlanet) return null;
+  if (!selectedNode) return null;
 
   return (
     <Button color="danger" variant="flat" onPress={handleExitDetailMode}>

@@ -11,7 +11,7 @@ export default function ControlMenu() {
   const controls = useAnimation();
 
   useEffect(() => {
-    if (cameraState === 'FREE') {
+    if (cameraState === 'FREE' || cameraState === 'INTRO_ANIMATION') {
       controls.start('visible');
     }
   }, [cameraState, controls]);
@@ -23,7 +23,7 @@ export default function ControlMenu() {
 
   return (
     <motion.div
-      className="absolute top-5 left-5 p-2 border-2 border-secondary-100 rounded-xl bg-black"
+      className="absolute top-5 left-5 p-2 border-2 border-secondary-100 rounded-xl bg-black z-10"
       variants={menuVariants}
       initial="hidden"
       animate={controls}

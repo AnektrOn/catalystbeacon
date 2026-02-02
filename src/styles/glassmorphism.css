@@ -191,7 +191,7 @@
 
 .glass-nav-btn-active {
   background: var(--gradient-primary);
-  color: var(--text-primary, #fff);
+  color: hsl(var(--primary-foreground));
   box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary, #B4833D) 40%, transparent);
   transform: translateX(4px);
   @apply p-3 rounded-xl;

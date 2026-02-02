@@ -1,32 +1,67 @@
-import { useState, Suspense } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { AnimatePresence } from 'framer-motion';
-import planetsData from '../lib/planetsData';
+import stellarMapService from '../../stellarMapService';
+import { buildNodesWithOrbits } from '../utils/nodesWithOrbits';
 import SceneBackground from './SceneBackground';
 import Sun from './celestial/Sun';
-import Planet from './celestial/Planets';
+import Node from './celestial/Node';
 import CameraController from './motion/CameraController';
-import PlanetsUpdater from './motion/PlanetsUpdater';
-import PlanetMenu from './ui/PlanetMenu';
+import NodesUpdater from './motion/NodesUpdater';
+import NodeMenu from './ui/NodeMenu';
 import SpeedControl from './ui/SpeedControl';
-import PlanetDetail from './ui/PlanetDetail';
+import NodeDetail from './ui/NodeDetail';
 import ControlMenu from './ui/ControlMenu/ControlMenu';
 import SceneLighting from './SceneLighting';
 import IntroText from './ui/IntroText';
 
+const DEFAULT_LEVEL = 'Ignition';
+
 export default function SolarSystem() {
-  const [planetOrbitProgress, setPlanetOrbitProgress] = useState(() =>
-    planetsData.reduce((acc, planet) => {
-      acc[planet.name] = 0;
-      return acc;
-    }, {})
-  );
+  const [nodesWithOrbits, setNodesWithOrbits] = useState([]);
+  const [orbitProgressByDifficulty, setOrbitProgressByDifficulty] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  const difficultyKeys = useMemo(() => {
+    const set = new Set(nodesWithOrbits.map((item) => item.difficulty));
+    return Array.from(set);
+  }, [nodesWithOrbits]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+      try {
+        const { data: grouped, error } = await stellarMapService.getNodesGroupedByHierarchy(DEFAULT_LEVEL, 0);
+        if (cancelled) return;
+        if (error || !grouped) {
+          setNodesWithOrbits([]);
+          return;
+        }
+        const list = buildNodesWithOrbits(grouped);
+        setNodesWithOrbits(list);
+        setOrbitProgressByDifficulty((prev) => {
+          const next = { ...prev };
+          list.forEach(({ difficulty }) => {
+            if (next[difficulty] == null) next[difficulty] = 0;
+          });
+          return next;
+        });
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <>
-      <div className="absolute inset-0 w-full h-full" style={{ minHeight: '100vh' }}>
+      <div className="absolute inset-0 w-full h-full">
         <Canvas
-          camera={{ position: [-100, 0, 100], fov: 60 }}
+          camera={{ position: [0, 35, 55], fov: 50 }}
           style={{ width: '100%', height: '100%', display: 'block' }}
           gl={{ antialias: true, alpha: false }}
         >
@@ -35,38 +70,35 @@ export default function SolarSystem() {
             <SceneBackground texturePath="/images/background/stars_8k.webp" />
             <SceneLighting />
             <Sun position={[0, 0, 0]} radius={1} />
-          {planetsData.map((planet) => (
-            <Planet
-              key={planet.id}
-              id={planet.id}
-              name={planet.name}
-              texturePath={planet.texturePath}
-              position={planet.position}
-              radius={planet.radius}
-              rotationSpeed={planet.rotationSpeed}
-              tilt={planet.tilt}
-              orbitSpeed={planet.orbitSpeed}
-              moons={planet.moons}
-              wobble={planet.wobble}
-              rings={planet.rings}
-              orbitProgress={planetOrbitProgress[planet.name]}
-              displayStats={planet.displayStats}
+            {nodesWithOrbits.map(({ node, orbitRadius, angleOffset, difficulty, showOrbitRing }) => (
+              <Node
+                key={node.id}
+                node={node}
+                orbitRadius={orbitRadius}
+                angleOffset={angleOffset}
+                orbitProgress={orbitProgressByDifficulty[difficulty] ?? 0}
+                showOrbitRing={showOrbitRing}
+              />
+            ))}
+            <NodesUpdater
+              setOrbitProgressByDifficulty={setOrbitProgressByDifficulty}
+              difficultyKeys={difficultyKeys}
             />
-          ))}
-          <PlanetsUpdater
-            setPlanetOrbitProgress={setPlanetOrbitProgress}
-            planets={planetsData}
-          />
           </Suspense>
         </Canvas>
       </div>
-      <PlanetMenu planets={planetsData} />
+      <NodeMenu nodesWithOrbits={nodesWithOrbits} />
       <SpeedControl />
       <AnimatePresence>
-        <PlanetDetail />
+        <NodeDetail />
       </AnimatePresence>
       <ControlMenu />
       <IntroText />
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-20 pointer-events-none">
+          <span className="text-white/80 text-sm">Chargement des nodes…</span>
+        </div>
+      )}
     </>
   );
 }

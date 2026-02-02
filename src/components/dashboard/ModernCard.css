@@ -52,26 +52,14 @@
   }
 }*/
 
-/* Modern Card - Ethereal Variant */
-:root {
-  --ethereal-bg: rgba(8, 8, 12, 0.4);
-  --ethereal-border: rgba(255, 255, 255, 0.05);
-  --ethereal-hover-bg: rgba(20, 20, 25, 0.6);
-  --ethereal-hover-border: rgba(255, 255, 255, 0.15);
-  --ethereal-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-  --radius-lg: 16px;
-  --radius-md: 12px;
-  --radius-sm: 8px;
-}
-
+/* Modern Card - uses global ethereal tokens from index.css (no local overrides) */
 .modern-card {
-  /* Glassmorphism Base */
-  background: var(--ethereal-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: var(--ethereal-bg-glass);
+  backdrop-filter: blur(var(--glass-blur-amount, 12px));
+  -webkit-backdrop-filter: blur(var(--glass-blur-amount, 12px));
   border: 1px solid var(--ethereal-border);
-  border-radius: var(--radius-lg);
-  color: #e0e0e0; /* Light text for dark theme */
+  border-radius: var(--ethereal-card-radius, 24px);
+  color: var(--ethereal-text, hsl(var(--foreground)));
   
   /* Layout & Box Model */
   padding: 24px;
@@ -109,7 +97,7 @@
 
 /* Elevated Variant (Stronger Shadow) */
 .modern-card-elevated {
-  box-shadow: var(--ethereal-shadow);
+  box-shadow: var(--ethereal-shadow-elevated);
 }
 
 /* Interactive Variant (Hover Effects) */
@@ -120,11 +108,9 @@
 @media (hover: hover) {
   .modern-card-interactive:hover {
     transform: translateY(-5px);
-    background: var(--ethereal-hover-bg);
-    border-color: var(--ethereal-hover-border);
-    box-shadow: 
-      0 15px 40px -10px rgba(0, 0, 0, 0.6),
-      inset 0 0 20px rgba(255, 255, 255, 0.02);
+    background: var(--ethereal-bg-hover);
+    border-color: var(--ethereal-border-hover);
+    box-shadow: var(--ethereal-shadow-hover);
   }
 
   .modern-card-interactive:hover::before {
@@ -140,7 +126,7 @@
 /* Responsive */
 @media (max-width: 768px) {
   .modern-card {
-    border-radius: var(--radius-md);
+    border-radius: var(--ethereal-card-radius-small, 20px);
     padding: 20px;
   }
 }
@@ -148,6 +134,6 @@
 @media (max-width: 480px) {
   .modern-card {
     padding: 16px;
-    border-radius: var(--radius-sm);
+    border-radius: var(--ethereal-card-radius-small, 20px);
   }
 }

@@ -10,9 +10,11 @@ export const useSpeedControl = () => {
   return context;
 };
 
+const DEFAULT_SPEED = 0.3;
+
 export const SpeedControlProvider = ({ children }) => {
-  const [speedFactor, setSpeedFactorState] = useState(1);
-  const [lastSpeedFactor, setLastSpeedFactor] = useState(1);
+  const [speedFactor, setSpeedFactorState] = useState(DEFAULT_SPEED);
+  const [lastSpeedFactor, setLastSpeedFactor] = useState(DEFAULT_SPEED);
 
   const setSpeedFactor = (value) => {
     setLastSpeedFactor(speedFactor);
