@@ -12,7 +12,9 @@ import './IPhoneAnsweredCall.css';
 const IPhoneAnsweredCall = ({ 
   callerName = 'Caller',
   onEndCall,
-  onNavigate
+  onNavigate,
+  speakerOn = false,
+  onSpeakerToggle
 }) => {
   const [duration, setDuration] = useState(5); // Start at 5 seconds to match reference
   const [isMuted, setIsMuted] = useState(false);
@@ -50,12 +52,13 @@ const IPhoneAnsweredCall = ({
       {/* Spacer */}
       <div className="answered-call-spacer"></div>
 
-      {/* Middle: Action buttons grid */}
+      {/* Middle: Action buttons grid - audio = speaker toggle */}
       <CallActionButtons 
         isMuted={isMuted}
         onMute={() => setIsMuted(!isMuted)}
         onKeypad={() => {}}
-        onAudio={() => {}}
+        onAudio={onSpeakerToggle || (() => {})}
+        isSpeakerOn={speakerOn}
         onAddCall={() => {}}
         onFaceTime={() => {}}
         onContacts={() => {}}

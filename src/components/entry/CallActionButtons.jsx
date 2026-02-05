@@ -11,6 +11,7 @@ const CallActionButtons = ({
   onMute,
   onKeypad,
   onAudio,
+  isSpeakerOn = false,
   onAddCall,
   onFaceTime,
   onContacts
@@ -32,8 +33,9 @@ const CallActionButtons = ({
     {
       id: 'audio',
       icon: Volume2,
-      label: 'audio',
-      onClick: onAudio
+      label: 'speaker',
+      onClick: onAudio,
+      active: isSpeakerOn
     },
     {
       id: 'add',

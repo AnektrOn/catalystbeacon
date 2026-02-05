@@ -1,19 +1,33 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import './EntityScene.css';
+
+const ACT2_VIDEO_URL = '/assets/kling_20260205_Image_to_Video_Make_the_s_3655_0.mp4';
 
 /**
  * EntityScene Component
- * Full-screen video background for Act 2
+ * Full-screen video for Act 2. Plays once then stays on last frame until user clicks CTA.
  */
 const EntityScene = () => {
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const onEnded = () => {
+      video.pause();
+    };
+    video.addEventListener('ended', onEnded);
+    return () => video.removeEventListener('ended', onEnded);
+  }, []);
+
   return (
     <div className="entity-scene">
-      {/* Full-screen video background */}
-      <video 
+      <video
+        ref={videoRef}
         className="entity-background-video"
-        src="/assets/act2-background.mp4"
+        src={ACT2_VIDEO_URL}
         autoPlay
-        loop
+        loop={false}
         muted
         playsInline
       />

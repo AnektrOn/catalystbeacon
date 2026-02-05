@@ -87,20 +87,50 @@ class HapticsService {
   }
 
   /**
-   * Vibrate (for Android compatibility)
+   * Vibrate (for Android compatibility; on web uses Vibration API)
    * @param {number} duration - Duration in milliseconds
    */
   async vibrate(duration = 200) {
-    if (!Capacitor.isNativePlatform()) {
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await Haptics.vibrate({ duration });
+      } catch (error) {
+        console.error('Error vibrating:', error);
+      }
       return;
     }
 
-    try {
-      await Haptics.vibrate({ duration });
-    } catch (error) {
-      console.error('Error vibrating:', error);
+    // Web: use Vibration API when available (Android Chrome, etc.; not supported on iOS Safari)
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try {
+        navigator.vibrate(duration);
+      } catch (e) {
+        // ignore
+      }
     }
   }
+}
+
+/**
+ * Web-only: start a repeating "ring" vibration pattern (e.g. for incoming call).
+ * Uses Vibration API. Returns a stop function. No-op if API not available (e.g. iOS).
+ * @returns {() => void} Call to stop vibrating
+ */
+export function startRingVibration() {
+  if (typeof navigator === 'undefined' || !navigator.vibrate) return () => {};
+
+  const pattern = [400, 200, 400]; // vibrate, pause, vibrate (like a ring)
+  const intervalMs = 2000; // repeat every 2s
+  const id = setInterval(() => {
+    navigator.vibrate(pattern);
+  }, intervalMs);
+  // First buzz immediately
+  navigator.vibrate(pattern);
+
+  return () => {
+    clearInterval(id);
+    navigator.vibrate(0); // cancel
+  };
 }
 
 // Export singleton instance

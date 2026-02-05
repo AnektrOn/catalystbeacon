@@ -6,6 +6,7 @@ import AnsweredCall from '../components/entry/IPhoneAnsweredCall'
 import EntityScene from '../components/entry/EntityScene'
 import TypingEffect from '../components/entry/TypingEffect'
 import { Button } from '../components/ui/button'
+import { startRingVibration } from '../utils/haptics'
 import './MatrixEntryPage.css'
 
 // Sons : fichiers dans public/assets/ (ou à la racine assets/ copiés vers public/assets/)
@@ -92,6 +93,11 @@ const MatrixEntryPage = () => {
   const incomingCallSoundRef = useRef(null)
   const incomingCallOscillatorRef = useRef(null)
   const audioContextRef = useRef(null)
+  const stopVibrationRef = useRef(null)
+  const [speakerOn, setSpeakerOn] = useState(false)
+  const callAudioContextRef = useRef(null)
+  const callAudioFilterRef = useRef(null)
+  const callAudioGainRef = useRef(null)
 
   const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
@@ -197,6 +203,9 @@ const MatrixEntryPage = () => {
     audio.loop = true
     audio.volume = 0.6
     audio.currentTime = 0
+    // Start phone vibration (Vibration API; works on Android, no-op on iOS)
+    if (stopVibrationRef.current) stopVibrationRef.current()
+    stopVibrationRef.current = startRingVibration()
     audio.play().catch(() => {
       // Fallback: son généré
       const id = setInterval(() => {
@@ -211,6 +220,10 @@ const MatrixEntryPage = () => {
   }
 
   const stopIncomingCallRing = () => {
+    if (stopVibrationRef.current) {
+      stopVibrationRef.current()
+      stopVibrationRef.current = null
+    }
     if (incomingCallSoundRef.current) {
       incomingCallSoundRef.current.pause()
       incomingCallSoundRef.current.currentTime = 0
@@ -362,6 +375,12 @@ const MatrixEntryPage = () => {
       audioRef.current.pause()
       audioRef.current.currentTime = 0
     }
+    if (callAudioContextRef.current) {
+      try { callAudioContextRef.current.close() } catch (_) {}
+      callAudioContextRef.current = null
+      callAudioFilterRef.current = null
+      callAudioGainRef.current = null
+    }
     setCallStatus('declined')
   }
 
@@ -369,28 +388,71 @@ const MatrixEntryPage = () => {
     navigate('/landing')
   }
 
+  const updateCallAudioMode = (useSpeaker) => {
+    const filter = callAudioFilterRef.current
+    const gain = callAudioGainRef.current
+    if (!filter || !gain) return
+    if (useSpeaker) {
+      filter.type = 'allpass'
+      filter.frequency.value = 1000
+      filter.Q.value = 0.0001
+      gain.gain.value = 1
+    } else {
+      filter.type = 'bandpass'
+      filter.frequency.value = 1200
+      filter.Q.value = 1
+      gain.gain.value = 0.5
+    }
+  }
+
   const handleAcceptCall = () => {
     stopIncomingCallRing()
     setCallStatus('answered')
-    // Jouer la voix (call audio) et attendre la fin
+    setSpeakerOn(false)
     const callAudio = audioRef.current
-    if (callAudio) {
+    if (!callAudio) {
+      setCallStatus('audioFinished')
+      return
+    }
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)()
+      const source = ctx.createMediaElementSource(callAudio)
+      const filter = ctx.createBiquadFilter()
+      filter.type = 'bandpass'
+      filter.frequency.value = 1200
+      filter.Q.value = 1
+      const gainNode = ctx.createGain()
+      gainNode.gain.value = 0.5
+      source.connect(filter)
+      filter.connect(gainNode)
+      gainNode.connect(ctx.destination)
+      callAudioContextRef.current = ctx
+      callAudioFilterRef.current = filter
+      callAudioGainRef.current = gainNode
+      callAudio.src = CALL_AUDIO_URL
+      callAudio.onended = () => setCallStatus('audioFinished')
+      ctx.resume().then(() => {
+        callAudio.play().catch(() => setTimeout(() => setCallStatus('audioFinished'), 5000))
+      }).catch(() => {
+        callAudio.play().catch(() => setTimeout(() => setCallStatus('audioFinished'), 5000))
+      })
+    } catch (_) {
       callAudio.src = CALL_AUDIO_URL
       callAudio.volume = 0.7
-      
-      callAudio.onended = () => {
-        // Audio terminé → passer à l'état suivant
-        setCallStatus('audioFinished')
-      }
-      
-      callAudio.play().catch(() => {
-        // Si erreur, passer quand même après délai
-        setTimeout(() => setCallStatus('audioFinished'), 5000)
-      })
-    } else {
-      // Pas d'audio → passer directement
-      setCallStatus('audioFinished')
+      callAudio.onended = () => setCallStatus('audioFinished')
+      callAudio.play().catch(() => setTimeout(() => setCallStatus('audioFinished'), 5000))
     }
+  }
+
+  useEffect(() => {
+    if (callStatus === 'answered' && callAudioFilterRef.current && callAudioGainRef.current) {
+      updateCallAudioMode(speakerOn)
+    }
+  }, [callStatus, speakerOn])
+
+  const handleRappeler = () => {
+    setCallStatus('incoming')
+    playIncomingCallRing()
   }
 
   // Navigation automatique après message final
@@ -521,6 +583,8 @@ const MatrixEntryPage = () => {
             <AnsweredCall 
               callerName="Note"
               onEndCall={handleRejectCall}
+              speakerOn={speakerOn}
+              onSpeakerToggle={() => setSpeakerOn(s => !s)}
             />
           )}
           
@@ -530,7 +594,7 @@ const MatrixEntryPage = () => {
               <Button 
                 variant="secondary" 
                 size="lg" 
-                onClick={handleSkipToLanding}
+                onClick={handleRappeler}
                 className="act3-rappeler-btn"
               >
                 Rappeler
