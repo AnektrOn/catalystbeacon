@@ -21,6 +21,16 @@ class ErrorBoundary extends React.Component {
       errorInfo: errorInfo
     })
     
+    // Handle ChunkLoadError by automatically reloading the page
+    if (error.name === 'ChunkLoadError' || error.message?.includes('Loading chunk')) {
+      console.warn('ChunkLoadError detected, reloading page...')
+      // Give user a moment to see what happened, then reload
+      setTimeout(() => {
+        window.location.reload()
+      }, 1000)
+      return
+    }
+    
     // Log error using centralized logger
     logError(error, 'ErrorBoundary')
     if (process.env.NODE_ENV === 'development') {

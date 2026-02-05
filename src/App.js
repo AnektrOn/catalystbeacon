@@ -42,6 +42,7 @@ const ForgotPasswordPage = React.lazy(() => import(/* webpackChunkName: "auth" *
 const TermsPage = React.lazy(() => import(/* webpackChunkName: "legal" */ './pages/TermsPage'))
 const PrivacyPage = React.lazy(() => import(/* webpackChunkName: "legal" */ './pages/PrivacyPage'))
 const AwakeningLandingPage = React.lazy(() => import(/* webpackChunkName: "landing" */ './pages/AwakeningLandingPage'))
+const MatrixEntryPage = React.lazy(() => import(/* webpackChunkName: "entry" */ './pages/MatrixEntryPage'))
 const SchoolRoadmap = React.lazy(() => import(/* webpackChunkName: "roadmap-feature" */ './pages/SchoolRoadmap'))
 
 // Loading component - Now using Skeleton Loader for perceived speed
@@ -102,7 +103,13 @@ const AppRoutes = () => {
       
       {/* Dev-only routes: Fragment of Route elements so Routes accepts them */}
       {process.env.NODE_ENV === 'development' && DevRouteElements}
-     
+      
+      {/* Matrix Entry Page - Public route, first page visitors see */}
+      <Route path="/entry" element={
+        <React.Suspense fallback={<LoadingScreen />}>
+          <MatrixEntryPage />
+        </React.Suspense>
+      } />
 
       {/* Protected Routes (With AppShell) */}
       <Route element={
@@ -264,14 +271,17 @@ const AppRoutes = () => {
       </Route>
 
       {/* Landing Page - Public route, accessible to all users (authenticated or not) */}
-      <Route path="/" element={
+      <Route path="/landing" element={
         <React.Suspense fallback={<LoadingScreen />}>
           <AwakeningLandingPage />
         </React.Suspense>
       } />
 
+      {/* Root redirects to entry page */}
+      <Route path="/" element={<Navigate to="/entry" replace />} />
+
       {/* Catch all */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to="/entry" replace />} />
     </Routes>
   )
 }
@@ -315,6 +325,30 @@ const MobileNativeInitializer = () => {
 
 function App() {
   const isMobile = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 767px)').matches
+
+  // Global handler for chunk loading errors
+  React.useEffect(() => {
+    const handleChunkError = (event) => {
+      // Check if it's a chunk loading error
+      if (
+        event.reason?.name === 'ChunkLoadError' ||
+        event.reason?.message?.includes('Loading chunk') ||
+        event.message?.includes('Loading chunk')
+      ) {
+        console.warn('ChunkLoadError detected globally, reloading page...')
+        event.preventDefault()
+        // Reload the page to get fresh chunks
+        window.location.reload()
+      }
+    }
+
+    // Listen for unhandled promise rejections (common for dynamic imports)
+    window.addEventListener('unhandledrejection', handleChunkError)
+
+    return () => {
+      window.removeEventListener('unhandledrejection', handleChunkError)
+    }
+  }, [])
 
   return (
     <ThemeProvider>

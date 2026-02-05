@@ -1,0 +1,24 @@
+/* EntityScene - Act 2 full-screen video background */
+
+.entity-scene {
+  position: fixed;
+  inset: 0;
+  background: #000000;
+  overflow: hidden;
+}
+
+.entity-background-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+/* Mobile: full viewport, video will cover when you add it */
+@media (max-width: 640px) {
+  .entity-scene {
+    min-height: 100dvh;
+  }
+}

@@ -1,13 +1,12 @@
-import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { AnimatePresence } from 'framer-motion';
 import stellarMapService from '../../stellarMapService';
-import { buildNodesWithOrbits } from '../utils/nodesWithOrbits';
+import { buildStellarHierarchy } from '../utils/stellarHierarchy';
 import SceneBackground from './SceneBackground';
 import Sun from './celestial/Sun';
-import Node from './celestial/Node';
+import FamilyOrbit from './celestial/FamilyOrbit';
 import CameraController from './motion/CameraController';
-import NodesUpdater from './motion/NodesUpdater';
 import NodeMenu from './ui/NodeMenu';
 import SpeedControl from './ui/SpeedControl';
 import NodeDetail from './ui/NodeDetail';
@@ -18,14 +17,8 @@ import IntroText from './ui/IntroText';
 const DEFAULT_LEVEL = 'Ignition';
 
 export default function SolarSystem() {
-  const [nodesWithOrbits, setNodesWithOrbits] = useState([]);
-  const [orbitProgressByDifficulty, setOrbitProgressByDifficulty] = useState({});
+  const [families, setFamilies] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const difficultyKeys = useMemo(() => {
-    const set = new Set(nodesWithOrbits.map((item) => item.difficulty));
-    return Array.from(set);
-  }, [nodesWithOrbits]);
 
   useEffect(() => {
     let cancelled = false;
@@ -36,18 +29,11 @@ export default function SolarSystem() {
         const { data: grouped, error } = await stellarMapService.getNodesGroupedByHierarchy(DEFAULT_LEVEL, 0);
         if (cancelled) return;
         if (error || !grouped) {
-          setNodesWithOrbits([]);
+          setFamilies([]);
           return;
         }
-        const list = buildNodesWithOrbits(grouped);
-        setNodesWithOrbits(list);
-        setOrbitProgressByDifficulty((prev) => {
-          const next = { ...prev };
-          list.forEach(({ difficulty }) => {
-            if (next[difficulty] == null) next[difficulty] = 0;
-          });
-          return next;
-        });
+        const hierarchy = buildStellarHierarchy(grouped);
+        setFamilies(hierarchy);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -57,11 +43,22 @@ export default function SolarSystem() {
     return () => { cancelled = true; };
   }, []);
 
+  // Extract all nodes for NodeMenu (flat list for compatibility)
+  const allNodesFlat = families.flatMap(family => 
+    family.constellations.flatMap(constellation => 
+      constellation.nodes.map(node => ({
+        node,
+        familyName: family.name,
+        constellationName: constellation.name
+      }))
+    )
+  );
+
   return (
     <>
       <div className="absolute inset-0 w-full h-full">
         <Canvas
-          camera={{ position: [0, 35, 55], fov: 50 }}
+          camera={{ position: [0, 50, 80], fov: 60 }}
           style={{ width: '100%', height: '100%', display: 'block' }}
           gl={{ antialias: true, alpha: false }}
         >
@@ -69,25 +66,22 @@ export default function SolarSystem() {
             <CameraController />
             <SceneBackground texturePath="/images/background/stars_8k.webp" />
             <SceneLighting />
-            <Sun position={[0, 0, 0]} radius={1} />
-            {nodesWithOrbits.map(({ node, orbitRadius, angleOffset, difficulty, showOrbitRing }) => (
-              <Node
-                key={node.id}
-                node={node}
-                orbitRadius={orbitRadius}
-                angleOffset={angleOffset}
-                orbitProgress={orbitProgressByDifficulty[difficulty] ?? 0}
-                showOrbitRing={showOrbitRing}
+            
+            {/* Central Sun/Nucleus */}
+            <Sun position={[0, 0, 0]} radius={1.5} />
+            
+            {/* Render hierarchical structure: Families > Constellations > Nodes */}
+            {families.map((family) => (
+              <FamilyOrbit
+                key={`family-${family.name}-${family.index}`}
+                family={family}
+                totalFamilies={families.length}
               />
             ))}
-            <NodesUpdater
-              setOrbitProgressByDifficulty={setOrbitProgressByDifficulty}
-              difficultyKeys={difficultyKeys}
-            />
           </Suspense>
         </Canvas>
       </div>
-      <NodeMenu nodesWithOrbits={nodesWithOrbits} />
+      <NodeMenu nodesWithOrbits={allNodesFlat} />
       <SpeedControl />
       <AnimatePresence>
         <NodeDetail />
@@ -96,7 +90,7 @@ export default function SolarSystem() {
       <IntroText />
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-20 pointer-events-none">
-          <span className="text-white/80 text-sm">Chargement des nodes…</span>
+          <span className="text-white/80 text-sm">Chargement de la carte stellaire…</span>
         </div>
       )}
     </>

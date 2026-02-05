@@ -1,0 +1,137 @@
+/* EntityAuraFX - Visual effects overlay for entity scene */
+
+/* Grain texture */
+.entity-fx-grain {
+  position: absolute;
+  inset: 0;
+  background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noiseFilter)"/></svg>');
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 2;
+  animation: grainFlicker 0.2s infinite;
+}
+
+@keyframes grainFlicker {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.12; }
+}
+
+/* Radial fog layers */
+.entity-fx-fog {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  mix-blend-mode: screen;
+  opacity: 0.3;
+}
+
+.entity-fx-fog-1 {
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(0, 240, 255, 0.4) 0%,
+    rgba(0, 240, 255, 0.2) 20%,
+    transparent 50%
+  );
+  animation: fogRotate1 60s linear infinite;
+}
+
+.entity-fx-fog-2 {
+  background: radial-gradient(
+    circle at 40% 60%,
+    rgba(139, 92, 246, 0.3) 0%,
+    rgba(139, 92, 246, 0.15) 25%,
+    transparent 50%
+  );
+  animation: fogRotate2 80s linear infinite reverse;
+}
+
+.entity-fx-fog-3 {
+  background: radial-gradient(
+    circle at 60% 40%,
+    rgba(255, 215, 0, 0.25) 0%,
+    rgba(255, 215, 0, 0.1) 20%,
+    transparent 45%
+  );
+  animation: fogPulse 10s ease-in-out infinite;
+}
+
+@keyframes fogRotate1 {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fogRotate2 {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fogPulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.5; }
+}
+
+/* Center glow halo */
+.entity-fx-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 400px;
+  height: 400px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    circle at center,
+    rgba(0, 240, 255, 0.3) 0%,
+    rgba(255, 215, 0, 0.2) 30%,
+    transparent 70%
+  );
+  filter: blur(40px);
+  pointer-events: none;
+  z-index: 1;
+  animation: glowPulse 4s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+  0%, 100% { 
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% { 
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+/* Vignette (dark edges) */
+.entity-fx-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at center,
+    transparent 0%,
+    transparent 40%,
+    rgba(0, 0, 0, 0.4) 70%,
+    rgba(0, 0, 0, 0.8) 100%
+  );
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .entity-fx-grain,
+  .entity-fx-fog-1,
+  .entity-fx-fog-2,
+  .entity-fx-fog-3,
+  .entity-fx-glow {
+    animation: none;
+  }
+  
+  .entity-fx-fog {
+    opacity: 0.2;
+  }
+  
+  .entity-fx-glow {
+    opacity: 0.6;
+  }
+}

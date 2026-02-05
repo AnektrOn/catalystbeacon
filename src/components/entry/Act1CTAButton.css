@@ -1,0 +1,104 @@
+/* Act1CTAButton - Gradient CTA with glow effect */
+
+.act1-cta-button {
+  position: relative;
+  padding: 16px 32px;
+  min-height: 56px;
+  min-width: 200px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #00f0ff, #00ffa2);
+  color: #000;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+  animation: ctaPulse 1.5s ease-in-out infinite;
+  margin-top: 32px;
+}
+
+.act1-cta-text {
+  position: relative;
+  z-index: 2;
+}
+
+.act1-cta-glow {
+  position: absolute;
+  inset: -2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #00f0ff, #00ffa2);
+  filter: blur(20px);
+  opacity: 0.6;
+  z-index: 1;
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+@keyframes ctaPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+@keyframes glowPulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+.act1-cta-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 30px rgba(0, 240, 255, 0.8);
+}
+
+.act1-cta-button:active {
+  transform: scale(0.98);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.6);
+}
+
+/* Mobile adjustments */
+@media (max-width: 640px) {
+  .act1-cta-button {
+    padding: 14px 28px;
+    min-height: 52px;
+    font-size: 14px;
+    min-width: 180px;
+  }
+}
+
+/* Touch target optimization */
+@media (pointer: coarse) {
+  .act1-cta-button {
+    min-height: 56px;
+    padding: 16px 32px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .act1-cta-button {
+    animation: none;
+  }
+  
+  .act1-cta-glow {
+    animation: none;
+    opacity: 0.6;
+  }
+  
+  .act1-cta-button:hover {
+    transform: scale(1.02);
+  }
+  
+  .act1-cta-button:active {
+    transform: scale(0.99);
+  }
+}

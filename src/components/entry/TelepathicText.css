@@ -1,0 +1,87 @@
+/* TelepathicText - Sequential text reveal for Act 2 */
+
+.telepathic-text-container {
+  position: absolute;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  text-align: center;
+  z-index: 10;
+  padding: 0 20px;
+}
+
+.telepathic-text-line {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+  transition: opacity 1.2s ease, transform 1.2s ease;
+}
+
+/* Removed hidden state - lines are now always shown when index <= currentIndex */
+
+.telepathic-text-line.active {
+  opacity: 1;
+  transform: translateY(0);
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  animation: textGlow 2s ease-in-out infinite;
+  margin-bottom: 12px;
+}
+
+.telepathic-text-line.dimmed {
+  opacity: 0.4;
+  transform: translateY(0);
+  margin-bottom: 12px;
+}
+
+@keyframes textGlow {
+  0%, 100% {
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  }
+  50% {
+    text-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
+  }
+}
+
+/* Mobile adjustments */
+@media (max-width: 640px) {
+  .telepathic-text-container {
+    bottom: 100px;
+    max-width: 100%;
+  }
+  
+  .telepathic-text-line {
+    font-size: 18px;
+    line-height: 1.5;
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .telepathic-text-line {
+    font-size: 20px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .telepathic-text-line {
+    transition: opacity 0.5s ease;
+  }
+  
+  .telepathic-text-line.active {
+    animation: none;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  }
+  
+  .telepathic-text-line.hidden {
+    transform: translateY(0);
+  }
+}

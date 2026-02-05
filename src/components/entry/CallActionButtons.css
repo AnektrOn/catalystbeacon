@@ -1,0 +1,98 @@
+/* CallActionButtons - Grid of call control buttons */
+
+.call-action-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px 32px;
+  width: 100%;
+  max-width: 360px;
+  padding: 20px;
+}
+
+.call-action-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  padding: 8px;
+}
+
+.call-action-button:hover {
+  opacity: 0.8;
+}
+
+.call-action-button:active {
+  transform: scale(0.9);
+}
+
+.call-action-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  transition: background 0.2s ease;
+}
+
+.call-action-button.active .call-action-icon {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.call-action-label {
+  font-size: 12px;
+  font-weight: 400;
+  color: #ffffff;
+  text-transform: lowercase;
+}
+
+/* Mobile adjustments */
+@media (max-width: 640px) {
+  .call-action-buttons {
+    gap: 20px 24px;
+    max-width: 320px;
+  }
+  
+  .call-action-icon {
+    width: 56px;
+    height: 56px;
+  }
+  
+  .call-action-label {
+    font-size: 11px;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 375px) {
+  .call-action-buttons {
+    gap: 16px 20px;
+    max-width: 280px;
+  }
+  
+  .call-action-icon {
+    width: 52px;
+    height: 52px;
+  }
+}
+
+/* Touch target optimization */
+@media (pointer: coarse) {
+  .call-action-button {
+    padding: 12px;
+    min-width: 64px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .call-action-button:active {
+    transform: none;
+  }
+}

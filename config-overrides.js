@@ -12,6 +12,21 @@ module.exports = function override(config, env) {
     );
   }
 
+  // Fix ChunkLoadError in development: light touch to avoid dev server hang
+  if (env === 'development') {
+    config.output = {
+      ...config.output,
+      chunkFilename: 'static/js/[name].chunk.js',
+      pathinfo: false,
+    };
+    config.optimization = {
+      ...config.optimization,
+      moduleIds: 'named',
+      chunkIds: 'named',
+      // Avoid runtimeChunk/splitChunks in dev – can hang webpack-dev-server
+    };
+  }
+
   // For production builds, we can disable minification if needed
   // This helps with memory issues on low-resource servers
   if (env === 'production') {
