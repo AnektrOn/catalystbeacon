@@ -31,6 +31,7 @@ fi
 
 # 3. Installation des dépendances
 echo "📦 3. Vérification des dépendances..."
+npm ci 2>/dev/null || npm install
 chmod +x node_modules/.bin/* 2>/dev/null || true
 
 # 4. Build (Méthode Directe Node.js)
@@ -41,7 +42,13 @@ export GENERATE_SOURCEMAP=false
 export BUILD_NO_MINIFY=true
 
 echo "   Execution directe du compilateur..."
-node node_modules/react-app-rewired/bin/index.js build
+node node_modules/react-app-rewired/bin/index.js build 2>&1 | tee /tmp/build.log
+if [ ${PIPESTATUS[0]} -ne 0 ]; then
+    echo ""
+    echo "❌ ERREUR DE BUILD - Dernières lignes du log :"
+    tail -80 /tmp/build.log
+    exit 1
+fi
 
 # 5. NETTOYAGE NUCLÉAIRE
 echo "🧹 5. Suppression des anciens fichiers..."
