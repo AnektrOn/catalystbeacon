@@ -334,7 +334,7 @@ class StellarMapService {
             family.constellations.forEach(constellation => {
               if (!constellation.id || !constellation.name) return;
               const constellationNodes = validatedNodes
-                .filter(item => item.constellation.id === constellation.id)
+                .filter(item => item.constellation.id === constellation.id && (xp >= (item.node.xp_threshold ?? 0)))
                 .map(item => item.node);
               if (constellationNodes.length > 0) {
                 grouped[family.name][constellation.name] = constellationNodes;
@@ -358,7 +358,7 @@ class StellarMapService {
             misgroupedNodes: misgroupedNodes.length,
             totalNodesInResult: totalNodes,
             userXP: xp,
-            note: 'XP filter removed - all nodes are visible'
+            note: 'Nodes visible only when user XP >= node xp_threshold'
           }
         );
 

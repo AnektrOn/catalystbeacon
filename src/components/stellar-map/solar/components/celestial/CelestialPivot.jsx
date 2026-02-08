@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, forwardRef, useImperativeHandle } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
@@ -7,51 +7,52 @@ import * as THREE from 'three';
  * 
  * Creates a THREE.Group that rotates around Y axis and can be tilted on X/Z
  * Children are positioned at 'radius' distance on the X axis (local space)
+ * Optional centerContent is rendered at orbit center (0,0,0) and does not orbit.
  * 
  * @param {Object} props
+ * @param {React.Ref} props.innerRef - Ref to the outer group (orbit center in world space)
  * @param {number} props.radius - Distance from center where children are positioned
  * @param {number} props.speed - Rotation speed (radians per frame * timeScale)
  * @param {Array<number>} props.tilt - [x, z] rotation tilts in radians for 3D orbit
  * @param {number} props.initialAngle - Starting angle offset (radians)
  * @param {Array<number>} props.position - [x, y, z] position of the pivot center
+ * @param {React.ReactNode} props.centerContent - Optional content at orbit center (e.g. clickable)
  * @param {React.ReactNode} props.children - Child elements to orbit
  */
-export default function CelestialPivot({ 
+const CelestialPivot = forwardRef(function CelestialPivot({ 
   radius = 5, 
   speed = 0.1, 
   tilt = [0, 0], 
   initialAngle = 0,
   position = [0, 0, 0],
+  centerContent,
   children 
-}) {
+}, ref) {
   const pivotRef = useRef();
   const angleRef = useRef(initialAngle);
-  
+
   useFrame((state, delta) => {
     if (!pivotRef.current) return;
     
-    // Update rotation angle
     angleRef.current += speed * delta;
-    
-    // Apply rotation around Y axis (main orbital rotation)
     pivotRef.current.rotation.y = angleRef.current;
-    
-    // Apply tilts for 3D spherical distribution (static tilts)
     pivotRef.current.rotation.x = tilt[0];
     pivotRef.current.rotation.z = tilt[1];
   });
   
   return (
-    <group position={position}>
+    <group ref={ref} position={position}>
       <group ref={pivotRef}>
-        {/* Children are positioned at [radius, 0, 0] in local space */}
+        {centerContent ? <group position={[0, 0, 0]}>{centerContent}</group> : null}
         <group position={[radius, 0, 0]}>
           {children}
         </group>
       </group>
     </group>
   );
-}
+});
+
+export default CelestialPivot;
 
 /**
  * StaticPivot - Non-rotating group for static positioning

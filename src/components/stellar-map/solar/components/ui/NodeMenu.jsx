@@ -1,5 +1,4 @@
-import React, { useEffect } from 'react';
-import { motion, useAnimation } from 'framer-motion';
+import React from 'react';
 import { useSelectedNode } from '../../contexts/SelectedNodeContext';
 import { useCameraContext } from '../../contexts/CameraContext';
 import { Button } from '@nextui-org/react';
@@ -7,33 +6,23 @@ import { Button } from '@nextui-org/react';
 export default function NodeMenu({ nodesWithOrbits }) {
   const [selectedNode, setSelectedNode] = useSelectedNode();
   const { setCameraState, cameraState } = useCameraContext();
-  const controls = useAnimation();
-
-  useEffect(() => {
-    if (cameraState === 'FREE' || cameraState === 'INTRO_ANIMATION') {
-      controls.start({ y: 0, opacity: 1 });
-    }
-  }, [cameraState, controls]);
 
   const handleSelect = (node) => {
     setSelectedNode(node);
     setCameraState('ZOOMING_IN');
   };
 
-  const menuVariants = {
-    hidden: { y: '170%', opacity: 1 },
-    visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 100 } },
-  };
+  const isMenuVisible = cameraState === 'FREE' || cameraState === 'INTRO_ANIMATION';
 
   const nodes = nodesWithOrbits?.map((item) => item.node) ?? [];
   const uniqueByTitle = nodes.filter((n, i, arr) => arr.findIndex((x) => x.id === n.id) === i);
 
   return (
-    <motion.div
-      className="absolute bottom-5 left-5 right-5 z-10"
-      variants={menuVariants}
-      initial="hidden"
-      animate={controls}
+    <div
+      className="absolute bottom-5 left-5 right-5 z-10 transition-transform duration-300 ease-out"
+      style={{
+        transform: isMenuVisible ? 'translateY(0)' : 'translateY(170%)',
+      }}
     >
       <div className="flex flex-wrap gap-2 justify-center max-h-24 overflow-y-auto">
         {uniqueByTitle.map((node) => (
@@ -49,6 +38,6 @@ export default function NodeMenu({ nodesWithOrbits }) {
           </Button>
         ))}
       </div>
-    </motion.div>
+    </div>
   );
 }

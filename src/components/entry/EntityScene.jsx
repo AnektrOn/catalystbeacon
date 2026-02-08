@@ -1,35 +1,26 @@
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import './EntityScene.css';
 
-const ACT2_VIDEO_URL = '/assets/kling_20260205_Image_to_Video_Make_the_s_3655_0.mp4';
+const ACT2_IMAGE_MOBILE_URL = '/assets/4505bf8457486a00ffcb727fcce13ef341.jpg';
+const ACT2_IMAGE_DESKTOP_URL = '/assets/' + encodeURIComponent('DASHBOARDe BG.png');
 
 /**
  * EntityScene Component
- * Full-screen video for Act 2. Plays once then stays on last frame until user clicks CTA.
+ * Act 2: image de fond — une pour mobile, une pour ordi.
+ * Mettre act2-mobile.jpg et act2-desktop.jpg dans public/assets/
  */
 const EntityScene = () => {
-  const videoRef = useRef(null);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    const onEnded = () => {
-      video.pause();
-    };
-    video.addEventListener('ended', onEnded);
-    return () => video.removeEventListener('ended', onEnded);
-  }, []);
-
   return (
     <div className="entity-scene">
-      <video
-        ref={videoRef}
-        className="entity-background-video"
-        src={ACT2_VIDEO_URL}
-        autoPlay
-        loop={false}
-        muted
-        playsInline
+      <img
+        src={ACT2_IMAGE_MOBILE_URL}
+        alt=""
+        className="entity-background-image entity-background-image--mobile"
+      />
+      <img
+        src={ACT2_IMAGE_DESKTOP_URL}
+        alt=""
+        className="entity-background-image entity-background-image--desktop"
       />
     </div>
   );

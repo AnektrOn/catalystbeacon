@@ -1,8 +1,8 @@
 import { useState, useEffect, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { AnimatePresence } from 'framer-motion';
 import stellarMapService from '../../stellarMapService';
 import { buildStellarHierarchy } from '../utils/stellarHierarchy';
+import { useAuth } from '../../../../contexts/AuthContext';
 import SceneBackground from './SceneBackground';
 import Sun from './celestial/Sun';
 import FamilyOrbit from './celestial/FamilyOrbit';
@@ -13,20 +13,35 @@ import NodeDetail from './ui/NodeDetail';
 import ControlMenu from './ui/ControlMenu/ControlMenu';
 import SceneLighting from './SceneLighting';
 import IntroText from './ui/IntroText';
+import StellarMapProgressionPanel from '../../StellarMapProgressionPanel';
+import StellarMapFamilyConstellationSearch from '../../StellarMapFamilyConstellationSearch';
+import StellarMapMiniMapWrapper from '../../StellarMapMiniMapWrapper';
+import StellarMapBreadcrumb from '../../StellarMapBreadcrumb';
+import { useFocus } from '../contexts/FocusContext';
+import { useSelectedNode } from '../contexts/SelectedNodeContext';
+import { useCameraContext } from '../contexts/CameraContext';
 
-const DEFAULT_LEVEL = 'Ignition';
-
-export default function SolarSystem() {
+export default function SolarSystem({ level }) {
+  const { profile } = useAuth();
+  const { focus, setFocus } = useFocus();
+  const [selectedNode, setSelectedNode] = useSelectedNode();
+  const { setCameraState } = useCameraContext();
   const [families, setFamilies] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const selectedFamily = focus?.type === 'family' ? focus.family : focus?.type === 'constellation' ? focus.family : selectedNode?.familyAlias && families?.length ? families.find((f) => f.name === selectedNode.familyAlias) : null;
+  const selectedConstellation = focus?.type === 'constellation' ? focus.constellation : selectedNode?.constellationAlias && selectedFamily ? selectedFamily.constellations?.find((c) => c.name === selectedNode.constellationAlias) : null;
+
+  const userXP = profile?.current_xp != null ? Number(profile.current_xp) : (profile?.total_xp_earned != null ? Number(profile.total_xp_earned) : 0);
+
   useEffect(() => {
+    if (!level) return;
     let cancelled = false;
 
     async function load() {
       setLoading(true);
       try {
-        const { data: grouped, error } = await stellarMapService.getNodesGroupedByHierarchy(DEFAULT_LEVEL, 0);
+        const { data: grouped, error } = await stellarMapService.getNodesGroupedByHierarchy(level, userXP);
         if (cancelled) return;
         if (error || !grouped) {
           setFamilies([]);
@@ -41,7 +56,7 @@ export default function SolarSystem() {
 
     load();
     return () => { cancelled = true; };
-  }, []);
+  }, [level, userXP]);
 
   // Extract all nodes for NodeMenu (flat list for compatibility)
   const allNodesFlat = families.flatMap(family => 
@@ -83,11 +98,33 @@ export default function SolarSystem() {
       </div>
       <NodeMenu nodesWithOrbits={allNodesFlat} />
       <SpeedControl />
-      <AnimatePresence>
-        <NodeDetail />
-      </AnimatePresence>
+      <NodeDetail />
       <ControlMenu />
       <IntroText />
+      <StellarMapBreadcrumb
+        currentCore={level}
+        selectedFamily={selectedFamily}
+        selectedConstellation={selectedConstellation}
+        selectedNode={selectedNode}
+        onNavigate={(type, data) => {
+          if (type === 'core') setFocus('sun');
+          else if (type === 'family') setFocus({ type: 'family', family: data });
+          else if (type === 'constellation' && data?.constellation && data?.family) setFocus({ type: 'constellation', constellation: data.constellation, family: data.family });
+          else if (type === 'node' && data) {
+            setSelectedNode(data);
+            setCameraState('ZOOMING_IN');
+          }
+        }}
+      />
+      <StellarMapFamilyConstellationSearch
+        families={families}
+        onSelect={({ type, family, constellation }) => {
+          if (type === 'family') setFocus({ type: 'family', family });
+          else setFocus({ type: 'constellation', constellation, family });
+        }}
+      />
+      <StellarMapProgressionPanel families={families} />
+      <StellarMapMiniMapWrapper families={families} />
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-20 pointer-events-none">
           <span className="text-white/80 text-sm">Chargement de la carte stellaire…</span>

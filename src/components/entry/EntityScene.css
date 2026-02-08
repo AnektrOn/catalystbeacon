@@ -1,4 +1,4 @@
-/* EntityScene - Act 2 full-screen video background */
+/* EntityScene - Act 2 image de fond (mobile + desktop) */
 
 .entity-scene {
   position: fixed;
@@ -7,7 +7,7 @@
   overflow: hidden;
 }
 
-.entity-background-video {
+.entity-background-image {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -16,7 +16,24 @@
   z-index: 0;
 }
 
-/* Mobile: full viewport, video will cover when you add it */
+/* Mobile: afficher uniquement l’image mobile */
+.entity-background-image--mobile {
+  display: block;
+}
+.entity-background-image--desktop {
+  display: none;
+}
+
+/* Desktop: afficher uniquement l’image ordi */
+@media (min-width: 641px) {
+  .entity-background-image--mobile {
+    display: none;
+  }
+  .entity-background-image--desktop {
+    display: block;
+  }
+}
+
 @media (max-width: 640px) {
   .entity-scene {
     min-height: 100dvh;

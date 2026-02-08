@@ -1,6 +1,21 @@
 /* Matrix Entry Page Styles - Adapted to Cyan/Black Design System */
 
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
+/* =====================
+   AJUSTEMENTS — Où modifier l’apparence
+=====================
+  • Carte (effet hero-dithering):
+    → .matrix-entry-card (border-radius, border, shadow, background)
+  • Tailles de police:
+    → .act1-line (texte ACT 1)
+    → .act2-line (texte ACT 2)
+    → .act3-final-message h2 et .act3-final-message p (ACT 3)
+  • Couleurs boutons / accent:
+    → .act1-cta-button, .act2-cta-button, .act3-rappeler-btn
+  • Fond Dithering (couleur, opacité, vitesse):
+    → src/components/entry/EntryDitheringBackground.jsx
+===================== */
 
 /* =====================
    GLOBAL
@@ -13,6 +28,33 @@
   overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
   color: white;
+}
+
+/* Carte avec effet Dithering (ACT 1, ACT 2, ACT 3) — style hero-dithering-card */
+.matrix-entry-card {
+  position: relative;
+  overflow: hidden;
+  width: 90%;
+  max-width: 42rem;
+  min-height: 420px;
+  border-radius: 48px;
+  border: 1px solid rgba(8, 145, 178, 0.25);
+  background: rgba(8, 12, 18, 0.92);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 32px;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.matrix-entry-card .entry-dithering-bg {
+  border-radius: 48px;
+}
+.act1-text-card.matrix-entry-card,
+.act2-text-card.matrix-entry-card,
+.act3-final-card.matrix-entry-card {
+  /* Ajuster min-height par act si besoin */
 }
 
 /* =====================
@@ -133,6 +175,30 @@
   margin-top: 4px;
 }
 
+/* Act 1 - Tap to start (débloque l’audio) */
+/* Même typo que le H1 du Dashboard (.dashboard-title) : Cinzel, 32px, font-weight 500 */
+.act1-tap-to-start {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  font-family: 'Cinzel', serif !important;
+  font-size: 32px !important;
+  font-weight: 500 !important;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  padding: 20px;
+  pointer-events: none;
+  animation: act1-tap-pulse 2s ease-in-out infinite;
+}
+
+@keyframes act1-tap-pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
 /* =====================
    ACTE 1 — TEXTE
 ===================== */
@@ -152,13 +218,33 @@
   padding: 20px;
 }
 
+.act1-text-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+/* Texte tapé ACT 1 — même typo que Dashboard H1 (Cinzel). TypingEffect utilise .typing-effect, pas .act1-line */
+.act1-text-content .typing-effect,
+.act1-text-content .typing-text {
+  font-family: 'Cinzel', serif !important;
+  font-size: 38px !important;
+  font-weight: 600 !important;
+  color: #ffffff;
+  line-height: 1.35;
+}
+
+/* ACT 1 — Ajuster la taille du texte ici (legacy / si autre usage) */
 .act1-line {
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
-  font-size: 28px;
+  font-family: 'Cinzel', serif;
+  font-size: 38px;
   font-weight: 600;
   color: #ffffff;
-  line-height: 1.4;
-  max-width: 600px;
+  line-height: 1.35;
+  max-width: 560px;
   opacity: 0;
   transform: translateY(20px);
   animation: slideUpFadeIn 0.8s ease-out forwards;
@@ -176,9 +262,12 @@
   }
 }
 
-/* Act 1 CTA Button - force visible text (override design system vars) */
+/* Act 1 CTA Button — même typo que Dashboard (.upgrade-button) : Cinzel, 16px, 600 */
 .act1-cta-button {
   margin-top: 32px;
+  font-family: 'Cinzel', serif !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
   color: #ffffff !important;
   background: #0891b2 !important;
   background-color: #0891b2 !important;
@@ -235,6 +324,8 @@
 }
 
 .act2-text-container {
+  position: relative;
+  z-index: 1;
   width: 90%;
   max-width: 520px;
   display: flex;
@@ -244,11 +335,22 @@
   justify-content: center;
 }
 
+/* Texte tapé ACT 2 — même typo Cinzel */
+.act2-text-container .typing-effect,
+.act2-text-container .typing-text {
+  font-family: 'Cinzel', serif !important;
+  font-size: 30px !important;
+  font-weight: 400 !important;
+  color: #ffffff;
+  line-height: 1.5;
+}
+
+/* ACT 2 — Ajuster la taille du texte ici */
 .act2-line {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
-  font-size: 22px;
+  font-size: 30px;
   font-weight: 400;
-  line-height: 1.6;
+  line-height: 1.5;
   letter-spacing: 0.02em;
   color: #ffffff;
   opacity: 0;
@@ -272,8 +374,13 @@
   }
 }
 
-/* Act 2 CTA Button - force visible text */
+/* Act 2 CTA Button — même typo que Dashboard (.upgrade-button) : Cinzel, 16px, 600 */
 .act2-cta-button {
+  position: relative;
+  z-index: 1;
+  font-family: 'Cinzel', serif !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
   color: #ffffff !important;
   background: #0891b2 !important;
   background-color: #0891b2 !important;
@@ -371,22 +478,36 @@
   padding: 20px;
 }
 
+.act3-final-message-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+/* ACT 3 — Ajuster titres et paragraphes ici */
 .act3-final-message h2 {
-  font-size: 32px;
+  font-size: 42px;
   font-weight: 600;
   margin: 0;
   letter-spacing: -0.02em;
 }
 
 .act3-final-message p {
-  font-size: 20px;
+  font-size: 26px;
   font-weight: 400;
-  opacity: 0.8;
+  opacity: 0.9;
   margin: 0;
 }
 
+/* Act 3 Rappeler — même typo que Dashboard (.upgrade-button) : Cinzel, 16px, 600 */
 .act3-final-message .act3-rappeler-btn {
   margin-top: 16px;
+  font-family: 'Cinzel', serif !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
   color: #ffffff !important;
   background: #0891b2 !important;
   background-color: #0891b2 !important;
@@ -402,10 +523,10 @@
     padding: max(20px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom));
   }
   .act3-final-message h2 {
-    font-size: 28px;
+    font-size: 34px;
   }
   .act3-final-message p {
-    font-size: 18px;
+    font-size: 22px;
   }
   .act3-final-message .act3-rappeler-btn {
     min-height: 48px;
@@ -521,6 +642,13 @@
   touch-action: manipulation;
 }
 
+/* ACT 3 : pas de fond matrix / glitch */
+.matrix-entry-page.act3-no-bg #matrix-canvas,
+.matrix-entry-page.act3-no-bg .glitch-noise,
+.matrix-entry-page.act3-no-bg .matrix-entry-glitch {
+  display: none;
+}
+
 /* Matrix Canvas */
 #matrix-canvas {
   position: fixed;
@@ -541,9 +669,85 @@
   width: 100%;
   height: 100%;
   background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyBAMAAADsEZWCAAAAGFBMVEUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAs697FAAAACHRSTlMA7v6f/v4A/v6f9v4EAAAAW0lEQVQ4y2NgwA0YGRiYGFgYmBhYGJgYWBjY2BgY2BgYmBjY2BgY2BjY2BjY2BjY2BgY2BgY2BjY2BgY2BgY2BjY2BgY2BgY2BgY2BgY2BgY2BgY2BgYmBkAAGjBA4H+mIuWAAAAAElFTkSuQmCC');
-  opacity: 0.05;
+  opacity: 0.08;
   pointer-events: none;
   z-index: 2;
+  animation: glitch-noise-flicker 4s steps(1) infinite;
+}
+
+.matrix-entry-glitch {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.12) 2px,
+    rgba(0, 0, 0, 0.12) 4px
+  );
+  opacity: 0.6;
+  animation: glitch-scan 8s linear infinite;
+}
+
+@keyframes glitch-noise-flicker {
+  0%, 90%, 100% { opacity: 0.08; }
+  92% { opacity: 0.15; }
+  94% { opacity: 0.05; }
+  96% { opacity: 0.12; }
+  98% { opacity: 0.07; }
+}
+
+@keyframes glitch-scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+.screen.matrix-glitch::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(0,255,255,0.02) 50%, transparent 100%);
+  animation: glitch-rgb 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.screen.matrix-glitch::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,0,128,0.02) 50%, transparent 100%);
+  animation: glitch-rgb 3s ease-in-out infinite 0.5s;
+  pointer-events: none;
+}
+
+@keyframes glitch-rgb {
+  0%, 100% { opacity: 0; transform: translateX(0); }
+  10% { opacity: 0.5; transform: translateX(-2px); }
+  20% { opacity: 0; transform: translateX(2px); }
+  30% { opacity: 0.3; transform: translateX(0); }
+  50%, 70% { opacity: 0; }
+  60% { opacity: 0.4; transform: translateX(1px); }
+  80% { opacity: 0.2; transform: translateX(-1px); }
+}
+
+.act1-text-container.matrix-glitch-text,
+.act2-text-container.matrix-glitch-text {
+  animation: glitch-box 6s ease-in-out infinite;
+}
+
+.act2-text-container.matrix-glitch-text {
+  animation-delay: 1s;
+}
+
+@keyframes glitch-box {
+  0%, 96%, 100% { filter: none; }
+  97% { filter: hue-rotate(5deg) saturate(1.2); }
+  98% { filter: hue-rotate(-5deg); }
+  99% { filter: none; }
 }
 
 /* Screen Shake Animation */
@@ -1012,8 +1216,15 @@
     padding: 20px 16px;
     padding-bottom: max(20px, env(safe-area-inset-bottom));
   }
+  .act1-tap-to-start {
+    font-size: 28px;
+  }
+  .act1-text-content .typing-effect,
+  .act1-text-content .typing-text {
+    font-size: 30px !important;
+  }
   .act1-line {
-    font-size: 22px;
+    font-size: 30px;
   }
   .act1-cta-button {
     min-height: 48px;
@@ -1033,8 +1244,12 @@
   .act2-text-container {
     max-width: 100%;
   }
+  .act2-text-container .typing-effect,
+  .act2-text-container .typing-text {
+    font-size: 24px !important;
+  }
   .act2-line {
-    font-size: 18px;
+    font-size: 24px;
     line-height: 1.5;
   }
   .act2-cta-button {
@@ -1046,8 +1261,11 @@
   }
 }
 
-/* Extra small phones */
+/* Extra small phones — Tap here même échelle que Dashboard H1 */
 @media (max-width: 380px) {
+  .act1-tap-to-start {
+    font-size: 24px;
+  }
   .act1-cta-button {
     min-width: 160px;
     font-size: 13px;
@@ -1069,7 +1287,13 @@
   .key-ring::after,
   .key-text,
   .glitch::before,
-  .glitch::after {
+  .glitch::after,
+  .glitch-noise,
+  .matrix-entry-glitch,
+  .screen.matrix-glitch::before,
+  .screen.matrix-glitch::after,
+  .act1-text-container.matrix-glitch-text,
+  .act2-text-container.matrix-glitch-text {
     animation: none;
   }
   

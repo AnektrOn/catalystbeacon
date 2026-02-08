@@ -1,67 +1,81 @@
+import { useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { Vector3 } from 'three';
 import CelestialPivot from './CelestialPivot';
 import NodeOrbit from './NodeOrbit';
 import { useSpeedControl } from '../../contexts/SpeedControlContext';
+import { useFocus } from '../../contexts/FocusContext';
+import { useConstellationPositions } from '../../contexts/ConstellationPositionsContext';
 import { 
   getConstellationOrbitParams, 
   generateDeterministicTilt,
   circularDistribution 
 } from '../../utils/stellarHierarchy';
 
+const tempVec = new Vector3();
+
 /**
- * ConstellationOrbit - Represents a constellation orbiting its family center
- * Contains multiple NodeOrbits (the actual stellar map nodes)
- * 
- * @param {Object} props
- * @param {Object} props.constellation - Constellation data { name, nodes, index }
- * @param {string} props.familyName - Parent family name (for deterministic generation)
- * @param {number} props.totalConstellations - Total constellations in this family
- * @param {number} props.initialAngle - Starting angle offset
+ * ConstellationOrbit - Represents a constellation orbiting its family center.
+ * Clicking the constellation center focuses the camera on it.
  */
 export default function ConstellationOrbit({ 
   constellation, 
   familyName,
+  family,
   totalConstellations, 
   initialAngle = 0
 }) {
+  const pivotRef = useRef();
   const { speedFactor } = useSpeedControl();
+  const { setFocus } = useFocus();
+  const { setConstellationPosition } = useConstellationPositions();
   const { radius, speed, tilt } = getConstellationOrbitParams(
     constellation.index, 
     totalConstellations
   );
   
-  // Deterministic tilt based on constellation name
   const deterministicTilt = generateDeterministicTilt(
     `${familyName}-${constellation.name}`, 
     [-0.4, 0.4]
   );
   
-  // Distribute nodes evenly around the constellation center
+  useFrame(() => {
+    if (pivotRef.current) {
+      pivotRef.current.getWorldPosition(tempVec);
+      const key = constellation.id || `${familyName}-${constellation.name}`;
+      setConstellationPosition(key, [tempVec.x, tempVec.y, tempVec.z]);
+    }
+  });
+  
   const nodeDistribution = circularDistribution(constellation.nodes.length, 1);
+  const constellationKey = constellation.id || `${familyName}-${constellation.name}`;
+
+  const centerContent = (
+    <mesh
+      onClick={(e) => {
+        e.stopPropagation();
+        setFocus({ type: 'constellation', constellation, family });
+      }}
+      onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
+      onPointerOut={() => { document.body.style.cursor = 'default'; }}
+    >
+      <sphereGeometry args={[1, 16, 16]} />
+      <meshBasicMaterial transparent opacity={0} />
+    </mesh>
+  );
   
   return (
     <CelestialPivot
+      ref={pivotRef}
       radius={radius}
       speed={speed * speedFactor}
       tilt={deterministicTilt}
       initialAngle={initialAngle}
       position={[0, 0, 0]}
+      centerContent={centerContent}
     >
-      {/* Constellation center marker (optional) */}
-      {/* <mesh>
-        <sphereGeometry args={[0.2, 16, 16]} />
-        <meshStandardMaterial 
-          color="#4ecdc4" 
-          emissive="#00ffff" 
-          emissiveIntensity={0.4}
-          transparent
-          opacity={0.5}
-        />
-      </mesh> */}
-      
-      {/* Render all nodes in this constellation */}
       {constellation.nodes.map((node, idx) => {
         const distribution = nodeDistribution[idx];
-        
         return (
           <NodeOrbit
             key={node.id}

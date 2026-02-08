@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
-import { Minimize2, Maximize2 } from 'lucide-react';
+import { Minimize2, Maximize2, Map } from 'lucide-react';
 
 /**
- * Mini-Map Overview Component
+ * Mini-Map Overview Component. Collapsible: when collapsed shows only a toggle button.
  */
 const StellarMapMiniMap = ({
   layout,
@@ -11,9 +11,10 @@ const StellarMapMiniMap = ({
   visible = true
 }) => {
   const [isExpanded, setIsExpanded] = React.useState(false);
+  const [isCollapsed, setIsCollapsed] = React.useState(true);
 
   const viewportRect = useMemo(() => {
-    if (!viewBox || !layout.bounds) return null;
+    if (!viewBox || !layout?.bounds) return null;
     const mapWidth = Math.abs(layout.bounds.maxX - layout.bounds.minX) || 1000;
     const mapHeight = Math.abs(layout.bounds.maxY - layout.bounds.minY) || 1000;
     const offsetX = layout.bounds.minX || 0;
@@ -25,9 +26,38 @@ const StellarMapMiniMap = ({
     const height = (viewBox.height / mapHeight) * (isExpanded ? 300 : 150);
     
     return { x, y, width, height };
-  }, [viewBox, layout.bounds, isExpanded]);
+  }, [viewBox, layout?.bounds, isExpanded]);
 
-  if (!visible || !layout.families.length) return null;
+  if (!visible) return null;
+
+  if (isCollapsed) {
+    return (
+      <div className="fixed bottom-4 left-4 z-40">
+        <button
+          type="button"
+          onClick={() => setIsCollapsed(false)}
+          className="p-2.5 rounded-lg bg-black/90 backdrop-blur-sm border border-white/20 text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+          aria-label="Afficher la mini-carte"
+        >
+          <Map size={18} />
+        </button>
+      </div>
+    );
+  }
+
+  if (!layout?.families?.length) {
+    return (
+      <div className="fixed bottom-4 left-4 z-40 bg-black/90 backdrop-blur-sm rounded-lg border border-white/20 p-3">
+        <div className="flex items-center justify-between">
+          <span className="text-white text-xs">Overview</span>
+          <button type="button" onClick={() => setIsCollapsed(true)} className="text-white/60 hover:text-white">
+            <Minimize2 size={14} />
+          </button>
+        </div>
+        <p className="text-white/50 text-xs mt-1">Chargement…</p>
+      </div>
+    );
+  }
 
   const size = isExpanded ? 300 : 150;
 
@@ -39,13 +69,24 @@ const StellarMapMiniMap = ({
     >
       <div className="flex items-center justify-between mb-2">
         <span className="text-white text-xs font-medium">Overview</span>
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="text-white/60 hover:text-white transition-colors"
-          aria-label={isExpanded ? 'Minimize' : 'Expand'}
-        >
-          {isExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="text-white/60 hover:text-white transition-colors p-1"
+            aria-label={isExpanded ? 'Minimize' : 'Expand'}
+          >
+            {isExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsCollapsed(true)}
+            className="text-white/60 hover:text-white transition-colors p-1"
+            aria-label="Replier la mini-carte"
+          >
+            <span className="text-xs">×</span>
+          </button>
+        </div>
       </div>
 
       <svg

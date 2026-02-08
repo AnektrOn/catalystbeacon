@@ -13,9 +13,9 @@ const StellarMapBreadcrumb = ({
 }) => {
   const breadcrumbs = [
     { label: currentCore || 'Stellar Map', type: 'core', data: currentCore },
-    selectedFamily && { label: selectedFamily, type: 'family', data: selectedFamily },
-    selectedConstellation && { label: selectedConstellation, type: 'constellation', data: selectedConstellation },
-    selectedNode && { label: selectedNode.title || selectedNode, type: 'node', data: selectedNode }
+    selectedFamily && { label: typeof selectedFamily === 'string' ? selectedFamily : selectedFamily?.name, type: 'family', data: selectedFamily },
+    selectedConstellation && { label: typeof selectedConstellation === 'string' ? selectedConstellation : selectedConstellation?.name, type: 'constellation', data: { constellation: selectedConstellation, family: selectedFamily } },
+    selectedNode && { label: selectedNode.title || selectedNode?.id, type: 'node', data: selectedNode }
   ].filter(Boolean);
 
   if (breadcrumbs.length <= 1) return null;

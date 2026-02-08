@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 
 export default function IntroText() {
   const [isVisible, setIsVisible] = useState(false);
@@ -20,11 +19,9 @@ export default function IntroText() {
   if (!display) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: isVisible ? 1 : 0 }}
-      transition={{ duration: 0.2 }}
-      className="absolute top-0 left-0 bottom-0 right-0 flex flex-col justify-center items-center opacity-95 z-10"
+    <div
+      className="absolute top-0 left-0 bottom-0 right-0 flex flex-col justify-center items-center opacity-95 z-10 transition-opacity duration-200"
+      style={{ opacity: isVisible ? 0.95 : 0 }}
     >
       <h1 className="tracking-tight font-semibold text-2xl md:text-5xl lg:text-7xl xl:text-8xl">
         <span className="text-white">Welcome to the </span>
@@ -32,6 +29,6 @@ export default function IntroText() {
           Solar System
         </span>
       </h1>
-    </motion.div>
+    </div>
   );
 }

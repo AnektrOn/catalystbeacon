@@ -5,21 +5,29 @@ import { Vector3 } from 'three';
 import { useSelectedNode } from '../../contexts/SelectedNodeContext';
 import { useNodePositions } from '../../contexts/NodePositionsContext';
 import { useCameraContext } from '../../contexts/CameraContext';
+import { useFocus } from '../../contexts/FocusContext';
+import { useFamilyPositions } from '../../contexts/FamilyPositionsContext';
+import { useConstellationPositions } from '../../contexts/ConstellationPositionsContext';
 import { useCameraSetup } from '../../hooks/useCameraSetup';
 
 const NODE_VIEW_MIN_DISTANCE = 3;
 const NODE_VIEW_MAX_DISTANCE = 15;
+const FOCUS_TARGET_LERP = 0.03;
 
 export default function CameraController() {
   useCameraSetup();
 
   const orbitControlsRef = useRef(null);
-  const invisibleTargetRef = useRef(new Vector3()).current;
+  const invisibleTargetRef = useRef(new Vector3(0, 0, 0)).current;
+  const focusTargetRef = useRef(new Vector3(0, 0, 0)).current;
 
   const { camera } = useThree();
   const [selectedNode] = useSelectedNode();
   const { nodePositions } = useNodePositions();
   const { cameraState, setCameraState } = useCameraContext();
+  const { focus } = useFocus();
+  const { familyPositions } = useFamilyPositions();
+  const { constellationPositions } = useConstellationPositions();
   const homePosition = useRef(new Vector3(0, 35, 55)).current;
   const lerpFactor = 0.06;
   const cameraPositionEpsilon = 0.5;
@@ -41,6 +49,18 @@ export default function CameraController() {
       case 'FREE':
         controls.enabled = true;
         controls.maxDistance = Infinity;
+        if (focus === 'sun') {
+          focusTargetRef.set(0, 0, 0);
+        } else if (focus?.type === 'family' && focus.family?.name && familyPositions[focus.family.name]) {
+          const [x, y, z] = familyPositions[focus.family.name];
+          focusTargetRef.set(x, y, z);
+        } else if (focus?.type === 'constellation' && focus.constellation && focus.family) {
+          const key = focus.constellation.id || `${focus.family.name}-${focus.constellation.name}`;
+          const pos = constellationPositions[key];
+          if (pos) focusTargetRef.set(...pos);
+        }
+        invisibleTargetRef.lerp(focusTargetRef, FOCUS_TARGET_LERP);
+        controls.target.copy(invisibleTargetRef);
         controls.update();
         break;
 

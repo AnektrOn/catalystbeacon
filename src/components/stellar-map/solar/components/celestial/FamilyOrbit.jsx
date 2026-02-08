@@ -1,65 +1,78 @@
+import { useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { Vector3 } from 'three';
 import CelestialPivot from './CelestialPivot';
 import ConstellationOrbit from './ConstellationOrbit';
 import { useSpeedControl } from '../../contexts/SpeedControlContext';
+import { useFocus } from '../../contexts/FocusContext';
+import { useFamilyPositions } from '../../contexts/FamilyPositionsContext';
 import { 
   getFamilyOrbitParams, 
   generateDeterministicTilt,
   circularDistribution 
 } from '../../utils/stellarHierarchy';
 
+const tempVec = new Vector3();
+
 /**
  * FamilyOrbit - Represents a constellation family orbiting the sun
- * Contains multiple ConstellationOrbits as children
- * 
- * @param {Object} props
- * @param {Object} props.family - Family data { name, constellations, index }
- * @param {number} props.totalFamilies - Total number of families (for spacing)
+ * Contains multiple ConstellationOrbits as children.
+ * Clicking the family center focuses the camera on this family.
  */
 export default function FamilyOrbit({ family, totalFamilies }) {
+  const pivotRef = useRef();
   const { speedFactor } = useSpeedControl();
+  const { setFocus } = useFocus();
+  const { setFamilyPosition } = useFamilyPositions();
   const { radius, speed, tilt } = getFamilyOrbitParams(family.index, totalFamilies);
   
-  // Deterministic tilt based on family name for consistency
   const deterministicTilt = generateDeterministicTilt(family.name, [-0.3, 0.3]);
-  
-  // Calculate initial angle based on family index for even distribution
   const initialAngle = (family.index / totalFamilies) * Math.PI * 2;
   
-  // Distribute constellations around the family center
+  useFrame(() => {
+    if (pivotRef.current) {
+      pivotRef.current.getWorldPosition(tempVec);
+      setFamilyPosition(family.name, [tempVec.x, tempVec.y, tempVec.z]);
+    }
+  });
+  
   const constellationDistribution = circularDistribution(
     family.constellations.length, 
-    1 // Relative radius, actual radius calculated in ConstellationOrbit
+    1
+  );
+
+  const centerContent = (
+    <mesh
+      onClick={(e) => {
+        e.stopPropagation();
+        setFocus({ type: 'family', family });
+      }}
+      onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
+      onPointerOut={() => { document.body.style.cursor = 'default'; }}
+    >
+      <sphereGeometry args={[2, 16, 16]} />
+      <meshBasicMaterial transparent opacity={0} />
+    </mesh>
   );
   
   return (
     <CelestialPivot
+      ref={pivotRef}
       radius={radius}
       speed={speed * speedFactor}
       tilt={deterministicTilt}
       initialAngle={initialAngle}
       position={[0, 0, 0]}
+      centerContent={centerContent}
     >
-      {/* Family center marker (optional visual aid) */}
-      {/* <mesh>
-        <sphereGeometry args={[0.3, 16, 16]} />
-        <meshStandardMaterial 
-          color="#ff6b6b" 
-          emissive="#ff0000" 
-          emissiveIntensity={0.5}
-          transparent
-          opacity={0.6}
-        />
-      </mesh> */}
-      
-      {/* Render all constellations in this family */}
       {family.constellations.map((constellation, idx) => {
         const distribution = constellationDistribution[idx];
-        
         return (
           <ConstellationOrbit
             key={`${family.name}-${constellation.name}-${idx}`}
             constellation={constellation}
             familyName={family.name}
+            family={family}
             totalConstellations={family.constellations.length}
             initialAngle={distribution.angle}
           />

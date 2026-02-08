@@ -5,14 +5,19 @@ import IncomingCall from '../components/entry/IPhoneIncomingCall'
 import AnsweredCall from '../components/entry/IPhoneAnsweredCall'
 import EntityScene from '../components/entry/EntityScene'
 import TypingEffect from '../components/entry/TypingEffect'
+import { EntryDitheringBackground } from '../components/entry/EntryDitheringBackground'
 import { Button } from '../components/ui/button'
 import { startRingVibration } from '../utils/haptics'
 import './MatrixEntryPage.css'
 
-// Sons : fichiers dans public/assets/ (ou à la racine assets/ copiés vers public/assets/)
+// Sons : fichiers dans public/assets/
 const CALL_AUDIO_URL = '/assets/Voix%202%20Entry.mp3'
 const NOTIFICATION_SOUND_URL = '/assets/mixkit-message-pop-alert-2354.mp3'
 const INCOMING_CALL_SOUND_URL = '/assets/11L-cellphone_ringing_vibrate-17172534.mp3'
+const AMBIENT_AUDIO_URL = '/assets/' + encodeURIComponent('Tessa - Steve Jablonsky (Extended Version).mp3')
+const GLITCH_AUDIO_URL = '/assets/b28apq4s5n5-glitching-sfx-8.mp3' // son glitch en boucle (mettre ton fichier dans public/assets/)
+const ACCEPT_TO_VOICE_DELAY_MS = 1500   // secondes avant que la voix commence après avoir décroché
+const VOICE_END_TO_MESSAGE_MS = 1500    // secondes après la fin de l'audio avant "Connection Finished"
 
 // Generate simple notification sound using Web Audio API
 const generateNotificationSound = () => {
@@ -81,6 +86,7 @@ const MatrixEntryPage = () => {
   const canvasRef = useRef(null)
 
   const [currentAct, setCurrentAct] = useState('act1') // act1 | act2 | act3
+  const [act1Started, setAct1Started] = useState(false) // true après premier tap (débloque l’audio)
   const [popups, setPopups] = useState([])
   const [showAct1Text, setShowAct1Text] = useState(false)
   const [showAct2Text, setShowAct2Text] = useState(false)
@@ -93,7 +99,10 @@ const MatrixEntryPage = () => {
   const incomingCallSoundRef = useRef(null)
   const incomingCallOscillatorRef = useRef(null)
   const audioContextRef = useRef(null)
+  const ambientSoundRef = useRef(null)
+  const glitchSoundRef = useRef(null)
   const stopVibrationRef = useRef(null)
+  const incomingCallRingTimeoutRef = useRef(null)
   const [speakerOn, setSpeakerOn] = useState(false)
   const callAudioContextRef = useRef(null)
   const callAudioFilterRef = useRef(null)
@@ -101,9 +110,7 @@ const MatrixEntryPage = () => {
 
   const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
-  // Initialize audio elements on mount (chaque ref = un seul fichier)
-  // IMPORTANT: notificationSoundRef et incomingCallSoundRef sont créés ici en JS (new Audio),
-  // pas via <audio ref={...} />, pour éviter que React écrase la ref avec un élément sans src.
+  // Initialize audio elements on mount
   useEffect(() => {
     if (!audioRef.current) {
       audioRef.current = new Audio()
@@ -121,8 +128,19 @@ const MatrixEntryPage = () => {
       incomingCallSoundRef.current.loop = true
       incomingCallSoundRef.current.volume = 0.6
     }
+    if (!ambientSoundRef.current) {
+      ambientSoundRef.current = new Audio(AMBIENT_AUDIO_URL)
+      ambientSoundRef.current.preload = 'auto'
+      ambientSoundRef.current.loop = true
+      ambientSoundRef.current.volume = 0.25
+    }
+    if (!glitchSoundRef.current) {
+      glitchSoundRef.current = new Audio(GLITCH_AUDIO_URL)
+      glitchSoundRef.current.preload = 'auto'
+      glitchSoundRef.current.loop = true
+      glitchSoundRef.current.volume = 0.15
+    }
 
-    // Enable audio on first user interaction (browser autoplay policy)
     const enableAudio = async () => {
       try {
         if (notificationSoundRef.current) {
@@ -130,13 +148,18 @@ const MatrixEntryPage = () => {
           notificationSoundRef.current.pause()
           notificationSoundRef.current.currentTime = 0
         }
-      } catch (err) {
-        // Autoplay bloqué, sera débloqué au premier clic
-      }
+        if (ambientSoundRef.current) {
+          ambientSoundRef.current.play().catch(() => {})
+        }
+        if (glitchSoundRef.current) {
+          glitchSoundRef.current.play().catch(() => {})
+        }
+      } catch (err) {}
     }
 
     const handleInteraction = async () => {
       await enableAudio()
+      setAct1Started(true)
       document.removeEventListener('click', handleInteraction)
       document.removeEventListener('touchstart', handleInteraction)
       document.removeEventListener('keydown', handleInteraction)
@@ -220,17 +243,24 @@ const MatrixEntryPage = () => {
   }
 
   const stopIncomingCallRing = () => {
+    if (incomingCallRingTimeoutRef.current) {
+      clearTimeout(incomingCallRingTimeoutRef.current)
+      incomingCallRingTimeoutRef.current = null
+    }
     if (stopVibrationRef.current) {
       stopVibrationRef.current()
       stopVibrationRef.current = null
     }
-    if (incomingCallSoundRef.current) {
-      incomingCallSoundRef.current.pause()
-      incomingCallSoundRef.current.currentTime = 0
-    }
     if (incomingCallOscillatorRef.current) {
       clearInterval(incomingCallOscillatorRef.current)
       incomingCallOscillatorRef.current = null
+    }
+    if (incomingCallSoundRef.current) {
+      const audio = incomingCallSoundRef.current
+      audio.pause()
+      audio.currentTime = 0
+      audio.src = ''
+      audio.load()
     }
   }
 
@@ -247,9 +277,8 @@ const MatrixEntryPage = () => {
   }, [currentAct])
 
   useEffect(() => {
-    if (currentAct !== 'act1') return
+    if (currentAct !== 'act1' || !act1Started) return
 
-    // Reset state when entering act1
     setShowAct1Text(false)
     setAct1TypingComplete(false)
 
@@ -298,11 +327,19 @@ const MatrixEntryPage = () => {
       const data = notificationsPool[Math.floor(Math.random() * notificationsPool.length)]
       const y = Math.random() * 70
       setPopups(prev => [...prev, { id, y, ...data }])
-      // Play notification sound
-      playSound(notificationSoundRef, NOTIFICATION_SOUND_URL).catch((err) => {
-        console.log('Using fallback notification sound')
+      // Son de notif : réutiliser l’élément débloqué au premier clic (pas de new Audio = pas bloqué par autoplay)
+      const audio = notificationSoundRef.current
+      if (audio) {
+        try {
+          audio.currentTime = 0
+          audio.volume = 0.5
+          audio.play().catch(() => generateNotificationSound())
+        } catch (_) {
+          generateNotificationSound()
+        }
+      } else {
         generateNotificationSound()
-      })
+      }
     }
 
     const runOverload = async () => {
@@ -322,7 +359,7 @@ const MatrixEntryPage = () => {
     }
 
     runOverload()
-  }, [currentAct])
+  }, [currentAct, act1Started])
 
   const act1Texts = [
     'Did you notice?',
@@ -355,11 +392,17 @@ const MatrixEntryPage = () => {
     runAct2Text()
   }, [currentAct])
 
-  // Jouer la sonnerie d'appel entrant en ACT 3
+  // Jouer la sonnerie en ACT 3 incoming ; l'arrêter dès que callStatus !== 'incoming'
   useEffect(() => {
     if (currentAct === 'act3' && callStatus === 'incoming') {
-      const t = setTimeout(playIncomingCallRing, 150)
-      return () => clearTimeout(t)
+      incomingCallRingTimeoutRef.current = setTimeout(playIncomingCallRing, 150)
+      return () => {
+        if (incomingCallRingTimeoutRef.current) {
+          clearTimeout(incomingCallRingTimeoutRef.current)
+          incomingCallRingTimeoutRef.current = null
+        }
+        stopIncomingCallRing()
+      }
     } else {
       stopIncomingCallRing()
     }
@@ -385,6 +428,14 @@ const MatrixEntryPage = () => {
   }
 
   const handleSkipToLanding = () => {
+    if (ambientSoundRef.current) {
+      ambientSoundRef.current.pause()
+      ambientSoundRef.current.currentTime = 0
+    }
+    if (glitchSoundRef.current) {
+      glitchSoundRef.current.pause()
+      glitchSoundRef.current.currentTime = 0
+    }
     navigate('/landing')
   }
 
@@ -414,34 +465,41 @@ const MatrixEntryPage = () => {
       setCallStatus('audioFinished')
       return
     }
-    try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)()
-      const source = ctx.createMediaElementSource(callAudio)
-      const filter = ctx.createBiquadFilter()
-      filter.type = 'bandpass'
-      filter.frequency.value = 1200
-      filter.Q.value = 1
-      const gainNode = ctx.createGain()
-      gainNode.gain.value = 0.5
-      source.connect(filter)
-      filter.connect(gainNode)
-      gainNode.connect(ctx.destination)
-      callAudioContextRef.current = ctx
-      callAudioFilterRef.current = filter
-      callAudioGainRef.current = gainNode
-      callAudio.src = CALL_AUDIO_URL
-      callAudio.onended = () => setCallStatus('audioFinished')
-      ctx.resume().then(() => {
+    const startCallVoice = () => {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)()
+        const source = ctx.createMediaElementSource(callAudio)
+        const filter = ctx.createBiquadFilter()
+        filter.type = 'bandpass'
+        filter.frequency.value = 1200
+        filter.Q.value = 1
+        const gainNode = ctx.createGain()
+        gainNode.gain.value = 0.5
+        source.connect(filter)
+        filter.connect(gainNode)
+        gainNode.connect(ctx.destination)
+        callAudioContextRef.current = ctx
+        callAudioFilterRef.current = filter
+        callAudioGainRef.current = gainNode
+        callAudio.src = CALL_AUDIO_URL
+        callAudio.onended = () => {
+          // Laisser quelques secondes après la fin de la voix avant d'afficher le message
+          setTimeout(() => setCallStatus('audioFinished'), VOICE_END_TO_MESSAGE_MS)
+        }
+        ctx.resume().then(() => {
+          callAudio.play().catch(() => setTimeout(() => setCallStatus('audioFinished'), 5000))
+        }).catch(() => {
+          callAudio.play().catch(() => setTimeout(() => setCallStatus('audioFinished'), 5000))
+        })
+      } catch (_) {
+        callAudio.src = CALL_AUDIO_URL
+        callAudio.volume = 0.7
+        callAudio.onended = () => setTimeout(() => setCallStatus('audioFinished'), VOICE_END_TO_MESSAGE_MS)
         callAudio.play().catch(() => setTimeout(() => setCallStatus('audioFinished'), 5000))
-      }).catch(() => {
-        callAudio.play().catch(() => setTimeout(() => setCallStatus('audioFinished'), 5000))
-      })
-    } catch (_) {
-      callAudio.src = CALL_AUDIO_URL
-      callAudio.volume = 0.7
-      callAudio.onended = () => setCallStatus('audioFinished')
-      callAudio.play().catch(() => setTimeout(() => setCallStatus('audioFinished'), 5000))
+      }
     }
+    // Délai après "décrocher" avant que la voix commence
+    setTimeout(startCallVoice, ACCEPT_TO_VOICE_DELAY_MS)
   }
 
   useEffect(() => {
@@ -455,21 +513,24 @@ const MatrixEntryPage = () => {
     playIncomingCallRing()
   }
 
-  // Navigation automatique après message final
+  // Navigation automatique après message final + arrêt son d'ambiance
   useEffect(() => {
     if (callStatus === 'audioFinished') {
-      // Afficher message après 1s
-      const timer = setTimeout(() => {
-        setCallStatus('finalMessage')
-      }, 1000)
+      const timer = setTimeout(() => setCallStatus('finalMessage'), 1500)
       return () => clearTimeout(timer)
     }
-    
     if (callStatus === 'finalMessage') {
-      // Naviguer vers /landing après 2s
       const timer = setTimeout(() => {
+        if (ambientSoundRef.current) {
+          ambientSoundRef.current.pause()
+          ambientSoundRef.current.currentTime = 0
+        }
+        if (glitchSoundRef.current) {
+          glitchSoundRef.current.pause()
+          glitchSoundRef.current.currentTime = 0
+        }
         navigate('/landing')
-      }, 2000)
+      }, 2500)
       return () => clearTimeout(timer)
     }
   }, [callStatus, navigate])
@@ -479,9 +540,10 @@ const MatrixEntryPage = () => {
   ======================= */
 
   return (
-    <div className="matrix-entry-page">
+    <div className={`matrix-entry-page${currentAct === 'act3' ? ' act3-no-bg' : ''}`}>
       <canvas id="matrix-canvas" ref={canvasRef} />
-      <div className="glitch-noise"></div>
+      <div className="glitch-noise" aria-hidden="true" />
+      <div className="matrix-entry-glitch" aria-hidden="true" />
 
       {/* Skip button - visible on all acts */}
       <button type="button" className="matrix-entry-skip" onClick={handleSkipToLanding} aria-label="Skip to landing">
@@ -490,7 +552,12 @@ const MatrixEntryPage = () => {
 
       {/* ================= ACTE 1 ================= */}
       {currentAct === 'act1' && (
-        <div className="screen active screen-act1">
+        <div className="screen active screen-act1 matrix-glitch">
+          {!act1Started && (
+            <div className="act1-tap-to-start" aria-live="polite">
+              Tap here
+            </div>
+          )}
           <div className="notif-layer">
             {popups.map(p => (
               <div
@@ -512,25 +579,30 @@ const MatrixEntryPage = () => {
           </div>
 
           {showAct1Text && (
-            <div className="act1-text-container">
-              <TypingEffect 
-                lines={act1Texts}
-                typingSpeed={50}
-                deletionSpeed={30}
-                pauseAfterLine={2000}
-                onComplete={() => setAct1TypingComplete(true)}
-              />
+            <div className="act1-text-container matrix-glitch-text">
+              <div className="matrix-entry-card act1-text-card">
+                <EntryDitheringBackground speed={0.2} />
+                <div className="act1-text-content">
+                  <TypingEffect 
+                    lines={act1Texts}
+                    typingSpeed={50}
+                    deletionSpeed={30}
+                    pauseAfterLine={2000}
+                    onComplete={() => setAct1TypingComplete(true)}
+                  />
 
-              {act1TypingComplete && (
-                <Button 
-                  variant="secondary" 
-                  size="lg" 
-                  onClick={() => setCurrentAct('act2')}
-                  className="act1-cta-button"
-                >
-                  RELEASE MY CHAINS
-                </Button>
-              )}
+                  {act1TypingComplete && (
+                    <Button 
+                      variant="secondary" 
+                      size="lg" 
+                      onClick={() => setCurrentAct('act2')}
+                      className="act1-cta-button"
+                    >
+                      RELEASE MY CHAINS
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -538,31 +610,41 @@ const MatrixEntryPage = () => {
 
       {/* ================= ACTE 2 ================= */}
       {currentAct === 'act2' && (
-        <div className="screen active screen-act2">
+        <div className="screen active screen-act2 matrix-glitch">
           <EntityScene />
 
           <div className="act2-centered">
-            {showAct2Text && (
-              <div className="act2-text-container">
-                <TypingEffect 
-                  lines={act2Texts}
-                  typingSpeed={50}
-                  deletionSpeed={30}
-                  pauseAfterLine={2000}
-                  onComplete={() => setAct2TypingComplete(true)}
-                />
+            {(showAct2Text || act2TypingComplete) && (
+              <div className="matrix-entry-card act2-text-card">
+                <EntryDitheringBackground speed={0.2} />
+                {showAct2Text && (
+                  <div className="act2-text-container matrix-glitch-text">
+                    <TypingEffect 
+                      lines={act2Texts}
+                      typingSpeed={50}
+                      deletionSpeed={30}
+                      pauseAfterLine={2000}
+                      onComplete={() => setAct2TypingComplete(true)}
+                    />
+                  </div>
+                )}
+                {act2TypingComplete && (
+                  <Button 
+                    variant="secondary" 
+                    size="lg" 
+                    onClick={() => {
+                      if (ambientSoundRef.current) {
+                        ambientSoundRef.current.pause()
+                        ambientSoundRef.current.currentTime = 0
+                      }
+                      setCurrentAct('act3')
+                    }}
+                    className="act2-cta-button"
+                  >
+                    WHAT'S THE FIRST STEP?
+                  </Button>
+                )}
               </div>
-            )}
-
-            {act2TypingComplete && (
-              <Button 
-                variant="secondary" 
-                size="lg" 
-                onClick={() => setCurrentAct('act3')}
-                className="act2-cta-button"
-              >
-                WHAT'S THE FIRST STEP?
-              </Button>
             )}
           </div>
         </div>
@@ -575,7 +657,7 @@ const MatrixEntryPage = () => {
             <IncomingCall 
               onAccept={handleAcceptCall}
               onDecline={handleRejectCall}
-              callerPhoto="/assets/image-1105ab57-7722-40da-86ce-f8763e06e471.png"
+              callerPhoto={'/assets/' + encodeURIComponent('20250619_1200_Enigmatic Visionary Logo_remix_01jy35dw3tf658rxk5nxs3kmk5.png')}
             />
           )}
           
@@ -590,22 +672,32 @@ const MatrixEntryPage = () => {
           
           {callStatus === 'declined' && (
             <div className="act3-final-message">
-              <h2>Connection terminée</h2>
-              <Button 
-                variant="secondary" 
-                size="lg" 
-                onClick={handleRappeler}
-                className="act3-rappeler-btn"
-              >
-                Rappeler
-              </Button>
+              <div className="matrix-entry-card act3-final-card">
+                <EntryDitheringBackground speed={0.2} />
+                <div className="act3-final-message-content">
+                  <h2>Connection terminée</h2>
+                  <Button 
+                    variant="secondary" 
+                    size="lg" 
+                    onClick={handleRappeler}
+                    className="act3-rappeler-btn"
+                  >
+                    Rappeler
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
           
           {callStatus === 'audioFinished' && (
             <div className="act3-final-message">
-              <h2>Connection Finished</h2>
-              <p>Rappelle toi c'est gratuit</p>
+              <div className="matrix-entry-card act3-final-card">
+                <EntryDitheringBackground speed={0.2} />
+                <div className="act3-final-message-content">
+                  <h2>Connection Finished</h2>
+                  <p>Rappelle toi c'est gratuit</p>
+                </div>
+              </div>
             </div>
           )}
         </div>
