@@ -10,7 +10,9 @@ const config: CapacitorConfig = {
     // Allow localhost in development
     hostname: process.env.NODE_ENV === 'development' ? 'localhost' : undefined,
     // Clear text traffic allowed for development only
-    cleartext: process.env.NODE_ENV === 'development'
+    cleartext: process.env.NODE_ENV === 'development',
+    // For production Android/iOS store builds, optionally load app from your site so OAuth redirect works:
+    // url: process.env.CAPACITOR_SERVER_URL || 'https://app.humancatalystbeacon.com'
   },
   plugins: {
     SplashScreen: {

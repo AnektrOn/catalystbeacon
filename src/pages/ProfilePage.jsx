@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabaseClient'
-import { User, Star, Flame, Brain, Upload, X, TrendingUp } from 'lucide-react'
+import { User, Star, Flame, Brain, Upload, X, TrendingUp, Settings } from 'lucide-react'
 import toast from 'react-hot-toast'
+import InstituteSorterModal from '../components/InstituteSorterModal'
 import { PolarAngleAxis, PolarGrid, Radar, RadarChart } from "recharts"
 import {
   Card,
@@ -24,9 +25,6 @@ import skillsService from '../services/skillsService'
 import levelsService from '../services/levelsService'
 import useSubscription from '../hooks/useSubscription'
 import SkeletonLoader from '../components/ui/SkeletonLoader'
-import { useOnboarding } from '../contexts/OnboardingContext'
-import ONBOARDING_STEPS from '../constants/onboardingSteps'
-
 const ProfilePage = () => {
   const { user, profile, updateProfile, loading: authLoading } = useAuth()
   const { isFreeUser, isAdmin } = useSubscription()
@@ -65,8 +63,7 @@ const ProfilePage = () => {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
   const [avatarPreview, setAvatarPreview] = useState(profile?.avatar_url || null)
   const avatarInputRef = useRef(null)
-  const { setShowTour, setCurrentStepIndex } = useOnboarding()
-
+  const [showInstituteSorter, setShowInstituteSorter] = useState(false)
 
   // Update form data when profile changes
   useEffect(() => {
@@ -189,31 +186,6 @@ const ProfilePage = () => {
       setLoading(false)
     }
   }
-
-  const handleRetriggerOnboarding = async () => {
-    if (user) {
-      try {
-        setLoading(true);
-        const { error } = await supabase
-          .from('profiles')
-          .update({ has_completed_onboarding: false })
-          .eq('id', user.id);
-        if (error) {
-          toast.error('Error re-triggering onboarding: ' + error.message);
-        } else {
-          toast.success('Onboarding re-triggered!');
-          setShowTour(true);
-          setCurrentStepIndex(0);
-          navigate(ONBOARDING_STEPS[0].route); // Navigate to the first step's route
-        }
-      } catch (err) {
-        console.error('A critical error occurred while re-triggering onboarding:', err);
-        toast.error('Failed to re-trigger onboarding due to a critical error.');
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -675,13 +647,6 @@ const ProfilePage = () => {
 
           <div className="md:col-span-2 flex justify-end items-center gap-4">
             <button
-              type="button"
-              onClick={handleRetriggerOnboarding}
-              className="px-8 py-3 bg-gradient-to-r from-ethereal-violet to-ethereal-cyan hover:from-ethereal-violet/80 hover:to-ethereal-cyan/80 text-white font-bold rounded-xl transition-all duration-200 shadow-ethereal-base hover:shadow-ethereal-hover font-heading uppercase tracking-widest"
-            >
-              Retrigger Onboarding
-            </button>
-            <button
               type="submit"
               disabled={loading}
               className="px-8 py-3 bg-gradient-to-r from-ethereal-cyan to-ethereal-violet hover:from-ethereal-cyan/80 hover:to-ethereal-violet/80 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all duration-200 shadow-ethereal-base hover:shadow-ethereal-hover font-heading uppercase tracking-widest"
@@ -690,7 +655,42 @@ const ProfilePage = () => {
             </button>
           </div>
         </form>
+
+        {/* Roadmap Settings Section */}
+        <div className="bg-ethereal-glass backdrop-blur-ethereal rounded-ethereal p-6 border border-ethereal-border shadow-ethereal-base">
+          <h3 className="text-lg font-semibold text-ethereal-text mb-4 flex items-center font-heading">
+            <Settings className="w-5 h-5 mr-2 text-ethereal-cyan" />
+            Roadmap Settings
+          </h3>
+          <p className="text-sm text-ethereal-text/60 mb-4 font-medium">
+            Customize your learning journey by reordering your institute priorities. This determines the order of lessons in your roadmap.
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowInstituteSorter(true)}
+            className="px-6 py-3 bg-gradient-to-r from-ethereal-cyan to-ethereal-violet text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-ethereal-cyan/30 transition-all duration-200 flex items-center gap-2"
+          >
+            <Settings size={18} />
+            Reorder Institutes
+          </button>
+        </div>
       </div>
+
+      {/* Institute Sorter Modal */}
+      {showInstituteSorter && (
+        <InstituteSorterModal
+          onClose={() => setShowInstituteSorter(false)}
+          onSave={(newPriority) => {
+            setShowInstituteSorter(false);
+            toast.success('Institute priority updated! Your roadmap will refresh.');
+            // The modal already saves to database, just refresh the page to show updated roadmap
+            // Could be optimized to update state instead of full reload
+            setTimeout(() => {
+              window.location.reload();
+            }, 500);
+          }}
+        />
+      )}
     </div>
   )
 }

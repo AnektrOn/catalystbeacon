@@ -36,10 +36,15 @@ export const useRoadmapLessonTracking = (
    */
   const findScrollContainer = useCallback(() => {
     // Try multiple selectors to find the scroll container
-    // 1. Desktop: .glass-main-panel
-    let scrollContainer = document.querySelector('.glass-main-panel');
-    
-    // 2. Mobile: AppShellMobile main > div (the overflow-auto container)
+    // 1. Course player: the actual lesson content scroll area (most reliable)
+    let scrollContainer = document.querySelector('[data-lesson-scroll-container]');
+
+    // 2. Desktop: .glass-main-panel (legacy layout)
+    if (!scrollContainer) {
+      scrollContainer = document.querySelector('.glass-main-panel');
+    }
+
+    // 3. Mobile: AppShellMobile main > div (the overflow-auto container)
     if (!scrollContainer) {
       const main = document.querySelector('main');
       if (main) {
@@ -69,7 +74,7 @@ export const useRoadmapLessonTracking = (
       }
     }
     
-    // 3. Try to find any scrollable container in the lesson content area
+    // 4. Try to find any scrollable container in the lesson content area
     if (!scrollContainer) {
       const lessonContent = document.querySelector('[class*="overflow-y-auto"]');
       if (lessonContent) {
@@ -80,7 +85,7 @@ export const useRoadmapLessonTracking = (
       }
     }
     
-    // 4. Verify the container is actually scrollable
+    // 5. Verify the container is actually scrollable
     if (scrollContainer && scrollContainer !== 'window') {
       const isScrollable = scrollContainer.scrollHeight > scrollContainer.clientHeight;
       if (!isScrollable) {
@@ -89,7 +94,7 @@ export const useRoadmapLessonTracking = (
       }
     }
     
-    // 5. Fallback: use window/document for mobile if no container found
+    // 6. Fallback: use window/document for mobile if no container found
     // On mobile, sometimes the entire page scrolls
     if (!scrollContainer) {
       // Check if window/document is scrollable

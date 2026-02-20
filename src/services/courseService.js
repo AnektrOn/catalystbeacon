@@ -465,20 +465,30 @@ class CourseService {
    */
   async getCourseDescriptions(courseId) {
     try {
+      const id = courseId != null ? parseInt(courseId, 10) : NaN;
+      const skip = Number.isNaN(id) || id < 1;
+      if (skip) {
+        return { data: null, error: null };
+      }
+
       const { data, error } = await supabase
         .from('course_description')
         .select('*')
-        .eq('course_id', parseInt(courseId))
+        .eq('course_id', id)
         .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
-        logError('Error fetching course descriptions:', error);
-        throw error;
+      // PGRST205 = relation does not exist; 404 / not found = no row: treat as no description
+      if (error) {
+        if (error.code === 'PGRST205' || error.code === 'PGRST116' || (error.message && (error.message.includes('404') || error.message.toLowerCase().includes('not found')))) {
+          return { data: null, error: null };
+        }
+        logError(error, 'getCourseDescriptions');
+        return { data: null, error };
       }
       return { data: data || null, error: null };
-    } catch (error) {
-      logError('Exception fetching course descriptions:', error);
-      return { data: null, error: null };
+    } catch (err) {
+      logError(err, 'getCourseDescriptions (exception)');
+      return { data: null, error: err };
     }
   }
 
@@ -533,9 +543,12 @@ class CourseService {
         return { data: null, error: null };
       }
 
-      // Get course descriptions
+      // Get course descriptions (non-blocking: missing table or row is ok)
       const { data: descriptions, error: descError } = await this.getCourseDescriptions(course.course_id);
-      if (descError) throw descError;
+      if (descError) {
+        logError(descError, 'getLessonDescription');
+        return { data: null, error: null };
+      }
 
       if (!descriptions) {
         return { data: null, error: null };
@@ -553,8 +566,8 @@ class CourseService {
         error: null
       };
     } catch (error) {
-      logError('Error fetching lesson description:', error);
-      return { data: null, error };
+      logError(error, 'getLessonDescription');
+      return { data: null, error: null };
     }
   }
 
@@ -1077,7 +1090,7 @@ class CourseService {
   async _getCourseCatalogDataFallback(userId) {
     try {
       const [profileRes, schoolsRes, coursesRes, progressRes] = await Promise.all([
-        supabase.from('profiles').select('current_xp').eq('id', userId).single(),
+        supabase.from('profiles').select('current_xp').eq('id', userId).maybeSingle(),
         supabase.from('schools').select('*').order('order_index', { ascending: true }),
         this.getAllCourses({}), // all published courses with structure (no user filter)
         supabase

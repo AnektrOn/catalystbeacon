@@ -175,7 +175,7 @@ const CosmicLoader = ({ fullScreen = true, message = "Loading your journey..." }
       </div>
 
       {/* CSS Animations */}
-      <style jsx>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @keyframes pulse {
           0%, 100% {
             opacity: 0.4;
@@ -215,7 +215,7 @@ const CosmicLoader = ({ fullScreen = true, message = "Loading your journey..." }
             opacity: 1;
           }
         }
-      `}</style>
+      ` }} />
     </div>
   )
 }

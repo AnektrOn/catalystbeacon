@@ -15,7 +15,8 @@ const CALL_AUDIO_URL = '/assets/Voix%202%20Entry.mp3'
 const NOTIFICATION_SOUND_URL = '/assets/mixkit-message-pop-alert-2354.mp3'
 const INCOMING_CALL_SOUND_URL = '/assets/11L-cellphone_ringing_vibrate-17172534.mp3'
 const AMBIENT_AUDIO_URL = '/assets/' + encodeURIComponent('Tessa - Steve Jablonsky (Extended Version).mp3')
-const GLITCH_AUDIO_URL = '/assets/b28apq4s5n5-glitching-sfx-8.mp3' // son glitch en boucle (mettre ton fichier dans public/assets/)
+// Glitch loop: use existing asset (replace with b28apq4s5n5-glitching-sfx-8.mp3 in public/assets/ if you have it)
+const GLITCH_AUDIO_URL = '/assets/czy8je37m6b-heaven-sfx-10.mp3'
 const ACCEPT_TO_VOICE_DELAY_MS = 1500   // secondes avant que la voix commence après avoir décroché
 const VOICE_END_TO_MESSAGE_MS = 1500    // secondes après la fin de l'audio avant "Connection Finished"
 

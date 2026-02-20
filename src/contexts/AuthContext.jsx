@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { supabase } from '../lib/supabaseClient'
 import toast from 'react-hot-toast'
 import { pushNotificationService } from '../services/pushNotificationService'
+import { getAuthRedirectBaseUrl } from '../utils/authRedirect'
 // import { logDebug, logInfo, logWarn, logError } from '../utils/logger'
 
 // Safe cache access - returns null if DataCacheProvider is not available
@@ -43,27 +44,43 @@ const AuthProviderComponent = ({ children }) => {
 
       // logDebug('📧 createDefaultProfile: User email found:', user.email)
 
-      // Check if profile already exists
+      // Check if profile already exists (maybeSingle avoids 406 when 0 rows)
       const { data: existingProfile } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single()
+        .maybeSingle()
 
       if (existingProfile) {
-        // logDebug('✅ createDefaultProfile: Profile already exists:', existingProfile)
-        setProfile(existingProfile)
+        // If profile exists but missing name/avatar (e.g. created without trigger), fill from auth
+        const fullName = user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email?.split('@')[0]
+        const avatarUrl = user.user_metadata?.avatar_url ?? user.user_metadata?.picture
+        const needsUpdate = (fullName && !existingProfile.full_name) || (avatarUrl && !existingProfile.avatar_url)
+        if (needsUpdate) {
+          const updates = { ...(fullName && { full_name: fullName }), ...(avatarUrl && { avatar_url: avatarUrl }) }
+          const { data: updated } = await supabase.from('profiles').update(updates).eq('id', userId).select().single()
+          if (updated) setProfile(updated)
+          else setProfile(existingProfile)
+        } else {
+          setProfile(existingProfile)
+        }
         return
       }
 
       // logDebug('🆕 createDefaultProfile: Creating new profile...')
 
-      // Create new profile (insert only safe, guaranteed columns to avoid schema mismatches)
+      // From OAuth (Google): user_metadata has full_name, name, avatar_url, picture
+      const fullName = user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email?.split('@')[0] ?? ''
+      const avatarUrl = user.user_metadata?.avatar_url ?? user.user_metadata?.picture ?? null
+
+      // Create new profile with id, email, full_name, avatar_url so it's not a "dump" account
       const { data, error } = await supabase
         .from('profiles')
         .insert({
           id: userId,
-          email: user.email
+          email: user.email,
+          ...(fullName && { full_name: fullName }),
+          ...(avatarUrl && { avatar_url: avatarUrl })
         })
         .select()
         .single()
@@ -134,27 +151,28 @@ const AuthProviderComponent = ({ children }) => {
           .from('profiles')
           .select('*')
           .eq('id', userId)
-          .single()
+          .maybeSingle()
       )
 
       if (error) {
-        if (error.code === 'PGRST116') {
-          // Profile doesn't exist, create a default one
-          // logDebug('📝 fetchProfile: Profile not found, creating default profile for user:', userId)
-          await createDefaultProfile(userId)
-          return
-        }
-        
-        // Retry on transient errors (network issues, temporary failures)
-        if (retryCount < MAX_RETRIES && (error.code === 'PGRST301' || error.message?.includes('network') || error.message?.includes('timeout'))) {
-          // logWarn(`⏳ fetchProfile: Retrying (${retryCount + 1}/${MAX_RETRIES})...`)
+        // Network/DB/server errors: retry on timeout, network, or 500 (server/trigger may be temporary)
+        const isRetryable =
+          error.code === 'PGRST301' ||
+          error.message?.includes('network') ||
+          error.message?.includes('timeout') ||
+          error.message?.includes('500') ||
+          (error.message && error.message.toLowerCase().includes('internal'))
+        if (retryCount < MAX_RETRIES && isRetryable) {
           await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)))
           return fetchProfile(userId, retryCount + 1)
         }
-        
-        // logError(error, 'fetchProfile - Error fetching profile')
-        // logDebug('Error details:', error.message, error.code, error.details)
-        // Don't clear profile on error - preserve existing state to prevent UI flicker
+        // Don't treat as profile exists; avoid surfacing unhandled error to UI
+        return
+      }
+
+      if (!data) {
+        // Profile doesn't exist, create a default one
+        await createDefaultProfile(userId)
         return
       }
 
@@ -224,6 +242,23 @@ const AuthProviderComponent = ({ children }) => {
         clearTimeout(forceTimeout)
         setLoading(false)
       }
+    }
+
+    // OAuth callback error: Supabase redirects to redirectTo with hash like #error=...&error_description=...
+    try {
+      const hash = window.location.hash?.slice(1) || ''
+      if (hash) {
+        const params = new URLSearchParams(hash)
+        const errorCode = params.get('error_code') || params.get('error')
+        const errorDesc = params.get('error_description') || params.get('error_description')
+        if (errorCode || errorDesc) {
+          const msg = errorDesc || errorCode || 'Sign-in failed'
+          toast.error(msg)
+          window.history.replaceState(null, '', window.location.pathname + window.location.search)
+        }
+      }
+    } catch (e) {
+      // ignore
     }
 
     // Helper to wrap promises with timeout
@@ -497,8 +532,10 @@ const AuthProviderComponent = ({ children }) => {
         throw new Error('Unexpected signup response')
       }
     } catch (error) {
-      // logError(error, 'Sign up error')
-      toast.error(error.message)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Sign up error:', error?.message || error, error)
+      }
+      toast.error(error?.message || 'Inscription impossible')
       return { data: null, error }
     }
   }
@@ -535,8 +572,10 @@ const AuthProviderComponent = ({ children }) => {
       
       return { data, error: null }
     } catch (error) {
-      // logError(error, 'Sign in error')
-      toast.error(error.message)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Sign in error:', error?.message || error, error)
+      }
+      toast.error(error?.message || 'Connexion impossible')
       return { data: null, error }
     }
   }
@@ -567,7 +606,7 @@ const AuthProviderComponent = ({ children }) => {
   const resetPassword = async (email) => {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`
+        redirectTo: `${getAuthRedirectBaseUrl()}/reset-password`
       })
 
       if (error) throw error
@@ -608,12 +647,15 @@ const AuthProviderComponent = ({ children }) => {
 
   const signInWithGoogle = async () => {
     try {
-      // logDebug('🔐 signInWithGoogle: Starting Google OAuth flow...')
-      
+      // On native (Android/iOS), use a fixed URL so Supabase/Google allow the redirect.
+      // Add this URL to Supabase Redirect URLs and (if custom scheme) to Android intent filters.
+      // See OAUTH_SETUP.md and ANDROID_OAUTH.md.
+      const baseUrl = getAuthRedirectBaseUrl()
+      const redirectTo = `${baseUrl}/dashboard`
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`
+          redirectTo
         }
       })
 
@@ -625,8 +667,10 @@ const AuthProviderComponent = ({ children }) => {
       // Welcome email will be sent if it's a new user (detected in fetchProfile)
       return { data, error: null }
     } catch (error) {
-      // logError(error, 'Sign in with Google error')
-      toast.error(error.message || 'Failed to sign in with Google')
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Sign in with Google error:', error?.message || error, error)
+      }
+      toast.error(error?.message || 'Connexion Google impossible')
       return { data: null, error }
     }
   }

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePageTransition } from '../../contexts/PageTransitionContext';
 import { supabase } from '../../lib/supabaseClient';
@@ -8,8 +8,9 @@ import useSubscription from '../../hooks/useSubscription';
 import NeuralNode from './NeuralNode';
 import NeuralCanvas from './NeuralCanvas';
 import MissionModal from './MissionModal';
-import InstituteSorterModal from '../InstituteSorterModal';
+const InstituteSorterModal = React.lazy(() => import('../InstituteSorterModal'));
 import CompletionAnimation from './CompletionAnimation';
+import toast from 'react-hot-toast';
 import './NeuralPathRoadmap.css';
 
 const CONFIG = {
@@ -28,10 +29,15 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition', schoolConfig = null }) =
   const { isFreeUser } = useSubscription();
   const { endTransition } = usePageTransition();
   const navigate = useNavigate();
+  const location = useLocation();
   const mapContainerRef = useRef(null);
   const canvasRef = useRef(null);
   const recenterBtnRef = useRef(null);
   const animationFrameRef = useRef(null);
+  const scrollToActiveAfterUpdateRef = useRef(false);
+  const lessonsRef = useRef([]);
+  const completionHandledRef = useRef(false);
+  const skipNormalLoadAfterCompletionRef = useRef(false);
 
   const [lessons, setLessons] = useState([]);
   const [nodes, setNodes] = useState([]);
@@ -51,59 +57,92 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition', schoolConfig = null }) =
     const loadUserData = async () => {
       if (!user) return;
 
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('current_xp, total_xp_earned, institute_priority')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
+      if (profileError) {
+        setInstitutePriority([]);
+        setShowInstituteSorter(true);
+        return;
+      }
       if (profile) {
         setUserXP(profile.current_xp || profile.total_xp_earned || 0);
-        setInstitutePriority(profile.institute_priority);
-        // Show sorter if priority is null or empty
-        if (!profile.institute_priority || profile.institute_priority.length === 0) {
+        const priority = profile.institute_priority || [];
+        setInstitutePriority(priority);
+        if (!priority || priority.length === 0) {
           setShowInstituteSorter(true);
         }
+      } else {
+        setInstitutePriority([]);
+        setShowInstituteSorter(true);
       }
     };
 
     loadUserData();
   }, [user]);
 
-  // Check for completion from URL params
+  // Completion: prefer location.state (set by CompleteLessonModal) so we avoid URL/effect races; fallback to URL params.
   useEffect(() => {
-    if (!lessons.length) return;
-
+    const fromState = location.state?.fromCompletion && location.state?.lessonId;
     const params = new URLSearchParams(window.location.search);
-    const completed = params.get('completed');
-    const lessonId = params.get('lessonId');
-    const xp = params.get('xp');
+    const fromUrl = params.get('completed') === 'true' && params.get('lessonId');
+    const lessonId = fromState ? location.state.lessonId : params.get('lessonId');
+    const nextLessonId = fromState ? (location.state.nextLessonId ?? null) : params.get('nextLessonId');
+    const xp = fromState ? (location.state.xp ?? 0) : parseInt(params.get('xp'), 10) || 0;
 
-    if (completed === 'true' && lessonId) {
-      // Find the completed lesson
-      const lesson = lessons.find(l =>
-        `${l.course_id}-${l.chapter_number}-${l.lesson_number}` === lessonId
-      );
-
-      if (lesson) {
-        setCompletedLesson({
-          lesson,
-          xp: parseInt(xp) || lesson.lesson_xp_reward || 0
-        });
-        setShowCompletion(true);
-
-        // Clean URL
-        window.history.replaceState({}, '', window.location.pathname);
-      }
+    if (!lessonId) {
+      completionHandledRef.current = false;
+      return;
     }
-  }, [lessons]);
+    if (!fromState && !fromUrl) return;
+    if (!user) return;
+    if (institutePriority === null) return; // wait for loadUserData
+    if (completionHandledRef.current) return;
+    completionHandledRef.current = true;
 
-  // Initialize
+    // Build completedLesson (support negative course_id e.g. "-1999533944-1-1")
+    const parts = lessonId.split('-');
+    let course_id; let chapter_number; let lesson_number;
+    if (parts[0] === '' && parts.length >= 4) {
+      course_id = -parseInt(parts[1], 10);
+      chapter_number = parseInt(parts[2], 10);
+      lesson_number = parseInt(parts[3], 10);
+    } else if (parts.length >= 3) {
+      course_id = parseInt(parts[0], 10);
+      chapter_number = parseInt(parts[1], 10);
+      lesson_number = parseInt(parts[2], 10);
+    }
+    const lessonFromParams = (course_id != null && !Number.isNaN(course_id) && chapter_number != null && lesson_number != null)
+      ? { lesson_id: lessonId, course_id, chapter_number, lesson_number, lesson_title: 'Lesson' }
+      : null;
+    if (lessonFromParams) {
+      setCompletedLesson({ lesson: lessonFromParams, xp: Number(xp) || 0 });
+      setShowCompletion(true);
+    }
+
+    const forceNext = nextLessonId || undefined;
+    skipNormalLoadAfterCompletionRef.current = true;
+    loadRoadmap(forceNext, lessonId).then(() => {
+      window.history.replaceState({}, '', window.location.pathname);
+      navigate(location.pathname, { replace: true, state: {} }); // clear completion state
+      setTimeout(() => { skipNormalLoadAfterCompletionRef.current = false; }, 3000);
+    });
+  }, [user, institutePriority, location.state, location.pathname, navigate]);
+
+  // Normal load when no completion in progress. Skip if we have completion state/params or if we just handled completion.
   useEffect(() => {
-    if (user) {
+    if (skipNormalLoadAfterCompletionRef.current) return;
+    if (location.state?.fromCompletion) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('completed') === 'true' && params.get('lessonId')) return;
+
+    if (user && institutePriority !== null && !showInstituteSorter) {
       loadRoadmap();
     }
-  }, [user, masterschool]);
+  }, [user, masterschool, institutePriority, showInstituteSorter, location.state]);
 
   // End transition when roadmap is loaded (with safety timeout)
   useEffect(() => {
@@ -131,30 +170,110 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition', schoolConfig = null }) =
     };
   }, [loading, lessons, nodes, endTransition]);
 
-  // Load roadmap data
-  // Load roadmap data (NOUVELLE VERSION LÉGÈRE)
- // 1. MODIFIER la fonction loadRoadmap pour calculer le niveau
- const loadRoadmap = async () => {
-  try {
-    setLoading(true);
-    const layerLessons = await roadmapService.getRoadmapLessons(masterschool, user.id);
-    setLessons(layerLessons);
+  // Keep ref in sync for "batch in progress" check
+  useEffect(() => {
+    lessonsRef.current = lessons;
+  }, [lessons]);
 
-    // Calcul de l'index actif (la première leçon non terminée)
-    const activeIndex = layerLessons.findIndex(l => !l.is_completed);
-    const calculatedLevel = activeIndex === -1 ? layerLessons.length - 1 : activeIndex;
-    
-    setCurrentLevel(calculatedLevel);
+  // Helper: compute active index from a lesson list. Never treat just-completed lesson as active.
+  const getActiveIndex = (list, forceActiveLessonId, justCompletedLessonId) => {
+    if (!list?.length) return 0;
+    let activeIndex = -1;
+    if (forceActiveLessonId) {
+      activeIndex = list.findIndex(l => l.lesson_id === forceActiveLessonId);
+    }
+    if (activeIndex === -1 && justCompletedLessonId) {
+      const completedIdx = list.findIndex(l => l.lesson_id === justCompletedLessonId);
+      const nextIdx = list.findIndex((l, i) => i > completedIdx && !l.is_completed);
+      activeIndex = nextIdx >= 0 ? nextIdx : (completedIdx >= 0 ? completedIdx + 1 : 0);
+    }
+    if (activeIndex === -1) {
+      activeIndex = list.findIndex(l =>
+        !l.is_completed && l.lesson_id !== justCompletedLessonId
+      );
+    }
+    if (activeIndex === -1) {
+      activeIndex = list.findIndex(l => l.lesson_id !== justCompletedLessonId);
+    }
+    if (justCompletedLessonId && activeIndex >= 0 && list[activeIndex]?.lesson_id === justCompletedLessonId) {
+      const nextIdx = list.findIndex((l, i) => i > activeIndex && !l.is_completed);
+      activeIndex = nextIdx >= 0 ? nextIdx : activeIndex + 1;
+    }
+    if (activeIndex < 0 || activeIndex >= list.length) activeIndex = list.length - 1;
+    return Math.max(0, activeIndex);
+  };
 
-    // !!! FIX : ICI ON PASSE calculatedLevel À createNodes !!!
-    createNodes(layerLessons, calculatedLevel); 
+  // Load roadmap data. Keep the same 10 lessons until all 10 are completed, then fetch the next 10.
+  const loadRoadmap = async (forceActiveLessonId = null, justCompletedLessonId = null) => {
+    try {
+      setLoading(true);
 
-  } catch (err) {
-    console.error(err);
-  } finally {
-    setLoading(false);
-  }
-};
+      if (!institutePriority || institutePriority.length === 0) {
+        setShowInstituteSorter(true);
+        setLoading(false);
+        return;
+      }
+
+      const current = lessonsRef.current;
+      const batchInProgress = current.length >= 10 && current.some(l => !l.is_completed);
+
+      // Same batch in progress: don't replace list until all 10 are completed
+      if (batchInProgress) {
+        if (justCompletedLessonId) {
+          const updatedLessons = current.map(l =>
+            l.lesson_id === justCompletedLessonId ? { ...l, is_completed: true } : l
+          );
+          setLessons(updatedLessons);
+          if (updatedLessons.every(l => l.is_completed)) {
+            // All 10 done: fetch next batch
+            const nextBatch = await roadmapService.getRoadmapLessons(masterschool, user.id, 10);
+            if (nextBatch?.length > 0) {
+              const list = nextBatch.slice(0, 10);
+              setLessons(list);
+              const level = getActiveIndex(list, null, null);
+              setCurrentLevel(level);
+              createNodes(list, level);
+            } else {
+              setCurrentLevel(getActiveIndex(updatedLessons, forceActiveLessonId, justCompletedLessonId));
+              createNodes(updatedLessons, getActiveIndex(updatedLessons, forceActiveLessonId, justCompletedLessonId));
+            }
+          } else {
+            const level = getActiveIndex(updatedLessons, forceActiveLessonId, justCompletedLessonId);
+            setCurrentLevel(level);
+            createNodes(updatedLessons, level);
+          }
+        } else {
+          const level = getActiveIndex(current, forceActiveLessonId, null);
+          setCurrentLevel(level);
+          createNodes(current, level);
+        }
+        setLoading(false);
+        return;
+      }
+
+      const layerLessons = await roadmapService.getRoadmapLessons(masterschool, user.id, 10);
+      console.log(`[Roadmap] Loaded ${layerLessons.length} lessons (requested: 10)`);
+
+      if (layerLessons.length === 0) {
+        console.warn('No roadmap lessons returned - user may need to set institute priority');
+        setShowInstituteSorter(true);
+        setLoading(false);
+        return;
+      }
+
+      const list = layerLessons.length > 50 ? layerLessons.slice(0, 10) : layerLessons;
+      setLessons(list);
+
+      const calculatedLevel = getActiveIndex(list, forceActiveLessonId, justCompletedLessonId);
+      setCurrentLevel(calculatedLevel);
+      createNodes(list, calculatedLevel);
+    } catch (err) {
+      console.error('Error loading roadmap:', err);
+      setShowInstituteSorter(true);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Create nodes from lessons - determine unlock status from roadmap_progress
   // Create nodes from lessons (NOUVELLE VERSION SIMPLIFIÉE)
@@ -164,12 +283,21 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition', schoolConfig = null }) =
   const createNodes = (lessonsList, activeLevel) => {
     const nodeList = [];
     
+    // Safety: Limit to maximum 50 nodes to prevent performance issues
+    // The service should already limit to 10, but this is a failsafe
+    const MAX_NODES = 50;
+    const limitedLessons = lessonsList.slice(0, MAX_NODES);
+    
+    if (lessonsList.length > MAX_NODES) {
+      console.warn(`Roadmap has ${lessonsList.length} lessons, limiting to ${MAX_NODES} for performance`);
+    }
+    
     // Configuration "Géométrie Sacrée"
     const HEX_RADIUS = 120; // Rayon de l'hexagone
     const VERTICAL_STEP = 100; // Espace vertical entre chaque ligne
 
-    for (let i = 0; i < lessonsList.length; i++) {
-      const lesson = lessonsList[i];
+    for (let i = 0; i < limitedLessons.length; i++) {
+      const lesson = limitedLessons[i];
       const isCompleted = lesson.is_completed;
       
       let status = 'locked';
@@ -286,19 +414,54 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition', schoolConfig = null }) =
     return () => window.removeEventListener('scroll', handleScroll);
   }, [nodes]);
 
-  // Initial scroll to active
+  // Initial scroll to active, and scroll after completion when nodes have updated
   useEffect(() => {
     if (nodes.length > 0 && !loading) {
-      setTimeout(() => {
+      const delay = scrollToActiveAfterUpdateRef.current ? 300 : 800;
+      if (scrollToActiveAfterUpdateRef.current) {
+        scrollToActiveAfterUpdateRef.current = false;
+      }
+      const t = setTimeout(() => {
         scrollToActive(true);
-      }, 800);
+      }, delay);
+      return () => clearTimeout(t);
     }
   }, [nodes, loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleSavePriority = (newPriority) => {
+  const handleSavePriority = async (newPriority) => {
     setInstitutePriority(newPriority);
-    setShowInstituteSorter(false); // Hide the modal
-    loadRoadmap(); // Reload roadmap with new priority
+    setShowInstituteSorter(false);
+
+    if (!user?.id) {
+      loadRoadmap();
+      return;
+    }
+
+    // Prefer RPC so save persists (bypasses profile UPDATE triggers that can break direct .update)
+    const { data: rpcData, error: rpcError } = await supabase.rpc('update_institute_priority', {
+      p_user_id: user.id,
+      p_institute_priority: newPriority
+    });
+
+    if (!rpcError && rpcData?.success) {
+      loadRoadmap();
+      return;
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ institute_priority: newPriority })
+      .eq('id', user.id);
+
+    if (error) {
+      console.error('Failed to save institute priority:', error);
+      toast.error('Failed to save institute priority. Please try again.');
+      setShowInstituteSorter(true);
+      setInstitutePriority(null);
+      return;
+    }
+
+    loadRoadmap();
   };
 
   const handleCloseSorter = () => {
@@ -417,20 +580,20 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition', schoolConfig = null }) =
         isVisible={showCompletion}
         xpEarned={completedLesson?.xp || 0}
         lessonTitle={completedLesson?.lesson?.lesson_title || ''}
-        onComplete={async () => { // Make onComplete async
+        onComplete={async () => {
           setShowCompletion(false);
-          await loadRoadmap(); // Reload roadmap and then scroll to next active node
-          setTimeout(() => {
-            scrollToActive(true);
-          }, 500);
+          scrollToActiveAfterUpdateRef.current = true;
+          await loadRoadmap(); // Reload so next node is active; scroll runs in effect when nodes update
         }}
       />
       {/* Institute Sorter Modal */}
-      {showInstituteSorter && (
-        <InstituteSorterModal
-          onClose={handleCloseSorter}
-          onSave={handleSavePriority}
-        />
+      {showInstituteSorter && user && (
+        <React.Suspense fallback={null}>
+          <InstituteSorterModal
+            onClose={handleCloseSorter}
+            onSave={handleSavePriority}
+          />
+        </React.Suspense>
       )}
 
       {/* Jump to Next Institute Button */}

@@ -38,10 +38,10 @@ const CompleteLessonModal = ({
     setError(null);
 
     try {
-
+      const canonicalLessonId = `${courseId}-${chapterNumber}-${lessonNumber}`;
       const result = await roadmapService.completeLesson(
         userId,
-        lessonId,
+        canonicalLessonId,
         courseId,
         chapterNumber,
         lessonNumber,
@@ -81,36 +81,62 @@ const CompleteLessonModal = ({
 
 
   const handleBackToRoadmap = () => {
-    
-    // Call onComplete before navigation if provided
+    // Call onComplete before navigation if provided (updates local state + refreshes profile XP)
     if (onComplete && completed) {
-      onComplete({ rewards, success: true });
+      try {
+        onComplete({ rewards, success: true });
+      } catch (e) {
+        console.error('[CompleteLessonModal] onComplete error:', e);
+      }
     }
-    
-    // Determine the target URL
+
     let targetUrl = '/roadmap/ignition';
     if (fromRoadmap && returnUrl) {
       try {
-        // returnUrl might be encoded, decode it
         const decoded = returnUrl.includes('%') ? decodeURIComponent(returnUrl) : returnUrl;
-        // Extract just the path (remove query params for navigation)
         const urlPath = decoded.split('?')[0];
         targetUrl = urlPath || '/roadmap/ignition';
       } catch (e) {
         targetUrl = '/roadmap/ignition';
       }
     }
-    
-    // Close modal and navigate
+
+    // Add completion params so roadmap shows celebration and can unlock the exact next node (from backend)
+    if (completed && courseId != null && chapterNumber != null && lessonNumber != null) {
+      const params = new URLSearchParams();
+      params.set('completed', 'true');
+      params.set('lessonId', `${courseId}-${chapterNumber}-${lessonNumber}`);
+      if (rewards?.xp_earned != null) params.set('xp', String(rewards.xp_earned));
+      if (rewards?.next_lesson_id) params.set('nextLessonId', rewards.next_lesson_id);
+      targetUrl = targetUrl.includes('?') ? `${targetUrl}&${params}` : `${targetUrl}?${params}`;
+    }
+
     onClose();
     startTransition();
-    navigate(targetUrl);
+    // Pass completion via state so roadmap reads it reliably (avoids URL/effect races)
+    const state = completed && courseId != null && chapterNumber != null && lessonNumber != null
+      ? {
+          fromCompletion: true,
+          lessonId: `${courseId}-${chapterNumber}-${lessonNumber}`,
+          nextLessonId: rewards?.next_lesson_id ?? null,
+          xp: rewards?.xp_earned ?? 50
+        }
+      : undefined;
+    const pathOnly = targetUrl.split('?')[0];
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[CompleteLessonModal] Navigating to roadmap:', pathOnly, state);
+    }
+    navigate(pathOnly, { replace: true, state });
   };
 
   const handleContinueToNext = async () => {
     // Call onComplete before navigation if provided
     if (onComplete && completed) {
-      onComplete({ rewards, success: true });
+      try {
+        onComplete({ rewards, success: true });
+      } catch (e) {
+        console.error('[CompleteLessonModal] onComplete error:', e);
+      }
     }
     
     try {
@@ -120,22 +146,35 @@ const CompleteLessonModal = ({
       startTransition();
       
       if (nextLesson) {
-        navigate(`/courses/${nextLesson.course_id}/chapters/${nextLesson.chapter_number}/lessons/${nextLesson.lesson_number}`);
+        const nextUrl = `/courses/${nextLesson.course_id}/chapters/${nextLesson.chapter_number}/lessons/${nextLesson.lesson_number}`;
+        if (process.env.NODE_ENV === 'development') console.log('[CompleteLessonModal] Navigating to next lesson:', nextUrl);
+        navigate(nextUrl, { replace: true });
       } else {
-        navigate(`/roadmap/ignition`);
+        if (process.env.NODE_ENV === 'development') console.log('[CompleteLessonModal] No next lesson, navigating to roadmap');
+        navigate(`/roadmap/ignition`, { replace: true });
       }
     } catch (err) {
       onClose();
       startTransition();
-      navigate(`/roadmap/ignition`);
+      if (process.env.NODE_ENV === 'development') console.log('[CompleteLessonModal] Error, fallback to roadmap');
+      navigate(`/roadmap/ignition`, { replace: true });
     }
   };
 
   if (!isOpen) return null;
 
 
+  const handleOverlayClick = () => {
+    if (completed) {
+      // When completed, overlay click = same as "Back to Roadmap" (ensure redirect)
+      handleBackToRoadmap();
+    } else {
+      onClose();
+    }
+  };
+
   return createPortal(
-    <div className="complete-lesson-modal__overlay" onClick={onClose}>
+    <div className="complete-lesson-modal__overlay" onClick={handleOverlayClick}>
       <div className="complete-lesson-modal" onClick={(e) => e.stopPropagation()}>
         {!completed ? (
           // Pre-completion state

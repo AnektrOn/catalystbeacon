@@ -19,12 +19,10 @@ class PushNotificationService {
    */
   async initialize(userId) {
     if (!Capacitor.isNativePlatform()) {
-      console.log('Push notifications only available on native platforms');
       return;
     }
 
     if (this.isInitialized) {
-      console.log('Push notifications already initialized');
       return;
     }
 
@@ -60,9 +58,8 @@ class PushNotificationService {
    * Set up push notification event listeners
    */
   setupListeners() {
-    // Registration event - token received
+    // Registration event - token received (do not log token value - security)
     PushNotifications.addListener('registration', async (token) => {
-      console.log('Push registration success, token: ' + token.value);
       this.deviceToken = token.value;
       await this.saveDeviceToken(token.value);
     });

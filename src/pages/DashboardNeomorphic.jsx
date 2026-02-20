@@ -69,13 +69,11 @@ const DashboardNeomorphic = () => {
   })
 
   // Show upgrade modal if redirected from restricted route
-  // Show onboarding modal for new users
   useEffect(() => {
     // Only check for modals when user and profile are loaded
     if (!user || !profile) return
-    
+
     const upgradePrompt = searchParams.get('upgradePrompt')
-    const isNewUser = searchParams.get('new_user')
   }, [searchParams, navigate, isAdmin, user, profile])
 
   // Handle payment success redirect - PRIMARY: Use API server directly

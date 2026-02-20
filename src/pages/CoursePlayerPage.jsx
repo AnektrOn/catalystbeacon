@@ -462,7 +462,7 @@ const CoursePlayerPage = () => {
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-2">
               {courseStructure?.chapters?.map((chapter) => (
-                <div key={chapter.id} className="space-y-1">
+                <div key={`ch-${chapter.chapter_number}`} className="space-y-1">
                   <div className="px-3 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
                     Chapter {chapter.chapter_number}
                   </div>
@@ -520,7 +520,7 @@ const CoursePlayerPage = () => {
         </div>
         <div className="flex-1 overflow-y-auto p-2 space-y-2">
           {courseStructure?.chapters?.map((chapter) => (
-            <div key={chapter.id} className="space-y-1">
+            <div key={`ch-${chapter.chapter_number}`} className="space-y-1">
               <div className="px-3 py-2 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Chapter {chapter.chapter_number}
               </div>
@@ -648,8 +648,8 @@ const CoursePlayerPage = () => {
           </div>
         </div>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto px-4 lg:px-8 pb-20">
+        {/* Scrollable Content - data attr used by useRoadmapLessonTracking for scroll progress */}
+        <div className="flex-1 overflow-y-auto px-4 lg:px-8 pb-20" data-lesson-scroll-container>
           <div className={`max-w-4xl mx-auto transition-all duration-500 ${cinemaMode ? 'py-12' : 'py-6'}`}>
 
             {/* Lesson Header */}

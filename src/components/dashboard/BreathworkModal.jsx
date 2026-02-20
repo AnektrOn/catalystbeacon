@@ -186,7 +186,7 @@ const BreathworkModal = ({ isOpen, onClose, userId }) => {
         )}
       </div>
 
-      <style jsx>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @keyframes shake {
           0%, 100% { transform: translateX(0); }
           25% { transform: translateX(-5px); }
@@ -202,7 +202,7 @@ const BreathworkModal = ({ isOpen, onClose, userId }) => {
         .animate-spin-slow {
           animation: spin-slow 8s linear infinite;
         }
-      `}</style>
+      ` }} />
     </div>,
     document.body
   )

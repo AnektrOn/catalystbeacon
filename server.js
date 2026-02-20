@@ -3,15 +3,18 @@ const path = require('path')
 const fs = require('fs')
 
 // Try to load server.env
+const isDev = process.env.NODE_ENV === 'development'
 const serverEnvPath = path.join(__dirname, 'server.env')
-console.log('📁 Looking for server.env at:', serverEnvPath)
-console.log('📁 server.env exists:', fs.existsSync(serverEnvPath))
+if (isDev) {
+  console.log('📁 Looking for server.env at:', serverEnvPath)
+  console.log('📁 server.env exists:', fs.existsSync(serverEnvPath))
+}
 
 if (fs.existsSync(serverEnvPath)) {
   const result = require('dotenv').config({ path: serverEnvPath })
   if (result.error) {
     console.error('❌ Error loading server.env:', result.error)
-  } else {
+  } else if (isDev) {
     console.log('✅ server.env loaded successfully')
   }
 } else {
@@ -24,23 +27,26 @@ if (!process.env.STRIPE_SECRET_KEY) {
   require('dotenv').config({ path: path.join(__dirname, '.env') })
 }
 
-// Debug: Check what Stripe vars are loaded
 const stripeKey = process.env.STRIPE_SECRET_KEY
-console.log('🔑 STRIPE_SECRET_KEY loaded:', stripeKey ? `YES (${stripeKey.substring(0, 7)}...${stripeKey.substring(stripeKey.length - 4)})` : 'NO')
-console.log('🔑 STRIPE_SECRET_KEY length:', stripeKey ? stripeKey.length : 0)
-console.log('🔑 All STRIPE vars:', Object.keys(process.env).filter(k => k.includes('STRIPE')))
-console.log('🔑 All env files checked:', {
-  serverEnvExists: fs.existsSync(serverEnvPath),
-  dotEnvExists: fs.existsSync(path.join(__dirname, '.env'))
-})
+if (isDev) {
+  console.log('🔑 STRIPE_SECRET_KEY loaded:', stripeKey ? 'YES' : 'NO')
+  console.log('🔑 STRIPE_SECRET_KEY length:', stripeKey ? stripeKey.length : 0)
+  console.log('🔑 All STRIPE vars:', Object.keys(process.env).filter(k => k.includes('STRIPE')))
+  console.log('🔑 All env files checked:', {
+    serverEnvExists: fs.existsSync(serverEnvPath),
+    dotEnvExists: fs.existsSync(path.join(__dirname, '.env'))
+  })
+}
 
 // Verify Stripe key is loaded and not a placeholder
 // WARNING: Don't exit in production - allow server to start but return 503 for payment endpoints
 if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes('your_stripe_secret_key')) {
   console.error('⚠️ WARNING: STRIPE_SECRET_KEY is not set correctly in server.env!')
   console.error('Payment endpoints will return 503 until STRIPE_SECRET_KEY is configured')
-  console.error('Get your key from: https://dashboard.stripe.com/test/apikeys')
-  console.error('Current value:', process.env.STRIPE_SECRET_KEY ? process.env.STRIPE_SECRET_KEY.substring(0, 20) + '...' : 'NOT SET')
+  if (isDev) {
+    console.error('Get your key from: https://dashboard.stripe.com/test/apikeys')
+    console.error('Current value:', process.env.STRIPE_SECRET_KEY ? '(redacted)' : 'NOT SET')
+  }
   // Don't exit - allow server to start for other endpoints
 }
 
@@ -119,10 +125,12 @@ if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
   process.exit(1)
 }
 
-console.log('✅ Supabase client initialized:', {
-  url: process.env.SUPABASE_URL,
-  hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY
-})
+if (isDev) {
+  console.log('✅ Supabase client initialized:', {
+    url: process.env.SUPABASE_URL,
+    hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY
+  })
+}
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -236,28 +244,33 @@ const corsOptions = {
 }
 app.use(cors(corsOptions))
 
-// Add CSP header that allows Stripe scripts (only for HTML pages, not API)
-app.use((req, res, next) => {
-  // Only add CSP for HTML pages, not API routes or static assets
-  if (!req.path.startsWith('/api/') && !req.path.startsWith('/static/') && req.path !== '/favicon.ico') {
-    res.setHeader(
-      'Content-Security-Policy',
-      "default-src 'self'; " +
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://*.stripe.com " +
-      "'sha256-BNulBYV1JXGvq9NQg7814ZyyVZCqfRI1aq5d+PSIdgI=' " +
-      "'sha256-5Hr21t1F1f0L2UiWkQNDZLeFImeo/+Mjhgju4d39sLA=' " +
-      "'sha256-4LRRm+CrRt91043ELDDzsKtE9mgb52p2iOlf9CRXTJ0=' " +
-      "'sha256-ieoeWczDHkReVBsRBqaal5AFMlBtNjMzgwKvLqi/tSU='; " +
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-      "font-src 'self' https://fonts.gstatic.com; " +
-      "img-src 'self' data: https: blob:; " +
-      "connect-src 'self' https://*.stripe.com https://*.supabase.co https://api.stripe.com; " +
-      "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com; " +
-      "frame-ancestors 'self';"
-    )
+// Add CSP header that allows Stripe + Supabase auth (only for HTML pages, not API)
+// In development, CSP is skipped to avoid blocking OAuth callback scripts (CSP with nonce often comes from Supabase's auth page, not this server)
+const cspMiddleware = (req, res, next) => {
+  if (req.path.startsWith('/api/') || req.path.startsWith('/static/') || req.path === '/favicon.ico') {
+    return next()
   }
+  if (process.env.NODE_ENV === 'development') {
+    return next()
+  }
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://*.stripe.com " +
+    "'sha256-BNulBYV1JXGvq9NQg7814ZyyVZCqfRI1aq5d+PSIdgI=' " +
+    "'sha256-5Hr21t1F1f0L2UiWkQNDZLeFImeo/+Mjhgju4d39sLA=' " +
+    "'sha256-4LRRm+CrRt91043ELDDzsKtE9mgb52p2iOlf9CRXTJ0=' " +
+    "'sha256-ieoeWczDHkReVBsRBqaal5AFMlBtNjMzgwKvLqi/tSU='; " +
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+    "font-src 'self' https://fonts.gstatic.com; " +
+    "img-src 'self' data: https: blob:; " +
+    "connect-src 'self' https://*.stripe.com https://*.supabase.co https://api.stripe.com; " +
+    "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com; " +
+    "frame-ancestors 'self';"
+  )
   next()
-})
+}
+app.use(cspMiddleware)
 
 // Apply general rate limiting to all routes (AFTER trust proxy is set)
 app.use('/api/', generalLimiter)
@@ -340,22 +353,21 @@ app.post('/api/send-signup-email', async (req, res) => {
 // Create checkout session
 app.post('/api/create-checkout-session', paymentLimiter, async (req, res) => {
   const requestId = Date.now().toString(36) + Math.random().toString(36).substr(2)
-  console.log(`=== CREATE CHECKOUT SESSION REQUEST [${requestId}] ===`)
-  console.log(`[${requestId}] Body:`, req.body)
-  console.log(`[${requestId}] Origin:`, req.headers.origin)
-  console.log(`[${requestId}] Host:`, req.headers.host)
-  console.log(`[${requestId}] IP:`, req.ip)
-  console.log(`[${requestId}] Headers:`, JSON.stringify(req.headers, null, 2))
-  
-  // Log environment check
-  console.log(`[${requestId}] Environment check:`, {
-    hasStripeKey: !!process.env.STRIPE_SECRET_KEY,
-    stripeKeyPrefix: process.env.STRIPE_SECRET_KEY ? process.env.STRIPE_SECRET_KEY.substring(0, 10) + '...' : 'NOT SET',
-    hasSupabaseUrl: !!process.env.SUPABASE_URL,
-    hasSupabaseServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-    nodeEnv: process.env.NODE_ENV
-  })
-  
+  if (isDev) {
+    console.log(`=== CREATE CHECKOUT SESSION REQUEST [${requestId}] ===`)
+    console.log(`[${requestId}] Body:`, req.body)
+    console.log(`[${requestId}] Origin:`, req.headers.origin)
+    console.log(`[${requestId}] Host:`, req.headers.host)
+    console.log(`[${requestId}] IP:`, req.ip)
+    console.log(`[${requestId}] Headers:`, JSON.stringify(req.headers, null, 2))
+    console.log(`[${requestId}] Environment check:`, {
+      hasStripeKey: !!process.env.STRIPE_SECRET_KEY,
+      hasSupabaseUrl: !!process.env.SUPABASE_URL,
+      hasSupabaseServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      nodeEnv: process.env.NODE_ENV
+    })
+  }
+
   try {
     const { priceId, userId, userEmail } = req.body
     
@@ -382,16 +394,15 @@ app.post('/api/create-checkout-session', paymentLimiter, async (req, res) => {
       stripeKey.length < 20
     )
     
-    console.log(`[${requestId}] 🔍 Stripe key validation:`, {
-      hasKey: hasStripeKey,
-      isPlaceholder: isPlaceholder,
-      keyLength: stripeKey ? stripeKey.length : 0,
-      keyPrefix: stripeKey ? stripeKey.substring(0, 7) : 'N/A',
-      keySuffix: stripeKey ? '...' + stripeKey.substring(stripeKey.length - 4) : 'N/A',
-      serverEnvExists: fs.existsSync(serverEnvPath),
-      cwd: process.cwd(),
-      __dirname: __dirname
-    })
+    if (isDev) {
+      console.log(`[${requestId}] 🔍 Stripe key validation:`, {
+        hasKey: hasStripeKey,
+        isPlaceholder: isPlaceholder,
+        serverEnvExists: fs.existsSync(serverEnvPath),
+        cwd: process.cwd(),
+        __dirname: __dirname
+      })
+    }
     
     if (!hasStripeKey || isPlaceholder) {
       console.error(`[${requestId}] ❌ ERROR: STRIPE_SECRET_KEY is not configured properly`)
@@ -410,11 +421,9 @@ app.post('/api/create-checkout-session', paymentLimiter, async (req, res) => {
           ? `STRIPE_SECRET_KEY validation failed. hasKey: ${hasStripeKey}, isPlaceholder: ${isPlaceholder}. Please check your server.env file and restart the server with PM2.` 
           : 'Payment service unavailable. Please contact support.',
         code: 'STRIPE_NOT_CONFIGURED',
-        debug: process.env.NODE_ENV === 'development' ? {
-          hasKey,
+        debug: isDev ? {
+          hasStripeKey,
           isPlaceholder,
-          keyLength: stripeKey?.length || 0,
-          serverEnvPath,
           serverEnvExists: fs.existsSync(serverEnvPath),
           cwd: process.cwd()
         } : undefined
@@ -569,19 +578,22 @@ app.get('/api/payment-success', paymentLimiter, async (req, res) => {
     console.log('Session ID:', session_id)
     console.log('Request origin:', req.headers.origin)
     console.log('Request IP:', req.ip)
-    console.log('Supabase config check:', {
-      hasUrl: !!process.env.SUPABASE_URL,
-      hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-      supabaseUrl: process.env.SUPABASE_URL ? process.env.SUPABASE_URL.substring(0, 30) + '...' : 'MISSING'
-    })
+    if (isDev) {
+      console.log('Supabase config check:', {
+        hasUrl: !!process.env.SUPABASE_URL,
+        hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY
+      })
+    }
 
     const session = await stripe.checkout.sessions.retrieve(session_id)
-    console.log('Stripe session retrieved:', {
-      id: session.id,
-      userId: session.metadata?.userId,
-      planType: session.metadata?.planType,
-      subscriptionId: session.subscription
-    })
+    if (isDev) {
+      console.log('Stripe session retrieved:', {
+        id: session.id,
+        userId: session.metadata?.userId,
+        planType: session.metadata?.planType,
+        subscriptionId: session.subscription
+      })
+    }
 
     // CRITICAL: Check if session has subscription
     if (!session.subscription) {
@@ -2010,25 +2022,27 @@ if (!fs.existsSync(buildPath)) {
 // Dual endpoint: /health (for backward compatibility with old builds) and /api/health
 const healthCheckHandler = (req, res) => {
   const stripeKey = process.env.STRIPE_SECRET_KEY
-  res.json({ 
-    status: 'ok', 
+  const payload = {
+    status: 'ok',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     server: 'Node.js Express',
     env: {
       hasStripeKey: !!stripeKey,
-      stripeKeyLength: stripeKey ? stripeKey.length : 0,
-      stripeKeyPrefix: stripeKey ? stripeKey.substring(0, 7) : 'N/A',
       hasSupabaseUrl: !!process.env.SUPABASE_URL,
       hasSupabaseServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
       nodeEnv: process.env.NODE_ENV,
       port: process.env.PORT || 3001
-    },
-    files: {
+    }
+  }
+  if (isDev) {
+    payload.env.stripeKeyLength = stripeKey ? stripeKey.length : 0
+    payload.files = {
       serverEnvExists: fs.existsSync(path.join(__dirname, 'server.env')),
       dotEnvExists: fs.existsSync(path.join(__dirname, '.env'))
     }
-  })
+  }
+  res.json(payload)
 }
 
 // Support both /health (for old builds) and /api/health (for new code)
@@ -2051,7 +2065,11 @@ app.use((req, res, next) => {
     res.setHeader(
       'Content-Security-Policy',
       "default-src 'self'; " +
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://maps.googleapis.com https://*.stripe.com; " +
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://maps.googleapis.com https://*.stripe.com " +
+      "'sha256-BNulBYV1JXGvq9NQg7814ZyyVZCqfRI1aq5d+PSIdgI=' " +
+      "'sha256-5Hr21t1F1f0L2UiWkQNDZLeFImeo/+Mjhgju4d39sLA=' " +
+      "'sha256-4LRRm+CrRt91043ELDDzsKtE9mgb52p2iOlf9CRXTJ0=' " +
+      "'sha256-ieoeWczDHkReVBsRBqaal5AFMlBtNjMzgwKvLqi/tSU='; " +
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
       "font-src 'self' https://fonts.gstatic.com; " +
       "img-src 'self' data: https: blob:; " +
@@ -2100,19 +2118,14 @@ app.listen(PORT, '0.0.0.0', () => {
     }
   }
   
-  // Log configuration status
-  console.log('\n📋 Final Configuration Status:')
-  const currentStripeKey = process.env.STRIPE_SECRET_KEY
-  console.log(`  - STRIPE_SECRET_KEY: ${currentStripeKey && !currentStripeKey.includes('your_stripe_secret_key') && !currentStripeKey.includes('YOUR_STRIPE_SECRET_KEY') ? '✅ SET' : '❌ NOT SET'}`)
-  if (currentStripeKey) {
-    console.log(`    Length: ${currentStripeKey.length}, Prefix: ${currentStripeKey.substring(0, 7)}...`)
+  if (isDev) {
+    console.log('\n📋 Final Configuration Status:')
+    const currentStripeKey = process.env.STRIPE_SECRET_KEY
+    console.log(`  - STRIPE_SECRET_KEY: ${currentStripeKey && !currentStripeKey.includes('your_stripe_secret_key') && !currentStripeKey.includes('YOUR_STRIPE_SECRET_KEY') ? '✅ SET' : '❌ NOT SET'}`)
+    console.log(`  - SUPABASE_URL: ${process.env.SUPABASE_URL ? '✅ SET' : '❌ NOT SET'}`)
+    console.log(`  - SUPABASE_SERVICE_ROLE_KEY: ${process.env.SUPABASE_SERVICE_ROLE_KEY ? '✅ SET' : '❌ NOT SET'}`)
+    console.log(`  - N8N_WEBHOOK_URL: ${process.env.N8N_WEBHOOK_URL ? '✅ SET' : '⚠️ NOT SET (optional)'}`)
+    console.log(`  - server.env exists: ${fs.existsSync(path.join(__dirname, 'server.env'))}`)
+    console.log('')
   }
-  console.log(`  - SUPABASE_URL: ${process.env.SUPABASE_URL ? '✅ SET' : '❌ NOT SET'}`)
-  console.log(`  - SUPABASE_SERVICE_ROLE_KEY: ${process.env.SUPABASE_SERVICE_ROLE_KEY ? '✅ SET' : '❌ NOT SET'}`)
-  console.log(`  - N8N_WEBHOOK_URL: ${process.env.N8N_WEBHOOK_URL ? '✅ SET' : '⚠️ NOT SET (optional)'}`)
-  console.log(`  - Current working directory: ${process.cwd()}`)
-  console.log(`  - Server file directory: ${__dirname}`)
-  console.log(`  - server.env path: ${path.join(__dirname, 'server.env')}`)
-  console.log(`  - server.env exists: ${fs.existsSync(path.join(__dirname, 'server.env'))}`)
-  console.log('')
 })

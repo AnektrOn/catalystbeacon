@@ -73,48 +73,76 @@ class RoadmapService {
    * @returns {Promise<Array>} Sorted array of lessons
    */
  /**
-   * VERSION TURBO : Récupère la roadmap en 1 seul appel RPC, avec fallback si RPC absent/erreur/vide.
-   * is_completed vient de user_lesson_progress (source canonique) pour les utilisateurs déjà avancés.
+   * Generate roadmap lessons based on user's institute priority order.
+   * Order: Institute Priority → Lesson Number → Chapter → Course
+   * Returns next 10 nodes dynamically (starting from first incomplete lesson).
+   * @param {string} masterschool - 'Ignition', 'Insight', or 'Transformation'
+   * @param {string} userId - User UUID
+   * @param {number} limit - Number of nodes to return (default 10)
+   * @returns {Promise<Array>} Array of roadmap lessons
    */
- async getRoadmapLessons(masterschool, userId) {
+ async getRoadmapLessons(masterschool, userId, limit = 10) {
   try {
-    let allLessons = [];
+    if (!userId) {
+      console.warn('getRoadmapLessons: No userId provided');
+      return [];
+    }
 
+    // Check if user has institute_priority set
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('institute_priority')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (!profile?.institute_priority || profile.institute_priority.length === 0) {
+      // User hasn't set institute priority yet - return empty to trigger modal
+      console.warn('getRoadmapLessons: User has no institute_priority set');
+      return [];
+    }
+
+    // Use get_roadmap_batch: returns the stored 10 for this user; is_completed from user_lesson_progress. Stable until all 10 done.
     const { data, error } = await supabase
-      .rpc('get_user_roadmap_details', {
+      .rpc('get_roadmap_batch', {
         p_user_id: userId,
         p_masterschool: masterschool
       });
 
     if (error) {
-      console.warn('RPC Roadmap non disponible, fallback manuel:', error.message);
-      allLessons = await this._getRoadmapLessonsFallback(masterschool, userId);
-    } else {
-      allLessons = data || [];
+      console.error('get_roadmap_batch RPC error:', error);
+      // Fallback to generate_roadmap_nodes if batch RPC missing
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .rpc('generate_roadmap_nodes', {
+          p_user_id: userId,
+          p_masterschool: masterschool,
+          p_limit: limit
+        });
+      if (!fallbackError && fallbackData?.length) {
+        const limited = fallbackData.slice(0, limit).map(lesson => ({
+          ...lesson,
+          masterschool,
+          lesson_xp_reward: (lesson.difficulty_numeric || 5) * 10
+        }));
+        return limited;
+      }
+      const fallbackLessons = await this._getRoadmapLessonsFallback(masterschool, userId);
+      return fallbackLessons.slice(0, limit).map(lesson => ({
+        ...lesson,
+        masterschool,
+        lesson_xp_reward: (lesson.difficulty_numeric || 5) * 10
+      }));
     }
 
-    if (allLessons.length === 0) {
-      allLessons = await this._getRoadmapLessonsFallback(masterschool, userId);
+    const lessons = data || [];
+    console.log(`[RoadmapService] RPC returned ${lessons.length} lessons, requested ${limit}`);
+
+    // Format lessons with masterschool and XP reward
+    // Ensure we don't return more than the requested limit
+    const limitedLessons = lessons.slice(0, limit);
+    if (lessons.length > limit) {
+      console.warn(`[RoadmapService] RPC returned ${lessons.length} lessons but limit is ${limit}, truncating`);
     }
-
-    if (allLessons.length === 0) return [];
-
-    // 2. CALCUL DE LA FENÊTRE D'AFFICHAGE
-    // On cherche l'index de la première leçon non terminée (le "Front")
-    let activeIndex = allLessons.findIndex(l => !l.is_completed);
-    
-    // Si tout est fini, on affiche tout jusqu'à la fin
-    if (activeIndex === -1) activeIndex = allLessons.length - 1;
-
-    // 3. FILTRAGE CHIRURGICAL
-    // On coupe après (Active + 3). Le reste du futur est caché.
-    const futureBuffer = 3; 
-    const cutoffIndex = activeIndex + futureBuffer;
-    
-    const optimizedData = allLessons.slice(0, cutoffIndex + 1);
-
-    // 4. Formatage
-    return optimizedData.map(lesson => ({
+    return limitedLessons.map(lesson => ({
       ...lesson,
       masterschool: masterschool,
       lesson_xp_reward: (lesson.difficulty_numeric || 5) * 10
@@ -122,7 +150,14 @@ class RoadmapService {
 
   } catch (error) {
     console.error(`Failed to fetch roadmap lessons: ${error.message}`);
-    return [];
+    // Fallback to old method on exception, but limit results
+    const fallbackLessons = await this._getRoadmapLessonsFallback(masterschool, userId);
+    console.log(`[RoadmapService] Exception fallback returned ${fallbackLessons.length} lessons, limiting to ${limit}`);
+    return fallbackLessons.slice(0, limit).map(lesson => ({
+      ...lesson,
+      masterschool: masterschool,
+      lesson_xp_reward: (lesson.difficulty_numeric || 5) * 10
+    }));
   }
 }
 
@@ -133,7 +168,7 @@ class RoadmapService {
   async _getRoadmapLessonsFallback(masterschool, userId) {
     try {
       const { data: structures } = await supabase.from('course_structure').select('course_id');
-      const courseIds = [...new Set((structures || []).map(s => s.course_id).filter(Boolean))];
+      const courseIds = [...new Set((structures || []).map(s => s.course_id).filter(id => id != null && Number.isInteger(id) && id > 0))];
       if (courseIds.length === 0) return [];
 
       const { data: metadataRows } = await supabase
@@ -179,7 +214,19 @@ class RoadmapService {
         return a.lesson_number - b.lesson_number;
       });
 
-      return orderedContent.map(cc => {
+      // Find first incomplete lesson and return only next lessons from there
+      let startIndex = 0;
+      for (let i = 0; i < orderedContent.length; i++) {
+        const cc = orderedContent[i];
+        const key = `${cc.course_id}-${cc.chapter_number}-${cc.lesson_number}`;
+        if (!completedSet.has(key)) {
+          startIndex = i;
+          break;
+        }
+      }
+
+      // Return lessons starting from first incomplete (fallback doesn't limit, caller will slice)
+      return orderedContent.slice(startIndex).map(cc => {
         const meta = metaByCourse[cc.course_id] || {};
         const key = `${cc.course_id}-${cc.chapter_number}-${cc.lesson_number}`;
         return {
@@ -328,9 +375,9 @@ class RoadmapService {
         .eq('course_id', previousLesson.course_id)
         .eq('chapter_number', previousLesson.chapter_number)
         .eq('lesson_number', previousLesson.lesson_number)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error checking lesson completion:', error);
         return false; // Safer default
       }
@@ -418,17 +465,53 @@ async updateLessonTracking(userId, courseId, chapterNumber, lessonNumber, timeSp
    */
 async completeLesson(userId, lessonId, courseId, chapterNumber, lessonNumber, masterschool, lessonTitle) {
   try {
-    // --- PASSE-DROIT POUR COURS VIRTUELS (ID Négatif) ---
-    // On valide immédiatement sans toucher à la DB pour éviter les crashs
+    // --- COURS VIRTUELS (ID Négatif) : on persiste la complétion pour que la roadmap
+    // reste correcte quel que soit le lien (sinon seul le lien "lesson complete" montrait le bon node).
     if (parseInt(courseId) < 0) {
-      console.log("Validation Bypass (Virtuel) pour :", courseId);
+      const justCompletedId = `${courseId}-${chapterNumber}-${lessonNumber}`;
+      let nextLessonId = null;
+
+      // 1. Persist completion in DB so generate_roadmap_nodes sees it as completed on any future load
+      const { error: upsertError } = await supabase.rpc('upsert_lesson_completed', {
+        p_user_id: userId,
+        p_course_id: parseInt(courseId, 10),
+        p_chapter_number: parseInt(chapterNumber, 10),
+        p_lesson_number: parseInt(lessonNumber, 10)
+      });
+      if (upsertError) {
+        console.error('[completeLesson] upsert_lesson_completed failed:', upsertError.code, upsertError.message);
+        return {
+          success: false,
+          message: upsertError.message || 'Impossible de sauvegarder la progression. Exécutez le script SQL APPLY_VIRTUAL_LESSON_PROGRESS_RUN_THIS.sql dans Supabase.'
+        };
+      }
+
+      // 2. Fetch the updated roadmap so next_lesson_id reflects the DB state after the upsert
+      try {
+        const { data: nextRows, error: nodesError } = await supabase.rpc('generate_roadmap_nodes', {
+          p_user_id: userId,
+          p_masterschool: masterschool,
+          p_limit: 5
+        });
+        if (nodesError) {
+          console.error('[completeLesson] generate_roadmap_nodes failed:', nodesError.message);
+        }
+        if (Array.isArray(nextRows) && nextRows.length > 0) {
+          const afterCompleted = nextRows.find(r => r?.lesson_id && r.lesson_id !== justCompletedId);
+          nextLessonId = afterCompleted?.lesson_id ?? nextRows[0]?.lesson_id ?? null;
+        }
+      } catch (e) {
+        console.error('[completeLesson] next node fetch exception:', e?.message || e);
+      }
+
       return {
         success: true,
         alreadyCompleted: false,
         rewards: {
           xp_earned: 50,
           new_total_xp: null,
-          skills_earned: []
+          skills_earned: [],
+          next_lesson_id: nextLessonId
         },
         message: 'Lesson completed successfully!'
       };
@@ -449,31 +532,39 @@ async completeLesson(userId, lessonId, courseId, chapterNumber, lessonNumber, ma
 
     if (error) throw error;
 
-    if (!data || !data.success) {
-      console.error("ERREUR SQL BRUTE:", data);
-      throw new Error(data?.error || "Erreur inconnue du serveur");
+    // RPC RETURNS TABLE returns an array of rows; take the first row
+    const row = Array.isArray(data) && data.length > 0 ? data[0] : data;
+
+    if (!row || !row.success) {
+      const msg = row?.message || (data?.message) || 'Erreur inconnue du serveur';
+      console.error('complete_lesson_transaction failed:', msg, row || data);
+      return {
+        success: false,
+        message: msg
+      };
     }
 
     // Envoi email en tâche de fond
-    this._sendCompletionEmail(userId, lessonTitle, masterschool, data.xp_earned).catch(console.error);
+    const xpEarned = row.xp_earned ?? 50;
+    this._sendCompletionEmail(userId, lessonTitle, masterschool, xpEarned).catch(console.error);
 
     return {
       success: true,
       alreadyCompleted: false,
       rewards: {
-        xp_earned: data.xp_earned || 50,
-        new_total_xp: data.new_total_xp,
-        skills_earned: data.skills_earned || []
+        xp_earned: xpEarned,
+        new_total_xp: row.new_total_xp ?? null,
+        skills_earned: row.skills_earned || [],
+        next_lesson_id: row.next_lesson_id ?? null
       },
-      message: 'Lesson completed successfully!'
+      message: row.message || 'Lesson completed successfully!'
     };
 
   } catch (error) {
     console.error('Complete Lesson Error:', error);
-    // Fallback ultime : On valide localement pour ne pas bloquer l'user
-    return { 
-      success: true, 
-      message: 'Lesson completed locally (Sync issue bypassed)' 
+    return {
+      success: false,
+      message: error?.message || 'Failed to complete lesson. Please try again.'
     };
   }
 }
@@ -629,13 +720,13 @@ async completeLesson(userId, lessonId, courseId, chapterNumber, lessonNumber, ma
         .eq('course_id', courseId)
         .eq('chapter_number', chapterNumber)
         .eq('lesson_number', lessonNumber)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         throw error;
       }
 
-      return data;
+      return data ?? null;
     } catch (error) {
       throw error;
     }

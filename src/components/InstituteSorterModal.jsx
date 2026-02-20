@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   DndContext,
   closestCenter,
@@ -11,10 +12,17 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
-  arrayMove // Utilisation directe de la lib
 } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+
+// Helper function to move an item in an array
+const arrayMove = (array, from, to) => {
+  const newArray = [...array];
+  const [movedItem] = newArray.splice(from, 1);
+  newArray.splice(to, 0, movedItem);
+  return newArray;
+};
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
 import { INSTITUTES } from '../constants/institutes'; 
@@ -75,8 +83,59 @@ const SortableInstitute = ({ institute, index }) => {
 // --- MODAL PRINCIPAL ---
 const InstituteSorterModal = ({ onClose, onSave }) => {
   const { user } = useAuth();
-  const [items, setItems] = useState(INSTITUTES); 
+  const [items, setItems] = useState([]); 
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Don't render if no user
+  if (!user) {
+    return null;
+  }
+
+  // Load user's existing priority or use default order
+  useEffect(() => {
+    const loadUserPriority = async () => {
+      if (!user?.id) {
+        setItems(INSTITUTES);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('institute_priority')
+          .eq('id', user.id)
+          .single();
+
+        if (profile?.institute_priority && profile.institute_priority.length > 0) {
+          // Reorder INSTITUTES based on user's priority
+          const priorityMap = new Map();
+          profile.institute_priority.forEach((name, index) => {
+            priorityMap.set(name, index);
+          });
+
+          const sorted = [...INSTITUTES].sort((a, b) => {
+            const aIndex = priorityMap.has(a.name) ? priorityMap.get(a.name) : Infinity;
+            const bIndex = priorityMap.has(b.name) ? priorityMap.get(b.name) : Infinity;
+            return aIndex - bIndex;
+          });
+
+          setItems(sorted);
+        } else {
+          // No priority set, use default order
+          setItems(INSTITUTES);
+        }
+      } catch (error) {
+        console.error('Error loading user priority:', error);
+        setItems(INSTITUTES);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUserPriority();
+  }, [user]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -108,14 +167,60 @@ const InstituteSorterModal = ({ onClose, onSave }) => {
     const instituteNames = items.map((item) => item.name);
 
     try {
-      const { error } = await supabase
+      // Try using RPC function first (bypasses triggers)
+      const { data: rpcData, error: rpcError } = await supabase.rpc('update_institute_priority', {
+        p_user_id: user.id,
+        p_institute_priority: instituteNames
+      });
+
+      if (!rpcError && rpcData?.success) {
+        // RPC succeeded
+        console.log('Priority saved successfully via RPC:', rpcData);
+        setTimeout(() => {
+          onSave(instituteNames); 
+          onClose(); 
+        }, 500);
+        return;
+      }
+
+      // If RPC doesn't exist or fails, fall back to direct update
+      console.warn('RPC not available, trying direct update:', rpcError?.message);
+      
+      const { data, error } = await supabase
         .from('profiles')
         .update({ institute_priority: instituteNames })
-        .eq('id', user.id);
+        .eq('id', user.id)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error saving priority:', error);
+        console.error('Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        
+        // Check error type and provide helpful message
+        let errorMessage = `Error saving priority: ${error.message || 'Unknown error'}`;
+        
+        if (error.code === '42703') {
+          // Undefined column
+          if (error.message?.includes('user_id')) {
+            errorMessage = 'Database trigger error: A trigger is trying to access "user_id" on profiles table, but profiles uses "id".\n\nSOLUTIONS:\n1. Run: supabase/migrations/disable_all_profile_triggers_then_fix.sql\n2. OR run: supabase/migrations/update_institute_priority_rpc.sql (creates RPC function to bypass triggers)';
+          } else {
+            errorMessage = 'Column not found error. Please ensure institute_priority column exists. Run: supabase/migrations/add_institute_priority_column.sql';
+          }
+        } else if (error.message?.includes('column') || error.message?.includes('field')) {
+          errorMessage = 'Column error. Please run migrations:\n1. supabase/migrations/add_institute_priority_column.sql\n2. supabase/migrations/disable_all_profile_triggers_then_fix.sql\n\nOR use RPC: supabase/migrations/update_institute_priority_rpc.sql';
+        }
+        
+        alert(errorMessage);
+        setSaving(false);
+        return;
+      }
 
-      console.log('Priority saved.');
+      console.log('Priority saved successfully:', data);
       
       // Petit délai pour l'effet UX
       setTimeout(() => {
@@ -124,14 +229,29 @@ const InstituteSorterModal = ({ onClose, onSave }) => {
       }, 500);
       
     } catch (error) {
-      console.error('Error saving priority:', error.message);
+      console.error('Exception saving priority:', error);
+      alert(`Failed to save priority: ${error.message || 'Unknown error'}`);
       setSaving(false);
     }
   };
 
-  return (
-    <div className="institute-sorter-overlay">
-      <div className="institute-sorter-modal">
+  if (loading) {
+    return createPortal(
+      <div className="institute-sorter-overlay">
+        <div className="institute-sorter-modal">
+          <div style={{ padding: '2rem', textAlign: 'center' }}>
+            <div className="fas fa-spinner fa-spin" style={{ fontSize: '2rem', marginBottom: '1rem' }}></div>
+            <p>Loading institutes...</p>
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
+  }
+
+  return createPortal(
+    <div className="institute-sorter-overlay" onClick={onClose}>
+      <div className="institute-sorter-modal" onClick={(e) => e.stopPropagation()}>
         
         {/* En-tête */}
         <div className="modal-header">
@@ -178,7 +298,8 @@ const InstituteSorterModal = ({ onClose, onSave }) => {
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

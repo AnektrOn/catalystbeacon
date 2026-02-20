@@ -62,10 +62,12 @@ class DeepLinkingService {
     console.log('Handling deep link:', url);
 
     try {
-      // Parse URL
+      // Parse URL (query and hash; Supabase OAuth uses hash for tokens)
       const urlObj = new URL(url);
       const path = urlObj.pathname;
-      const params = new URLSearchParams(urlObj.search);
+      const queryParams = new URLSearchParams(urlObj.search);
+      const hashParams = urlObj.hash ? new URLSearchParams(urlObj.hash.slice(1)) : new URLSearchParams();
+      const params = new URLSearchParams([...queryParams.entries(), ...hashParams.entries()]);
 
       // Extract route from path
       let route = path;
@@ -80,11 +82,11 @@ class DeepLinkingService {
         route = path;
       }
 
-      // Handle authentication tokens
-      const token = params.get('token');
+      // Handle authentication tokens (query or hash – Supabase OAuth uses hash)
+      const accessToken = params.get('access_token') || params.get('token');
       const refreshToken = params.get('refresh_token');
-      if (token && refreshToken) {
-        this.handleAuthTokens(token, refreshToken, route);
+      if (accessToken && refreshToken) {
+        this.handleAuthTokens(accessToken, refreshToken, route);
         return;
       }
 

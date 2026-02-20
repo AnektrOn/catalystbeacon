@@ -51,18 +51,23 @@ BEGIN
       total_xp_earned = total_xp_earned + v_xp_reward
   WHERE id = p_user_id;
 
-  -- Update roadmap progress
-  PERFORM update_roadmap_progress(
-    p_user_id,
-    p_masterschool,
-    p_lesson_id,
-    p_lesson_title,
-    p_course_id,
-    p_chapter_number,
-    p_lesson_number
-  );
+  -- Update roadmap progress (optional: table/function may not exist in all envs)
+  BEGIN
+    PERFORM update_roadmap_progress(
+      p_user_id,
+      p_masterschool,
+      p_lesson_id,
+      p_lesson_title,
+      p_course_id,
+      p_chapter_number,
+      p_lesson_number
+    );
+  EXCEPTION WHEN OTHERS THEN
+    -- Don't fail the whole transaction if roadmap_progress is missing or errors
+    NULL;
+  END;
 
-  -- Mark lesson as completed
+  -- Mark lesson as completed (source of truth for roadmap "completed" and next node)
   UPDATE user_lesson_progress
   SET is_completed = true,
       completed_at = NOW()

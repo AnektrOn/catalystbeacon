@@ -11,8 +11,6 @@ import ProtectedSubscriptionRoute from './components/ProtectedSubscriptionRoute'
 import CosmicLoader from './components/ui/CosmicLoader'
 import SkeletonLoader from './components/ui/SkeletonLoader'
 import WelcomeModal from './components/WelcomeModal'
-import { OnboardingProvider } from './contexts/OnboardingContext'
-import OnboardingTour from './components/Onboarding/OnboardingTour'
 import DevRouteElements from './routes/DevRoutes'
 import { deepLinkingService } from './utils/deepLinking'
 import { Capacitor } from '@capacitor/core'
@@ -362,19 +360,17 @@ function App() {
             >
               <DeepLinkingInitializer />
               <MobileNativeInitializer />
-              <OnboardingProvider>
-                <PageTransitionProvider>
-                  <div 
-                    className="App font-sans antialiased min-h-screen"
-                    style={{
-                      color: 'var(--text-primary)',
-                      backgroundColor: 'transparent'
-                    }}
-                  >
-                    <AppRoutes />
-                    <OnboardingTour />
-                    {/* First-time welcome modal - shows globally on first visit */}
-                    <WelcomeModal />
+              <PageTransitionProvider>
+                <div 
+                  className="App font-sans antialiased min-h-screen"
+                  style={{
+                    color: 'var(--text-primary)',
+                    backgroundColor: 'transparent'
+                  }}
+                >
+                  <AppRoutes />
+                  {/* First-time welcome modal - shows globally on first visit */}
+                  <WelcomeModal />
                 <Toaster
                   position={isMobile ? 'top-center' : 'top-right'}
                   toastOptions={{
@@ -385,9 +381,8 @@ function App() {
                     position: 'fixed',
                   }}
                 />
-              </div>
-                </PageTransitionProvider>
-              </OnboardingProvider>
+                </div>
+              </PageTransitionProvider>
             </Router>
           </AuthProvider>
       </DataCacheProvider>
