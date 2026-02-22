@@ -1,24 +1,13 @@
-/* Node Wrapper */
-.node-wrapper {
+/* === ÉTHÉRÉ NODE SYSTEM === */
+
+/* Base wrapper */
+.node-ethereal {
   position: absolute;
   transform: translate(-50%, -50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 10;
-  width: 70px;
-  height: 70px;
-  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.node-wrapper:active {
-  transform: translate(-50%, -50%) scale(0.9);
-}
-
-/* Shake Animation */
-.node-wrapper.shake {
+/* Shake on locked click */
+.node-ethereal.shake {
   animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
 }
 
@@ -29,179 +18,142 @@
   40%, 60% { transform: translate(-46%, -50%); }
 }
 
-/* Node Core */
-.node-core {
-  width: 8px;
-  height: 8px;
-  background: #fff;
-  border-radius: 50%;
-  position: relative;
-  z-index: 2;
-  transition: all 0.3s ease;
-  box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.5);
-}
-
-/* Node Halo */
-.node-halo {
+/* --- HALO (bioluminescent aura) --- */
+.node-ethereal-halo {
   position: absolute;
+  width: 192px;
+  height: 192px;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
-  width: 30px;
-  height: 30px;
+  margin-left: -96px;
+  margin-top: -96px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0) 70%);
-  opacity: 0.5;
-  transition: all 0.5s ease;
-  z-index: 1;
-}
-
-/* States */
-.node-wrapper.locked .node-core {
-  background: #333;
-  box-shadow: none;
-  width: 6px;
-  height: 6px;
-}
-
-.node-wrapper.locked .node-halo {
+  filter: blur(60px);
+  transition: all 1s ease;
   opacity: 0;
-}
-
-.node-wrapper.locked .node-label {
-  opacity: 0.3;
-}
-
-.node-wrapper.active .node-core {
-  width: 14px;
-  height: 14px;
-  background: #fff;
-  box-shadow: 
-    0 0 20px 5px rgba(255, 255, 255, 0.8),
-    0 0 40px 10px rgba(100, 200, 255, 0.4);
-  animation: pulse-core 2s infinite ease-in-out;
-}
-
-.node-wrapper.active .node-halo {
-  width: 90px;
-  height: 90px;
-  background: radial-gradient(circle, rgba(100,200,255,0.15) 0%, rgba(0,0,0,0) 70%);
-  animation: rotate-halo 10s infinite linear;
-}
-
-.node-wrapper.completed .node-core {
-  background: #FFD700; /* Gold color */
-  box-shadow: 0 0 15px 3px rgba(255, 215, 0, 0.7); /* Gold glow */
-  width: 10px; /* Slightly larger to stand out */
-  height: 10px;
-}
-
-.node-wrapper.completed .node-halo {
-  background: radial-gradient(circle, rgba(255, 215, 0, 0.1) 0%, rgba(0,0,0,0) 70%); /* Subtle gold halo */
-  opacity: 0.8;
-}
-
-.node-wrapper.completed .node-label {
-  color: #FFD700; /* Gold text for label */
-  text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
-  opacity: 1;
-}
-
-/* Add a tooltip for completed nodes */
-.node-wrapper.completed {
-  position: relative; /* Needed for tooltip positioning */
-}
-
-.node-wrapper.completed .node-tooltip {
-  visibility: hidden;
-  opacity: 0;
-  background-color: rgba(0, 0, 0, 0.8);
-  color: #fff;
-  text-align: center;
-  border-radius: 6px;
-  padding: 5px 10px;
-  position: absolute;
-  z-index: 100;
-  bottom: 125%; /* Position above the node */
-  left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
-  font-size: 12px;
-  letter-spacing: 1px;
-}
-
-.node-wrapper.completed:hover .node-tooltip {
-  visibility: visible;
-  opacity: 1;
-}
-
-/* Boss Node */
-.node-wrapper.boss .node-core {
-  border: 2px solid var(--neon-red);
-  background: #300;
-}
-
-.node-wrapper.boss.active .node-core {
-  background: var(--neon-red);
-  box-shadow: 0 0 20px 5px rgba(255, 0, 60, 0.8);
-}
-
-.node-wrapper.boss.active .node-halo {
-  background: radial-gradient(circle, rgba(255, 0, 60, 0.2) 0%, rgba(0,0,0,0) 70%);
-}
-
-/* Labels */
-.node-label {
-  position: absolute;
-  bottom: -22px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: #555;
-  transition: all 0.3s;
-  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.05);
   pointer-events: none;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-  opacity: 0.4;
 }
 
-.node-wrapper:hover .node-label {
-  opacity: 1;
-  color: #aaa;
-}
-
-.node-wrapper.active .node-label {
-  color: #fff;
-  text-shadow: 0 0 10px rgba(255,255,255,0.5);
-  bottom: -28px;
+.node-ethereal:hover .node-ethereal-halo {
   opacity: 1;
 }
 
-@keyframes pulse-core {
-  0% {
-    transform: scale(1);
-    box-shadow: 0 0 20px 5px rgba(255, 255, 255, 0.8);
-  }
-  50% {
-    transform: scale(1.15);
-    box-shadow: 0 0 35px 10px rgba(255, 255, 255, 1);
-  }
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 20px 5px rgba(255, 255, 255, 0.8);
+.node-ethereal-halo.halo-active {
+  background: rgba(34, 211, 238, 0.2);
+  opacity: 1;
+  transform: scale(1.25);
+}
+
+.node-ethereal-halo.halo-completed {
+  background: rgba(255, 255, 255, 0.1);
+  opacity: 0.8;
+  transform: scale(1);
+}
+
+/* --- CORE --- */
+.node-ethereal-core {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  z-index: 2;
+}
+
+.node-ethereal:hover .node-ethereal-core {
+  transform: scale(1.5);
+  background: white;
+}
+
+.node-ethereal-core.core-active {
+  background: white;
+  box-shadow: 0 0 60px #00e5ff;
+  transform: scale(1.5);
+}
+
+.node-ethereal-core.core-completed {
+  background: white;
+  box-shadow: 0 0 25px rgba(255, 255, 255, 0.6);
+  transform: scale(1.1);
+}
+
+.node-ethereal-core.core-locked {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* --- ACTIVE RING EFFECTS --- */
+.core-ping {
+  position: absolute;
+  inset: 0;
+  background: rgba(34, 211, 238, 1);
+  border-radius: 50%;
+  animation: ethereal-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+@keyframes ethereal-ping {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
   }
 }
 
-@keyframes rotate-halo {
-  0% {
-    transform: translate(-50%, -50%) rotate(0deg) scale(1);
-  }
-  50% {
-    transform: translate(-50%, -50%) rotate(180deg) scale(1.1);
-  }
-  100% {
-    transform: translate(-50%, -50%) rotate(360deg) scale(1);
-  }
+.core-orbit {
+  position: absolute;
+  inset: -15px;
+  border: 1px solid rgba(34, 211, 238, 0.1);
+  border-radius: 50%;
+  animation: ethereal-spin 5s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes ethereal-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* --- LABEL --- */
+.node-ethereal-label {
+  margin-top: 40px;
+  font-size: 7px!important;
+  letter-spacing: 0.8em;
+  font-weight: 300;
+  text-transform: uppercase;
+  transition: all 0.7s ease;
+  color: rgba(255, 255, 255, 0.2);
+  opacity: 0.3;
+  text-align: center;
+  line-height: 1.4;
+  max-width: 280px;
+  pointer-events: none;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.node-ethereal:hover .node-ethereal-label {
+  opacity: 1;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.node-ethereal-label.label-active {
+  color: white;
+  opacity: 1;
+  font-weight: 700;
+}
+
+.node-ethereal-label.label-completed {
+  color: rgba(255, 255, 255, 0.8);
+  opacity: 1;
+}
+
+.node-ethereal-label.label-locked {
+  color: rgba(255, 255, 255, 0.2);
+  opacity: 0.3;
 }

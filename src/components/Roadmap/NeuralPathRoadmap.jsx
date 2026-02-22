@@ -10,16 +10,17 @@ import NeuralCanvas from './NeuralCanvas';
 import MissionModal from './MissionModal';
 const InstituteSorterModal = React.lazy(() => import('../InstituteSorterModal'));
 import CompletionAnimation from './CompletionAnimation';
+import { Activity, Crosshair } from 'lucide-react';
 import toast from 'react-hot-toast';
 import './NeuralPathRoadmap.css';
 
 const CONFIG = {
-  count: 35,
-  spacing: 120,
-  amplitude: 140,
-  paddingTop: 300,
+  count: 10,
+  spacing: 180,
+  amplitude: 160,
+  paddingTop: 200,
   filamentCount: 8,
-  filamentChaos: 25,
+  filamentChaos: 30,
   particleCount: 60,
   bossInterval: 5
 };
@@ -51,6 +52,24 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition', schoolConfig = null }) =
   const [loading, setLoading] = useState(true);
   const [showCompletion, setShowCompletion] = useState(false);
   const [completedLesson, setCompletedLesson] = useState(null);
+  const [containerSize, setContainerSize] = useState({ width: 600, height: 2000 });
+
+  // Mesure du map-container : une seule source de vérité pour l’alignement canvas / nœuds
+  useEffect(() => {
+    const el = mapContainerRef.current;
+    if (!el) return;
+    const updateSize = () => {
+      const w = el.clientWidth || 600; // clientWidth exclut les bordures/scrollbars (zone de positionnement réelle)
+      const h = nodes.length > 0
+        ? Math.min(nodes[nodes.length - 1].y + 400, 8000)
+        : CONFIG.paddingTop + 500;
+      setContainerSize({ width: w, height: Math.min(h, 8000) });
+    };
+    updateSize();
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [nodes]);
 
   // Load user XP and institute_priority
   useEffect(() => {
@@ -282,65 +301,39 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition', schoolConfig = null }) =
 
   const createNodes = (lessonsList, activeLevel) => {
     const nodeList = [];
-    
-    // Safety: Limit to maximum 50 nodes to prevent performance issues
-    // The service should already limit to 10, but this is a failsafe
+
     const MAX_NODES = 50;
     const limitedLessons = lessonsList.slice(0, MAX_NODES);
-    
+
     if (lessonsList.length > MAX_NODES) {
       console.warn(`Roadmap has ${lessonsList.length} lessons, limiting to ${MAX_NODES} for performance`);
     }
-    
-    // Configuration "Géométrie Sacrée"
-    const HEX_RADIUS = 120; // Rayon de l'hexagone
-    const VERTICAL_STEP = 100; // Espace vertical entre chaque ligne
 
     for (let i = 0; i < limitedLessons.length; i++) {
       const lesson = limitedLessons[i];
       const isCompleted = lesson.is_completed;
-      
+
       let status = 'locked';
       if (isCompleted) status = 'completed';
       else if (i === activeLevel) status = 'active';
 
-      // --- NOUVELLE MATHÉMATIQUE : LE CADUCÉE HEXAGONAL ---
-      // Cela crée un motif qui oscille comme une double hélice d'ADN ou une fleur de vie verticale.
-      
-      // Cycle de 6 positions (comme une fleur)
-      // 0: Centre
-      // 1: Droite
-      // 2: Droite Extrême (ou retour centre)
-      // 3: Centre
-      // 4: Gauche
-      // 5: Gauche Extrême
-      
-      const cycle = i % 4; // Cycle de 4 pour une symétrie parfaite
-      let x = 0;
-      
-      // Motif : Centre -> Droite -> Centre -> Gauche (Le Serpent/Caducée)
-      if (cycle === 0) x = 0;                // Centre (Chakra)
-      else if (cycle === 1) x = HEX_RADIUS;  // Droite (Pingala)
-      else if (cycle === 2) x = 0;           // Centre (Retour)
-      else if (cycle === 3) x = -HEX_RADIUS; // Gauche (Ida)
+      // Sinusoidal path — éthéré wave
+      const angle = i * 0.6;
+      let x = Math.sin(angle) * CONFIG.amplitude;
+      // Subtle organic drift (deterministic, no Math.random)
+      x += Math.sin(i * 0.5) * 12;
 
-      // Ajout d'une petite variation "Organique" pour ne pas faire trop rigide
-      const organicDrift = Math.sin(i * 0.5) * 10;
-      x += organicDrift;
-
-      // Position Y : Descend régulièrement
-      const y = CONFIG.paddingTop + (i * VERTICAL_STEP);
+      const y = CONFIG.paddingTop + i * CONFIG.spacing;
 
       const isBoss = (i + 1) % CONFIG.bossInterval === 0;
-
-      // Si c'est un Boss, on le force au CENTRE pour marquer une étape
+      // Boss nodes snap to centre for visual emphasis
       if (isBoss) x = 0;
 
       nodeList.push({
         id: i,
         lesson,
-        x, // Position X calculée géométriquement
-        y, // Position Y stricte
+        x,
+        y,
         status,
         isBoss,
         isLocked: status === 'locked',
@@ -500,54 +493,79 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition', schoolConfig = null }) =
   if (loading) {
     return (
       <div className="neural-path-loading">
-        <div className="loading-spinner"></div>
-        <p>Initializing Neural Path...</p>
+        <div className="loading-spinner" />
+        <p style={{ marginTop: '16px', fontSize: '8px', letterSpacing: '0.8em', textTransform: 'uppercase', opacity: 0.4 }}>
+          Initializing Neural Path...
+        </p>
       </div>
     );
   }
 
   const containerHeight = nodes.length > 0
-    ? nodes[nodes.length - 1].y + 300
+    ? nodes[nodes.length - 1].y + 400
     : CONFIG.paddingTop + 500;
 
   return (
     <div id="roadmap-container" className="neural-path-container">
-      {/* HUD */}
+
+      {/* === ÉTHÉRÉ HUD === */}
       <div className="neural-hud">
-        <div className="hud-item">
-          <i className="fas fa-graduation-cap"></i>
-          <span className="hud-val">{masterschool.toUpperCase()}</span>
+        {/* Left — school identity */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{
+              width: '4px', height: '4px', borderRadius: '50%',
+              background: '#00e5ff', boxShadow: '0 0 10px #00e5ff'
+            }} />
+            <span className="hud-sub-label">Système de Conscience</span>
+          </div>
+          <span className="hud-val" style={{ marginLeft: '20px' }}>
+            {masterschool.toUpperCase()}
+          </span>
         </div>
-        <div className="hud-item">
-          <i className="fas fa-star"></i>
-          <span className="hud-val">{userXP.toLocaleString()} XP</span>
+
+        {/* Right — XP */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+          <span className="hud-sub-label">{userXP.toLocaleString()} XP</span>
+          <div style={{ width: '160px', height: '1px', background: 'rgba(255,255,255,0.05)' }} />
         </div>
       </div>
 
-      {/* Map Container */}
+      {/* === MAP CONTAINER === */}
       <div
         className="map-container"
         id="mapContainer"
         ref={mapContainerRef}
         style={{ minHeight: `${containerHeight}px` }}
       >
-        {/* Canvas for particles and connections */}
         <NeuralCanvas
           ref={canvasRef}
           nodes={nodes}
           currentLevel={currentLevel}
           config={CONFIG}
+          containerWidth={containerSize.width}
+          containerHeight={containerSize.height}
         />
 
-        {/* Nodes */}
         {nodes.map(node => (
           <NeuralNode
             key={node.id}
             id={`neural-node-${node.id}`}
             node={node}
+            containerWidth={containerSize.width}
             onClick={() => handleNodeClick(node)}
           />
         ))}
+      </div>
+
+      {/* Top/Bottom vignette fade */}
+      <div className="roadmap-vignette" />
+
+      {/* Bottom-left stream label */}
+      <div className="roadmap-stream-label">
+        <Activity style={{ width: '12px', height: '12px' }} />
+        <span>Stream v3.1.0</span>
+        <div style={{ width: '80px', height: '1px', background: 'rgba(255,255,255,0.1)' }} />
       </div>
 
       {/* Recenter Button */}
@@ -557,7 +575,7 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition', schoolConfig = null }) =
         className="recenter-btn"
         onClick={() => scrollToActive(true)}
       >
-        <i className="fas fa-crosshairs"></i>
+        <Crosshair style={{ width: '16px', height: '16px' }} />
       </button>
 
       {/* Mission Modal */}
@@ -567,11 +585,9 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition', schoolConfig = null }) =
         masterschool={masterschool}
         onClose={() => setIsModalOpen(false)}
         onStart={startLevel}
-        onComplete={async () => { // Make onComplete async
-          await loadRoadmap(); // Ensure roadmap is reloaded
-          setTimeout(() => {
-            scrollToActive(true); // Scroll to active node after reload
-          }, 500);
+        onComplete={async () => {
+          await loadRoadmap();
+          setTimeout(() => scrollToActive(true), 500);
         }}
       />
 
@@ -583,9 +599,10 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition', schoolConfig = null }) =
         onComplete={async () => {
           setShowCompletion(false);
           scrollToActiveAfterUpdateRef.current = true;
-          await loadRoadmap(); // Reload so next node is active; scroll runs in effect when nodes update
+          await loadRoadmap();
         }}
       />
+
       {/* Institute Sorter Modal */}
       {showInstituteSorter && user && (
         <React.Suspense fallback={null}>

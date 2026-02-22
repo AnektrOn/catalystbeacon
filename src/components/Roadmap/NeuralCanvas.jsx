@@ -1,366 +1,153 @@
-import React, { useEffect, useRef, forwardRef, useState } from 'react';
+import React, { useEffect, useRef, forwardRef } from 'react';
 
-// 🎨 CONFIGURATION DU DESIGN "QUANTUM DEEP VOID" v1.5
 const THEME = {
   colors: {
-    background: '#020617',      // AJOUT : Fond noir profond (Slate 950) pour que les étoiles brillent
-    activeCore: '#FFFFFF',
-    activeGlow: '#00F3FF',
-    completed: '#FFD700',
-    future: 'rgba(51, 65, 85, 0.2)',
-    boss: '#F43F5E',
-    particles: '#94A3B8',
-    nebula: 'rgba(0, 243, 255, 0.05)' // Légèrement augmenté pour visibilité
-  },
-  animation: {
-    speed: 0.0015,
-    flowSpeed: 0.012,
-    breathingSpeed: 0.02
+    background: '#010204',
+    glow: '#00e5ff',
+    completed: '#ffffff',
   }
 };
 
-const NeuralCanvas = forwardRef(({ nodes, currentLevel, config }, ref) => {
+const NeuralCanvas = forwardRef(({ nodes, currentLevel, config, containerWidth, containerHeight }, _ref) => {
   const canvasRef = useRef(null);
-  const animationFrameRef = useRef(null);
-  const particlesRef = useRef([]);
-  const nebulasRef = useRef([]);
   const frameRef = useRef(0);
-  const lastTimeRef = useRef(0);
-  const mouseRef = useRef({ x: -1000, y: -1000 });
-  const [canvasDimensions, setCanvasDimensions] = useState({ width: 600, height: 2000 });
+  const spores = useRef([]);
+  const animIdRef = useRef(null);
 
-  // 1. Initialisation
+  // Init spores whenever container size changes
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    const container = canvas.parentElement;
-    if (!container) return;
-    
-    const width = container.offsetWidth || 600;
-    const calculatedHeight = nodes.length > 0 
-      ? nodes[nodes.length - 1].y + 400 
-      : (config.paddingTop || 300) + 500;
-    
-    // Sécurité hauteur pour éviter le crash de texture sur mobile
-    const height = Math.min(calculatedHeight, 8000);
-
-    // Mise à jour de l'état pour forcer le redessin
-    setCanvasDimensions({ width, height });
-    
-    // Initialisation des étoiles/particules
-    particlesRef.current = [];
-    const pCount = config.particleCount || 100;
-    for (let i = 0; i < pCount; i++) {
-      particlesRef.current.push({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        baseX: Math.random() * width,
-        baseY: Math.random() * height,
-        size: Math.random() * 1.5,
-        alpha: Math.random() * 0.5 + 0.1,
-        speed: Math.random() * 0.02,
-        offset: Math.random() * 100
+    if (!containerWidth || !containerHeight) return;
+    const list = [];
+    for (let i = 0; i < 60; i++) {
+      list.push({
+        x: Math.random() * containerWidth,
+        y: Math.random() * containerHeight,
+        vx: (Math.random() - 0.5) * 0.2,
+        vy: (Math.random() - 0.5) * 0.2,
+        size: Math.random() * 2,
+        life: Math.random() * Math.PI * 2
       });
     }
+    spores.current = list;
+  }, [containerWidth, containerHeight]);
 
-    nebulasRef.current = [];
-    for (let i = 0; i < 6; i++) {
-      nebulasRef.current.push({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        size: 200 + Math.random() * 400,
-        speed: (Math.random() - 0.5) * 0.1
-      });
-    }
-
-  }, [nodes, config]);
-
-  // 2. Tracking Souris
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (!canvasRef.current) return;
-      const rect = canvasRef.current.getBoundingClientRect();
-      mouseRef.current.x = e.clientX - rect.left;
-      mouseRef.current.y = e.clientY - rect.top;
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
-
-  // 3. Boucle de Rendu
+  // Animation loop
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || !containerWidth || !containerHeight) return;
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const dpr = window.devicePixelRatio || 1;
 
-    const centerX = canvas.width / 2;
+    canvas.width = containerWidth * dpr;
+    canvas.height = containerHeight * dpr;
+    ctx.scale(dpr, dpr);
 
-    const animate = (timestamp) => {
-      if (!lastTimeRef.current) lastTimeRef.current = timestamp;
-      const deltaTime = timestamp - lastTimeRef.current;
-      lastTimeRef.current = timestamp;
+    const centerX = containerWidth / 2;
 
-      // Protection sauts temporels
-      const safeDelta = Math.min(deltaTime, 100);
-      const timeFactor = safeDelta / 16.67; 
-      
-      frameRef.current += 1 * timeFactor;
+    const animate = () => {
+      frameRef.current += 1;
       const time = frameRef.current;
-      
-      // --- CORRECTION 1 : FOND NOIR OBLIGATOIRE ---
-      // Au lieu de clearRect, on peint en noir. 
-      // Sinon "screen" mode sur fond transparent = invisible.
+
+      ctx.clearRect(0, 0, containerWidth, containerHeight);
       ctx.fillStyle = THEME.colors.background;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      const silencePhase = Math.sin(time * 0.001);
-      const silenceFactor = silencePhase > 0.95 ? 0.7 : 1;
-      const globalBreath = (0.95 + Math.sin(time * 0.002) * 0.05) * silenceFactor;
-      
-      ctx.globalCompositeOperation = 'screen'; 
+      ctx.fillRect(0, 0, containerWidth, containerHeight);
 
-      // Fond étoilé
-      drawBackground(ctx, canvas.width, canvas.height, time);
+      // --- Spores ---
+      ctx.globalCompositeOperation = 'lighter';
+      spores.current.forEach(s => {
+        s.x += s.vx + Math.sin(time * 0.01 + s.life) * 0.1;
+        s.y += s.vy + Math.cos(time * 0.01 + s.life) * 0.1;
+        if (s.x < 0) s.x = containerWidth;
+        if (s.x > containerWidth) s.x = 0;
+        if (s.y < 0) s.y = containerHeight;
+        if (s.y > containerHeight) s.y = 0;
+        const alpha = (Math.sin(time * 0.02 + s.life) + 1) / 2 * 0.3;
+        ctx.fillStyle = `rgba(0, 229, 255, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
 
-      // Connexions
+      // --- Filaments (bezier bundles) ---
       for (let i = 0; i < nodes.length - 1; i++) {
-        const curr = nodes[i];
-        const next = nodes[i + 1];
-        
-        const isCompleted = i < currentLevel;
-        const isActive = i === currentLevel; 
-        const isFuture = i > currentLevel;
-        const isBossPath = next.isBoss;
+        const start = nodes[i];
+        const end = nodes[i + 1];
+        const isPast = i < currentLevel;
+        const isActive = i === currentLevel;
 
-        let mouseProximity = 0;
-        if (mouseRef.current.x > -100) {
-          const midX = centerX + (curr.x + next.x) / 2;
-          const midY = (curr.y + next.y) / 2;
-          const dist = Math.hypot(mouseRef.current.x - midX, mouseRef.current.y - midY);
-          if (dist < 300) mouseProximity = (300 - dist) / 300;
+        const x1 = centerX + start.x;
+        const y1 = start.y;
+        const x2 = centerX + end.x;
+        const y2 = end.y;
+
+        const color = isPast ? THEME.colors.completed : (isActive ? THEME.colors.glow : 'white');
+        const baseAlpha = isPast ? 0.45 : (isActive ? 0.6 : 0.03);
+
+        for (let f = 0; f < 8; f++) {
+          const offset = f * 15;
+          const cp1x = x1 + (x2 - x1) * 0.3 + Math.sin(time * 0.005 + i + offset) * 30;
+          const cp1y = y1 + (y2 - y1) * 0.3 + Math.cos(time * 0.005 + i + offset) * 20;
+          const cp2x = x1 + (x2 - x1) * 0.7 + Math.cos(time * 0.005 + i + offset * 1.5) * 30;
+          const cp2y = y1 + (y2 - y1) * 0.7 + Math.sin(time * 0.005 + i + offset * 1.5) * 20;
+
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x2, y2);
+          ctx.strokeStyle = color;
+          ctx.lineWidth = isPast ? 0.5 : 0.3;
+          ctx.globalAlpha = baseAlpha * (1 - f * 0.1);
+          ctx.stroke();
+
+          // Travel particles on active/completed segments
+          if (isPast || isActive) {
+            const speed = isActive ? 0.004 : 0.0015;
+            const t = (time * speed + i * 0.5 + f * 0.1) % 1;
+            const invT = 1 - t;
+            const px =
+              Math.pow(invT, 3) * x1 +
+              3 * Math.pow(invT, 2) * t * cp1x +
+              3 * invT * Math.pow(t, 2) * cp2x +
+              Math.pow(t, 3) * x2;
+            const py =
+              Math.pow(invT, 3) * y1 +
+              3 * Math.pow(invT, 2) * t * cp1y +
+              3 * invT * Math.pow(t, 2) * cp2y +
+              Math.pow(t, 3) * y2;
+
+            ctx.fillStyle = f === 0 ? '#fff' : color;
+            ctx.globalAlpha = (isActive ? 0.8 : 0.5) * (1 - f * 0.1);
+            ctx.beginPath();
+            ctx.arc(px, py, f === 0 ? 1.5 : 0.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
         }
-       
-        drawSynapticBundle(
-          ctx,
-          centerX + curr.x, curr.y,
-          centerX + next.x, next.y,
-          { isCompleted, isActive, isFuture, isBossPath },
-          time,
-          mouseProximity,
-          globalBreath
-        );
-      }
-
-      // Nœud Actif
-      // Sécurité : On vérifie que le nœud existe
-      if (nodes[currentLevel]) {
-        drawActiveNodeHalo(ctx, frameRef.current, centerX, nodes[currentLevel]);
       }
 
       ctx.globalCompositeOperation = 'source-over';
-      
-      animationFrameRef.current = requestAnimationFrame(animate);
+      animIdRef.current = requestAnimationFrame(animate);
     };
 
-    animationFrameRef.current = requestAnimationFrame(animate);
-
+    animIdRef.current = requestAnimationFrame(animate);
     return () => {
-      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      if (animIdRef.current) cancelAnimationFrame(animIdRef.current);
     };
-  }, [nodes, currentLevel, config, canvasDimensions]); // Ajout canvasDimensions pour redessiner si taille change
+  }, [nodes, currentLevel, containerWidth, containerHeight]);
 
-  // --- MOTEUR DE DESSIN (Inchangé sauf secure) ---
-
-  const drawBackground = (ctx, width, height, time) => {
-    ctx.fillStyle = THEME.colors.nebula;
-    nebulasRef.current.forEach(n => {
-      const y = n.y + Math.sin(time * 0.0005) * 50;
-      ctx.beginPath();
-      ctx.arc(n.x, y, n.size, 0, Math.PI * 2);
-      ctx.fill();
-    });
-
-    ctx.fillStyle = THEME.colors.particles;
-    particlesRef.current.forEach((p, index) => {
-      const floatX = Math.sin(time * 0.001 + p.offset) * 20;
-      const verticalDrift = Math.sin(time * 0.0005) * 15;
-      const x = p.baseX + floatX;
-      const y = p.baseY + verticalDrift + p.y * 0.01;
-      
-      const alpha = p.alpha + Math.sin(time * 0.02 + index) * 0.1;
-      ctx.globalAlpha = Math.max(0, alpha);
-      ctx.beginPath();
-      ctx.arc(x, y, p.size, 0, Math.PI * 2);
-      ctx.fill();
-    });
-  };
-
-  const drawSynapticBundle = (ctx, x1, y1, x2, y2, status, time, proximity, globalBreath) => {
-    const { isCompleted, isActive, isFuture, isBossPath } = status;
-    const warpedTime = time * (1 - proximity * 0.4);
-
-    let mainColor = isFuture ? THEME.colors.future : (isActive ? THEME.colors.activeGlow : THEME.colors.completed);
-    if (isBossPath && (isActive || isCompleted)) mainColor = THEME.colors.boss;
-
-    const midX = (x1 + x2) / 2;
-    const midY = (y1 + y2) / 2;
-    const fiberCount = isFuture ? 1 : (isActive ? 16 : 10);
-    
-    for (let i = 0; i < fiberCount; i++) {
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-
-      const localTime = warpedTime + i * 150;
-      const drift = Math.sin(time * 0.0001 + i * 10) * 2;
-      const baseSpread = isFuture ? 0 : Math.sin(i * 123.45) * 8; 
-      const organicWave = Math.sin(localTime * THEME.animation.speed + (y1 * 0.01)) * 5;
-      const spread = baseSpread + organicWave + drift;
-      
-      const cp1x = midX + spread + (proximity * 30 * (i%2===0?1:-1));
-      const cp1y = midY + (Math.cos(localTime * THEME.animation.speed + i) * 6);
-
-      ctx.quadraticCurveTo(cp1x, cp1y, x2, y2);
-
-      const centerFactor = 1 - Math.abs(i - fiberCount/2) / (fiberCount/2); 
-      let fiberAlpha = isFuture ? 0.2 : (0.1 + (centerFactor * 0.1));
-      
-      fiberAlpha += proximity * 0.2;
-      if (isActive) fiberAlpha += Math.sin(time * 0.05) * 0.05;
-      if (isCompleted) fiberAlpha *= 0.85 + Math.sin(time * 0.02 + y1) * 0.05;
-
-      ctx.strokeStyle = mainColor;
-      const baseWidth = isFuture ? 1 : (Math.random() * 0.5 + 0.5 + centerFactor);
-      const breathingWidth = baseWidth * (0.8 + Math.sin(time * 0.01 + i) * 0.2);
-      ctx.lineWidth = breathingWidth;
-      
-      ctx.globalAlpha = Math.max(0, Math.min(1, fiberAlpha * globalBreath));
-      ctx.stroke();
-    }
-
-    if (!isFuture) {
-      const particleCount = isActive ? 2 : 1;
-      if (isCompleted && Math.random() > 0.02) return; 
-
-      for (let p = 0; p < particleCount; p++) {
-        const t = ((warpedTime * THEME.animation.flowSpeed) + (p * 0.4)) % 1;
-        const getPos = (posT) => {
-          if (posT < 0) posT += 1;
-          const mt = 1 - posT;
-          const avgWave = Math.sin(warpedTime * THEME.animation.speed + (y1 * 0.01)) * 5;
-          const cx = midX + avgWave;
-          const cy = midY;
-          return {
-            x: (mt * mt * x1) + (2 * mt * posT * cx) + (posT * posT * x2),
-            y: (mt * mt * y1) + (2 * mt * posT * cy) + (posT * posT * y2)
-          };
-        };
-
-        const currentPos = getPos(t);
-        const tailSteps = 8;
-        const tailLen = 0.12;
-        
-        for(let s = 1; s <= tailSteps; s++) {
-           const tailT = t - (s * (tailLen / tailSteps));
-           if(tailT < 0) continue;
-           const p1 = getPos(tailT);
-           const p2 = getPos(t - ((s-1) * (tailLen / tailSteps)));
-           
-           ctx.beginPath();
-           ctx.moveTo(p1.x, p1.y);
-           ctx.lineTo(p2.x, p2.y);
-           ctx.lineWidth = (isBossPath ? 3 : 1.5) * (1 - s/tailSteps);
-           ctx.strokeStyle = mainColor;
-           ctx.globalAlpha = (1 - s/tailSteps) * 0.6;
-           ctx.stroke();
-        }
-
-        const size = isBossPath ? 3 : 2;
-        ctx.fillStyle = mainColor;
-        ctx.globalAlpha = 0.3;
-        ctx.beginPath();
-        ctx.arc(currentPos.x, currentPos.y, size * 3, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = THEME.colors.activeCore;
-        ctx.globalAlpha = 1;
-        ctx.beginPath();
-        ctx.arc(currentPos.x, currentPos.y, size, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-  };
-
-  const drawActiveNodeHalo = (ctx, frame, centerX, node) => {
-    if (!node) return;
-    const x = centerX + node.x;
-    const y = node.y;
-    const breath = Math.sin(frame * THEME.animation.breathingSpeed); 
-    const size = 35 + (breath * 5); 
-
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(frame * 0.015);
-    const gradient = ctx.createConicGradient(0, x, y);
-    gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
-    gradient.addColorStop(0.2, 'rgba(0, 243, 255, 0.05)');
-    gradient.addColorStop(0.5, 'rgba(0, 243, 255, 0.3)');
-    gradient.addColorStop(0.8, 'rgba(0, 243, 255, 0.05)');
-    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.arc(0, 0, size * 1.8, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-
-    ctx.beginPath();
-    ctx.arc(x, y, size, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(0, 243, 255, 0.05)';
-    ctx.strokeStyle = THEME.colors.activeGlow;
-    ctx.lineWidth = 1.5;
-    ctx.globalAlpha = 0.5 + (breath * 0.3);
-    ctx.fill();
-    ctx.stroke();
-
-    const orbitSpeed = frame * 0.04;
-    const orbitR = size * 1.2;
-    for(let i=0; i<3; i++) {
-        const angle = orbitSpeed + (i * (Math.PI * 2 / 3));
-        const localR = orbitR + Math.sin(frame * 0.02 + i * 10) * 3;
-        const ox = x + Math.cos(angle) * localR;
-        const oy = y + Math.sin(angle) * (localR * 0.4); 
-        const electronSize = 2 * (1 + Math.sin(angle) * 0.3); // Simplification sans shadowBlur pour perf
-
-        const glow = ctx.createRadialGradient(ox, oy, 0, ox, oy, electronSize * 4);
-        glow.addColorStop(0, 'rgba(255, 255, 255, 1)');
-        glow.addColorStop(0.2, 'rgba(0, 243, 255, 0.8)');
-        glow.addColorStop(1, 'rgba(0, 243, 255, 0)');
-        
-        ctx.fillStyle = glow;
-        ctx.globalAlpha = 0.8 + Math.sin(angle) * 0.2;
-        ctx.beginPath();
-        ctx.arc(ox, oy, electronSize * 4, 0, Math.PI * 2);
-        ctx.fill();
-    }
-  };
+  const w = containerWidth || 600;
+  const h = containerHeight || 2000;
 
   return (
     <canvas
       ref={canvasRef}
       id="neuron-canvas"
       className="neuron-canvas"
-      // --- CORRECTION 2 : AJOUT DES PROPS DE RÉSOLUTION ---
-      width={canvasDimensions.width}
-      height={canvasDimensions.height}
-      // ----------------------------------------------------
       style={{
         display: 'block',
         position: 'absolute',
         top: 0,
         left: 0,
-        width: `${canvasDimensions.width}px`,
-        height: `${canvasDimensions.height}px`,
+        width: `${w}px`,
+        height: `${h}px`,
         zIndex: 0,
         pointerEvents: 'none'
       }}

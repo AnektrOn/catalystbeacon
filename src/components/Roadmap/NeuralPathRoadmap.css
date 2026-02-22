@@ -1,34 +1,20 @@
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;500;600;700&display=swap');
+/* === ÉTHÉRÉ ROADMAP THEME === */
 
-/* --- BRIDGE SYSTEM: Connexion Sécurisée --- */
 :root {
-  /* CORRECTION CRITIQUE : 
-     On utilise 'color-mix' pour gérer la compatibilité Hex/HSL automatiquement.
-     Si ça échoue, on a un fallback visible (Cyan/Or).
-  */
-  
-  /* Neon Blue -> Primary (ou Cyan par défaut) */
-  --neon-blue: color-mix(in srgb, var(--primary), #00f3ff);
-  
-  /* Neon Gold -> Secondary (ou Or par défaut) */
-  --neon-gold: color-mix(in srgb, var(--secondary), #ffd700);
-  
-  /* Neon Red -> Destructive (ou Rouge par défaut) */
-  --neon-red: color-mix(in srgb, var(--destructive), #ff003c);
+  --neon-blue: color-mix(in srgb, var(--primary, #00f3ff), #00f3ff);
+  --neon-gold: color-mix(in srgb, var(--secondary, #ffd700), #ffd700);
+  --neon-red:  color-mix(in srgb, var(--destructive, #ff003c), #ff003c);
+  --ethereal-bg: #010204;
+  --ethereal-cyan: #00e5ff;
 }
 
+/* ---- CONTAINER ---- */
 .neural-path-container {
   margin: 0;
-  /* FORCE LE FOND SOMBRE (ESPACE) pour la visibilité des néons */
-  background-color: #050505; 
-  
-  /* Dégradé d'ambiance subtil utilisant les couleurs du thème */
-  background-image: 
-    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--primary), transparent 90%), transparent 70%),
-    radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--secondary), transparent 90%), transparent 70%);
-    
-  color: #e0e0e0; /* Texte clair forcé */
-  font-family: 'Rajdhani', sans-serif;
+  background-color: var(--ethereal-bg);
+  color: rgba(255, 255, 255, 0.9);
+  font-family: 'Inter', 'Rajdhani', sans-serif;
+  font-weight: 300;
   overflow-x: hidden;
   touch-action: pan-y;
   -webkit-tap-highlight-color: transparent;
@@ -37,125 +23,116 @@
   position: relative;
 }
 
-/* Sci-Fi Scrollbar */
-.neural-path-container::-webkit-scrollbar {
-  width: 6px;
-}
+/* Hide scrollbar */
+.neural-path-container::-webkit-scrollbar { display: none; }
+.neural-path-container { scrollbar-width: none; }
 
-.neural-path-container::-webkit-scrollbar-track {
-  background: #020202;
-}
-
-.neural-path-container::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 3px;
-}
-
-.neural-path-container::-webkit-scrollbar-thumb:hover {
-  background: var(--neon-blue);
-}
-
-/* Map Container */
+/* ---- MAP CONTAINER ---- */
 .map-container {
-  max-width: 600px;
+  width: 100%;
+  max-width: 640px;
   margin: 0 auto;
   position: relative;
-  min-height: 100vh;
-  padding-bottom: 120px;
+  padding-bottom: 140px;
   z-index: 1;
-  /* 🔴 FIX: S'assurer que le contenu du canvas n'est pas masqué */
   overflow: visible;
-  /* 🔴 FIX: Pas de clip qui pourrait masquer */
-  clip: none;
-  clip-path: none;
 }
 
 .neuron-canvas {
   position: absolute;
   top: 0;
   left: 0;
-  /* 🔴 DEBUG: Commenté temporairement pour tester avec les dimensions exactes */
-  /* width: 100%; */
-  /* height: 100%; */
-  z-index: 0; /* Derrière les nœuds (z-index: 10) */
+  z-index: 0;
   pointer-events: none;
-  opacity: 1;
-  /* 🔴 FIX: S'assurer que le canvas n'est pas masqué */
-  overflow: visible;
-  clip: none;
-  clip-path: none;
-  /* Pas de mix-blend-mode pour garantir la visibilité sur fond sombre */
 }
 
-/* HUD - Style Glass Sombre */
+/* ---- HUD (fixed top bar) ---- */
 .neural-hud {
   position: fixed;
   top: 0;
+  left: 0;
   width: 100%;
-  padding: 15px 20px;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%);
+  padding: 36px 48px 24px;
+  background: linear-gradient(to bottom, rgba(1, 2, 4, 0.95) 0%, rgba(1, 2, 4, 0) 100%);
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
   z-index: 50;
   pointer-events: none;
 }
 
-/* Réactive les clics sur les boutons du HUD */
-.neural-hud > * {
-  pointer-events: auto;
-}
+.neural-hud > * { pointer-events: auto; }
 
-.hud-item {
-  font-size: 14px;
-  color: #888;
-  letter-spacing: 1px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 600;
+.hud-sub-label {
+  font-size: 8px!important;
+  letter-spacing: 0.8em;
   text-transform: uppercase;
-}
-
-.hud-item svg,
-.hud-item i {
-  font-size: 14px;
-  color: var(--neon-blue);
-  filter: drop-shadow(0 0 5px var(--neon-blue));
-}
-
-.hud-item.xp svg,
-.hud-item.xp i {
-  color: var(--neon-gold);
-  filter: drop-shadow(0 0 5px var(--neon-gold));
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 300;
 }
 
 .hud-val {
-  color: #fff;
-  font-weight: 700;
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+  font-size: 12px;
+  letter-spacing: 0.5em;
+  font-weight: 300;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
 }
 
-/* Recenter Button */
+/* ---- VIGNETTE (top/bottom fade) ---- */
+.roadmap-vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    var(--ethereal-bg) 0%,
+    transparent 12%,
+    transparent 88%,
+    var(--ethereal-bg) 100%
+  );
+  z-index: 5;
+}
+
+/* ---- STREAM LABEL (bottom left) ---- */
+.roadmap-stream-label {
+  position: fixed;
+  bottom: 48px;
+  left: 48px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  opacity: 0.4;
+  pointer-events: none;
+  color: white;
+}
+
+.roadmap-stream-label span {
+  font-size: 7px;
+  letter-spacing: 0.8em;
+  text-transform: uppercase;
+  font-weight: 300;
+}
+
+/* ---- RECENTER BUTTON ---- */
 .recenter-btn {
   position: fixed;
-  bottom: 100px;
-  right: 20px;
-  width: 50px;
-  height: 50px;
+  bottom: 48px;
+  right: 48px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  
-  background: rgba(20, 20, 25, 0.9);
-  border: 1px solid #444;
-  color: var(--neon-blue);
-  
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
-  z-index: 40;
+  z-index: 50;
   cursor: pointer;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(4px);
   opacity: 0;
   transform: translateY(20px);
 }
@@ -165,37 +142,62 @@
   transform: translateY(0);
 }
 
+.recenter-btn:hover {
+  background: white;
+  border-color: white;
+  color: black;
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+}
+
 .recenter-btn:active {
   transform: scale(0.9);
 }
 
-.recenter-btn:hover {
-  border-color: var(--neon-blue);
-  box-shadow: 0 0 15px var(--neon-blue);
-  color: #fff;
-}
-
-/* Loading */
+/* ---- LOADING STATE ---- */
 .neural-path-loading {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: #020202;
-  color: #e0e0e0;
+  background: var(--ethereal-bg);
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(255,255,255,0.1);
-  border-top-color: var(--neon-blue);
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top-color: var(--ethereal-cyan);
   border-radius: 50%;
-  animation: spin 1s linear infinite;
-  box-shadow: 0 0 15px var(--neon-blue);
+  animation: spin 1.2s linear infinite;
+  box-shadow: 0 0 20px var(--ethereal-cyan);
 }
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* ---- JUMP BUTTON (keep functional) ---- */
+.jump-institute-btn {
+  position: fixed;
+  bottom: 110px;
+  right: 48px;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  cursor: pointer;
+  z-index: 50;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(4px);
+}
+
+.jump-institute-btn:hover {
+  border-color: var(--ethereal-cyan);
+  color: var(--ethereal-cyan);
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.15);
 }
