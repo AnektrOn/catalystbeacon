@@ -478,3 +478,71 @@ svg text, .recharts-legend-item, .recharts-tooltip-label, .recharts-cartesian-ax
 code, pre, kbd, samp {
   font-family: var(--font-family-mono) !important;
 }
+
+/* Injecte ce bloc dans ton index.css global. 
+   Il définit les classes que tu utiliseras dans tes pages.
+*/
+
+@layer components {
+  /* --- PAGE DE FOND (DEEP VOID) --- */
+  .ethereal-page {
+    @apply min-h-screen relative overflow-x-hidden;
+    background-color: #010204; /* Noir d'encre pur */
+  }
+
+  /* --- LE GRAIN ÉTHÉRÉ (S'APPLIQUE PARTOUT) --- */
+  .ethereal-page::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.4'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+  }
+
+  /* --- CONTENEUR DE CONTENU --- */
+  .neural-container {
+    @apply relative z-10 mx-auto max-w-7xl px-6 py-8 md:py-12;
+  }
+
+  /* --- CARTES EN VERRE NEURAL (REMPLACE TES CARTES ACTUELLES) --- */
+  .ethereal-glass {
+    @apply backdrop-blur-3xl border transition-all duration-700;
+    background-color: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 0 80px rgba(255, 255, 255, 0.02);
+  }
+
+  .ethereal-glass:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  }
+
+  /* --- BOUTON NEURAL --- */
+  .btn-neural {
+    @apply relative overflow-hidden transition-all duration-700 flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-black uppercase;
+    font-size: 10px;
+    letter-spacing: 0.4em;
+    background-color: #ffffff;
+    color: #000000;
+  }
+
+  .btn-neural:hover {
+    @apply scale-[1.02];
+    background-color: #00e5ff; /* Cyan Actif */
+    box-shadow: 0 0 30px rgba(0, 229, 255, 0.4);
+  }
+
+  /* --- TITRES ÉTHÉRÉS --- */
+  .text-neural-title {
+    @apply uppercase italic font-light tracking-[0.5em];
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+  }
+}
+
+/* Scrollbar invisible pour garder le look épuré */
+::-webkit-scrollbar { display: none; }

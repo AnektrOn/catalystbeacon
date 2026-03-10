@@ -102,6 +102,10 @@ const SignupPage = () => {
     
     // Validate form first
     const isValid = validateForm()
+
+    // #region agent log
+    console.error('[DEBUG-444e1a] signup-validate', {isValid, passwordLen:formData.password?.length, hasUpper:/[A-Z]/.test(formData.password), hasLower:/[a-z]/.test(formData.password), hasNum:/[0-9]/.test(formData.password), agreeToTerms:formData.agreeToTerms});
+    // #endregion
     
     if (!isValid) {
       // Scroll to first error
@@ -131,6 +135,10 @@ const SignupPage = () => {
       ])
       
       const { data, error } = signUpResult || {}
+
+      // #region agent log
+      console.error('[DEBUG-444e1a] signup-result', {hasData:!!data, hasUser:!!data?.user, hasSession:!!data?.session, errorMsg:error?.message, signUpResultType:typeof signUpResult});
+      // #endregion
       
       if (error) {
         toast.error(error.message || 'Failed to create account')

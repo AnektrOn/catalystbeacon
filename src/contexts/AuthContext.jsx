@@ -441,6 +441,9 @@ const AuthProviderComponent = ({ children }) => {
   }, [fetchProfile])
 
   const signUp = async (email, password, userData = {}) => {
+    // #region agent log
+    console.error('[DEBUG-444e1a] signUp-entry', {email, hasPassword:!!password, userData});
+    // #endregion
     try {
       // logDebug('Starting signup process for:', email)
       
@@ -452,6 +455,10 @@ const AuthProviderComponent = ({ children }) => {
           data: userData
         }
       })
+
+      // #region agent log
+      console.error('[DEBUG-444e1a] signUp-result', {hasUser:!!data?.user, hasSession:!!data?.session, errorMsg:error?.message, errorCode:error?.code, errorStatus:error?.status});
+      // #endregion
       
       if (error) {
         // logError(error, 'Signup failed')
@@ -541,11 +548,18 @@ const AuthProviderComponent = ({ children }) => {
   }
 
   const signIn = async (email, password) => {
+    // #region agent log
+    console.error('[DEBUG-444e1a] signIn-entry', {email, hasPassword:!!password});
+    // #endregion
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       })
+
+      // #region agent log
+      console.error('[DEBUG-444e1a] signIn-result', {hasUser:!!data?.user, errorMsg:error?.message, errorCode:error?.code, errorStatus:error?.status});
+      // #endregion
 
       if (error) throw error
       
@@ -572,6 +586,9 @@ const AuthProviderComponent = ({ children }) => {
       
       return { data, error: null }
     } catch (error) {
+      // #region agent log
+      console.error('[DEBUG-444e1a] signIn-catch', {errorMsg:error?.message, errorCode:error?.code, errorName:error?.name});
+      // #endregion
       if (process.env.NODE_ENV === 'development') {
         console.error('Sign in error:', error?.message || error, error)
       }
