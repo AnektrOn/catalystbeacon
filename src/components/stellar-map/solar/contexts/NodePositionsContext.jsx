@@ -1,19 +1,36 @@
-import React, { createContext, useState, useContext, useCallback } from 'react';
+import React, { createContext, useContext, useRef, useState, useCallback, useEffect, useMemo } from 'react';
 
 const NodePositionsContext = createContext({
   nodePositions: {},
+  positionsRef: { current: {} },
   setNodePosition: () => {},
 });
 
 export const NodePositionsProvider = ({ children }) => {
-  const [nodePositions, setNodePositions] = useState({});
+  const positionsRef = useRef({});
+  const [snapshot, setSnapshot] = useState({});
+  const throttleRef = useRef(null);
 
   const setNodePosition = useCallback((nodeId, position) => {
-    setNodePositions((prev) => ({ ...prev, [nodeId]: position }));
+    positionsRef.current[nodeId] = position;
+    if (!throttleRef.current) {
+      throttleRef.current = setTimeout(() => {
+        setSnapshot({ ...positionsRef.current });
+        throttleRef.current = null;
+      }, 160);
+    }
   }, []);
 
+  useEffect(() => () => clearTimeout(throttleRef.current), []);
+
+  const value = useMemo(() => ({
+    nodePositions: snapshot,
+    positionsRef,
+    setNodePosition,
+  }), [snapshot, setNodePosition]);
+
   return (
-    <NodePositionsContext.Provider value={{ nodePositions, setNodePosition }}>
+    <NodePositionsContext.Provider value={value}>
       {children}
     </NodePositionsContext.Provider>
   );

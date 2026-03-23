@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useLayoutEffect, useEffect } from 'react';
+import React, { createContext, useContext, useState, useLayoutEffect, useEffect, useCallback, useMemo } from 'react';
 import { colorPalettes, DEFAULT_PALETTE, STORAGE_KEY } from '../config/colorPalettes';
 import colorPaletteSwitcher from '../utils/colorPaletteSwitcher';
 
@@ -28,12 +28,10 @@ export const ThemeProvider = ({ children }) => {
       if (saved !== null) {
         return saved === 'true' ? 'dark' : 'light';
       }
-      // Auto-detect system preference
-      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-        ? 'dark'
-        : 'light';
+      // Default to dark for Neural Dark theme
+      return 'dark';
     }
-    return 'light';
+    return 'dark';
   });
 
   /**
@@ -107,58 +105,32 @@ export const ThemeProvider = ({ children }) => {
   }, [currentPalette]);
 
   /**
-   * Listen for dark mode class changes (e.g., from AppShell theme toggle)
-   */
-  useEffect(() => {
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-          const isDark = document.documentElement.classList.contains('dark');
-          const newMode = isDark ? 'dark' : 'light';
-          if (newMode !== mode) {
-            setMode(newMode);
-          }
-        }
-      });
-    });
-
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class']
-    });
-
-    return () => observer.disconnect();
-  }, [mode]);
-
-  /**
    * Switch to a specific palette
    */
-  const switchPalette = (paletteKey) => {
+  const switchPalette = useCallback((paletteKey) => {
     if (colorPalettes[paletteKey]) {
       setCurrentPalette(paletteKey);
-      // Also update the legacy switcher for compatibility
       colorPaletteSwitcher.switchTo(paletteKey, true);
-    } else {
     }
-  };
+  }, []);
 
   /**
    * Toggle between light and dark mode
    */
-  const toggleMode = () => {
+  const toggleMode = useCallback(() => {
     setMode(prev => prev === 'dark' ? 'light' : 'dark');
-  };
+  }, []);
 
   /**
    * Set mode explicitly
    */
-  const setModeExplicit = (newMode) => {
+  const setModeExplicit = useCallback((newMode) => {
     if (newMode === 'dark' || newMode === 'light') {
       setMode(newMode);
     }
-  };
+  }, []);
 
-  const value = {
+  const value = useMemo(() => ({
     currentPalette,
     mode,
     palette: colorPalettes[currentPalette],
@@ -167,7 +139,7 @@ export const ThemeProvider = ({ children }) => {
     toggleMode,
     setMode: setModeExplicit,
     availablePalettes: colorPalettes,
-  };
+  }), [currentPalette, mode, switchPalette, toggleMode, setModeExplicit]);
 
   return (
     <ThemeContext.Provider value={value}>

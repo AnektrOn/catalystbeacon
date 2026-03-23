@@ -60,8 +60,8 @@ const SignupPage = () => {
       newErrors.password = 'Password is required'
     } else if (formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters'
-    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-      newErrors.password = 'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+    } else if (!(/[a-zA-Z]/.test(formData.password) && /[0-9]/.test(formData.password))) {
+      newErrors.password = 'Password must contain at least one letter and one number'
     }
     
     // Confirm password validation
@@ -76,8 +76,9 @@ const SignupPage = () => {
       newErrors.agreeToTerms = 'You must agree to the terms and conditions'
     }
     
+    const firstErrorField = Object.keys(newErrors)[0] || null
     setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    return { isValid: !firstErrorField, firstErrorField }
   }
 
   const handleChange = (e) => {
@@ -100,22 +101,19 @@ const SignupPage = () => {
     e.preventDefault()
     e.stopPropagation()
     
-    // Validate form first
-    const isValid = validateForm()
+    const { isValid, firstErrorField } = validateForm()
 
-    // #region agent log
-    console.error('[DEBUG-444e1a] signup-validate', {isValid, passwordLen:formData.password?.length, hasUpper:/[A-Z]/.test(formData.password), hasLower:/[a-z]/.test(formData.password), hasNum:/[0-9]/.test(formData.password), agreeToTerms:formData.agreeToTerms});
-    // #endregion
-    
     if (!isValid) {
-      // Scroll to first error
-      const firstErrorField = Object.keys(errors)[0]
       if (firstErrorField) {
-        const errorElement = document.getElementById(firstErrorField)
-        if (errorElement) {
-          errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
-          errorElement.focus()
-        }
+        requestAnimationFrame(() => {
+          const errorElement = document.getElementById(firstErrorField)
+          if (errorElement) {
+            errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            if (typeof errorElement.focus === 'function') {
+              errorElement.focus()
+            }
+          }
+        })
       }
       return
     }
@@ -136,12 +134,8 @@ const SignupPage = () => {
       
       const { data, error } = signUpResult || {}
 
-      // #region agent log
-      console.error('[DEBUG-444e1a] signup-result', {hasData:!!data, hasUser:!!data?.user, hasSession:!!data?.session, errorMsg:error?.message, signUpResultType:typeof signUpResult});
-      // #endregion
-      
       if (error) {
-        toast.error(error.message || 'Failed to create account')
+        // AuthContext already surfaces toast for signup errors
         setLoading(false)
       } else {
         // Check if user was immediately signed in (email confirmation disabled)
@@ -176,7 +170,7 @@ const SignupPage = () => {
   }, [loading, startTransition, endTransition]);
 
   return (
-    <div className="min-h-screen flex bg-[#0a0a0a]">
+    <div className="min-h-screen min-h-[100dvh] flex bg-[#0a0a0a] safe-area-top safe-area-bottom">
       {/* Left Side - Hero Image (Hidden on mobile) */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/20 via-transparent to-cyan-900/20 z-10"></div>
@@ -191,7 +185,7 @@ const SignupPage = () => {
       </div>
 
       {/* Right Side - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         <div className="w-full max-w-md">
           {/* Logo */}
           <div className="mb-12">
@@ -240,9 +234,10 @@ const SignupPage = () => {
                 id="email"
                 name="email"
                 type="email"
+                inputMode="email"
                 autoComplete="email"
                 required
-                className={`w-full px-4 py-3.5 bg-ethereal-glass border ${
+                className={`w-full px-4 py-3.5 text-base bg-ethereal-glass border ${
                   errors.email ? 'border-red-500' : 'border-ethereal'
                 } rounded-ethereal text-ethereal-text placeholder-ethereal-text/40 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent transition-all`}
                 placeholder="Your Email"
@@ -261,9 +256,10 @@ const SignupPage = () => {
                 name="fullName"
                 type="text"
                 required
-                className={`w-full px-4 py-3.5 bg-ethereal-glass border ${
+                className={`w-full px-4 py-3.5 text-base bg-ethereal-glass border ${
                   errors.fullName ? 'border-red-500' : 'border-ethereal'
                 } rounded-ethereal text-ethereal-text placeholder-ethereal-text/40 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent transition-all`}
+                autoComplete="name"
                 placeholder="Full Name"
                 value={formData.fullName}
                 onChange={handleChange}
@@ -281,7 +277,7 @@ const SignupPage = () => {
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="new-password"
                 required
-                className={`w-full px-4 py-3.5 bg-ethereal-glass border ${
+                className={`w-full px-4 py-3.5 text-base bg-ethereal-glass border ${
                   errors.password ? 'border-red-500' : 'border-ethereal'
                 } rounded-ethereal text-ethereal-text placeholder-ethereal-text/40 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent transition-all pr-12`}
                 placeholder="Password"
@@ -312,7 +308,7 @@ const SignupPage = () => {
                 type={showConfirmPassword ? 'text' : 'password'}
                 autoComplete="new-password"
                 required
-                className={`w-full px-4 py-3.5 bg-ethereal-glass border ${
+                className={`w-full px-4 py-3.5 text-base bg-ethereal-glass border ${
                   errors.confirmPassword ? 'border-red-500' : 'border-ethereal'
                 } rounded-ethereal text-ethereal-text placeholder-ethereal-text/40 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent transition-all pr-12`}
                 placeholder="Confirm Password"

@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import Providers from './solar/Providers';
-import SolarSystem from './solar/components/SolarSystem';
 import LevelSelector, { getLastVisitedLevel } from './LevelSelector';
+
+// Defer Three.js + R3F bundle until user selects a level
+const SolarSystem = lazy(() => import('./solar/components/SolarSystem'));
 
 /**
  * Stellar Map page.
@@ -26,7 +28,9 @@ export default function StellarMap() {
         <>
           <div className="absolute inset-0 w-full h-full z-0">
             <Providers>
-              <SolarSystem level={selectedLevel} />
+              <Suspense fallback={<div className="w-full h-full bg-black" />}>
+                <SolarSystem level={selectedLevel} />
+              </Suspense>
             </Providers>
           </div>
           <div className="absolute top-4 right-4 z-[100] flex items-center gap-2">

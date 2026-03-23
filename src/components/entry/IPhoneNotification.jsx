@@ -73,7 +73,7 @@ const IPhoneNotification = ({
         {/* Optional preview image */}
         {image && (
           <div className="notif-image">
-            <img src={image} alt="preview" />
+            <img src={image} alt="preview" loading="lazy" />
           </div>
         )}
       </div>

@@ -950,7 +950,7 @@ const EnhancedLandingPage = () => {
         <div className="container mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-8">
             <div>
-              <img src={LogoBeacon} alt="HC Beacon" className="h-10 w-auto mb-4 object-contain opacity-80" />
+              <img src={LogoBeacon} alt="HC Beacon" className="h-10 w-auto mb-4 object-contain opacity-80" loading="lazy" />
               <p className="text-gray-500 font-rajdhani text-sm tracking-wide">System Version 2.4.0 // Neural Net Active</p>
             </div>
             <div className="flex gap-10 text-sm font-cinzel text-gray-400 tracking-wide">

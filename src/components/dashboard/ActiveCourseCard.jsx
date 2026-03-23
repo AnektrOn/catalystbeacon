@@ -30,6 +30,7 @@ const ActiveCourseCard = ({
           src={image} 
           alt={title}
           className="course-image"
+          loading="lazy"
         />
         <div className="course-image-overlay" />
         

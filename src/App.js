@@ -8,7 +8,6 @@ import { Toaster } from 'react-hot-toast'
 import ErrorBoundary from './components/ErrorBoundary'
 import AppShell from './components/AppShell'
 import ProtectedSubscriptionRoute from './components/ProtectedSubscriptionRoute'
-import CosmicLoader from './components/ui/CosmicLoader'
 import SkeletonLoader from './components/ui/SkeletonLoader'
 import WelcomeModal from './components/WelcomeModal'
 import DevRouteElements from './routes/DevRoutes'
@@ -39,6 +38,7 @@ const AchievementsPage = React.lazy(() => import(/* webpackChunkName: "achieveme
 const ForgotPasswordPage = React.lazy(() => import(/* webpackChunkName: "auth" */ './pages/ForgotPasswordPage'))
 const TermsPage = React.lazy(() => import(/* webpackChunkName: "legal" */ './pages/TermsPage'))
 const PrivacyPage = React.lazy(() => import(/* webpackChunkName: "legal" */ './pages/PrivacyPage'))
+const CookiesPage = React.lazy(() => import(/* webpackChunkName: "legal" */ './pages/CookiesPage'))
 const AwakeningLandingPage = React.lazy(() => import(/* webpackChunkName: "landing" */ './pages/AwakeningLandingPage'))
 const MatrixEntryPage = React.lazy(() => import(/* webpackChunkName: "entry" */ './pages/MatrixEntryPage'))
 const SchoolRoadmap = React.lazy(() => import(/* webpackChunkName: "roadmap-feature" */ './pages/SchoolRoadmap'))
@@ -96,6 +96,11 @@ const AppRoutes = () => {
       <Route path="/privacy" element={
         <React.Suspense fallback={<LoadingScreen />}>
           <PrivacyPage />
+        </React.Suspense>
+      } />
+      <Route path="/cookies" element={
+        <React.Suspense fallback={<LoadingScreen />}>
+          <CookiesPage />
         </React.Suspense>
       } />
       

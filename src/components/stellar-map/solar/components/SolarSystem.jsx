@@ -79,6 +79,9 @@ export default function SolarSystem({ level }) {
         >
           <Suspense fallback={null}>
             <CameraController />
+            {/* TODO: once public/images/background/stars_2k.webp is generated
+                (cwebp -q 85 -resize 2048 1024 stars_8k.webp -o stars_2k.webp),
+                swap the path below to /images/background/stars_2k.webp for non-HiDPI viewports. */}
             <SceneBackground texturePath="/images/background/stars_8k.webp" />
             <SceneLighting />
             

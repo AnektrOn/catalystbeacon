@@ -84,7 +84,6 @@ const generateIncomingCallSound = (audioContextRef) => {
 
 const MatrixEntryPage = () => {
   const navigate = useNavigate()
-  const canvasRef = useRef(null)
 
   const [currentAct, setCurrentAct] = useState('act1') // act1 | act2 | act3
   const [act1Started, setAct1Started] = useState(false) // true après premier tap (débloque l’audio)
@@ -111,23 +110,13 @@ const MatrixEntryPage = () => {
 
   const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
-  // Initialize audio elements on mount
-  useEffect(() => {
-    if (!audioRef.current) {
-      audioRef.current = new Audio()
-      audioRef.current.preload = 'auto'
-      audioRef.current.volume = 0.7
-    }
+  // Lazily create and start audio only after the first user interaction (act1 start)
+  // This avoids downloading MB of audio for users who immediately skip
+  const initAct1Audio = () => {
     if (!notificationSoundRef.current) {
       notificationSoundRef.current = new Audio(NOTIFICATION_SOUND_URL)
       notificationSoundRef.current.preload = 'auto'
       notificationSoundRef.current.volume = 0.5
-    }
-    if (!incomingCallSoundRef.current) {
-      incomingCallSoundRef.current = new Audio(INCOMING_CALL_SOUND_URL)
-      incomingCallSoundRef.current.preload = 'auto'
-      incomingCallSoundRef.current.loop = true
-      incomingCallSoundRef.current.volume = 0.6
     }
     if (!ambientSoundRef.current) {
       ambientSoundRef.current = new Audio(AMBIENT_AUDIO_URL)
@@ -141,35 +130,47 @@ const MatrixEntryPage = () => {
       glitchSoundRef.current.loop = true
       glitchSoundRef.current.volume = 0.15
     }
+    if (!audioRef.current) {
+      audioRef.current = new Audio()
+      audioRef.current.preload = 'auto'
+      audioRef.current.volume = 0.7
+    }
+    // Unlock audio context and start ambient/glitch
+    try {
+      notificationSoundRef.current.play().then(() => {
+        notificationSoundRef.current.pause()
+        notificationSoundRef.current.currentTime = 0
+      }).catch(() => {})
+      ambientSoundRef.current.play().catch(() => {})
+      glitchSoundRef.current.play().catch(() => {})
+    } catch (_) {}
+  }
 
-    const enableAudio = async () => {
-      try {
-        if (notificationSoundRef.current) {
-          await notificationSoundRef.current.play()
-          notificationSoundRef.current.pause()
-          notificationSoundRef.current.currentTime = 0
-        }
-        if (ambientSoundRef.current) {
-          ambientSoundRef.current.play().catch(() => {})
-        }
-        if (glitchSoundRef.current) {
-          glitchSoundRef.current.play().catch(() => {})
-        }
-      } catch (err) {}
+  const initAct3Audio = () => {
+    if (!incomingCallSoundRef.current) {
+      incomingCallSoundRef.current = new Audio(INCOMING_CALL_SOUND_URL)
+      incomingCallSoundRef.current.preload = 'auto'
+      incomingCallSoundRef.current.loop = true
+      incomingCallSoundRef.current.volume = 0.6
+    }
+  }
+
+  useEffect(() => {
+    const handleInteraction = () => {
+      initAct1Audio()
+      setAct1Started(true)
     }
 
-    const handleInteraction = async () => {
-      await enableAudio()
-      setAct1Started(true)
+    document.addEventListener('click', handleInteraction, { once: true })
+    document.addEventListener('touchstart', handleInteraction, { once: true })
+    document.addEventListener('keydown', handleInteraction, { once: true })
+
+    return () => {
       document.removeEventListener('click', handleInteraction)
       document.removeEventListener('touchstart', handleInteraction)
       document.removeEventListener('keydown', handleInteraction)
     }
-
-    enableAudio()
-    document.addEventListener('click', handleInteraction, { once: true })
-    document.addEventListener('touchstart', handleInteraction, { once: true })
-    document.addEventListener('keydown', handleInteraction, { once: true })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Play sound helper with error handling (évite l'erreur "media resource not suitable")
@@ -396,6 +397,8 @@ const MatrixEntryPage = () => {
   // Jouer la sonnerie en ACT 3 incoming ; l'arrêter dès que callStatus !== 'incoming'
   useEffect(() => {
     if (currentAct === 'act3' && callStatus === 'incoming') {
+      // Create incoming call audio lazily — only when act3 actually starts
+      initAct3Audio()
       incomingCallRingTimeoutRef.current = setTimeout(playIncomingCallRing, 150)
       return () => {
         if (incomingCallRingTimeoutRef.current) {
@@ -429,6 +432,32 @@ const MatrixEntryPage = () => {
   }
 
   const handleSkipToLanding = () => {
+    // Stop all audio when user skips (fix: audio continued after skip)
+    stopIncomingCallRing()
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+      audioRef.current.src = ''
+      audioRef.current.load()
+    }
+    if (notificationSoundRef.current) {
+      notificationSoundRef.current.pause()
+      notificationSoundRef.current.currentTime = 0
+    }
+    if (callAudioContextRef.current) {
+      try {
+        callAudioContextRef.current.close()
+      } catch (_) {}
+      callAudioContextRef.current = null
+      callAudioFilterRef.current = null
+      callAudioGainRef.current = null
+    }
+    if (audioContextRef.current) {
+      try {
+        audioContextRef.current.close()
+      } catch (_) {}
+      audioContextRef.current = null
+    }
     if (ambientSoundRef.current) {
       ambientSoundRef.current.pause()
       ambientSoundRef.current.currentTime = 0
@@ -542,7 +571,6 @@ const MatrixEntryPage = () => {
 
   return (
     <div className={`matrix-entry-page${currentAct === 'act3' ? ' act3-no-bg' : ''}`}>
-      <canvas id="matrix-canvas" ref={canvasRef} />
       <div className="glitch-noise" aria-hidden="true" />
       <div className="matrix-entry-glitch" aria-hidden="true" />
 

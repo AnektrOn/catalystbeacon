@@ -14,6 +14,12 @@ const NeuralCanvas = forwardRef(({ nodes, currentLevel, config, containerWidth, 
   const spores = useRef([]);
   const animIdRef = useRef(null);
 
+  // Refs for data the loop reads every frame — updating these does NOT restart the loop
+  const nodesRef = useRef(nodes);
+  const currentLevelRef = useRef(currentLevel);
+  useEffect(() => { nodesRef.current = nodes; }, [nodes]);
+  useEffect(() => { currentLevelRef.current = currentLevel; }, [currentLevel]);
+
   // Init spores whenever container size changes
   useEffect(() => {
     if (!containerWidth || !containerHeight) return;
@@ -31,7 +37,7 @@ const NeuralCanvas = forwardRef(({ nodes, currentLevel, config, containerWidth, 
     spores.current = list;
   }, [containerWidth, containerHeight]);
 
-  // Animation loop
+  // Animation loop — only restarts when canvas dimensions change
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !containerWidth || !containerHeight) return;
@@ -47,6 +53,9 @@ const NeuralCanvas = forwardRef(({ nodes, currentLevel, config, containerWidth, 
     const animate = () => {
       frameRef.current += 1;
       const time = frameRef.current;
+      // Read current data from refs — no closure over stale props
+      const currentNodes = nodesRef.current;
+      const level = currentLevelRef.current;
 
       ctx.clearRect(0, 0, containerWidth, containerHeight);
       ctx.fillStyle = THEME.colors.background;
@@ -69,11 +78,11 @@ const NeuralCanvas = forwardRef(({ nodes, currentLevel, config, containerWidth, 
       });
 
       // --- Filaments (bezier bundles) ---
-      for (let i = 0; i < nodes.length - 1; i++) {
-        const start = nodes[i];
-        const end = nodes[i + 1];
-        const isPast = i < currentLevel;
-        const isActive = i === currentLevel;
+      for (let i = 0; i < currentNodes.length - 1; i++) {
+        const start = currentNodes[i];
+        const end = currentNodes[i + 1];
+        const isPast = i < level;
+        const isActive = i === level;
 
         const x1 = centerX + start.x;
         const y1 = start.y;
@@ -131,7 +140,8 @@ const NeuralCanvas = forwardRef(({ nodes, currentLevel, config, containerWidth, 
     return () => {
       if (animIdRef.current) cancelAnimationFrame(animIdRef.current);
     };
-  }, [nodes, currentLevel, containerWidth, containerHeight]);
+  // Loop only restarts when canvas dimensions change — nodes/currentLevel read from refs
+  }, [containerWidth, containerHeight]);
 
   const w = containerWidth || 600;
   const h = containerHeight || 2000;

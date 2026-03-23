@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Check } from 'lucide-react';
 import './NeuralNode.css';
 
@@ -11,7 +11,8 @@ const NeuralNode = ({ id, node, containerWidth, onClick }) => {
       setTimeout(() => setIsShaking(false), 400);
       return;
     }
-    onClick();
+    // Pass node back so callers can use a single stable handler reference
+    onClick(node);
   };
 
   const isCompleted = node.status === 'completed' || node.is_completed;
@@ -69,4 +70,4 @@ const NeuralNode = ({ id, node, containerWidth, onClick }) => {
   );
 };
 
-export default NeuralNode;
+export default memo(NeuralNode);

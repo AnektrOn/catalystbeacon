@@ -69,7 +69,7 @@ const LoginPage = () => {
       ])
       
       if (signInResult?.error) {
-        toast.error(signInResult.error.message || 'Failed to sign in. Please check your credentials.')
+        // AuthContext already shows an error toast for failed sign-in
         setLoading(false)
       } else {
         // Keep loader visible during navigation
@@ -93,7 +93,7 @@ const LoginPage = () => {
   }, [loading, startTransition, endTransition]);
 
   return (
-    <div className="min-h-screen flex bg-[#0a0a0a]">
+    <div className="min-h-screen min-h-[100dvh] flex bg-[#0a0a0a] safe-area-top safe-area-bottom">
       {/* Left Side - Hero Image (Hidden on mobile) */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-transparent to-orange-900/20 z-10"></div>
@@ -108,7 +108,7 @@ const LoginPage = () => {
       </div>
 
       {/* Right Side - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         <div className="w-full max-w-md">
           {/* Logo */}
           <div className="mb-12">
@@ -156,9 +156,10 @@ const LoginPage = () => {
                 id="email"
                 name="email"
                 type="email"
+                inputMode="email"
                 autoComplete="email"
                 required
-                className="w-full px-4 py-3.5 bg-ethereal-glass border border-ethereal rounded-ethereal text-ethereal-text placeholder-ethereal-text/40 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent transition-all"
+                className="w-full px-4 py-3.5 text-base bg-ethereal-glass border border-ethereal rounded-ethereal text-ethereal-text placeholder-ethereal-text/40 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent transition-all"
                 placeholder="Your Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -173,7 +174,7 @@ const LoginPage = () => {
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
                 required
-                className="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent transition-all pr-12"
+                className="w-full px-4 py-3.5 text-base bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent transition-all pr-12"
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

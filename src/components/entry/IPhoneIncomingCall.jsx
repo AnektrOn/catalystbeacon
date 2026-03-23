@@ -25,7 +25,7 @@ const IPhoneIncomingCall = ({
       {/* Photo de profil */}
       {callerPhoto && (
         <div className="caller-photo-container">
-          <img src={callerPhoto} alt={callerName} className="caller-photo" />
+          <img src={callerPhoto} alt={callerName} className="caller-photo" loading="lazy" />
         </div>
       )}
 

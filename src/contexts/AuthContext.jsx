@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import toast from 'react-hot-toast'
 import { pushNotificationService } from '../services/pushNotificationService'
 import { getAuthRedirectBaseUrl } from '../utils/authRedirect'
+import { getAbortSignalTimeout } from '../utils/abortSignalTimeout'
 // import { logDebug, logInfo, logWarn, logError } from '../utils/logger'
 
 // Safe cache access - returns null if DataCacheProvider is not available
@@ -19,11 +20,19 @@ export const useAuth = () => {
 }
 
 const AuthProviderComponent = ({ children }) => {
-  // Use refs to track initialization and prevent state loss on remounts
-  const isInitializedRef = React.useRef(false)
+  const isInitializedRef = useRef(false)
+  // profileRef keeps a live reference for the auth state change closure (avoids stale closure)
+  const profileRef = useRef(null)
+  // fetchingRef prevents simultaneous duplicate profile fetches
+  const fetchingRef = useRef(false)
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+
+  // Keep profileRef current after every render so auth listener never closes over stale profile
+  useEffect(() => {
+    profileRef.current = profile
+  }, [profile])
   
   // Get cache context (will be null if DataCacheProvider is not available)
   // We need to import and use it conditionally, but hooks must be called unconditionally
@@ -118,6 +127,11 @@ const AuthProviderComponent = ({ children }) => {
 
   const fetchProfile = useCallback(async (userId, retryCount = 0, forceRefresh = false) => {
     const MAX_RETRIES = 2
+
+    // Prevent duplicate concurrent fetches for the same user
+    if (fetchingRef.current && !forceRefresh) return
+    fetchingRef.current = true
+
     try {
       // logDebug('📥 fetchProfile: Starting profile fetch for user:', userId)
       
@@ -167,12 +181,14 @@ const AuthProviderComponent = ({ children }) => {
           return fetchProfile(userId, retryCount + 1)
         }
         // Don't treat as profile exists; avoid surfacing unhandled error to UI
+        fetchingRef.current = false
         return
       }
 
       if (!data) {
         // Profile doesn't exist, create a default one
         await createDefaultProfile(userId)
+        fetchingRef.current = false
         return
       }
 
@@ -207,17 +223,15 @@ const AuthProviderComponent = ({ children }) => {
       }
     } catch (error) {
       if (error && error.message === 'PROFILE_FETCH_TIMEOUT') {
-        // Retry on timeout
         if (retryCount < MAX_RETRIES) {
-          // logWarn(`⏳ fetchProfile: Timeout, retrying (${retryCount + 1}/${MAX_RETRIES})...`)
+          fetchingRef.current = false
           await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)))
           return fetchProfile(userId, retryCount + 1)
         }
-        // logWarn('⏳ fetchProfile: Timed out after retries; proceeding without blocking UI')
-      } else {
-        // logError(error, 'fetchProfile - Exception')
       }
       // Don't clear profile on error - preserve existing state to prevent UI flicker
+    } finally {
+      fetchingRef.current = false
     }
   }, [createDefaultProfile])
 
@@ -395,22 +409,15 @@ const AuthProviderComponent = ({ children }) => {
             console.error('Error initializing push notifications:', err)
           })
           
-          // Only fetch profile if we don't already have it for this user
-          // This prevents unnecessary fetches during navigation
-          if (!profile || profile.id !== session.user.id) {
-            // logDebug('📥 AuthContext: Fetching profile after auth change for user:', session.user.id)
+          // Use profileRef to avoid stale closure over profile state
+          if (!profileRef.current || profileRef.current.id !== session.user.id) {
             await fetchProfile(session.user.id)
-          } else {
-            // Si on a déjà le profile, on ne fait rien - pas besoin de recharger
-            // logDebug('✅ AuthContext: Profile already loaded, skipping fetch')
           }
           isInitializedRef.current = true
         }
         
         // IMPORTANT: Ne jamais remettre loading à true si on a déjà un profile
-        // Cela évite l'impression de rechargement lors des événements TOKEN_REFRESHED
-        // qui se déclenchent quand on change de fenêtre
-        if (isInitializedRef.current && profile && user) {
+        if (isInitializedRef.current && profileRef.current && user) {
           // logDebug('✅ AuthContext: Already initialized with profile, keeping loading false')
           // Ne pas toucher à loading - on garde l'état actuel
           return
@@ -440,10 +447,7 @@ const AuthProviderComponent = ({ children }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchProfile])
 
-  const signUp = async (email, password, userData = {}) => {
-    // #region agent log
-    console.error('[DEBUG-444e1a] signUp-entry', {email, hasPassword:!!password, userData});
-    // #endregion
+  const signUp = useCallback(async (email, password, userData = {}) => {
     try {
       // logDebug('Starting signup process for:', email)
       
@@ -455,10 +459,6 @@ const AuthProviderComponent = ({ children }) => {
           data: userData
         }
       })
-
-      // #region agent log
-      console.error('[DEBUG-444e1a] signUp-result', {hasUser:!!data?.user, hasSession:!!data?.session, errorMsg:error?.message, errorCode:error?.code, errorStatus:error?.status});
-      // #endregion
       
       if (error) {
         // logError(error, 'Signup failed')
@@ -485,7 +485,7 @@ const AuthProviderComponent = ({ children }) => {
             email,
             userName
           }),
-          signal: AbortSignal.timeout(10000) // 10 second timeout
+          signal: getAbortSignalTimeout(10000)
         })
           .then(response => {
             if (!response.ok && response.status !== 503) {
@@ -545,21 +545,14 @@ const AuthProviderComponent = ({ children }) => {
       toast.error(error?.message || 'Inscription impossible')
       return { data: null, error }
     }
-  }
+  }, [])
 
-  const signIn = async (email, password) => {
-    // #region agent log
-    console.error('[DEBUG-444e1a] signIn-entry', {email, hasPassword:!!password});
-    // #endregion
+  const signIn = useCallback(async (email, password) => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       })
-
-      // #region agent log
-      console.error('[DEBUG-444e1a] signIn-result', {hasUser:!!data?.user, errorMsg:error?.message, errorCode:error?.code, errorStatus:error?.status});
-      // #endregion
 
       if (error) throw error
       
@@ -586,18 +579,15 @@ const AuthProviderComponent = ({ children }) => {
       
       return { data, error: null }
     } catch (error) {
-      // #region agent log
-      console.error('[DEBUG-444e1a] signIn-catch', {errorMsg:error?.message, errorCode:error?.code, errorName:error?.name});
-      // #endregion
       if (process.env.NODE_ENV === 'development') {
         console.error('Sign in error:', error?.message || error, error)
       }
       toast.error(error?.message || 'Connexion impossible')
       return { data: null, error }
     }
-  }
+  }, [profile])
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     try {
       // logDebug('🔓 signOut: Starting sign out process...')
       
@@ -618,9 +608,9 @@ const AuthProviderComponent = ({ children }) => {
       toast.error(error.message)
       return { error }
     }
-  }
+  }, [])
 
-  const resetPassword = async (email) => {
+  const resetPassword = useCallback(async (email) => {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${getAuthRedirectBaseUrl()}/reset-password`
@@ -635,13 +625,12 @@ const AuthProviderComponent = ({ children }) => {
       toast.error(error.message)
       return { error }
     }
-  }
+  }, [])
 
-  const updateProfile = async (updates) => {
+  const updateProfile = useCallback(async (updates) => {
     if (!user) return { error: new Error('No user logged in') }
 
     try {
-      // logDebug('🔄 AuthContext: Updating profile with:', updates)
       const { data, error } = await supabase
         .from('profiles')
         .update(updates)
@@ -651,18 +640,16 @@ const AuthProviderComponent = ({ children }) => {
 
       if (error) throw error
 
-      // logDebug('✅ AuthContext: Profile updated, new data:', data)
       setProfile(data)
       // Don't show toast here - let the caller handle it
       return { data, error: null }
     } catch (error) {
-      // logError(error, 'AuthContext - Update profile error')
       toast.error(error.message)
       return { data: null, error }
     }
-  }
+  }, [user])
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = useCallback(async () => {
     try {
       // On native (Android/iOS), use a fixed URL so Supabase/Google allow the redirect.
       // Add this URL to Supabase Redirect URLs and (if custom scheme) to Android intent filters.
@@ -690,7 +677,7 @@ const AuthProviderComponent = ({ children }) => {
       toast.error(error?.message || 'Connexion Google impossible')
       return { data: null, error }
     }
-  }
+  }, [])
 
   // Helper function to send welcome email for new users (OAuth or regular signup)
   const sendWelcomeEmailForNewUser = async (email, userName) => {
@@ -711,7 +698,7 @@ const AuthProviderComponent = ({ children }) => {
           email,
           userName: userName || 'there'
         }),
-        signal: AbortSignal.timeout(10000) // 10 second timeout
+        signal: getAbortSignalTimeout(10000)
       })
         .then(response => {
           if (!response.ok && response.status !== 503) {
@@ -753,7 +740,7 @@ const AuthProviderComponent = ({ children }) => {
     }
   }
 
-  const value = {
+  const value = useMemo(() => ({
     user,
     profile,
     loading,
@@ -763,8 +750,8 @@ const AuthProviderComponent = ({ children }) => {
     resetPassword,
     updateProfile,
     fetchProfile,
-    signInWithGoogle
-  }
+    signInWithGoogle,
+  }), [user, profile, loading, signUp, signIn, signOut, resetPassword, updateProfile, fetchProfile, signInWithGoogle])
 
   return (
     <AuthContext.Provider value={value}>

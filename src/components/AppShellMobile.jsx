@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabaseClient';
 import { logDebug, logWarn } from '../utils/logger';
 import { hapticImpact } from '../utils/haptics';
@@ -34,20 +35,12 @@ import {
 } from 'lucide-react';
 
 const AppShellMobile = ({ navData: navDataProp } = {}) => {
+  const { mode, toggleMode } = useTheme();
+  const isDarkMode = mode === 'dark';
+  const toggleTheme = () => toggleMode();
+
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-  // Initialize dark mode from localStorage or system preference
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('darkMode');
-      if (saved !== null) {
-        return saved === 'true';
-      }
-      // Auto-detect system preference if no user preference saved
-      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    return false;
-  });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
   const actionsBtnRef = useRef(null);
@@ -315,22 +308,6 @@ const AppShellMobile = ({ navData: navDataProp } = {}) => {
     }
   }, [profile?.background_image]);
 
-  // Apply dark class to document.documentElement on mount and when isDarkMode changes
-  useEffect(() => {
-    const root = document.documentElement;
-    if (isDarkMode) {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-    // Save to localStorage
-    localStorage.setItem('darkMode', isDarkMode.toString());
-  }, [isDarkMode]);
-
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-  };
-
   const allSidebarItems = [
     { icon: Grid3X3, label: 'Dashboard', path: '/dashboard', restricted: false },
     { icon: Target, label: 'Mastery', path: '/mastery', restricted: false },
@@ -371,7 +348,7 @@ const AppShellMobile = ({ navData: navDataProp } = {}) => {
   }, [profile]);
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'dark' : ''}`}>
+    <div className="min-h-screen">
       {/* Background - User's custom background or earth-tone gradient */}
       <div
         key={profile?.background_image || 'default-bg'}

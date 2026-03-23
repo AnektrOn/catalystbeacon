@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { logDebug, logWarn, logError } from '../utils/logger'
 
 const DataCacheContext = createContext(null)
@@ -40,28 +40,28 @@ export const DataCacheProvider = ({ children }) => {
     }
   }, [])
 
-  // Save cache to sessionStorage whenever it changes
+  // Debounced save to sessionStorage — coalesces rapid consecutive cache updates
+  const saveDebounceRef = useRef(null)
   useEffect(() => {
-    try {
-      const toStore = {
-        data: cache,
-        timestamp: Date.now()
-      }
-      sessionStorage.setItem('app_data_cache', JSON.stringify(toStore))
-    } catch (error) {
-      logWarn('📦 DataCache: Error saving to sessionStorage:', error)
-      // If storage is full, clear old cache
+    clearTimeout(saveDebounceRef.current)
+    saveDebounceRef.current = setTimeout(() => {
       try {
-        sessionStorage.removeItem('app_data_cache')
         const toStore = {
           data: cache,
           timestamp: Date.now()
         }
         sessionStorage.setItem('app_data_cache', JSON.stringify(toStore))
-      } catch (e) {
-        logWarn('📦 DataCache: Could not save cache, storage may be full')
+      } catch (error) {
+        logWarn('📦 DataCache: Error saving to sessionStorage:', error)
+        try {
+          sessionStorage.removeItem('app_data_cache')
+          sessionStorage.setItem('app_data_cache', JSON.stringify({ data: cache, timestamp: Date.now() }))
+        } catch (e) {
+          logWarn('📦 DataCache: Could not save cache, storage may be full')
+        }
       }
-    }
+    }, 300)
+    return () => clearTimeout(saveDebounceRef.current)
   }, [cache])
 
   /**
@@ -204,7 +204,7 @@ export const DataCacheProvider = ({ children }) => {
     }
   }, [cache])
 
-  const value = {
+  const value = useMemo(() => ({
     getCached,
     setCached,
     fetchWithCache,
@@ -212,8 +212,7 @@ export const DataCacheProvider = ({ children }) => {
     clearCache,
     isLoading,
     getCacheStats,
-    cache
-  }
+  }), [getCached, setCached, fetchWithCache, invalidateCache, clearCache, isLoading, getCacheStats])
 
   return (
     <DataCacheContext.Provider value={value}>

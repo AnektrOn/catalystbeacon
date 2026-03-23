@@ -1,5 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react'
 import CosmicLoader from '../components/ui/CosmicLoader'
 
 const PageTransitionContext = createContext()
@@ -14,43 +13,33 @@ export const usePageTransition = () => {
 
 export const PageTransitionProvider = ({ children }) => {
   const [isTransitioning, setIsTransitioning] = useState(false)
-  const location = useLocation()
-
-  useEffect(() => {
-    // Désactivé: Ne plus montrer le loader à chaque changement de route
-    // Cela causait l'impression d'un rechargement complet de la page
-    // Le loader n'est maintenant affiché que manuellement via startTransition()
-    
-    // Optionnel: Si vous voulez garder une transition très rapide (100ms max)
-    // Décommentez les lignes ci-dessous:
-    // setIsTransitioning(true)
-    // const minTime = setTimeout(() => {
-    //   setIsTransitioning(false)
-    // }, 100)
-    // return () => clearTimeout(minTime)
-  }, [location])
 
   // Safety timeout: always end transition after max 10 seconds to prevent infinite loading
   useEffect(() => {
     if (isTransitioning) {
       const safetyTimeout = setTimeout(() => {
         setIsTransitioning(false);
-      }, 10000); // 10 seconds max
+      }, 10000);
 
       return () => clearTimeout(safetyTimeout);
     }
   }, [isTransitioning]);
 
-  const startTransition = () => {
+  const startTransition = useCallback(() => {
     setIsTransitioning(true);
-  };
+  }, []);
   
-  const endTransition = () => {
+  const endTransition = useCallback(() => {
     setIsTransitioning(false);
-  };
+  }, []);
+
+  const value = useMemo(
+    () => ({ isTransitioning, startTransition, endTransition }),
+    [isTransitioning, startTransition, endTransition]
+  );
 
   return (
-    <PageTransitionContext.Provider value={{ isTransitioning, startTransition, endTransition }}>
+    <PageTransitionContext.Provider value={value}>
       {children}
       {isTransitioning && (
         <div

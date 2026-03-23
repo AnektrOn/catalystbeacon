@@ -242,29 +242,23 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition', schoolConfig = null }) =
           const updatedLessons = current.map(l =>
             l.lesson_id === justCompletedLessonId ? { ...l, is_completed: true } : l
           );
-          setLessons(updatedLessons);
           if (updatedLessons.every(l => l.is_completed)) {
             // All 10 done: fetch next batch
             const nextBatch = await roadmapService.getRoadmapLessons(masterschool, user.id, 10);
             if (nextBatch?.length > 0) {
               const list = nextBatch.slice(0, 10);
-              setLessons(list);
-              const level = getActiveIndex(list, null, null);
-              setCurrentLevel(level);
-              createNodes(list, level);
+              applyRoadmapState(list, getActiveIndex(list, null, null));
             } else {
-              setCurrentLevel(getActiveIndex(updatedLessons, forceActiveLessonId, justCompletedLessonId));
-              createNodes(updatedLessons, getActiveIndex(updatedLessons, forceActiveLessonId, justCompletedLessonId));
+              const level = getActiveIndex(updatedLessons, forceActiveLessonId, justCompletedLessonId);
+              applyRoadmapState(updatedLessons, level);
             }
           } else {
             const level = getActiveIndex(updatedLessons, forceActiveLessonId, justCompletedLessonId);
-            setCurrentLevel(level);
-            createNodes(updatedLessons, level);
+            applyRoadmapState(updatedLessons, level);
           }
         } else {
           const level = getActiveIndex(current, forceActiveLessonId, null);
-          setCurrentLevel(level);
-          createNodes(current, level);
+          applyRoadmapState(current, level);
         }
         setLoading(false);
         return;
@@ -281,11 +275,7 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition', schoolConfig = null }) =
       }
 
       const list = layerLessons.length > 50 ? layerLessons.slice(0, 10) : layerLessons;
-      setLessons(list);
-
-      const calculatedLevel = getActiveIndex(list, forceActiveLessonId, justCompletedLessonId);
-      setCurrentLevel(calculatedLevel);
-      createNodes(list, calculatedLevel);
+      applyRoadmapState(list, getActiveIndex(list, forceActiveLessonId, justCompletedLessonId));
     } catch (err) {
       console.error('Error loading roadmap:', err);
       setShowInstituteSorter(true);
@@ -294,12 +284,8 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition', schoolConfig = null }) =
     }
   };
 
-  // Create nodes from lessons - determine unlock status from roadmap_progress
-  // Create nodes from lessons (NOUVELLE VERSION SIMPLIFIÉE)
-// 2. MODIFIER createNodes pour passer le bon statut aux nœuds
-// DANS src/components/Roadmap/NeuralPathRoadmap.jsx
-
-  const createNodes = (lessonsList, activeLevel) => {
+  // Returns node list without calling setNodes — callers batch all state updates together
+  const buildNodes = (lessonsList, activeLevel) => {
     const nodeList = [];
 
     const MAX_NODES = 50;
@@ -341,6 +327,14 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition', schoolConfig = null }) =
       });
     }
 
+    return nodeList;
+  };
+
+  // Batch all roadmap state updates in one synchronous block to avoid cascading renders
+  const applyRoadmapState = (list, level) => {
+    const nodeList = buildNodes(list, level);
+    setLessons(list);
+    setCurrentLevel(level);
     setNodes(nodeList);
   };
 
@@ -553,7 +547,7 @@ const NeuralPathRoadmap = ({ masterschool = 'Ignition', schoolConfig = null }) =
             id={`neural-node-${node.id}`}
             node={node}
             containerWidth={containerSize.width}
-            onClick={() => handleNodeClick(node)}
+            onClick={handleNodeClick}
           />
         ))}
       </div>

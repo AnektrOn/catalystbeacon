@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,9 +7,11 @@ import useSubscription from '../hooks/useSubscription';
 import courseService from '../services/courseService';
 import roadmapService from '../services/roadmapService';
 import { supabase } from '../lib/supabaseClient';
-import QuizComponent from '../components/QuizComponent';
-import LessonTracker from '../components/Roadmap/LessonTracker';
-import CompleteLessonModal from '../components/Roadmap/CompleteLessonModal';
+
+// Lazy-load components only needed on specific interactions
+const QuizComponent = lazy(() => import('../components/QuizComponent'));
+const LessonTracker = lazy(() => import('../components/Roadmap/LessonTracker'));
+const CompleteLessonModal = lazy(() => import('../components/Roadmap/CompleteLessonModal'));
 import { useRoadmapLessonTracking } from '../hooks/useRoadmapLessonTracking';
 import {
   ArrowLeft,
@@ -180,74 +182,47 @@ const CoursePlayerPage = () => {
 
       setCurrentLesson(lesson);
 
-      // Load lesson content (use course_id, not UUID)
+      // Fire all independent requests in parallel after course structure is resolved
       const actualCourseId = fullCourse?.course_id || parseInt(courseId);
       if (actualCourseId) {
-        const { data: content, error: contentError } = await courseService.getLessonContent(
-          actualCourseId,
-          chapterNum,
-          lessonNum
-        );
+        const parallelRequests = [
+          courseService.getLessonContent(actualCourseId, chapterNum, lessonNum),
+          courseService.getLessonDescription(courseId, chapterNum, lessonNum),
+        ];
+
+        if (user) {
+          parallelRequests.push(
+            courseService.getUserLessonProgress(user.id, fullCourse.course_id, chapterNum, lessonNum),
+            supabase
+              .from('user_lesson_progress')
+              .select('chapter_number, lesson_number')
+              .eq('user_id', user.id)
+              .eq('course_id', parseInt(fullCourse.course_id))
+              .eq('is_completed', true)
+          );
+        }
+
+        const results = await Promise.all(parallelRequests);
+        const { data: content, error: contentError } = results[0];
+        const { data: description } = results[1];
+
         if (contentError && contentError.code !== 'PGRST116') {
+          // content load failed non-fatally
         } else if (content) {
           setLessonContent(content);
         }
-
-        // Load lesson description
-        const { data: description } = await courseService.getLessonDescription(
-          courseId,
-          chapterNum,
-          lessonNum
-        );
         setLessonDescription(description);
 
-        // Load user progress
-        if (user) {
-          const { data: progress } = await courseService.getUserLessonProgress(
-            user.id,
-            fullCourse.course_id,
-            chapterNum,
-            lessonNum
-          );
+        if (user && results[2] && results[3]) {
+          const { data: progress } = results[2];
+          const { data: allCompleted, error: completedError } = results[3];
           setUserLessonProgress(progress);
-
-          // Load all completed lessons for this course to show completion status in sidebar
-          
-          const { data: allCompleted, error: completedError } = await supabase
-            .from('user_lesson_progress')
-            .select('chapter_number, lesson_number')
-            .eq('user_id', user.id)
-            .eq('course_id', parseInt(fullCourse.course_id))
-            .eq('is_completed', true);
-
           if (!completedError && allCompleted) {
-            // Create a Set of completed lesson keys for O(1) lookup
-            const completedSet = new Set(
-              allCompleted.map(c => `${c.chapter_number}_${c.lesson_number}`)
-            );
-            setCompletedLessons(completedSet);
+            setCompletedLessons(new Set(allCompleted.map(c => `${c.chapter_number}_${c.lesson_number}`)));
           }
         }
 
-        // Load quiz data from Supabase (if quiz table exists)
-        // Note: Quiz system is planned for future implementation
-        // When quiz table is created, implement quiz loading here
-        try {
-          // Future implementation:
-          // const { data: quizData, error: quizError } = await supabase
-          //   .from('lesson_quizzes')
-          //   .select('*')
-          //   .eq('lesson_id', lessonId)
-          //   .single();
-          // if (!quizError && quizData) {
-          //   setQuizData(quizData.questions || []);
-          // } else {
-          //   setQuizData([]);
-          // }
-          setQuizData([]); // No quizzes until quiz system is implemented
-        } catch (quizErr) {
-          setQuizData([]);
-        }
+        setQuizData([]); // Quiz system not yet implemented
       }
     } catch (err) {
       setError('Failed to load lesson. Please try again.');
@@ -353,37 +328,33 @@ const CoursePlayerPage = () => {
     }
   };
 
-  const getNextLesson = () => {
+  const nextLesson = useMemo(() => {
     if (!courseStructure?.chapters) return null;
-
     let foundCurrent = false;
     for (const chapter of courseStructure.chapters) {
       for (const lesson of chapter.lessons || []) {
-        if (foundCurrent) {
-          return { lesson, chapter };
-        }
+        if (foundCurrent) return { lesson, chapter };
         if (lesson.chapter_number === chapterNum && lesson.lesson_number === lessonNum) {
           foundCurrent = true;
         }
       }
     }
     return null;
-  };
+  }, [courseStructure, chapterNum, lessonNum]);
 
-  const getPreviousLesson = () => {
+  const previousLesson = useMemo(() => {
     if (!courseStructure?.chapters) return null;
-
-    let previousLesson = null;
+    let prev = null;
     for (const chapter of courseStructure.chapters) {
       for (const lesson of chapter.lessons || []) {
         if (lesson.chapter_number === chapterNum && lesson.lesson_number === lessonNum) {
-          return previousLesson;
+          return prev;
         }
-        previousLesson = { lesson, chapter };
+        prev = { lesson, chapter };
       }
     }
     return null;
-  };
+  }, [courseStructure, chapterNum, lessonNum]);
 
   const handleNavigateLesson = (targetChapterNum, targetLessonNum) => {
     // Block navigation if accessed from roadmap (only for free users)
@@ -396,8 +367,7 @@ const CoursePlayerPage = () => {
   };
 
   const isCompleted = userLessonProgress?.is_completed || false;
-  const nextLesson = getNextLesson();
-  const previousLesson = getPreviousLesson();
+  // nextLesson and previousLesson are memoized above
 
   // Track lesson progress to enable "Mark as Complete" button
   const { canComplete: trackingCanComplete } = useRoadmapLessonTracking(
@@ -690,11 +660,13 @@ const CoursePlayerPage = () => {
                   </button>
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Lesson Quiz</h2>
                 </div>
-                <QuizComponent
-                  quizData={quizData}
-                  onComplete={handleQuizComplete}
-                  xpReward={20}
-                />
+                <Suspense fallback={<div className="p-8 text-center">Loading quiz...</div>}>
+                  <QuizComponent
+                    quizData={quizData}
+                    onComplete={handleQuizComplete}
+                    xpReward={20}
+                  />
+                </Suspense>
               </div>
             ) : (
               /* Content Cards */
@@ -978,6 +950,7 @@ const CoursePlayerPage = () => {
 
       {/* Lesson Tracker - Only show if course has masterschool */}
       {course?.masterschool && currentLesson && currentLesson.lesson_id && (
+        <Suspense fallback={null}>
         <LessonTracker
           courseId={parseInt(courseId)}
           chapterNumber={chapterNum}
@@ -989,10 +962,12 @@ const CoursePlayerPage = () => {
           fromRoadmap={fromRoadmap}
           returnUrl={returnUrl}
         />
+        </Suspense>
       )}
 
       {/* Complete Lesson Modal - For courses with masterschool when clicking the main complete button */}
       {course?.masterschool && currentLesson && currentLesson.lesson_id && (
+        <Suspense fallback={null}>
         <CompleteLessonModal
           isOpen={showCompleteModal}
           onClose={() => setShowCompleteModal(false)}
@@ -1008,6 +983,7 @@ const CoursePlayerPage = () => {
           returnUrl={returnUrl}
           isFreeUser={isFreeUser}
         />
+        </Suspense>
       )}
     </div>
   );

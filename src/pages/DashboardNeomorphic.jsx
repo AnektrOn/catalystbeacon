@@ -1,13 +1,9 @@
 import './DashboardNeomorphic.css'
-import React, { useEffect, useState, useCallback, Suspense, lazy } from 'react'
+import React, { useEffect, useState, useCallback, Suspense, lazy, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { usePageTransition } from '../contexts/PageTransitionContext'
 import { supabase } from '../lib/supabaseClient'
 import SEOHead from '../components/SEOHead'
-import levelsService from '../services/levelsService'
-import courseService from '../services/courseService'
-import socialService from '../services/socialService'
 import dashboardService from '../services/dashboardService'
 import useSubscription from '../hooks/useSubscription'
 import UpgradeModal from '../components/UpgradeModal'
@@ -24,10 +20,22 @@ const HabitsCompletedCard = lazy(() => import('../components/dashboard/HabitsCom
 const ConstellationNavigatorWidget = lazy(() => import('../components/dashboard/ConstellationNavigatorWidget'))
 const EtherealStatsCards = lazy(() => import('../components/dashboard/EtherealStatsCards'))
 
+// Simple hook to conditionally mount only the correct chart variant
+const useIsDesktop = () => {
+  const [isDesktop, setIsDesktop] = useState(() => window.matchMedia('(min-width: 1024px)').matches)
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)')
+    const handler = (e) => setIsDesktop(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+  return isDesktop
+}
+
 const DashboardNeomorphic = () => {
   const { user, profile, fetchProfile } = useAuth()
   const { isFreeUser, isAdmin } = useSubscription()
-  const { startTransition, endTransition } = usePageTransition()
+  const isDesktop = useIsDesktop()
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -194,7 +202,9 @@ const DashboardNeomorphic = () => {
     } else {
       setLoading(false)
     }
-  }, [user, profile, fetchProfile])
+  // profile?.id (not profile) prevents reloads on token-refresh object reference changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, profile?.id, fetchProfile])
 
   if (loading && !profile) {
     return <SkeletonLoader type="dashboard" />;
@@ -271,18 +281,17 @@ const DashboardNeomorphic = () => {
           </Suspense>
         </div>
 
-        {/* School Progress Area Chart */}
+        {/* School Progress Area Chart — only mount the relevant variant */}
         <div className="grid-chart">
-          <div className="lg:hidden">
-            <Suspense fallback={<div>Loading Mobile Chart...</div>}>
-              <SchoolProgressAreaChartMobile userId={profile?.id} />
-            </Suspense>
-          </div>
-          <div className="hidden lg:block">
-            <Suspense fallback={<div>Loading Desktop Chart...</div>}>
+          {isDesktop ? (
+            <Suspense fallback={<div>Loading Chart...</div>}>
               <SchoolProgressAreaChartDesktop userId={profile?.id} />
             </Suspense>
-          </div>
+          ) : (
+            <Suspense fallback={<div>Loading Chart...</div>}>
+              <SchoolProgressAreaChartMobile userId={profile?.id} />
+            </Suspense>
+          )}
         </div>
 
         {/* 12. Constellation Navigator - Only show for paid users and admins */}

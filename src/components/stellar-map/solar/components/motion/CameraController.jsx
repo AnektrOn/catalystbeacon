@@ -23,11 +23,12 @@ export default function CameraController() {
 
   const { camera } = useThree();
   const [selectedNode] = useSelectedNode();
-  const { nodePositions } = useNodePositions();
+  // Use positionsRef (not snapshot state) for zero-latency reads inside useFrame
+  const { positionsRef: nodePositionsRef } = useNodePositions();
   const { cameraState, setCameraState } = useCameraContext();
   const { focus } = useFocus();
-  const { familyPositions } = useFamilyPositions();
-  const { constellationPositions } = useConstellationPositions();
+  const { positionsRef: familyPositionsRef } = useFamilyPositions();
+  const { positionsRef: constellationPositionsRef } = useConstellationPositions();
   const homePosition = useRef(new Vector3(0, 35, 55)).current;
   const lerpFactor = 0.06;
   const cameraPositionEpsilon = 0.5;
@@ -51,12 +52,12 @@ export default function CameraController() {
         controls.maxDistance = Infinity;
         if (focus === 'sun') {
           focusTargetRef.set(0, 0, 0);
-        } else if (focus?.type === 'family' && focus.family?.name && familyPositions[focus.family.name]) {
-          const [x, y, z] = familyPositions[focus.family.name];
+        } else if (focus?.type === 'family' && focus.family?.name && familyPositionsRef.current[focus.family.name]) {
+          const [x, y, z] = familyPositionsRef.current[focus.family.name];
           focusTargetRef.set(x, y, z);
         } else if (focus?.type === 'constellation' && focus.constellation && focus.family) {
           const key = focus.constellation.id || `${focus.family.name}-${focus.constellation.name}`;
-          const pos = constellationPositions[key];
+          const pos = constellationPositionsRef.current[key];
           if (pos) focusTargetRef.set(...pos);
         }
         invisibleTargetRef.lerp(focusTargetRef, FOCUS_TARGET_LERP);
@@ -67,7 +68,7 @@ export default function CameraController() {
       case 'DETAIL_VIEW':
         if (selectedNode) {
           controls.enabled = true;
-          const pos = nodePositions[selectedNode.id];
+          const pos = nodePositionsRef.current[selectedNode.id];
           if (pos) {
             controls.target.set(...pos);
             controls.minDistance = NODE_VIEW_MIN_DISTANCE;
@@ -111,7 +112,7 @@ export default function CameraController() {
 
       case 'ZOOMING_IN':
         if (selectedNode) {
-          const pos = nodePositions[selectedNode.id];
+          const pos = nodePositionsRef.current[selectedNode.id];
           if (pos) {
             controls.enabled = false;
             const nodePosition = new Vector3(...pos);

@@ -562,8 +562,58 @@ export const colorPalettes = {
       '--error': '0 84% 60%',
       '--info': '217 91% 60%',
     }
+  },
+  neural: {
+    name: 'Neural Dark',
+    description: 'Deep void black with electric cyan — Neural Roadmap aesthetic',
+    light: {
+      '--p-h': '186', '--p-s': '100%', '--p-l': '50%',
+      '--primary-foreground': '0 0% 100%',
+      '--secondary': '186 40% 90%',
+      '--secondary-foreground': '220 30% 12%',
+      '--background': '220 20% 98%',
+      '--foreground': '220 25% 12%',
+      '--card': '0 0% 100%',
+      '--card-foreground': '220 25% 12%',
+      '--popover': '0 0% 100%',
+      '--popover-foreground': '220 25% 12%',
+      '--muted': '220 15% 94%',
+      '--muted-foreground': '220 15% 40%',
+      '--accent': '186 60% 94%',
+      '--accent-foreground': '220 25% 12%',
+      '--border': '220 15% 88%',
+      '--input': '220 15% 92%',
+      '--ring': '186 100% 50%',
+      '--success': '151 55% 41.5%',
+      '--warning': '38 92% 50%',
+      '--error': '0 84% 60%',
+      '--info': '186 100% 50%',
+    },
+    dark: {
+      '--p-h': '186', '--p-s': '100%', '--p-l': '50%',
+      '--primary-foreground': '0 0% 0%',
+      '--secondary': '186 50% 20%',
+      '--secondary-foreground': '0 0% 90%',
+      '--background': '220 60% 1%',
+      '--foreground': '0 0% 90%',
+      '--card': '0 0% 3%',
+      '--card-foreground': '0 0% 90%',
+      '--popover': '0 0% 3%',
+      '--popover-foreground': '0 0% 90%',
+      '--muted': '0 0% 8%',
+      '--muted-foreground': '0 0% 40%',
+      '--accent': '186 100% 50%',
+      '--accent-foreground': '0 0% 0%',
+      '--border': '0 0% 100%',
+      '--input': '0 0% 10%',
+      '--ring': '186 100% 50%',
+      '--success': '151 55% 50%',
+      '--warning': '38 92% 60%',
+      '--error': '0 84% 70%',
+      '--info': '186 100% 50%',
+    }
   }
 };
 
-export const DEFAULT_PALETTE = 'earth';
+export const DEFAULT_PALETTE = 'neural';
 export const STORAGE_KEY = 'colorPalette';

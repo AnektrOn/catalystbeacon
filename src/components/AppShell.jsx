@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabaseClient';
 import UserProfileDropdown from './UserProfileDropdown';
 import NotificationBadge from './NotificationBadge';
@@ -10,7 +11,6 @@ import AppShellMobile from './AppShellMobile';
 import useSubscription from '../hooks/useSubscription';
 import { useNavigationData } from '../hooks/useNavigationData';
 import UpgradeModal from './UpgradeModal';
-import { getCurrentPalette, switchTo } from '../utils/colorPaletteSwitcher';
 import GlobalBackground from './ui/GlobalBackground';
 import {
   Grid3X3,
@@ -100,31 +100,10 @@ const SidebarNavItem = ({ item, isActive, isSidebarExpanded, onClick, onPrefetch
 };
 
 const AppShell = () => {
-  // Initialize dark mode from localStorage or system preference
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('darkMode');
-      if (saved !== null) {
-        return saved === 'true';
-      }
-      // Auto-detect system preference if no user preference saved
-      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    return false;
-  });
-  
-  // Apply dark class to document.documentElement on mount and when isDarkMode changes
-  useEffect(() => {
-    const root = document.documentElement;
-    if (isDarkMode) {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-    // Save to localStorage
-    localStorage.setItem('darkMode', isDarkMode.toString());
-  }, [isDarkMode]);
-  
+  const { mode, toggleMode } = useTheme();
+  const isDarkMode = mode === 'dark';
+  const toggleTheme = () => toggleMode();
+
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
@@ -162,32 +141,13 @@ const AppShell = () => {
     const computedColorPrimary = getComputedStyle(root).getPropertyValue('--color-primary').trim();
     const glassCard = document.querySelector('.glass-card-premium, .glass-effect');
     const glassCardBg = glassCard ? getComputedStyle(glassCard).backgroundColor : 'not found';
-  }, [isDarkMode]);
+  }, [mode]);
   // #endregion
 
   // Use AppShellMobile for smaller screens; pass navData to avoid double-fetch on resize
   if (isMobile) {
     return <AppShellMobile navData={navData} />;
   }
-
-  const toggleTheme = () => {
-    const newDarkMode = !isDarkMode;
-    const root = document.documentElement;
-    const currentPalette = getCurrentPalette();
-    
-    // Toggle dark class
-    if (newDarkMode) {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-    
-    setIsDarkMode(newDarkMode);
-    
-    // Re-apply current palette with new dark mode state
-    // This will automatically select the correct variant (light/dark)
-    switchTo(currentPalette, false); // Don't save, just re-apply
-  };
 
   const toggleSidebar = () => {
     setIsSidebarExpanded(!isSidebarExpanded);

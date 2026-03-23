@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useRef, useState, useCallback, useEffect, useMemo } from 'react';
 
 const ConstellationPositionsContext = createContext(null);
 
@@ -9,14 +9,30 @@ export function useConstellationPositions() {
 }
 
 export const ConstellationPositionsProvider = ({ children }) => {
-  const [positions, setPositions] = useState({});
+  const positionsRef = useRef({});
+  const [snapshot, setSnapshot] = useState({});
+  const throttleRef = useRef(null);
 
-  const setConstellationPosition = useCallback((key, [x, y, z]) => {
-    setPositions((prev) => ({ ...prev, [key]: [x, y, z] }));
+  const setConstellationPosition = useCallback((key, pos) => {
+    positionsRef.current[key] = pos;
+    if (!throttleRef.current) {
+      throttleRef.current = setTimeout(() => {
+        setSnapshot({ ...positionsRef.current });
+        throttleRef.current = null;
+      }, 160);
+    }
   }, []);
 
+  useEffect(() => () => clearTimeout(throttleRef.current), []);
+
+  const value = useMemo(() => ({
+    constellationPositions: snapshot,
+    positionsRef,
+    setConstellationPosition,
+  }), [snapshot, setConstellationPosition]);
+
   return (
-    <ConstellationPositionsContext.Provider value={{ constellationPositions: positions, setConstellationPosition }}>
+    <ConstellationPositionsContext.Provider value={value}>
       {children}
     </ConstellationPositionsContext.Provider>
   );
