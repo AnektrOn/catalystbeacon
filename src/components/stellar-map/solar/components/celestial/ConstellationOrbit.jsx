@@ -50,18 +50,29 @@ export default function ConstellationOrbit({
   const nodeDistribution = circularDistribution(constellation.nodes.length, 1);
   const constellationKey = constellation.id || `${familyName}-${constellation.name}`;
 
+  const onConstellationClick = (e) => {
+    e.stopPropagation();
+    setFocus({ type: 'constellation', constellation, family });
+  };
+  const onPointerOver = (e) => {
+    e.stopPropagation();
+    document.body.style.cursor = 'pointer';
+  };
+  const onPointerOut = () => {
+    document.body.style.cursor = 'default';
+  };
+
   const centerContent = (
-    <mesh
-      onClick={(e) => {
-        e.stopPropagation();
-        setFocus({ type: 'constellation', constellation, family });
-      }}
-      onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
-      onPointerOut={() => { document.body.style.cursor = 'default'; }}
-    >
-      <sphereGeometry args={[1, 16, 16]} />
-      <meshBasicMaterial transparent opacity={0} />
-    </mesh>
+    <group>
+      <mesh onClick={onConstellationClick} onPointerOver={onPointerOver} onPointerOut={onPointerOut}>
+        <sphereGeometry args={[0.2, 12, 12]} />
+        <meshBasicMaterial color="#D4B080" transparent opacity={0.5} depthWrite={false} />
+      </mesh>
+      <mesh onClick={onConstellationClick} onPointerOver={onPointerOver} onPointerOut={onPointerOut}>
+        <sphereGeometry args={[1, 16, 16]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
+    </group>
   );
   
   return (

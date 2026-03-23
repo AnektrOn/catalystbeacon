@@ -1,9 +1,10 @@
 import { useState, useEffect, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
+import * as THREE from 'three';
 import stellarMapService from '../../stellarMapService';
 import { buildStellarHierarchy } from '../utils/stellarHierarchy';
 import { useAuth } from '../../../../contexts/AuthContext';
-import SceneBackground from './SceneBackground';
+import StarfieldBackground from '../../r3f/StarfieldBackground';
 import Sun from './celestial/Sun';
 import FamilyOrbit from './celestial/FamilyOrbit';
 import CameraController from './motion/CameraController';
@@ -76,13 +77,15 @@ export default function SolarSystem({ level }) {
           camera={{ position: [0, 50, 80], fov: 60 }}
           style={{ width: '100%', height: '100%', display: 'block' }}
           gl={{ antialias: true, alpha: false }}
+          onCreated={({ gl }) => {
+            gl.setClearColor('#000000');
+            gl.shadowMap.enabled = true;
+            gl.shadowMap.type = THREE.PCFSoftShadowMap;
+          }}
         >
           <Suspense fallback={null}>
             <CameraController />
-            {/* TODO: once public/images/background/stars_2k.webp is generated
-                (cwebp -q 85 -resize 2048 1024 stars_8k.webp -o stars_2k.webp),
-                swap the path below to /images/background/stars_2k.webp for non-HiDPI viewports. */}
-            <SceneBackground texturePath="/images/background/stars_8k.webp" />
+            <StarfieldBackground />
             <SceneLighting />
             
             {/* Central Sun/Nucleus */}

@@ -41,18 +41,29 @@ export default function FamilyOrbit({ family, totalFamilies }) {
     1
   );
 
+  const onFamilyClick = (e) => {
+    e.stopPropagation();
+    setFocus({ type: 'family', family });
+  };
+  const onPointerOver = (e) => {
+    e.stopPropagation();
+    document.body.style.cursor = 'pointer';
+  };
+  const onPointerOut = () => {
+    document.body.style.cursor = 'default';
+  };
+
   const centerContent = (
-    <mesh
-      onClick={(e) => {
-        e.stopPropagation();
-        setFocus({ type: 'family', family });
-      }}
-      onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
-      onPointerOut={() => { document.body.style.cursor = 'default'; }}
-    >
-      <sphereGeometry args={[2, 16, 16]} />
-      <meshBasicMaterial transparent opacity={0} />
-    </mesh>
+    <group>
+      <mesh onClick={onFamilyClick} onPointerOver={onPointerOver} onPointerOut={onPointerOut}>
+        <sphereGeometry args={[0.4, 16, 16]} />
+        <meshBasicMaterial color="#C8A96E" transparent opacity={0.6} depthWrite={false} />
+      </mesh>
+      <mesh onClick={onFamilyClick} onPointerOver={onPointerOver} onPointerOut={onPointerOut}>
+        <sphereGeometry args={[2, 16, 16]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
+    </group>
   );
   
   return (

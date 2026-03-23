@@ -1,67 +1,83 @@
-import React, { useEffect, useRef } from 'react';
+import { useRef, useMemo } from 'react';
+import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
 /**
- * Starfield Background Component
- * Creates an animated starfield background using Three.js
+ * Procedural starfield + golden galactic dust (no network textures).
  */
-export function StarfieldBackground() {
-  const mountRef = useRef(null);
+export default function StarfieldBackground() {
+  const starsGroupRef = useRef(null);
+  const dustGroupRef = useRef(null);
 
-  useEffect(() => {
-    if (!mountRef.current) return;
-
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setClearColor(0x000000, 1);
-    mountRef.current.appendChild(renderer.domElement);
-
-    const starsGeometry = new THREE.BufferGeometry();
-    const starsCount = 10000;
-    const positions = new Float32Array(starsCount * 3);
-    for (let i = 0; i < starsCount; i++) {
+  const starsGeometry = useMemo(() => {
+    const positions = new Float32Array(8000 * 3);
+    for (let i = 0; i < 8000; i++) {
       positions[i * 3] = (Math.random() - 0.5) * 2000;
       positions[i * 3 + 1] = (Math.random() - 0.5) * 2000;
       positions[i * 3 + 2] = (Math.random() - 0.5) * 2000;
     }
-    starsGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.7, sizeAttenuation: true });
-    const stars = new THREE.Points(starsGeometry, starsMaterial);
-    scene.add(stars);
-
-    camera.position.z = 10;
-
-    let animationId = 0;
-    const animate = () => {
-      animationId = requestAnimationFrame(animate);
-      stars.rotation.y += 0.0001;
-      stars.rotation.x += 0.00005;
-      renderer.render(scene, camera);
-    };
-    animate();
-
-    const handleResize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    };
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      cancelAnimationFrame(animationId);
-      if (mountRef.current && renderer.domElement) {
-        mountRef.current.removeChild(renderer.domElement);
-      }
-      renderer.dispose();
-      starsGeometry.dispose();
-      starsMaterial.dispose();
-    };
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    return geo;
   }, []);
 
-  return <div ref={mountRef} className="fixed top-0 left-0 w-full h-full z-0 bg-black" />;
-}
+  const dustGeometry = useMemo(() => {
+    const positions = new Float32Array(3000 * 3);
+    const tiltX = 0.55;
+    const cosT = Math.cos(tiltX);
+    const sinT = Math.sin(tiltX);
+    for (let i = 0; i < 3000; i++) {
+      const r = 100 + Math.random() * 800;
+      const theta = Math.random() * Math.PI * 2;
+      let x = Math.cos(theta) * r;
+      const y0 = (Math.random() - 0.5) * 120;
+      let z = Math.sin(theta) * r;
+      const y = y0 * cosT - z * sinT;
+      z = y0 * sinT + z * cosT;
+      positions[i * 3] = x;
+      positions[i * 3 + 1] = y;
+      positions[i * 3 + 2] = z;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    return geo;
+  }, []);
 
+  useFrame(() => {
+    if (starsGroupRef.current) {
+      starsGroupRef.current.rotation.y += 0.00004;
+    }
+    if (dustGroupRef.current) {
+      dustGroupRef.current.rotation.y += 0.00006;
+    }
+  });
+
+  return (
+    <group>
+      <group ref={starsGroupRef}>
+        <points geometry={starsGeometry} frustumCulled={false}>
+          <pointsMaterial
+            color="#ffffff"
+            size={0.5}
+            sizeAttenuation
+            transparent
+            opacity={0.7}
+            depthWrite={false}
+          />
+        </points>
+      </group>
+      <group ref={dustGroupRef}>
+        <points geometry={dustGeometry} frustumCulled={false}>
+          <pointsMaterial
+            color="#C8A96E"
+            size={0.35}
+            sizeAttenuation
+            transparent
+            opacity={0.45}
+            depthWrite={false}
+          />
+        </points>
+      </group>
+    </group>
+  );
+}

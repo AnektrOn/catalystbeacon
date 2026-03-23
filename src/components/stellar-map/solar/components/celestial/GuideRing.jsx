@@ -1,19 +1,20 @@
-import { Torus } from '@react-three/drei';
+import { useMemo, useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
+import * as THREE from 'three';
 import { useCameraContext } from '../../contexts/CameraContext';
-import { useSpring, animated } from '@react-spring/web';
 
 export default function GuideRing({ radius }) {
   const { cameraState } = useCameraContext();
+  const lineRef = useRef(null);
+  const opacitySmoothed = useRef(0);
 
   const targetOpacity = (() => {
     switch (cameraState) {
       case 'FREE':
       case 'MOVING_TO_HOME':
-        return 1;
       case 'INTRO_ANIMATION':
         return 1;
       case 'ZOOMING_IN':
-        return 0;
       case 'DETAIL_VIEW':
         return 0;
       default:
@@ -21,19 +22,34 @@ export default function GuideRing({ radius }) {
     }
   })();
 
-  const { opacity } = useSpring({
-    opacity: targetOpacity,
-    from: { opacity: 0 },
-    config: { duration: 1000 },
+  const geometry = useMemo(() => {
+    const points = [];
+    const segments = 128;
+    for (let i = 0; i <= segments; i++) {
+      const angle = (i / segments) * Math.PI * 2;
+      points.push(
+        new THREE.Vector3(Math.cos(angle) * radius, 0, Math.sin(angle) * radius)
+      );
+    }
+    return new THREE.BufferGeometry().setFromPoints(points);
+  }, [radius]);
+
+  useFrame((_, delta) => {
+    const goal = targetOpacity * 0.28;
+    const k = 1 - Math.exp(-delta * 3.5);
+    opacitySmoothed.current += (goal - opacitySmoothed.current) * k;
+    const mat = lineRef.current?.material;
+    if (mat) mat.opacity = opacitySmoothed.current;
   });
 
-  const AnimatedMaterial = animated('meshBasicMaterial');
-
   return (
-    <mesh>
-      <Torus args={[radius, 0.002, 16, 500]} position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <AnimatedMaterial color="#666" transparent opacity={opacity} />
-      </Torus>
-    </mesh>
+    <line rotation={[0.15, 0, 0]} geometry={geometry} ref={lineRef}>
+      <lineBasicMaterial
+        color="#C8A96E"
+        transparent
+        opacity={0}
+        depthWrite={false}
+      />
+    </line>
   );
 }
