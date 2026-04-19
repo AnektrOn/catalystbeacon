@@ -3,6 +3,16 @@ import { Capacitor } from '@capacitor/core';
 import { supabase } from '../lib/supabaseClient';
 
 /**
+ * Android FCM: `PushNotifications.register()` requires a valid Firebase project in
+ * `android/app/google-services.json` and the Google Services Gradle plugin. Without
+ * that, the native process often crashes right after the user accepts notification
+ * permission. We skip registration until you opt in with the env flag below.
+ */
+function isAndroidFcmBuildReady() {
+  return typeof process !== 'undefined' && process.env?.REACT_APP_ANDROID_PUSH_FCM === 'true';
+}
+
+/**
  * Push Notification Service
  * Handles push notification registration, token storage, and event handling
  */
@@ -11,6 +21,8 @@ class PushNotificationService {
     this.isInitialized = false;
     this.deviceToken = null;
     this.userId = null;
+    this.initInFlight = false;
+    this.androidFcmSkipLogged = false;
   }
 
   /**
@@ -26,6 +38,22 @@ class PushNotificationService {
       return;
     }
 
+    if (this.initInFlight) {
+      return;
+    }
+
+    // Android: never call register() until Firebase FCM is wired (avoids native crash).
+    if (Capacitor.getPlatform() === 'android' && !isAndroidFcmBuildReady()) {
+      if (!this.androidFcmSkipLogged) {
+        this.androidFcmSkipLogged = true;
+        console.info(
+          '[PushNotifications] Android: skipped (FCM not configured). Add Firebase android/app/google-services.json, apply the Google Services plugin in Gradle, then set REACT_APP_ANDROID_PUSH_FCM=true in .env and rebuild.'
+        );
+      }
+      return;
+    }
+
+    this.initInFlight = true;
     this.userId = userId;
 
     try {
@@ -41,7 +69,7 @@ class PushNotificationService {
         return;
       }
 
-      // Register for push notifications
+      // Register for push notifications (FCM / APNS — requires native project setup)
       await PushNotifications.register();
 
       // Set up event listeners
@@ -51,6 +79,8 @@ class PushNotificationService {
       console.log('Push notifications initialized');
     } catch (error) {
       console.error('Error initializing push notifications:', error);
+    } finally {
+      this.initInFlight = false;
     }
   }
 

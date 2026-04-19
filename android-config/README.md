@@ -68,6 +68,16 @@ Edit `android/app/build.gradle`:
 3. Complete Data Safety section
 4. Set up app signing key
 
+## Push notifications (FCM) — éviter un crash après « Autoriser »
+
+Sur Android, `@capacitor/push-notifications` utilise **Firebase Cloud Messaging**. Sans `android/app/google-services.json` (projet Firebase lié au package `com.hcuniversity.beacon`), l’app peut **se fermer** juste après l’acceptation des notifications.
+
+1. Crée une app Android dans la [console Firebase](https://console.firebase.google.com/), télécharge `google-services.json` et place-le dans `android/app/`.
+2. Vérifie que `android/app/build.gradle` applique le plugin `com.google.gms.google-services` quand ce fichier est présent (déjà le cas dans ce projet).
+3. Dans `.env` (racine du repo React), ajoute **`REACT_APP_ANDROID_PUSH_FCM=true`**, puis `npm run build` et `npx cap sync android` avant de regénérer l’APK.
+
+Tant que l’étape 1 n’est pas faite, l’app **ne demande plus** l’enregistrement FCM côté natif (pas de crash) ; les pushes Android restent inactifs jusqu’à configuration complète.
+
 ## Build Commands
 
 ```bash
