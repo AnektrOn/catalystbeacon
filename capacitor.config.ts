@@ -5,14 +5,16 @@ const config: CapacitorConfig = {
   appName: 'HC Beacon',
   webDir: 'build',
   server: {
+    // Bundled mode: APK serves the React build from android/app/src/main/assets/public.
+    // To switch back to loading from the live site (Option A in ANDROID_OAUTH.md),
+    // set CAPACITOR_SERVER_URL=https://app.humancatalystbeacon.com before running cap sync.
+    url: process.env.CAPACITOR_SERVER_URL || undefined,
     androidScheme: 'https',
     iosScheme: 'https',
     // Allow localhost in development
     hostname: process.env.NODE_ENV === 'development' ? 'localhost' : undefined,
     // Clear text traffic allowed for development only
     cleartext: process.env.NODE_ENV === 'development',
-    // For production Android/iOS store builds, optionally load app from your site so OAuth redirect works:
-    // url: process.env.CAPACITOR_SERVER_URL || 'https://app.humancatalystbeacon.com'
   },
   plugins: {
     SplashScreen: {

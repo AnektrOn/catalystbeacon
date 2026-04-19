@@ -63,7 +63,7 @@ export default function NodeDetail() {
     <>
       <div
         key={displayedNode?.id ?? 'empty'}
-        className="absolute left-5 right-5 top-20 mt-4 max-w-md z-10 transition-all duration-500 ease-out"
+        className="absolute z-10 transition-all duration-500 ease-out left-3 right-3 top-16 md:left-5 md:right-5 md:top-20 md:max-w-md md:mt-4"
         style={{
           opacity: isVisible ? 1 : 0,
           transform: isVisible ? 'translateY(0)' : 'translateY(20px)',

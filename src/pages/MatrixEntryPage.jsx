@@ -15,10 +15,22 @@ const CALL_AUDIO_URL = '/assets/Voix%202%20Entry.mp3'
 const NOTIFICATION_SOUND_URL = '/assets/mixkit-message-pop-alert-2354.mp3'
 const INCOMING_CALL_SOUND_URL = '/assets/11L-cellphone_ringing_vibrate-17172534.mp3'
 const AMBIENT_AUDIO_URL = '/assets/' + encodeURIComponent('Tessa - Steve Jablonsky (Extended Version).mp3')
-// Glitch loop: use existing asset (replace with b28apq4s5n5-glitching-sfx-8.mp3 in public/assets/ if you have it)
-const GLITCH_AUDIO_URL = '/assets/czy8je37m6b-heaven-sfx-10.mp3'
 const ACCEPT_TO_VOICE_DELAY_MS = 1500   // secondes avant que la voix commence après avoir décroché
 const VOICE_END_TO_MESSAGE_MS = 1500    // secondes après la fin de l'audio avant "Connection Finished"
+
+const clamp01 = (n) => Math.max(0, Math.min(1, n))
+
+const computeTypingDurationMs = ({ lines, typingSpeed, deletionSpeed, pauseAfterLine }) => {
+  const safeLines = Array.isArray(lines) ? lines : []
+  const typeMs = Number(typingSpeed) || 0
+  const delMs = Number(deletionSpeed) || 0
+  const pauseMs = Number(pauseAfterLine) || 0
+  return safeLines.reduce((sum, line) => {
+    const len = (line || '').length
+    // TypingEffect: type full line -> pause -> delete full line (even on last line)
+    return sum + len * typeMs + pauseMs + len * delMs
+  }, 0)
+}
 
 // Generate simple notification sound using Web Audio API
 const generateNotificationSound = () => {
@@ -93,6 +105,12 @@ const MatrixEntryPage = () => {
   const [act1TypingComplete, setAct1TypingComplete] = useState(false)
   const [act2TypingComplete, setAct2TypingComplete] = useState(false)
   const [callStatus, setCallStatus] = useState('incoming') // 'incoming' | 'answered' | 'audioFinished' | 'finalMessage'
+  const [voiceDurationMs, setVoiceDurationMs] = useState(null)
+
+  const [actProgress, setActProgress] = useState(0) // 0..1
+  const [actProgressMode, setActProgressMode] = useState('hidden') // hidden | determinate | indeterminate | complete
+  const actProgressStartTsRef = useRef(null)
+  const actProgressExpectedMsRef = useRef(null)
 
   const audioRef = useRef(null)
   const notificationSoundRef = useRef(null)
@@ -100,7 +118,6 @@ const MatrixEntryPage = () => {
   const incomingCallOscillatorRef = useRef(null)
   const audioContextRef = useRef(null)
   const ambientSoundRef = useRef(null)
-  const glitchSoundRef = useRef(null)
   const stopVibrationRef = useRef(null)
   const incomingCallRingTimeoutRef = useRef(null)
   const [speakerOn, setSpeakerOn] = useState(false)
@@ -109,6 +126,63 @@ const MatrixEntryPage = () => {
   const callAudioGainRef = useRef(null)
 
   const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+
+  const stopHtmlAudio = (audio, { resetTime = true, clearSrc = false } = {}) => {
+    if (!audio) return
+    try {
+      audio.pause()
+      if (resetTime) audio.currentTime = 0
+      if (clearSrc) {
+        audio.src = ''
+        audio.load()
+      }
+    } catch (_) {}
+  }
+
+  const fadeOutHtmlAudio = (audio, { durationMs = 350, clearSrc = false } = {}) => {
+    if (!audio) return
+    try {
+      const startVol = Number.isFinite(audio.volume) ? audio.volume : 1
+      const start = performance.now()
+      const tick = (now) => {
+        const t = Math.min(1, (now - start) / durationMs)
+        audio.volume = startVol * (1 - t)
+        if (t < 1) requestAnimationFrame(tick)
+        else {
+          stopHtmlAudio(audio, { resetTime: true, clearSrc })
+          audio.volume = startVol
+        }
+      }
+      requestAnimationFrame(tick)
+    } catch (_) {
+      stopHtmlAudio(audio, { resetTime: true, clearSrc })
+    }
+  }
+
+  const stopAllAudio = ({ fade = true } = {}) => {
+    stopIncomingCallRing()
+
+    if (fade) {
+      fadeOutHtmlAudio(ambientSoundRef.current)
+    } else {
+      stopHtmlAudio(ambientSoundRef.current)
+    }
+
+    stopHtmlAudio(notificationSoundRef.current)
+    stopHtmlAudio(audioRef.current, { clearSrc: true })
+
+    if (callAudioContextRef.current) {
+      try { callAudioContextRef.current.close() } catch (_) {}
+      callAudioContextRef.current = null
+      callAudioFilterRef.current = null
+      callAudioGainRef.current = null
+    }
+
+    if (audioContextRef.current) {
+      try { audioContextRef.current.close() } catch (_) {}
+      audioContextRef.current = null
+    }
+  }
 
   // Lazily create and start audio only after the first user interaction (act1 start)
   // This avoids downloading MB of audio for users who immediately skip
@@ -124,12 +198,6 @@ const MatrixEntryPage = () => {
       ambientSoundRef.current.loop = true
       ambientSoundRef.current.volume = 0.25
     }
-    if (!glitchSoundRef.current) {
-      glitchSoundRef.current = new Audio(GLITCH_AUDIO_URL)
-      glitchSoundRef.current.preload = 'auto'
-      glitchSoundRef.current.loop = true
-      glitchSoundRef.current.volume = 0.15
-    }
     if (!audioRef.current) {
       audioRef.current = new Audio()
       audioRef.current.preload = 'auto'
@@ -142,7 +210,6 @@ const MatrixEntryPage = () => {
         notificationSoundRef.current.currentTime = 0
       }).catch(() => {})
       ambientSoundRef.current.play().catch(() => {})
-      glitchSoundRef.current.play().catch(() => {})
     } catch (_) {}
   }
 
@@ -172,6 +239,23 @@ const MatrixEntryPage = () => {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Safety: stop audio if user leaves/unmounts onboarding
+  useEffect(() => {
+    return () => {
+      stopAllAudio({ fade: false })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Prevent overlapping loops between acts
+  useEffect(() => {
+    if (!act1Started) return
+    if (currentAct === 'act1') return
+    // Act2/Act3 should not keep act1 loops running under the voice/call
+    stopAllAudio({ fade: true })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentAct, act1Started])
 
   // Play sound helper with error handling (évite l'erreur "media resource not suitable")
   const playSound = (audioRef, url) => {
@@ -380,6 +464,79 @@ const MatrixEntryPage = () => {
     'And the system profits from it.'
   ]
 
+  const getActProgressExpectedMs = () => {
+    // Speeds used in render props below
+    const typing1 = computeTypingDurationMs({
+      lines: act1Texts,
+      typingSpeed: 50,
+      deletionSpeed: 30,
+      pauseAfterLine: 2000
+    })
+    const typing2 = computeTypingDurationMs({
+      lines: act2Texts,
+      typingSpeed: 50,
+      deletionSpeed: 30,
+      pauseAfterLine: 2000
+    })
+
+    // Act 1 scripted timing in runOverload()
+    const act1OverloadMs = 1200 + 1000 + 12 * 200 + 1500 // 6100ms
+
+    if (currentAct === 'act1') return act1OverloadMs + typing1
+    if (currentAct === 'act2') return typing2
+    if (currentAct === 'act3') {
+      if (callStatus !== 'answered' && callStatus !== 'audioFinished' && callStatus !== 'finalMessage') {
+        return null // waiting user action -> indeterminate
+      }
+      const voiceMs = Number.isFinite(voiceDurationMs) ? voiceDurationMs : 20000
+      // accept delay + voice + post-voice delays + UI transitions to landing
+      return ACCEPT_TO_VOICE_DELAY_MS + voiceMs + VOICE_END_TO_MESSAGE_MS + 1500 + 2500
+    }
+    return null
+  }
+
+  // Act progress timeline: measure real time but use expected per act for %.
+  useEffect(() => {
+    if (currentAct === 'act1' && !act1Started) {
+      setActProgressMode('hidden')
+      setActProgress(0)
+      actProgressStartTsRef.current = null
+      actProgressExpectedMsRef.current = null
+      return
+    }
+
+    const expected = getActProgressExpectedMs()
+    actProgressExpectedMsRef.current = expected
+    actProgressStartTsRef.current = performance.now()
+
+    if (expected == null) {
+      setActProgressMode('indeterminate')
+      setActProgress(0)
+      return
+    }
+
+    setActProgressMode('determinate')
+    setActProgress(0)
+
+    let raf = 0
+    const tick = () => {
+      const start = actProgressStartTsRef.current
+      const exp = actProgressExpectedMsRef.current
+      if (!start || !exp) return
+      const elapsed = performance.now() - start
+      const p = clamp01(elapsed / exp)
+      setActProgress(p)
+      if (p >= 1) {
+        setActProgressMode('complete')
+        return
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentAct, act1Started, callStatus, voiceDurationMs])
+
   useEffect(() => {
     if (currentAct !== 'act2') {
       setShowAct2Text(false)
@@ -417,55 +574,13 @@ const MatrixEntryPage = () => {
   ======================= */
 
   const handleRejectCall = () => {
-    stopIncomingCallRing()
-    if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current.currentTime = 0
-    }
-    if (callAudioContextRef.current) {
-      try { callAudioContextRef.current.close() } catch (_) {}
-      callAudioContextRef.current = null
-      callAudioFilterRef.current = null
-      callAudioGainRef.current = null
-    }
+    stopAllAudio({ fade: true })
     setCallStatus('declined')
   }
 
   const handleSkipToLanding = () => {
     // Stop all audio when user skips (fix: audio continued after skip)
-    stopIncomingCallRing()
-    if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current.currentTime = 0
-      audioRef.current.src = ''
-      audioRef.current.load()
-    }
-    if (notificationSoundRef.current) {
-      notificationSoundRef.current.pause()
-      notificationSoundRef.current.currentTime = 0
-    }
-    if (callAudioContextRef.current) {
-      try {
-        callAudioContextRef.current.close()
-      } catch (_) {}
-      callAudioContextRef.current = null
-      callAudioFilterRef.current = null
-      callAudioGainRef.current = null
-    }
-    if (audioContextRef.current) {
-      try {
-        audioContextRef.current.close()
-      } catch (_) {}
-      audioContextRef.current = null
-    }
-    if (ambientSoundRef.current) {
-      ambientSoundRef.current.pause()
-      ambientSoundRef.current.currentTime = 0
-    }
-    if (glitchSoundRef.current) {
-      glitchSoundRef.current.pause()
-      glitchSoundRef.current.currentTime = 0
-    }
+    stopAllAudio({ fade: false })
     navigate('/landing')
   }
 
@@ -488,6 +603,8 @@ const MatrixEntryPage = () => {
 
   const handleAcceptCall = () => {
     stopIncomingCallRing()
+    // Ensure act1 loops aren't running under the call voice
+    fadeOutHtmlAudio(ambientSoundRef.current)
     setCallStatus('answered')
     setSpeakerOn(false)
     const callAudio = audioRef.current
@@ -512,6 +629,10 @@ const MatrixEntryPage = () => {
         callAudioFilterRef.current = filter
         callAudioGainRef.current = gainNode
         callAudio.src = CALL_AUDIO_URL
+        callAudio.onloadedmetadata = () => {
+          const d = callAudio.duration
+          if (Number.isFinite(d) && d > 0) setVoiceDurationMs(Math.round(d * 1000))
+        }
         callAudio.onended = () => {
           // Laisser quelques secondes après la fin de la voix avant d'afficher le message
           setTimeout(() => setCallStatus('audioFinished'), VOICE_END_TO_MESSAGE_MS)
@@ -524,6 +645,10 @@ const MatrixEntryPage = () => {
       } catch (_) {
         callAudio.src = CALL_AUDIO_URL
         callAudio.volume = 0.7
+        callAudio.onloadedmetadata = () => {
+          const d = callAudio.duration
+          if (Number.isFinite(d) && d > 0) setVoiceDurationMs(Math.round(d * 1000))
+        }
         callAudio.onended = () => setTimeout(() => setCallStatus('audioFinished'), VOICE_END_TO_MESSAGE_MS)
         callAudio.play().catch(() => setTimeout(() => setCallStatus('audioFinished'), 5000))
       }
@@ -555,10 +680,6 @@ const MatrixEntryPage = () => {
           ambientSoundRef.current.pause()
           ambientSoundRef.current.currentTime = 0
         }
-        if (glitchSoundRef.current) {
-          glitchSoundRef.current.pause()
-          glitchSoundRef.current.currentTime = 0
-        }
         navigate('/landing')
       }, 2500)
       return () => clearTimeout(timer)
@@ -573,6 +694,23 @@ const MatrixEntryPage = () => {
     <div className={`matrix-entry-page${currentAct === 'act3' ? ' act3-no-bg' : ''}`}>
       <div className="glitch-noise" aria-hidden="true" />
       <div className="matrix-entry-glitch" aria-hidden="true" />
+
+      {/* Act progress bar (top) */}
+      {actProgressMode !== 'hidden' && (
+        <div
+          className={`entry-act-progress ${actProgressMode === 'indeterminate' ? 'is-indeterminate' : ''}`}
+          role="progressbar"
+          aria-label="Progression de l'onboarding"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={actProgressMode === 'indeterminate' ? undefined : Math.round(actProgress * 100)}
+        >
+          <div
+            className="entry-act-progress__fill"
+            style={{ width: `${Math.round(actProgress * 100)}%` }}
+          />
+        </div>
+      )}
 
       {/* Skip button - visible on all acts */}
       <button type="button" className="matrix-entry-skip" onClick={handleSkipToLanding} aria-label="Skip to landing">
@@ -610,7 +748,6 @@ const MatrixEntryPage = () => {
           {showAct1Text && (
             <div className="act1-text-container matrix-glitch-text">
               <div className="matrix-entry-card act1-text-card">
-                <EntryDitheringBackground speed={0.2} />
                 <div className="act1-text-content">
                   <TypingEffect 
                     lines={act1Texts}
@@ -662,10 +799,8 @@ const MatrixEntryPage = () => {
                     variant="secondary" 
                     size="lg" 
                     onClick={() => {
-                      if (ambientSoundRef.current) {
-                        ambientSoundRef.current.pause()
-                        ambientSoundRef.current.currentTime = 0
-                      }
+                      // Stop act1 loops before starting the call act
+                      stopAllAudio({ fade: true })
                       setCurrentAct('act3')
                     }}
                     className="act2-cta-button"

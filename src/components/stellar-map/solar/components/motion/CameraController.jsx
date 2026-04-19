@@ -12,7 +12,21 @@ import { useCameraSetup } from '../../hooks/useCameraSetup';
 
 const NODE_VIEW_MIN_DISTANCE = 3;
 const NODE_VIEW_MAX_DISTANCE = 15;
-const FOCUS_TARGET_LERP = 0.03;
+const FOCUS_TARGET_LERP = 0.06;
+/** After focus change, nudge camera toward this offset from target (orbit around selection, not sun). */
+const REFOCUS_FRAMES = 100;
+const FAMILY_CAM_OFFSET = new Vector3(0, 24, 42);
+const CONSTELLATION_CAM_OFFSET = new Vector3(0, 14, 26);
+
+function focusKey(focus) {
+  if (focus === 'sun') return 'sun';
+  if (focus?.type === 'family' && focus.family?.name) return `family:${focus.family.name}`;
+  if (focus?.type === 'constellation' && focus.family && focus.constellation) {
+    const id = focus.constellation.id || focus.constellation.name;
+    return `constellation:${focus.family.name}:${id}`;
+  }
+  return 'sun';
+}
 
 export default function CameraController() {
   useCameraSetup();
@@ -20,10 +34,11 @@ export default function CameraController() {
   const orbitControlsRef = useRef(null);
   const invisibleTargetRef = useRef(new Vector3(0, 0, 0)).current;
   const focusTargetRef = useRef(new Vector3(0, 0, 0)).current;
+  const prevFocusKeyRef = useRef('sun');
+  const refocusFramesRef = useRef(0);
 
   const { camera } = useThree();
   const [selectedNode] = useSelectedNode();
-  // Use positionsRef (not snapshot state) for zero-latency reads inside useFrame
   const { positionsRef: nodePositionsRef } = useNodePositions();
   const { cameraState, setCameraState } = useCameraContext();
   const { focus } = useFocus();
@@ -46,26 +61,60 @@ export default function CameraController() {
     const controls = orbitControlsRef.current;
     if (!controls) return;
 
+    const key = focusKey(focus);
+    if (key !== prevFocusKeyRef.current) {
+      prevFocusKeyRef.current = key;
+      refocusFramesRef.current = REFOCUS_FRAMES;
+    }
+
     switch (cameraState) {
-      case 'FREE':
+      case 'FREE': {
         controls.enabled = true;
         controls.maxDistance = Infinity;
+        controls.minDistance = 0;
+
         if (focus === 'sun') {
           focusTargetRef.set(0, 0, 0);
-        } else if (focus?.type === 'family' && focus.family?.name && familyPositionsRef.current[focus.family.name]) {
-          const [x, y, z] = familyPositionsRef.current[focus.family.name];
-          focusTargetRef.set(x, y, z);
+        } else if (focus?.type === 'family' && focus.family?.name) {
+          const pos = familyPositionsRef.current[focus.family.name];
+          if (pos) focusTargetRef.set(pos[0], pos[1], pos[2]);
         } else if (focus?.type === 'constellation' && focus.constellation && focus.family) {
-          const key = focus.constellation.id || `${focus.family.name}-${focus.constellation.name}`;
-          const pos = constellationPositionsRef.current[key];
-          if (pos) focusTargetRef.set(...pos);
+          const ckey = focus.constellation.id || `${focus.family.name}-${focus.constellation.name}`;
+          const pos = constellationPositionsRef.current[ckey];
+          if (pos) focusTargetRef.set(pos[0], pos[1], pos[2]);
         }
+
         invisibleTargetRef.lerp(focusTargetRef, FOCUS_TARGET_LERP);
         controls.target.copy(invisibleTargetRef);
+
+        if (refocusFramesRef.current > 0) {
+          refocusFramesRef.current -= 1;
+          if (focus === 'sun') {
+            camera.position.lerp(homePosition, 0.055);
+          } else if (focus?.type === 'family' && focus.family?.name) {
+            const pos = familyPositionsRef.current[focus.family.name];
+            if (pos) {
+              const target = new Vector3(pos[0], pos[1], pos[2]);
+              const ideal = target.clone().add(FAMILY_CAM_OFFSET);
+              camera.position.lerp(ideal, 0.05);
+            }
+          } else if (focus?.type === 'constellation' && focus.constellation && focus.family) {
+            const ckey = focus.constellation.id || `${focus.family.name}-${focus.constellation.name}`;
+            const pos = constellationPositionsRef.current[ckey];
+            if (pos) {
+              const target = new Vector3(pos[0], pos[1], pos[2]);
+              const ideal = target.clone().add(CONSTELLATION_CAM_OFFSET);
+              camera.position.lerp(ideal, 0.05);
+            }
+          }
+        }
+
         controls.update();
         break;
+      }
 
       case 'DETAIL_VIEW':
+        refocusFramesRef.current = 0;
         if (selectedNode) {
           controls.enabled = true;
           const pos = nodePositionsRef.current[selectedNode.id];
@@ -79,6 +128,7 @@ export default function CameraController() {
         break;
 
       case 'INTRO_ANIMATION':
+        refocusFramesRef.current = 0;
         if (!introAnimationCompleted.current) {
           controls.enabled = false;
           camera.position.lerp(homePosition, 0.12);
@@ -92,6 +142,7 @@ export default function CameraController() {
         break;
 
       case 'MOVING_TO_HOME':
+        refocusFramesRef.current = 0;
         controls.enabled = false;
         camera.position.lerp(homePosition, lerpFactor);
         invisibleTargetRef.lerp(new Vector3(0, 0, 0), lerpFactor);
@@ -111,6 +162,7 @@ export default function CameraController() {
         break;
 
       case 'ZOOMING_IN':
+        refocusFramesRef.current = 0;
         if (selectedNode) {
           const pos = nodePositionsRef.current[selectedNode.id];
           if (pos) {

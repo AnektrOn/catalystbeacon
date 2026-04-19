@@ -41,6 +41,10 @@ const PrivacyPage = React.lazy(() => import(/* webpackChunkName: "legal" */ './p
 const CookiesPage = React.lazy(() => import(/* webpackChunkName: "legal" */ './pages/CookiesPage'))
 const AwakeningLandingPage = React.lazy(() => import(/* webpackChunkName: "landing" */ './pages/AwakeningLandingPage'))
 const MatrixEntryPage = React.lazy(() => import(/* webpackChunkName: "entry" */ './pages/MatrixEntryPage'))
+const NativeWelcomePage = React.lazy(() => import(/* webpackChunkName: "native-welcome" */ './pages/NativeWelcomePage'))
+
+// True only when running inside the native Capacitor shell (Android/iOS APK)
+const IS_NATIVE = typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform && Capacitor.isNativePlatform()
 const SchoolRoadmap = React.lazy(() => import(/* webpackChunkName: "roadmap-feature" */ './pages/SchoolRoadmap'))
 
 // Loading component - Now using Skeleton Loader for perceived speed
@@ -107,10 +111,11 @@ const AppRoutes = () => {
       {/* Dev-only routes: Fragment of Route elements so Routes accepts them */}
       {process.env.NODE_ENV === 'development' && DevRouteElements}
       
-      {/* Matrix Entry Page - Public route, first page visitors see */}
+      {/* Matrix Entry Page - Public route, first page visitors see.
+          On native (APK), replace with a minimal welcome screen (big logo + login/signup). */}
       <Route path="/entry" element={
         <React.Suspense fallback={<LoadingScreen />}>
-          <MatrixEntryPage />
+          {IS_NATIVE ? <NativeWelcomePage /> : <MatrixEntryPage />}
         </React.Suspense>
       } />
 
@@ -273,14 +278,19 @@ const AppRoutes = () => {
         } />
       </Route>
 
-      {/* Landing Page - Public route, accessible to all users (authenticated or not) */}
+      {/* Landing Page - Public route, accessible to all users (authenticated or not).
+          On native (APK), the marketing landing is suppressed in favor of /entry (welcome). */}
       <Route path="/landing" element={
-        <React.Suspense fallback={<LoadingScreen />}>
-          <AwakeningLandingPage />
-        </React.Suspense>
+        IS_NATIVE
+          ? <Navigate to="/entry" replace />
+          : (
+            <React.Suspense fallback={<LoadingScreen />}>
+              <AwakeningLandingPage />
+            </React.Suspense>
+          )
       } />
 
-      {/* Root redirects to entry page */}
+      {/* Root redirects to entry page (which is the native welcome on the APK) */}
       <Route path="/" element={<Navigate to="/entry" replace />} />
 
       {/* Catch all */}

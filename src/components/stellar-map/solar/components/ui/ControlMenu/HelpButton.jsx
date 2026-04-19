@@ -30,7 +30,7 @@ export default function HelpButton() {
                   <span className="text-secondary">Desktop: </span>Left click + drag to move, scroll to zoom.
                 </p>
                 <p>Drag the slider on the right to change speed.</p>
-                <p>Click a planet from the menu at the bottom of the page to zoom in and see more info.</p>
+                <p>Search for a family or constellation, then click a planet in the 3D view to zoom in and see more info.</p>
                 <p>To exit planet view click "Exit Detail View" at the top or press the home button.</p>
                 <p>
                   <span className="text-secondary">Note: </span> Free movement and speed are disabled when zoomed in on a planet

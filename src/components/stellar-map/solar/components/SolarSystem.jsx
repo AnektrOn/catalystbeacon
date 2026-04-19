@@ -1,6 +1,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
+import { ArrowLeft, Menu } from 'lucide-react';
 import stellarMapService from '../../stellarMapService';
 import { buildStellarHierarchy } from '../utils/stellarHierarchy';
 import { useAuth } from '../../../../contexts/AuthContext';
@@ -8,7 +9,6 @@ import StarfieldBackground from '../../r3f/StarfieldBackground';
 import Sun from './celestial/Sun';
 import FamilyOrbit from './celestial/FamilyOrbit';
 import CameraController from './motion/CameraController';
-import NodeMenu from './ui/NodeMenu';
 import SpeedControl from './ui/SpeedControl';
 import NodeDetail from './ui/NodeDetail';
 import ControlMenu from './ui/ControlMenu/ControlMenu';
@@ -22,7 +22,12 @@ import { useFocus } from '../contexts/FocusContext';
 import { useSelectedNode } from '../contexts/SelectedNodeContext';
 import { useCameraContext } from '../contexts/CameraContext';
 
-export default function SolarSystem({ level }) {
+export default function SolarSystem({
+  level,
+  onExitLevel,
+  onNavigateDashboard,
+  setDrawerOpen = () => {},
+}) {
   const { profile } = useAuth();
   const { focus, setFocus } = useFocus();
   const [selectedNode, setSelectedNode] = useSelectedNode();
@@ -59,15 +64,36 @@ export default function SolarSystem({ level }) {
     return () => { cancelled = true; };
   }, [level, userXP]);
 
-  // Extract all nodes for NodeMenu (flat list for compatibility)
-  const allNodesFlat = families.flatMap(family => 
-    family.constellations.flatMap(constellation => 
-      constellation.nodes.map(node => ({
-        node,
-        familyName: family.name,
-        constellationName: constellation.name
-      }))
-    )
+  const searchOnSelect = ({ type, family, constellation }) => {
+    if (type === 'family') setFocus({ type: 'family', family });
+    else setFocus({ type: 'constellation', constellation, family });
+  };
+
+  const levelButtons = (
+    <>
+      <button
+        type="button"
+        onClick={onExitLevel}
+        className="px-3 py-1.5 rounded-lg bg-black/70 text-white/90 text-xs border border-white/15 hover:bg-white/10 transition-colors shrink-0 hidden md:inline-flex items-center justify-center"
+      >
+        Changer de niveau
+      </button>
+      <button
+        type="button"
+        onClick={onExitLevel}
+        className="px-2 py-1.5 rounded-lg bg-black/70 text-white/90 text-xs border border-white/15 hover:bg-white/10 transition-colors shrink-0 md:hidden"
+      >
+        Changer
+      </button>
+      <button
+        type="button"
+        onClick={onNavigateDashboard}
+        className="w-8 h-8 shrink-0 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-white/10 transition-colors border border-white/15"
+        aria-label="Retour"
+      >
+        <ArrowLeft className="w-4 h-4" />
+      </button>
+    </>
   );
 
   return (
@@ -87,11 +113,9 @@ export default function SolarSystem({ level }) {
             <CameraController />
             <StarfieldBackground />
             <SceneLighting />
-            
-            {/* Central Sun/Nucleus */}
+
             <Sun position={[0, 0, 0]} radius={1.5} />
-            
-            {/* Render hierarchical structure: Families > Constellations > Nodes */}
+
             {families.map((family) => (
               <FamilyOrbit
                 key={`family-${family.name}-${family.index}`}
@@ -102,10 +126,72 @@ export default function SolarSystem({ level }) {
           </Suspense>
         </Canvas>
       </div>
-      <NodeMenu nodesWithOrbits={allNodesFlat} />
+
+      <div className="hidden lg:flex absolute top-3 left-3 z-[100] items-center gap-2">
+        <ControlMenu variant="panel" />
+        <StellarMapFamilyConstellationSearch
+          families={families}
+          onSelect={searchOnSelect}
+          inline
+          className="w-[220px] shrink-0"
+        />
+      </div>
+
+      <div className="hidden lg:flex absolute top-3 right-3 z-[100] items-center gap-2">
+        <button
+          type="button"
+          onClick={onExitLevel}
+          className="px-3 py-1.5 rounded-lg bg-black/70 text-white/90 text-xs border border-white/15 hover:bg-white/10 transition-colors"
+        >
+          Changer de niveau
+        </button>
+        <button
+          type="button"
+          onClick={onNavigateDashboard}
+          className="w-8 h-8 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-white/10 transition-colors border border-white/15"
+          aria-label="Retour"
+        >
+          <ArrowLeft className="w-4 h-4" />
+        </button>
+      </div>
+
+      <div className="hidden md:flex lg:hidden absolute top-2 left-2 right-2 h-10 z-[100] items-center gap-2 px-2.5 rounded-lg bg-black/80 border border-white/10 overflow-visible">
+        <ControlMenu variant="inline" />
+        <StellarMapFamilyConstellationSearch
+          families={families}
+          onSelect={searchOnSelect}
+          inline
+          className="min-w-0 flex-1"
+        />
+        {levelButtons}
+      </div>
+
+      <div className="flex md:hidden absolute top-2 left-2 right-2 h-10 z-[100] items-center gap-1.5 px-2 rounded-lg bg-black/80 border border-white/10 overflow-visible">
+        <button
+          type="button"
+          onClick={() => setDrawerOpen(true)}
+          className="w-9 h-9 shrink-0 rounded-lg bg-white/10 text-white flex items-center justify-center hover:bg-white/15 border border-white/15"
+          aria-label="Menu"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+        <StellarMapFamilyConstellationSearch
+          families={families}
+          onSelect={searchOnSelect}
+          inline
+          className="min-w-0 flex-1"
+        />
+        <button
+          type="button"
+          onClick={onExitLevel}
+          className="px-2 py-1.5 rounded-lg bg-black/70 text-white/90 text-xs border border-white/15 hover:bg-white/10 transition-colors shrink-0 max-w-[76px] truncate"
+        >
+          Changer
+        </button>
+      </div>
+
       <SpeedControl />
       <NodeDetail />
-      <ControlMenu />
       <IntroText />
       <StellarMapBreadcrumb
         currentCore={level}
@@ -122,18 +208,13 @@ export default function SolarSystem({ level }) {
           }
         }}
       />
-      <StellarMapFamilyConstellationSearch
-        families={families}
-        onSelect={({ type, family, constellation }) => {
-          if (type === 'family') setFocus({ type: 'family', family });
-          else setFocus({ type: 'constellation', constellation, family });
-        }}
-      />
+
       <StellarMapProgressionPanel families={families} />
+
       <StellarMapMiniMapWrapper families={families} />
       {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-20 pointer-events-none">
-          <span className="text-white/80 text-sm">Chargement de la carte stellaire…</span>
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 pointer-events-none px-3 py-1.5 rounded-lg bg-black/70 text-white/80 text-xs border border-white/10">
+          Chargement de la carte stellaire…
         </div>
       )}
     </>

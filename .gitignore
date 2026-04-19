@@ -88,3 +88,4 @@ DerivedData/
 *.p12
 *.keystore
 *.jks
+android/keystore.properties

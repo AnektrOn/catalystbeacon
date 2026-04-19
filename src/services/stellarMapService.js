@@ -2,6 +2,24 @@ import { supabase } from '../lib/supabaseClient';
 import { logDebug, logError } from '../utils/logger';
 
 class StellarMapService {
+  constructor() {
+    this.rpcHierarchyAvailable = true;
+    this.stellarCompletionsTableAvailable = true;
+    this.hasLoggedMissingCompletionsTable = false;
+  }
+
+  isSchemaMissingError(error) {
+    return error?.code === 'PGRST202' || error?.code === 'PGRST205';
+  }
+
+  markCompletionsTableUnavailable() {
+    this.stellarCompletionsTableAvailable = false;
+    if (!this.hasLoggedMissingCompletionsTable) {
+      this.hasLoggedMissingCompletionsTable = true;
+      logDebug('[StellarMapService] user_stellar_node_completions not in schema; completion checks disabled.');
+    }
+  }
+
   /**
    * Get all constellation families for a specific level
    * @param {string} level - Level name ('Ignition', 'Insight', 'Transformation', 'God Mode')
@@ -228,14 +246,22 @@ class StellarMapService {
       let families = null;
       let nodes = null;
 
-      const { data: rpcData, error: rpcError } = await supabase.rpc('get_stellar_map_hierarchy_v1', {
-        p_level: finalLevel
-      });
+      let rpcData = null;
+      let rpcError = null;
+
+      if (this.rpcHierarchyAvailable) {
+        const rpcResult = await supabase.rpc('get_stellar_map_hierarchy_v1', {
+          p_level: finalLevel
+        });
+        rpcData = rpcResult.data;
+        rpcError = rpcResult.error;
+      }
 
       if (!rpcError && rpcData) {
         families = Array.isArray(rpcData.families) ? rpcData.families : [];
         nodes = Array.isArray(rpcData.nodes) ? rpcData.nodes : [];
       } else if (rpcError?.code === 'PGRST202') {
+        this.rpcHierarchyAvailable = false;
         if (isDevelopment) {
           logDebug('[StellarMapService] get_stellar_map_hierarchy_v1 not in schema; using fallback');
         }
@@ -466,6 +492,10 @@ class StellarMapService {
         return { data: null, error: new Error('User ID and Node ID are required') };
       }
 
+      if (!this.stellarCompletionsTableAvailable) {
+        return { data: null, error: null };
+      }
+
       const { data, error } = await supabase
         .from('user_stellar_node_completions')
         .select('*')
@@ -473,7 +503,13 @@ class StellarMapService {
         .eq('node_id', nodeId)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        if (this.isSchemaMissingError(error)) {
+          this.markCompletionsTableUnavailable();
+          return { data: null, error: null };
+        }
+        throw error;
+      }
       return { data, error: null };
     } catch (error) {
       logError(error, 'StellarMapService - Error checking node completion');
@@ -496,6 +532,10 @@ class StellarMapService {
 
       if (!xpAmount || xpAmount <= 0) {
         return { data: null, error: new Error('XP amount must be greater than 0') };
+      }
+
+      if (!this.stellarCompletionsTableAvailable) {
+        return { data: null, error: new Error('Node completion tracking table is not available in this environment') };
       }
 
       // Check if already completed
@@ -539,6 +579,10 @@ class StellarMapService {
         .single();
 
       if (completionError) {
+        if (this.isSchemaMissingError(completionError)) {
+          this.markCompletionsTableUnavailable();
+          return { data: null, error: new Error('Node completion tracking table is not available in this environment') };
+        }
         logError(completionError, 'StellarMapService - Error recording completion');
         return { data: null, error: completionError };
       }
@@ -607,13 +651,39 @@ class StellarMapService {
         return { data: new Map(), error: null };
       }
 
+      if (!this.stellarCompletionsTableAvailable) {
+        const fallbackMap = new Map();
+        nodeIds.forEach(nodeId => {
+          fallbackMap.set(nodeId, {
+            completed: false,
+            completedAt: null,
+            xpAwarded: null
+          });
+        });
+        return { data: fallbackMap, error: null };
+      }
+
       const { data, error } = await supabase
         .from('user_stellar_node_completions')
         .select('node_id, completed_at, xp_awarded')
         .eq('user_id', userId)
         .in('node_id', nodeIds);
 
-      if (error) throw error;
+      if (error) {
+        if (this.isSchemaMissingError(error)) {
+          this.markCompletionsTableUnavailable();
+          const fallbackMap = new Map();
+          nodeIds.forEach(nodeId => {
+            fallbackMap.set(nodeId, {
+              completed: false,
+              completedAt: null,
+              xpAwarded: null
+            });
+          });
+          return { data: fallbackMap, error: null };
+        }
+        throw error;
+      }
 
       // Create a map of node_id -> completion data
       const completionMap = new Map();

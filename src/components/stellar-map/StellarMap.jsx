@@ -1,10 +1,10 @@
 import React, { useState, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
 import Providers from './solar/Providers';
 import LevelSelector, { getLastVisitedLevel } from './LevelSelector';
+import ControlMenu from './solar/components/ui/ControlMenu/ControlMenu';
+import SpeedControl from './solar/components/ui/SpeedControl';
 
-// Defer Three.js + R3F bundle until user selects a level
 const SolarSystem = lazy(() => import('./solar/components/SolarSystem'));
 
 /**
@@ -14,6 +14,7 @@ const SolarSystem = lazy(() => import('./solar/components/SolarSystem'));
 export default function StellarMap() {
   const navigate = useNavigate();
   const [selectedLevel, setSelectedLevel] = useState(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const showLevelSelector = selectedLevel === null;
 
@@ -25,32 +26,64 @@ export default function StellarMap() {
           onSelectLevel={setSelectedLevel}
         />
       ) : (
-        <>
-          <div className="absolute inset-0 w-full h-full z-0">
-            <Providers>
+        <Providers>
+          <>
+            <div className="absolute inset-0 w-full h-full z-0 min-h-[60vh] md:min-h-[80vh] lg:min-h-[90vh]">
               <Suspense fallback={<div className="w-full h-full bg-black" />}>
-                <SolarSystem level={selectedLevel} />
+                <SolarSystem
+                  level={selectedLevel}
+                  onExitLevel={() => setSelectedLevel(null)}
+                  onNavigateDashboard={() => navigate('/dashboard')}
+                  setDrawerOpen={setDrawerOpen}
+                />
               </Suspense>
-            </Providers>
-          </div>
-          <div className="absolute top-4 right-4 z-[100] flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setSelectedLevel(null)}
-              className="px-3 py-2 rounded-lg bg-white/10 text-white/90 text-sm hover:bg-white/20 transition-colors"
-            >
-              Changer de niveau
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/dashboard')}
-              className="w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition-colors"
-              aria-label="Retour"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-          </div>
-        </>
+            </div>
+            {drawerOpen && (
+              <>
+                <button
+                  type="button"
+                  className="absolute inset-0 z-[60] bg-black/60 border-0 p-0 cursor-default"
+                  onClick={() => setDrawerOpen(false)}
+                  aria-label="Fermer le menu"
+                />
+                <aside className="absolute top-0 left-0 bottom-0 w-72 z-[60] bg-black/95 border-r border-white/10 p-4 flex flex-col gap-4 overflow-y-auto">
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setDrawerOpen(false)}
+                      className="w-8 h-8 rounded-lg text-white/90 hover:bg-white/10 text-lg leading-none"
+                      aria-label="Fermer"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigate('/dashboard');
+                      setDrawerOpen(false);
+                    }}
+                    className="w-full px-3 py-2 rounded-lg bg-white/10 text-white/90 text-sm border border-white/15 hover:bg-white/15 text-left"
+                  >
+                    ← Tableau de bord
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedLevel(null);
+                      setDrawerOpen(false);
+                    }}
+                    className="w-full px-3 py-2 rounded-lg bg-white/10 text-white/90 text-sm border border-white/15 hover:bg-white/15 text-left"
+                  >
+                    Changer de niveau
+                  </button>
+                  <ControlMenu variant="drawer" />
+                  <SpeedControl variant="drawer" />
+                </aside>
+              </>
+            )}
+          </>
+        </Providers>
       )}
     </div>
   );
