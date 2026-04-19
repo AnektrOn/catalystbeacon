@@ -2,13 +2,15 @@ import React, { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
-/** HC native welcome palette (matches NativeWelcomePage) */
+/** Night + HC accent (orb reads on dark; shell/plasma stay cohesive) */
 const PALETTE = {
-  bg: 0xf7f1e1,
-  ink: 0x2a1f12,
+  bg: 0x030510,
+  voidDeep: 0x000c1a,
+  blueMid: 0x1a5f9e,
+  cyanBright: 0x5ee7ff,
   accent: 0xb4833d,
   accentLight: 0xd4a574,
-  creamBright: 0xfff8ec,
+  star: 0xc8e4ff,
 }
 
 const noiseFunctions = `
@@ -112,7 +114,7 @@ const WelcomeOrbCanvas = ({ className = '' }) => {
     const rotationSpeedX = 0.002
     const rotationSpeedY = 0.005
     const plasmaScale = 0.22
-    const plasmaBrightness = 1.15
+    const plasmaBrightness = 1.28
     const voidThreshold = 0.1
     const shellOpacity = 0.38
 
@@ -137,7 +139,7 @@ const WelcomeOrbCanvas = ({ className = '' }) => {
     const mainGroup = new THREE.Group()
     scene.add(mainGroup)
 
-    const pointLight = new THREE.PointLight(PALETTE.accentLight, 2.2, 12)
+    const pointLight = new THREE.PointLight(PALETTE.cyanBright, 2.0, 12)
     mainGroup.add(pointLight)
 
     const shellGeo = new THREE.SphereGeometry(1.0, 64, 64)
@@ -146,8 +148,8 @@ const WelcomeOrbCanvas = ({ className = '' }) => {
       vertexShader: shellShader.vertexShader,
       fragmentShader: shellShader.fragmentShader,
       uniforms: {
-        uColor: { value: new THREE.Color(PALETTE.ink) },
-        uOpacity: { value: 0.22 },
+        uColor: { value: new THREE.Color(PALETTE.voidDeep) },
+        uOpacity: { value: 0.35 },
       },
       transparent: true,
       blending: THREE.AdditiveBlending,
@@ -159,7 +161,7 @@ const WelcomeOrbCanvas = ({ className = '' }) => {
       vertexShader: shellShader.vertexShader,
       fragmentShader: shellShader.fragmentShader,
       uniforms: {
-        uColor: { value: new THREE.Color(PALETTE.accent) },
+        uColor: { value: new THREE.Color(PALETTE.blueMid) },
         uOpacity: { value: shellOpacity },
       },
       transparent: true,
@@ -178,9 +180,9 @@ const WelcomeOrbCanvas = ({ className = '' }) => {
         uScale: { value: plasmaScale },
         uBrightness: { value: plasmaBrightness },
         uThreshold: { value: voidThreshold },
-        uColorDeep: { value: new THREE.Color(PALETTE.ink) },
-        uColorMid: { value: new THREE.Color(PALETTE.accent) },
-        uColorBright: { value: new THREE.Color(PALETTE.creamBright) },
+        uColorDeep: { value: new THREE.Color(PALETTE.voidDeep) },
+        uColorMid: { value: new THREE.Color(PALETTE.blueMid) },
+        uColorBright: { value: new THREE.Color(PALETTE.cyanBright) },
       },
       vertexShader: `
         varying vec3 vPosition;
@@ -265,7 +267,7 @@ const WelcomeOrbCanvas = ({ className = '' }) => {
     const pMat = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
-        uColor: { value: new THREE.Color(PALETTE.creamBright) },
+        uColor: { value: new THREE.Color(PALETTE.star) },
       },
       vertexShader: `
         uniform float uTime;

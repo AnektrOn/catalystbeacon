@@ -2,16 +2,16 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import WelcomeOrbCanvas from '../components/welcome/WelcomeOrbCanvas'
 
-const BG = '#F7F1E1'
+const BG = 'linear-gradient(165deg, #061018 0%, #000205 42%, #020617 100%)'
 const ACCENT = '#B4833D'
-const INK = '#2A1F12'
+const TEXT_ON_DARK = '#E8E2D9'
 
 const NativeWelcomePage = () => {
   return (
     <div
       className="min-h-screen w-full flex flex-col items-center justify-between relative"
       style={{
-        backgroundColor: BG,
+        background: BG,
         paddingTop: 'max(2.5rem, env(safe-area-inset-top))',
         paddingBottom: 'max(2.5rem, env(safe-area-inset-bottom))',
         paddingLeft: 'max(1.5rem, env(safe-area-inset-left))',
@@ -44,7 +44,7 @@ const NativeWelcomePage = () => {
           className="w-full text-center rounded-full py-4 text-base font-semibold tracking-wide transition-transform active:scale-[0.98]"
           style={{
             backgroundColor: 'transparent',
-            color: INK,
+            color: TEXT_ON_DARK,
             border: `1.5px solid ${ACCENT}`,
           }}
         >
